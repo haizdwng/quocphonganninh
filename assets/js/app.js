@@ -564,13 +564,15 @@ function finishSession() {
   const s = state.session;
   if (!s) return;
 
-  const completedIdx = s.items
-    .filter((it) => it.status === 'correct')
-    .map((it) => s.pool[it.poolIdx].originalIndex);
-  addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
+  if (s.mode === 'normal') {
+    const completedIdx = s.items
+      .filter((it) => it.status === 'correct')
+      .map((it) => s.pool[it.poolIdx].originalIndex);
+    addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
 
-  if (s.sequential && s.nextCursor != null) {
-    setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId]);
+    if (s.sequential && s.nextCursor != null) {
+      setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId]);
+    }
   }
 
   const wrongInSession = [];
