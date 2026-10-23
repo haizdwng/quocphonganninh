@@ -1096,3 +1096,53 @@ button {
     font-size: 0.72rem;
   }
 }
+
+
+/* Official Tabler Icons, bundled locally for offline use. */
+[data-icon]::before {
+  content: '';
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.45em;
+  vertical-align: -0.2em;
+  flex: 0 0 auto;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+[data-icon="sun"]::before { -webkit-mask-image: url('../icons/tabler/sun.svg'); mask-image: url('../icons/tabler/sun.svg'); }
+[data-icon="moon"]::before { -webkit-mask-image: url('../icons/tabler/moon.svg'); mask-image: url('../icons/tabler/moon.svg'); }
+[data-icon="search"]::before { -webkit-mask-image: url('../icons/tabler/search.svg'); mask-image: url('../icons/tabler/search.svg'); }
+[data-icon="bookmark"]::before { -webkit-mask-image: url('../icons/tabler/bookmark.svg'); mask-image: url('../icons/tabler/bookmark.svg'); }
+[data-icon="check"]::before { -webkit-mask-image: url('../icons/tabler/check.svg'); mask-image: url('../icons/tabler/check.svg'); }
+[data-icon="chevron-left"]::before { -webkit-mask-image: url('../icons/tabler/chevron-left.svg'); mask-image: url('../icons/tabler/chevron-left.svg'); }
+[data-icon="chevron-right"]::before { -webkit-mask-image: url('../icons/tabler/chevron-right.svg'); mask-image: url('../icons/tabler/chevron-right.svg'); }
+[data-icon="player-play"]::before { -webkit-mask-image: url('../icons/tabler/player-play.svg'); mask-image: url('../icons/tabler/player-play.svg'); }
+[data-icon="refresh"]::before { -webkit-mask-image: url('../icons/tabler/refresh.svg'); mask-image: url('../icons/tabler/refresh.svg'); }
+[data-icon="download"]::before { -webkit-mask-image: url('../icons/tabler/download.svg'); mask-image: url('../icons/tabler/download.svg'); }
+[data-icon="upload"]::before { -webkit-mask-image: url('../icons/tabler/upload.svg'); mask-image: url('../icons/tabler/upload.svg'); }
+[data-icon="trash"]::before { -webkit-mask-image: url('../icons/tabler/trash.svg'); mask-image: url('../icons/tabler/trash.svg'); }
+[data-icon="alert-circle"]::before { -webkit-mask-image: url('../icons/tabler/alert-circle.svg'); mask-image: url('../icons/tabler/alert-circle.svg'); }
+[data-icon="wifi"]::before { -webkit-mask-image: url('../icons/tabler/wifi.svg'); mask-image: url('../icons/tabler/wifi.svg'); }
+[data-icon="wifi-off"]::before { -webkit-mask-image: url('../icons/tabler/wifi-off.svg'); mask-image: url('../icons/tabler/wifi-off.svg'); }
+[data-icon="book-2"]::before { -webkit-mask-image: url('../icons/tabler/book-2.svg'); mask-image: url('../icons/tabler/book-2.svg'); }
+[data-icon="list-check"]::before { -webkit-mask-image: url('../icons/tabler/list-check.svg'); mask-image: url('../icons/tabler/list-check.svg'); }
+[data-icon="arrow-right"]::before { -webkit-mask-image: url('../icons/tabler/arrow-right.svg'); mask-image: url('../icons/tabler/arrow-right.svg'); }
+[data-icon="arrow-left"]::before { -webkit-mask-image: url('../icons/tabler/arrow-left.svg'); mask-image: url('../icons/tabler/arrow-left.svg'); }
+[data-icon="rotate-clockwise"]::before { -webkit-mask-image: url('../icons/tabler/rotate-clockwise.svg'); mask-image: url('../icons/tabler/rotate-clockwise.svg'); }
+[data-icon="x"]::before { -webkit-mask-image: url('../icons/tabler/x.svg'); mask-image: url('../icons/tabler/x.svg'); }
+
+.btn[data-icon], .theme-toggle[data-icon], .bookmark-btn[data-icon] { display: inline-flex; align-items: center; justify-content: center; }
+.btn-block[data-icon] { display: flex; }
+.theme-toggle[data-icon]::before, .bookmark-btn[data-icon]::before { width: 1.15em; height: 1.15em; }
+.network-status::before { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 0; background-color: currentColor; -webkit-mask: url('../icons/tabler/wifi.svg') center / contain no-repeat; mask: url('../icons/tabler/wifi.svg') center / contain no-repeat; }
+.network-status[data-state="offline"]::before { background-color: var(--warning); -webkit-mask-image: url('../icons/tabler/wifi-off.svg'); mask-image: url('../icons/tabler/wifi-off.svg'); }
+.feedback.ok::before, .feedback.bad::before { content: ''; display: inline-block; width: 1.1em; height: 1.1em; margin-right: 0.45em; vertical-align: -0.2em; background-color: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
+.feedback.ok::before { -webkit-mask-image: url('../icons/tabler/check.svg'); mask-image: url('../icons/tabler/check.svg'); }
+.feedback.bad::before { -webkit-mask-image: url('../icons/tabler/alert-circle.svg'); mask-image: url('../icons/tabler/alert-circle.svg'); }
+@media (max-width: 420px) { [data-icon]::before { width: 1em; height: 1em; margin-right: 0.35em; } }
