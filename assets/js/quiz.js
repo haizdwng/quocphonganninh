@@ -1,9 +1,15 @@
 export function fingerprintQuestions(questions) {
-  const n = questions.length;
-  if (!n) return 'empty';
-  const first = questions[0]?.question?.slice(0, 40) || '';
-  const last = questions[n - 1]?.question?.slice(0, 40) || '';
-  return `${n}|${first}|${last}`;
+  const source = JSON.stringify(questions.map((q) => ({
+    question: q.question,
+    options: q.options,
+    correct: q.correct
+  })));
+  let hash = 2166136261;
+  for (let i = 0; i < source.length; i++) {
+    hash ^= source.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${questions.length}:${(hash >>> 0).toString(16)}`;
 }
 
 export function normalizeQuestions(raw) {
@@ -15,14 +21,13 @@ export function normalizeQuestions(raw) {
     const q = raw[i];
     if (!q || typeof q.question !== 'string' || !q.question.trim()) continue;
     if (!Array.isArray(q.options) || q.options.length < 2) continue;
-    const options = q.options.map((o) => String(o ?? ''));
-    let correct = q.correct;
-    if (typeof correct !== 'number' || !Number.isInteger(correct) || correct < 0 || correct >= options.length) {
-      continue;
-    }
+    if (q.options.some((option) => typeof option !== 'string' || !option.trim())) continue;
+    const options = q.options.slice();
+    const correct = q.correct;
+    if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) continue;
     out.push({
       originalIndex: i,
-      question: q.question.trim(),
+      question: q.question,
       options,
       correct
     });
@@ -66,16 +71,20 @@ export function createSessionItems(pool, { shuffleQ, shuffleA }) {
   });
 }
 
-export function pickSequential(allQuestions, cursor, count) {
+export function pickSequential(allQuestions, cursor, count, completedSet = new Set()) {
   const total = allQuestions.length;
-  if (cursor >= total) return { items: [], nextCursor: cursor, exhausted: true };
-  const end = Math.min(cursor + count, total);
-  const slice = allQuestions.slice(cursor, end);
+  let nextCursor = Math.max(0, Math.min(Number(cursor) || 0, total));
+  const items = [];
+  while (nextCursor < total && items.length < count) {
+    const question = allQuestions[nextCursor];
+    nextCursor += 1;
+    if (!completedSet.has(question.originalIndex)) items.push(question);
+  }
   return {
-    items: slice,
-    nextCursor: end,
-    exhausted: end >= total,
-    actualCount: slice.length
+    items,
+    nextCursor,
+    exhausted: nextCursor >= total,
+    actualCount: items.length
   };
 }
 
