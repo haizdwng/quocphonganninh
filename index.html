@@ -24,7 +24,16 @@
     </header>
 
     <main id="main">
-      <section id="screen-setup" class="screen active" aria-label="Thiết lập lượt ôn">
+      <section id="screen-loading" class="screen active" aria-label="Đang tải dữ liệu">
+        <div class="card loading-card" role="status" aria-live="polite">
+          <span class="loading-spinner" aria-hidden="true"></span>
+          <h2>Đang chuẩn bị bộ đề</h2>
+          <p class="hint">Đang tải câu hỏi, kiểm tra dữ liệu và khôi phục tiến độ của bạn…</p>
+          <div class="loading-track" aria-hidden="true"><span></span></div>
+        </div>
+      </section>
+
+      <section id="screen-setup" class="screen" aria-label="Thiết lập lượt ôn" hidden>
         <div class="card">
           <h2>Chọn bộ đề</h2>
           <div class="deck-switch" role="group" aria-label="Bộ đề">
