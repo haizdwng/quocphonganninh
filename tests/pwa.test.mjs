@@ -31,7 +31,7 @@ test('quiz UI keeps accessible live regions for changing questions and feedback'
   assert.match(html, /id="feedback"[^>]*role="status"/);
   assert.match(html, /id="network-status"[^>]*aria-live="polite"/);
   assert.match(html, /id="screen-loading"[^>]*aria-label="Đang tải dữ liệu"/);
-  assert.match(read('assets/css/style.css'), /\\.loading-spinner/);
+  assert.ok(read('assets/css/style.css').includes('.loading-spinner'));
 });
 
 test('quiz session persists on page lifecycle changes and checks deadlines on resume', () => {
