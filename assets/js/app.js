@@ -896,7 +896,7 @@ function bindKeyboardShortcuts() {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (!$('screen-quiz') || $('screen-quiz').hidden || !$('modal').hidden) return;
     const target = event.target;
-    if (target instanceof HTMLElement && target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+    if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable="true"]')) return;
 
     if (/^[1-6]$/.test(event.key)) {
       const option = $('options').querySelectorAll('.option')[Number(event.key) - 1];
