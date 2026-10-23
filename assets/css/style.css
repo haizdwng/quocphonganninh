@@ -1781,7 +1781,7 @@ html, body { color-scheme: dark; }
 #btn-next:not(:disabled) { box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 16%, transparent); }
 .toast { max-width: min(520px, calc(100vw - 24px)); padding: 14px 16px; line-height: 1.5; }
 @media (max-width: 760px) {
-  .quiz-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .quiz-actions #btn-next { grid-column: 1 / -1; grid-row: 1; }
-  .quiz-actions #btn-prev { grid-column: 1 / -1; grid-row: 2; }
+  .quiz-actions { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+  .quiz-actions #btn-prev { grid-column: 1; grid-row: 1; }
+  .quiz-actions #btn-next { grid-column: 2; grid-row: 1; }
 }
