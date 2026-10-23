@@ -49,9 +49,19 @@ function dataUrl(rel) {
 async function loadDeck(id) {
   const meta = DECKS[id];
   const url = dataUrl(meta.file);
-  const res = await fetch(url, { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}).`);
-  const raw = await res.json();
+  let res;
+  try {
+    res = await fetch(url, { cache: 'no-cache' });
+  } catch {
+    throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở website online ít nhất một lần để lưu dữ liệu offline.`);
+  }
+  if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}). Hãy kiểm tra vị trí file JSON.`);
+  let raw;
+  try {
+    raw = await res.json();
+  } catch {
+    throw new Error(`File dữ liệu ${meta.file} không phải JSON hợp lệ.`);
+  }
   const questions = normalizeQuestions(raw);
   const fp = fingerprintQuestions(questions);
   state.decks[id] = questions;
@@ -285,10 +295,16 @@ function startNormal(opts = {}) {
   }
 
   if (form.shuffleQ) {
+    const remainingCount = qs.filter((question) => !completedSet.has(question.originalIndex)).length;
     const pool = pickRandom(qs, form.count, true, completedSet);
     if (!pool.length) {
       toast('Không lấy được câu hỏi.');
       return;
+    }
+    if (remainingCount === 0) {
+      toast('Bạn đã hoàn thành toàn bộ bộ đề; lượt này lấy ngẫu nhiên từ tất cả câu.');
+    } else if (remainingCount < form.count) {
+      toast(`Chỉ còn ${remainingCount} câu chưa hoàn thành; đã bổ sung câu đã làm để đủ ${pool.length} câu.`);
     }
     startSessionFromPool(pool, {
       mode: 'normal',
@@ -730,7 +746,7 @@ function bindEvents() {
   $('btn-quit').addEventListener('click', async () => {
     const ok = await confirmModal(
       'Thoát lượt ôn?',
-      'Tiến độ lượt hiện tại vẫn được lưu và có thể khôi phục khi mở lại. Bạn có thể thoát về màn hình chính.'
+      'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.'
     );
     if (!ok) return;
     clearSession();
