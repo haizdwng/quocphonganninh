@@ -116,7 +116,7 @@
 
       <section id="screen-quiz" class="screen" aria-label="Làm bài" hidden>
         <div class="progress-wrap">
-          <div class="progress-meta">
+          <div class="progress-meta" aria-live="polite" aria-atomic="true">
             <span id="progress-label">Câu 1 / 20</span>
             <span id="progress-score">Điểm 0 / 10</span>
             <span id="progress-time" aria-live="polite">Đã làm 00:00</span>
@@ -131,9 +131,9 @@
             <p class="q-badge" id="q-badge">Câu hỏi</p>
             <button type="button" class="bookmark-btn" id="btn-bookmark" aria-pressed="false" data-icon="bookmark">☆ Đánh dấu</button>
           </div>
-          <h2 class="q-text" id="q-text"></h2>
+          <h2 class="q-text" id="q-text" aria-live="polite" aria-atomic="true"></h2>
           <div class="options" id="options" role="group" aria-label="Chọn một đáp án"></div>
-          <div class="feedback" id="feedback" hidden></div>
+          <div class="feedback" id="feedback" role="status" aria-live="polite" hidden></div>
         </div>
 
         <div class="quiz-actions">
