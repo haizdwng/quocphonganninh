@@ -38,6 +38,9 @@ export function getSettings() {
       : 1,
     endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0
       ? Number(settings.endQuestion)
+      : 0,
+    timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0
+      ? Math.min(1440, Number(settings.timeLimit))
       : 0
   };
 };
@@ -55,6 +58,9 @@ export function saveSettings(settings) {
       : 1,
     endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0
       ? Number(settings.endQuestion)
+      : 0,
+    timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0
+      ? Math.min(1440, Number(settings.timeLimit))
       : 0
   };
   return writeRoot(root);
@@ -228,7 +234,8 @@ export function importBackup(raw) {
       shuffleQ: !!settings.shuffleQ,
       shuffleA: settings.shuffleA !== false,
       startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0 ? Number(settings.startQuestion) : 1,
-      endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0 ? Number(settings.endQuestion) : 0
+      endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0 ? Number(settings.endQuestion) : 0,
+      timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0 ? Math.min(1440, Number(settings.timeLimit)) : 0
     },
     decks: {}
   };
