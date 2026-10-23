@@ -669,15 +669,23 @@ function restoreSessionIfAny() {
   if (!saved || !['qp1', 'qp2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) return false;
   if (!state.decks[saved.deckId]) return false;
   const fp = state.fingerprints[saved.deckId];
-  const validSession = saved.items.length > 0 &&
+  const validPool = saved.pool.length > 0 && saved.pool.every((question) =>
+    question && Number.isInteger(question.originalIndex) && question.originalIndex >= 0 &&
+    typeof question.question === 'string' && Array.isArray(question.options) && question.options.length >= 2 &&
+    Number.isInteger(question.correct) && question.correct >= 0 && question.correct < question.options.length
+  );
+  const validSession = validPool && saved.items.length > 0 &&
     Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length &&
     saved.items.every((item) => {
+      if (!item || typeof item !== 'object' || !Number.isInteger(item.poolIdx) ||
+          item.poolIdx < 0 || item.poolIdx >= saved.pool.length) return false;
       const question = saved.pool[item.poolIdx];
-      return Number.isInteger(item.poolIdx) && item.poolIdx >= 0 && item.poolIdx < saved.pool.length &&
-        question && Array.isArray(question.options) && Array.isArray(item.optionOrder) &&
-        item.optionOrder.length === question.options.length &&
+      return Array.isArray(item.optionOrder) && item.optionOrder.length === question.options.length &&
+        new Set(item.optionOrder).size === question.options.length &&
         item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) &&
-        ['pending', 'wrong', 'correct'].includes(item.status);
+        ['pending', 'wrong', 'correct'].includes(item.status) &&
+        (item.userAnswer == null || (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) &&
+        Number.isInteger(item.wrongCount) && item.wrongCount >= 0;
     });
   if (!validSession || saved.dataFingerprint !== fp) {
     clearSession();
