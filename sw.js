@@ -1,4 +1,5 @@
-const CACHE_VERSION = 'qp-quiz-v2';
+const CACHE_VERSION = 'qp-quiz-v3';
+const CACHE_PREFIX = 'qp-quiz-';
 const ESSENTIAL = [
   './',
   './index.html',
@@ -9,96 +10,85 @@ const ESSENTIAL = [
   './assets/js/storage.js',
   './data/quocphong1.json',
   './data/quocphong2.json',
-  './assets/icons/icon.svg',
-  './assets/icons/icon-192.png',
-  './assets/icons/icon-512.png'
+  './assets/icons/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(ESSENTIAL)).then(() => self.skipWaiting())
+    caches.open(CACHE_VERSION)
+      .then((cache) => cache.addAll(ESSENTIAL))
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys
+        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION)
+        .map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  if (req.method !== 'GET') return;
+  const request = event.request;
+  if (request.method !== 'GET') return;
 
-  const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  const scopeUrl = new URL(self.registration.scope);
+  if (url.origin !== scopeUrl.origin || !url.pathname.startsWith(scopeUrl.pathname)) return;
 
-  const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
-  const isJSON = url.pathname.endsWith('.json');
-  const isAsset =
-    url.pathname.includes('/assets/') ||
-    url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.webmanifest') ||
-    url.pathname.endsWith('.svg') ||
-    url.pathname.endsWith('.png');
+  const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+  const isEssentialAsset = /\\.(css|js|json|webmanifest|svg|png|ico)$/i.test(url.pathname);
+  if (!isHTML && !isEssentialAsset) return;
 
   if (isHTML) {
-    event.respondWith(networkFirst(req));
-    return;
+    event.respondWith(networkFirst(request));
+  } else {
+    event.respondWith(cacheFirst(request));
   }
-
-  if (isJSON || isAsset) {
-    event.respondWith(cacheFirst(req));
-    return;
-  }
-
-  event.respondWith(cacheFirst(req));
 });
 
-async function cacheFirst(req) {
+async function cacheFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
-  const cached = await cache.match(req, { ignoreSearch: true });
+  const cached = await cache.match(request, { ignoreSearch: true });
   if (cached) {
-    fetchAndUpdate(cache, req);
+    fetch(request).then((response) => {
+      if (response.ok) cache.put(request, response.clone());
+    }).catch(() => {});
     return cached;
   }
+
   try {
-    const res = await fetch(req);
-    if (res && res.ok) cache.put(req, res.clone());
-    return res;
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
   } catch {
-    return new Response('Offline và chưa có cache.', {
+    return new Response('Chưa có tài nguyên này trong bộ nhớ offline. Hãy kết nối mạng để tải ứng dụng và bộ đề.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
   }
 }
 
-async function networkFirst(req) {
+async function networkFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
   try {
-    const res = await fetch(req);
-    if (res && res.ok) cache.put(req, res.clone());
-    return res;
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
   } catch {
-    const cached = await cache.match(req, { ignoreSearch: true });
+    const cached = await cache.match(request, { ignoreSearch: true });
     if (cached) return cached;
-    const fallback = await cache.match('./index.html');
+    const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
     if (fallback) return fallback;
-    return new Response('Cần kết nối mạng lần đầu để tải ứng dụng.', {
+    return new Response('Cần kết nối mạng ít nhất một lần để tải website và hai bộ đề.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
   }
-}
-
-function fetchAndUpdate(cache, req) {
-  fetch(req)
-    .then((res) => {
-      if (res && res.ok) cache.put(req, res.clone());
-    })
-    .catch(() => {});
 }
