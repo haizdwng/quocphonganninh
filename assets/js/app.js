@@ -549,7 +549,7 @@ function renderQuestion() {
   $('progress-label').textContent = s.mode === 'practice-wrong'
     ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
     : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
-  $('progress-score').textContent = `Đúng ${s.completedInSession}`;
+  $('progress-score').textContent = `Đúng lần đầu ${s.firstTryCorrect || 0}`;
   const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
   const pct = progressTotal ? Math.round((s.completedInSession / progressTotal) * 100) : 0;
   $('progress-fill').style.width = `${pct}%`;
@@ -587,6 +587,11 @@ function renderQuestion() {
     };
     if (item.checked && item.status === 'wrong' && displayIdx === item.userAnswer) {
       btn.classList.add('incorrect');
+    };
+    const wrongOptions = Array.isArray(item.wrongOptions) ? item.wrongOptions : [];
+    if (wrongOptions.includes(origIdx)) {
+      btn.classList.add('incorrect', 'locked');
+      btn.disabled = true;
     };
     if (item.status === 'correct') {
       btn.classList.add('locked');
@@ -648,6 +653,8 @@ function onSelectOption(displayIdx) {
   const item = currentItem();
   if (!s || !item) return;
   if (item.status === 'correct' || s.viewIndex < s.maxReached) return;
+  const q = currentQ();
+  if (!q || (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))) return;
 
   item.userAnswer = displayIdx;
   if (item.status === 'wrong') {
@@ -666,6 +673,7 @@ function onCheck() {
   if (item.status === 'correct' || item.checked || s.viewIndex < s.maxReached) return;
 
   item.checked = true;
+  if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
   if (isAnswerCorrect(item, q)) {
     const wasAlreadyCorrect = item.status === 'correct';
     const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
@@ -688,6 +696,8 @@ function onCheck() {
     s.reviewingPast = false;
   } else {
     item.status = 'wrong';
+    const wrongOriginalIndex = item.optionOrder[item.userAnswer];
+    if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
     item.wrongCount += 1;
     s.totalWrongAttempts += 1;
     if (s.mode === 'practice-wrong') {
@@ -817,7 +827,7 @@ function finishSession() {
 
   s.summary = {
     total: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length,
-    correct: s.completedInSession,
+    correct: s.firstTryCorrect || 0,
     wrongQuestions: wrongInSession.length,
     wrongAttempts: s.totalWrongAttempts,
     practiceQuestions: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : 0,
@@ -930,6 +940,7 @@ function restoreSessionIfAny() {
           item.poolIdx < 0 || item.poolIdx >= saved.pool.length) return false;
       const question = saved.pool[item.poolIdx];
       return Array.isArray(item.optionOrder) && item.optionOrder.length === question.options.length &&
+        (item.wrongOptions == null || (Array.isArray(item.wrongOptions) && item.wrongOptions.every((value) => Number.isInteger(value) && value >= 0 && value < question.options.length))) &&
         new Set(item.optionOrder).size === question.options.length &&
         item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) &&
         ['pending', 'wrong', 'correct'].includes(item.status) &&
@@ -956,6 +967,9 @@ function restoreSessionIfAny() {
   saved.practiceWrongHistory = Array.isArray(saved.practiceWrongHistory)
     ? saved.practiceWrongHistory.filter((entry) => entry && Number.isInteger(entry.originalIndex) && entry.originalIndex >= 0 && typeof entry.question === 'string' && Number.isInteger(entry.wrongCount) && entry.wrongCount > 0)
     : [];
+  for (const item of saved.items) {
+    if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
+  };
   saved.completedInSession = saved.mode === 'practice-wrong'
     ? saved.practiceCompletedIndices.length
     : saved.items.filter((item) => item.status === 'correct').length;
