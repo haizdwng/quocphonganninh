@@ -96,6 +96,19 @@ async function loadDeck(id) {
     progress.dataFingerprint = fp;
     if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
   };
+
+  const progressBeforeSanitize = JSON.stringify(progress);
+  const isValidIndex = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
+  progress.completed = progress.completed.filter(isValidIndex);
+  progress.bookmarks = progress.bookmarks.filter(isValidIndex);
+  progress.sequentialCursor = Math.min(progress.sequentialCursor, questions.length);
+  progress.wrongMap = Object.fromEntries(Object.entries(progress.wrongMap)
+    .filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
+  progress.practiceMap = Object.fromEntries(Object.entries(progress.practiceMap)
+    .filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
+  if (JSON.stringify(progress) !== progressBeforeSanitize && !saveDeckProgress(id, progress)) {
+    toast('Không thể làm sạch tiến độ cũ trong trình duyệt.');
+  };
   return questions;
 };
 
@@ -660,7 +673,16 @@ function renderQuestion() {
   };
 };
 
+function enforceSessionDeadline() {
+  const session = state.session;
+  if (!session || !(session.timeLimit > 0) || !session.deadlineAt || Date.now() < session.deadlineAt) return false;
+  session.timeExpired = true;
+  finishSession();
+  return true;
+};
+
 function onSelectOption(displayIdx) {
+  if (enforceSessionDeadline()) return;
   const s = state.session;
   const item = currentItem();
   if (!s || !item) return;
@@ -678,6 +700,7 @@ function onSelectOption(displayIdx) {
 };
 
 function onCheck() {
+  if (enforceSessionDeadline()) return;
   const s = state.session;
   const item = currentItem();
   const q = currentQ();
@@ -730,6 +753,7 @@ function onCheck() {
 };
 
 function onNext() {
+  if (enforceSessionDeadline()) return;
   const s = state.session;
   if (!s) return;
   const item = currentItem();
@@ -781,6 +805,7 @@ function onNext() {
 };
 
 function onPrev() {
+  if (enforceSessionDeadline()) return;
   const s = state.session;
   if (!s || s.viewIndex <= 0) return;
   s.viewIndex -= 1;
