@@ -1532,14 +1532,6 @@ input[type="number"]:focus, .search-field input[type="search"]:focus {
 
 
 /* Hoàn thiện trải nghiệm: chuyển động nhẹ, trạng thái rõ ràng và hỗ trợ thiết bị cảm ứng. */
-@font-face {
-  font-family: Inter;
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('../fonts/InterVariable.woff2') format('woff2');
-}
-
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
