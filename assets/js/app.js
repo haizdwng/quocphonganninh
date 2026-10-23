@@ -14,6 +14,8 @@ import {
   getWrongIndices,
   getBookmarkedIndices,
   toggleBookmark,
+  exportBackup,
+  importBackup,
   storageAvailable
 } from './storage.js';
 import {
@@ -1104,6 +1106,52 @@ function bindEvents() {
     }
     renderQuestion();
     toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
+  });
+
+  $('btn-export-progress').addEventListener('click', () => {
+    try {
+      const content = exportBackup();
+      const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const date = new Date().toISOString().slice(0, 10);
+      link.href = url;
+      link.download = `quocphong-tien-do-${date}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast('Đã tạo tệp sao lưu tiến độ.');
+    } catch {
+      toast('Không thể tạo tệp sao lưu trên trình duyệt này.');
+    }
+  });
+
+  $('btn-import-progress').addEventListener('click', () => $('input-import-progress').click());
+  $('input-import-progress').addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast('Tệp sao lưu quá lớn hoặc không hợp lệ.');
+      return;
+    }
+    const ok = await confirmModal(
+      'Khôi phục tiến độ?',
+      'Tiến độ đang lưu trên thiết bị này sẽ được thay bằng dữ liệu trong tệp sao lưu. Hãy chắc chắn bạn đã sao lưu dữ liệu hiện tại nếu cần.'
+    );
+    if (!ok) return;
+    let raw;
+    try {
+      raw = await file.text();
+    } catch {
+      toast('Không đọc được tệp đã chọn.');
+      return;
+    }
+    if (!importBackup(raw)) {
+      toast('Tệp sao lưu không hợp lệ hoặc không được hỗ trợ.');
+      return;
+    }
+    await loadAll();
+    toast('Đã khôi phục tiến độ từ tệp sao lưu.');
   });
 
   $('btn-reset-progress').addEventListener('click', async () => {
