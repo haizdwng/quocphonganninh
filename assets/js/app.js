@@ -452,6 +452,28 @@ function startSessionFromPool(pool, meta) {
   startSessionTimer();
 };
 
+function startExam() {
+  const form = readSetupForm();
+  const pool = selectedQuestions(form);
+  if (!pool.length) {
+    toast('Vùng câu hỏi đã chọn không có câu hợp lệ.');
+    return;
+  };
+  persistSetupForm();
+  if (form.shuffleQ) {
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    };
+  };
+  startSessionFromPool(pool.slice(0, form.count), {
+    mode: 'exam',
+    sequential: false,
+    forceShuffleQ: form.shuffleQ,
+    alreadyShuffled: true
+  });
+};
+
 function startNormal(opts = {}) {
   const allQuestions = currentQuestions();
   if (!allQuestions.length) {
@@ -603,9 +625,11 @@ function renderQuestion() {
   const q = currentQ();
   if (!item || !q) return;
 
-  const viewingHistory = s.viewIndex < s.maxReached;
+  const viewingHistory = s.viewIndex < s.maxReached && s.mode !== 'exam';
 
-  $('progress-label').textContent = s.mode === 'practice-wrong'
+  $('progress-label').textContent = s.mode === 'exam'
+    ? `Thi thử · Câu ${s.viewIndex + 1} / ${s.items.length}`
+    : s.mode === 'practice-wrong'
     ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
     : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
   const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
@@ -616,7 +640,9 @@ function renderQuestion() {
   $('progress-fill').parentElement.setAttribute('aria-valuenow', String(pct));
 
   $('q-badge').textContent =
-    s.mode === 'practice-wrong'
+    s.mode === 'exam'
+      ? `Thi thử · Gốc #${q.originalIndex + 1}`
+      : s.mode === 'practice-wrong'
       ? `Luyện câu sai · Gốc #${q.originalIndex + 1}`
       : s.mode === 'practice-bookmarks'
         ? `Câu đã đánh dấu · Gốc #${q.originalIndex + 1}`
@@ -676,7 +702,10 @@ function renderQuestion() {
   });
 
   const feedback = $('feedback');
-  if (item.checked && item.status === 'correct') {
+  if (s.mode === 'exam') {
+    feedback.hidden = true;
+    feedback.textContent = '';
+  } else if (item.checked && item.status === 'correct') {
     feedback.hidden = false;
     feedback.className = 'feedback ok';
     feedback.textContent = 'Chính xác! Bạn đã trả lời đúng câu này.';
@@ -691,7 +720,11 @@ function renderQuestion() {
 
   $('btn-prev').disabled = s.viewIndex <= 0;
   const nextButton = $('btn-next');
-  if (viewingHistory) {
+  if (s.mode === 'exam') {
+    nextButton.textContent = s.viewIndex === s.items.length - 1 ? 'Nộp bài' : 'Câu tiếp';
+    nextButton.dataset.icon = s.viewIndex === s.items.length - 1 ? 'check' : 'chevron-right';
+    nextButton.disabled = false;
+  } else if (viewingHistory) {
     nextButton.textContent = 'Câu tiếp';
     nextButton.dataset.icon = 'chevron-right';
     nextButton.disabled = s.viewIndex >= s.maxReached;
@@ -725,7 +758,7 @@ function onSelectOption(displayIdx) {
   const s = state.session;
   const item = currentItem();
   if (!s || !item) return;
-  if (item.status === 'correct' || s.viewIndex < s.maxReached) return;
+  if (item.status === 'correct' || (s.viewIndex < s.maxReached && s.mode !== 'exam')) return;
   const q = currentQ();
   if (!q || (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))) return;
 
@@ -793,6 +826,20 @@ function onNext() {
   if (!s) return;
   const item = currentItem();
   if (!item) return;
+  if (s.mode === 'exam') {
+    if (s.viewIndex < s.items.length - 1) {
+      s.viewIndex += 1;
+      if (s.viewIndex > s.maxReached) s.maxReached = s.viewIndex;
+      s.reviewingPast = false;
+      persistSession();
+      renderQuestion();
+      return;
+    };
+    confirmModal('Nộp bài thi thử?', 'Bài thi sẽ kết thúc và tính điểm dựa trên các đáp án hiện tại. Câu bỏ trống không được tính điểm.').then((ok) => {
+      if (ok && state.session === s) finishSession();
+    });
+    return;
+  };
 
   if (s.viewIndex >= s.maxReached && item.status !== 'correct' &&
       !(s.mode === 'practice-wrong' && item.status === 'wrong' && item.checked)) {
@@ -930,6 +977,22 @@ function finishSession() {
   if (!s) return;
   clearInterval(state.timerInterval);
   state.timerInterval = null;
+  if (s.mode === 'exam') {
+    for (const item of s.items) {
+      const question = s.pool[item.poolIdx];
+      if (!question || item.userAnswer == null) continue;
+      if (isAnswerCorrect(item, question)) {
+        item.status = 'correct';
+        item.wrongCount = 0;
+      } else {
+        item.status = 'wrong';
+        item.wrongCount = 1;
+        s.totalWrongAttempts += 1;
+      };
+    };
+    s.firstTryCorrect = s.items.filter((item) => item.status === 'correct').length;
+    s.completedInSession = s.firstTryCorrect;
+  };
 
   if (s.mode !== 'practice-wrong') {
     const completedIdx = s.items
@@ -997,7 +1060,9 @@ function finishSession() {
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
   $('summary-title').textContent =
-    mode === 'practice-wrong'
+    mode === 'exam'
+      ? 'Hoàn thành bài thi thử'
+      : mode === 'practice-wrong'
       ? 'Kết thúc luyện câu sai'
       : mode === 'practice-bookmarks'
         ? 'Hoàn thành ôn câu đã đánh dấu'
@@ -1262,6 +1327,7 @@ function bindEvents() {
   });
 
   $('btn-start').addEventListener('click', () => startNormal({ sequential: false }));
+  $('btn-exam').addEventListener('click', () => startExam());
   $('btn-continue').addEventListener('click', () => startNormal({ sequential: true }));
   $('btn-practice-wrong').addEventListener('click', () => startPracticeWrong());
   $('btn-practice-bookmarks').addEventListener('click', () => startPracticeBookmarks());
