@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'qp-quiz-v18';
+const CACHE_VERSION = 'qp-quiz-v19';
 const CACHE_PREFIX = 'qp-quiz-';
 const ESSENTIAL = [
   './',
@@ -12,6 +12,27 @@ const ESSENTIAL = [
   './data/quocphong1.json',
   './data/quocphong2.json',
   './assets/icons/icon.svg'
+  './assets/icons/tabler/sun.svg',
+  './assets/icons/tabler/moon.svg',
+  './assets/icons/tabler/search.svg',
+  './assets/icons/tabler/bookmark.svg',
+  './assets/icons/tabler/check.svg',
+  './assets/icons/tabler/chevron-left.svg',
+  './assets/icons/tabler/chevron-right.svg',
+  './assets/icons/tabler/player-play.svg',
+  './assets/icons/tabler/refresh.svg',
+  './assets/icons/tabler/download.svg',
+  './assets/icons/tabler/upload.svg',
+  './assets/icons/tabler/trash.svg',
+  './assets/icons/tabler/alert-circle.svg',
+  './assets/icons/tabler/wifi.svg',
+  './assets/icons/tabler/wifi-off.svg',
+  './assets/icons/tabler/book-2.svg',
+  './assets/icons/tabler/list-check.svg',
+  './assets/icons/tabler/arrow-right.svg',
+  './assets/icons/tabler/arrow-left.svg',
+  './assets/icons/tabler/rotate-clockwise.svg',
+  './assets/icons/tabler/x.svg',
 ];
 
 self.addEventListener('install', (event) => {
