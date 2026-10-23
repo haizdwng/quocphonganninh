@@ -392,6 +392,7 @@ function startSessionFromPool(pool, meta) {
     firstTryCorrect: 0,
     totalWrongAttempts: 0,
     timeLimit: form.timeLimit,
+    startedAt: Date.now(),
     deadlineAt: form.timeLimit > 0 ? Date.now() + form.timeLimit * 60000 : null,
     timeExpired: false
   };
@@ -559,7 +560,7 @@ function renderQuestion() {
   $('progress-label').textContent = s.mode === 'practice-wrong'
     ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
     : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
-  $('progress-score').textContent = `Điểm ${s.firstTryCorrect || 0} / ${s.items.length}`;
+  $('progress-score').textContent = `Điểm ${formatScore(s.firstTryCorrect || 0, s.items.length)} / 10`;
   updateTimerDisplay();
   const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
   const pct = progressTotal ? Math.round((s.completedInSession / progressTotal) * 100) : 0;
@@ -795,43 +796,59 @@ function persistSession() {
 };
 
 function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const remainder = seconds % 60;
+  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+};
+
+function formatScore(correct, total) {
+  if (!(total > 0)) return '0';
+  const score = Math.round((Math.max(0, correct) / total) * 100) / 10;
+  return score.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+};
+
+function getElapsedSeconds(session = state.session) {
+  if (!session) return 0;
+  const startedAt = Number(session.startedAt) || Date.now();
+  return Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
 };
 
 function updateTimerDisplay() {
   const el = $('progress-time');
   const s = state.session;
   if (!el) return;
-  if (!s || !s.deadlineAt || s.timeLimit <= 0) {
+  if (!s) {
     el.hidden = true;
     return;
   };
-  const remaining = Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000));
+  const elapsed = getElapsedSeconds(s);
+  const hasLimit = Number(s.timeLimit) > 0 && Number(s.deadlineAt) > 0;
+  const remaining = hasLimit ? Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000)) : null;
   el.hidden = false;
-  el.textContent = `Còn ${formatTime(remaining)}`;
-  el.classList.toggle('time-warning', remaining <= 60);
+  el.textContent = hasLimit
+    ? `Còn ${formatTime(remaining)} · Đã làm ${formatTime(elapsed)}`
+    : `Đã làm ${formatTime(elapsed)}`;
+  el.classList.toggle('time-warning', hasLimit && remaining <= 60);
 };
 
 function startSessionTimer() {
   clearInterval(state.timerInterval);
   state.timerInterval = null;
-  const s = state.session;
-  if (!s || !s.deadlineAt || !(s.timeLimit > 0)) {
+  if (!state.session) {
     updateTimerDisplay();
     return;
   };
   const tick = () => {
-    if (!state.session) {
+    const session = state.session;
+    if (!session) {
       clearInterval(state.timerInterval);
       state.timerInterval = null;
       return;
     };
-    const remaining = Math.ceil((state.session.deadlineAt - Date.now()) / 1000);
     updateTimerDisplay();
-    if (remaining <= 0) {
-      state.session.timeExpired = true;
+    if (session.timeLimit > 0 && session.deadlineAt && Date.now() >= session.deadlineAt) {
+      session.timeExpired = true;
       clearInterval(state.timerInterval);
       state.timerInterval = null;
       finishSession();
@@ -885,9 +902,11 @@ function finishSession() {
     };
   };
 
+  const scoreTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
   s.summary = {
-    total: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length,
-    score: s.firstTryCorrect || 0,
+    total: scoreTotal,
+    score: formatScore(s.firstTryCorrect || 0, scoreTotal),
+    elapsedSeconds: getElapsedSeconds(s),
     timeExpired: !!s.timeExpired,
     correct: s.firstTryCorrect || 0,
     wrongQuestions: wrongInSession.length,
@@ -918,7 +937,8 @@ function showSummary(summary, deckId, mode) {
           ? 'Hoàn thành ôn kết quả tìm kiếm'
           : 'Hoàn thành lượt ôn';
   $('sum-total').textContent = String(summary.total);
-  $('sum-score').textContent = `${summary.score ?? summary.correct} / ${summary.total}`;
+  $('sum-score').textContent = `${summary.score ?? formatScore(summary.correct, summary.total)} / 10`;
+  $('sum-time').textContent = formatTime(summary.elapsedSeconds || 0);
   $('sum-correct').textContent = String(summary.correct);
   $('sum-wrong-q').textContent = String(summary.wrongQuestions);
   $('sum-wrong-times').textContent = String(summary.wrongAttempts);
@@ -1024,6 +1044,7 @@ function restoreSessionIfAny() {
     return false;
   };
   saved.timeLimit = Number.isInteger(saved.timeLimit) && saved.timeLimit > 0 ? Math.min(1440, saved.timeLimit) : 0;
+  saved.startedAt = Number.isFinite(saved.startedAt) && saved.startedAt > 0 ? saved.startedAt : Date.now();
   saved.deadlineAt = Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0 ? saved.deadlineAt : null;
   saved.timeExpired = !!saved.timeExpired;
   saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
