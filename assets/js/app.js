@@ -44,7 +44,8 @@ const state = {
   mode: 'setup',
   session: null,
   reviewMode: false,
-  searchResults: []
+  searchResults: [],
+  timerInterval: null
 };
 
 const $ = (id) => document.getElementById(id);
@@ -331,9 +332,13 @@ function readSetupForm() {
   const rangeCount = Math.max(1, endQuestion - startQuestion + 1);
   if (!Number.isFinite(count) || count < 1) count = 1;
   if (count > rangeCount) count = rangeCount;
+  let timeLimit = Number.parseInt($('input-time-limit').value, 10);
+  if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
+  timeLimit = Math.min(1440, timeLimit);
+  $('input-time-limit').value = String(timeLimit);
   const shuffleQ = $('chk-shuffle-q').checked;
   const shuffleA = $('chk-shuffle-a').checked;
-  return { count, shuffleQ, shuffleA, startQuestion, endQuestion };
+  return { count, shuffleQ, shuffleA, startQuestion, endQuestion, timeLimit };
 };
 
 function persistSetupForm() {
@@ -344,7 +349,8 @@ function persistSetupForm() {
     shuffleQ: form.shuffleQ,
     shuffleA: form.shuffleA,
     startQuestion: form.startQuestion,
-    endQuestion: form.endQuestion
+    endQuestion: form.endQuestion,
+    timeLimit: form.timeLimit
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 };
@@ -384,13 +390,17 @@ function startSessionFromPool(pool, meta) {
     practiceCompletedIndices: [],
     practiceWrongHistory: [],
     firstTryCorrect: 0,
-    totalWrongAttempts: 0
+    totalWrongAttempts: 0,
+    timeLimit: form.timeLimit,
+    deadlineAt: form.timeLimit > 0 ? Date.now() + form.timeLimit * 60000 : null,
+    timeExpired: false
   };
   state.session = session;
   state.reviewMode = false;
   if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
   showScreen('quiz');
   renderQuestion();
+  startSessionTimer();
 };
 
 function startNormal(opts = {}) {
@@ -549,7 +559,8 @@ function renderQuestion() {
   $('progress-label').textContent = s.mode === 'practice-wrong'
     ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
     : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
-  $('progress-score').textContent = `Đúng lần đầu ${s.firstTryCorrect || 0}`;
+  $('progress-score').textContent = `Điểm ${s.firstTryCorrect || 0} / ${s.items.length}`;
+  updateTimerDisplay();
   const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
   const pct = progressTotal ? Math.round((s.completedInSession / progressTotal) * 100) : 0;
   $('progress-fill').style.width = `${pct}%`;
@@ -783,9 +794,58 @@ function persistSession() {
   };
 };
 
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+};
+
+function updateTimerDisplay() {
+  const el = $('progress-time');
+  const s = state.session;
+  if (!el) return;
+  if (!s || !s.deadlineAt || s.timeLimit <= 0) {
+    el.hidden = true;
+    return;
+  };
+  const remaining = Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000));
+  el.hidden = false;
+  el.textContent = `Còn ${formatTime(remaining)}`;
+  el.classList.toggle('time-warning', remaining <= 60);
+};
+
+function startSessionTimer() {
+  clearInterval(state.timerInterval);
+  state.timerInterval = null;
+  const s = state.session;
+  if (!s || !s.deadlineAt || !(s.timeLimit > 0)) {
+    updateTimerDisplay();
+    return;
+  };
+  const tick = () => {
+    if (!state.session) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+      return;
+    };
+    const remaining = Math.ceil((state.session.deadlineAt - Date.now()) / 1000);
+    updateTimerDisplay();
+    if (remaining <= 0) {
+      state.session.timeExpired = true;
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+      finishSession();
+    };
+  };
+  tick();
+  if (state.session) state.timerInterval = setInterval(tick, 1000);
+};
+
 function finishSession() {
   const s = state.session;
   if (!s) return;
+  clearInterval(state.timerInterval);
+  state.timerInterval = null;
 
   if (s.mode !== 'practice-wrong') {
     const completedIdx = s.items
@@ -827,6 +887,8 @@ function finishSession() {
 
   s.summary = {
     total: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length,
+    score: s.firstTryCorrect || 0,
+    timeExpired: !!s.timeExpired,
     correct: s.firstTryCorrect || 0,
     wrongQuestions: wrongInSession.length,
     wrongAttempts: s.totalWrongAttempts,
@@ -856,6 +918,7 @@ function showSummary(summary, deckId, mode) {
           ? 'Hoàn thành ôn kết quả tìm kiếm'
           : 'Hoàn thành lượt ôn';
   $('sum-total').textContent = String(summary.total);
+  $('sum-score').textContent = `${summary.score ?? summary.correct} / ${summary.total}`;
   $('sum-correct').textContent = String(summary.correct);
   $('sum-wrong-q').textContent = String(summary.wrongQuestions);
   $('sum-wrong-times').textContent = String(summary.wrongAttempts);
@@ -865,11 +928,13 @@ function showSummary(summary, deckId, mode) {
   const totalQuestions = (state.decks[deckId] || []).length;
   const progressAfterSession = getDeckProgress(deckId);
   const completedAfterSession = new Set(progressAfterSession.completed).size;
-  $('summary-note').textContent = completedAfterSession >= totalQuestions
-    ? `Bạn đã hoàn thành toàn bộ bộ đề ${DECKS[deckId].label}.`
-    : summary.wrongQuestions === 0
-      ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.'
-      : 'Bạn có thể luyện lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
+  $('summary-note').textContent = summary.timeExpired
+    ? 'Đã hết giờ. Bài làm được tự động kết thúc; câu chưa trả lời đúng không được tính điểm.'
+    : completedAfterSession >= totalQuestions
+      ? `Bạn đã hoàn thành toàn bộ bộ đề ${DECKS[deckId].label}.`
+      : summary.wrongQuestions === 0
+        ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.'
+        : 'Bạn có thể luyện lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
 
   const listCard = $('wrong-list-card');
   const list = $('wrong-list');
@@ -958,6 +1023,9 @@ function restoreSessionIfAny() {
     clearSession();
     return false;
   };
+  saved.timeLimit = Number.isInteger(saved.timeLimit) && saved.timeLimit > 0 ? Math.min(1440, saved.timeLimit) : 0;
+  saved.deadlineAt = Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0 ? saved.deadlineAt : null;
+  saved.timeExpired = !!saved.timeExpired;
   saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
     ? saved.practiceInitialCount
     : (saved.mode === 'practice-wrong' ? saved.items.length : 0);
@@ -985,6 +1053,7 @@ function restoreSessionIfAny() {
   state.session = saved;
   showScreen('quiz');
   renderQuestion();
+  startSessionTimer();
   toast('Đã khôi phục lượt ôn đang làm.');
   return true;
 };
@@ -993,6 +1062,7 @@ function initUI() {
   const settings = getSettings();
   state.currentDeck = settings.deck === 'qp2' ? 'qp2' : 'qp1';
   $('input-count').value = String(settings.count || 20);
+  $('input-time-limit').value = String(settings.timeLimit || 0);
   $('input-range-start').value = String(settings.startQuestion || 1);
   $('input-range-end').value = String(settings.endQuestion || state.decks[state.currentDeck]?.length || 1);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
@@ -1085,6 +1155,12 @@ function bindEvents() {
   $('input-count').addEventListener('change', () => {
     persistSetupForm();
     refreshSetupUI();
+  });
+
+  $('input-time-limit').addEventListener('change', () => {
+    const value = Number.parseInt($('input-time-limit').value, 10);
+    $('input-time-limit').value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
+    persistSetupForm();
   });
 
   for (const id of ['input-range-start', 'input-range-end']) {
