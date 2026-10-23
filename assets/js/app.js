@@ -55,14 +55,14 @@ async function loadDeck(id) {
   try {
     res = await fetch(url, { cache: 'no-cache' });
   } catch {
-    throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở website online ít nhất một lần để lưu dữ liệu offline.`);
+    throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`);
   }
-  if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}). Hãy kiểm tra vị trí file JSON.`);
+  if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
   let raw;
   try {
     raw = await res.json();
   } catch {
-    throw new Error(`File dữ liệu ${meta.file} không phải JSON hợp lệ.`);
+    throw new Error(`Tệp dữ liệu ${meta.file} không hợp lệ.`);
   }
   const questions = normalizeQuestions(raw);
   const fp = fingerprintQuestions(questions);
@@ -103,7 +103,7 @@ async function loadAll() {
     state.loading = false;
     state.error = e.message || String(e);
     showScreen('error');
-    $('error-message').textContent = state.error + '\n\nNếu bạn đang offline lần đầu, hãy kết nối mạng để tải bộ đề.';
+    $('error-message').textContent = state.error + '\n\nNếu bạn đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.';
   }
 }
 
@@ -889,7 +889,7 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = nextTheme;
   const button = $('theme-toggle');
   if (button) {
-    button.textContent = nextTheme === 'dark' ? '☀️ Giao diện sáng' : '🌙 Giao diện tối';
+    button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
     button.setAttribute('aria-pressed', String(nextTheme === 'light'));
   }
   try {
@@ -1095,7 +1095,7 @@ let reloadAfterUpdate = false;
 
 function registerSW() {
   if (!('serviceWorker' in navigator)) {
-    toast('Trình duyệt này không hỗ trợ Service Worker nên không thể dùng chế độ offline.');
+    toast('Trình duyệt này không hỗ trợ chế độ ngoại tuyến.');
     return;
   }
   const swUrl = new URL('sw.js', document.baseURI).href;
@@ -1111,13 +1111,13 @@ function registerSW() {
           if (nw.state === 'installed' && navigator.serviceWorker.controller) {
             $('update-banner').hidden = false;
           } else if (nw.state === 'redundant') {
-            toast('Không thể cài bản offline mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.');
+            toast('Không thể cài bản ngoại tuyến mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.');
           }
         });
       });
     })
     .catch(() => {
-      toast('Không thể bật chế độ offline. Hãy mở website bằng HTTPS trên GitHub Pages.');
+      toast('Không thể bật chế độ ngoại tuyến.');
     });
 
   let refreshing = false;
