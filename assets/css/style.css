@@ -1065,3 +1065,34 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+
+.network-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.network-status::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.network-status[data-state="offline"]::before {
+  background: var(--warning, #f59e0b);
+}
+
+@media (max-width: 520px) {
+  .network-status {
+    max-width: 100%;
+    font-size: 0.72rem;
+  }
+}
