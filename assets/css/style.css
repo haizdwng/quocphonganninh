@@ -1144,3 +1144,22 @@ button {
 .feedback.ok::before { -webkit-mask-image: url('../icons/tabler/check.svg'); mask-image: url('../icons/tabler/check.svg'); }
 .feedback.bad::before { -webkit-mask-image: url('../icons/tabler/alert-circle.svg'); mask-image: url('../icons/tabler/alert-circle.svg'); }
 @media (max-width: 420px) { [data-icon]::before { width: 1em; height: 1em; margin-right: 0.35em; } }
+
+.progress-meta {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#progress-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+#progress-time.time-warning {
+  color: var(--danger);
+}
+
+#sum-score {
+  color: var(--primary);
+}
