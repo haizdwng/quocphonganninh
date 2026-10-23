@@ -641,8 +641,14 @@ function restoreSessionIfAny() {
   const fp = state.fingerprints[saved.deckId];
   const validSession = saved.items.length > 0 &&
     Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length &&
-    saved.items.every((item) => Number.isInteger(item.poolIdx) && item.poolIdx >= 0 && item.poolIdx < saved.pool.length &&
-      Array.isArray(item.optionOrder) && item.optionOrder.length === saved.pool[item.poolIdx].options?.length);
+    saved.items.every((item) => {
+      const question = saved.pool[item.poolIdx];
+      return Number.isInteger(item.poolIdx) && item.poolIdx >= 0 && item.poolIdx < saved.pool.length &&
+        question && Array.isArray(question.options) && Array.isArray(item.optionOrder) &&
+        item.optionOrder.length === question.options.length &&
+        item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) &&
+        ['pending', 'wrong', 'correct'].includes(item.status);
+    });
   if (!validSession || saved.dataFingerprint !== fp) {
     clearSession();
     return false;
