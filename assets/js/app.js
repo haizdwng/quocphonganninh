@@ -55,7 +55,7 @@ function stableQuestionIds(questions) {
   return questions.map((question) => {
     const identity = String(question.question || '')
       .normalize('NFD')
-      .replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/[đĐ]/g, (letter) => letter === 'Đ' ? 'D' : 'd')
       .replace(/[^a-zA-Z0-9]+/g, ' ')
       .trim().toLowerCase();
