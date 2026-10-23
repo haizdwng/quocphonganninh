@@ -42,14 +42,8 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
-function baseUrl() {
-  const u = new URL('.', import.meta.url);
-  u.pathname = u.pathname.replace(/assets\/js\/?$/, '');
-  return u;
-}
-
 function dataUrl(rel) {
-  return new URL(rel, document.baseURI || baseUrl()).href;
+  return new URL(rel, document.baseURI).href;
 }
 
 async function loadDeck(id) {
