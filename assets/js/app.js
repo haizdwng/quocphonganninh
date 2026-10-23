@@ -565,7 +565,7 @@ function renderQuestion() {
           : `Câu hỏi · Gốc #${q.originalIndex + 1}`;
   const bookmarkButton = $('btn-bookmark');
   const isBookmarked = getBookmarkedIndices(s.deckId).includes(q.originalIndex);
-  bookmarkButton.textContent = isBookmarked ? '★ Đã đánh dấu' : '☆ Đánh dấu';
+  bookmarkButton.textContent = isBookmarked ? 'Đã đánh dấu' : 'Đánh dấu';
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
   $('q-text').textContent = q.question;
@@ -996,6 +996,7 @@ function applyTheme(theme) {
   const button = $('theme-toggle');
   if (button) {
     button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
+    button.dataset.icon = nextTheme === 'dark' ? 'sun' : 'moon';
     button.setAttribute('aria-pressed', String(nextTheme === 'light'));
   }
   try {
