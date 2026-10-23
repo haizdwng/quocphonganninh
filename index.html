@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#11170f">
+  <meta name="theme-color" content="#07111f">
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="Trắc nghiệm Quốc Phòng An Ninh">
   <title>Trắc nghiệm Quốc Phòng An Ninh</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
-  
+  <link rel="preload" href="assets/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
   <div id="app">
     <header class="app-header">
       <div class="header-title">
-        <h1>Ôn tập Quốc phòng · An ninh</h1>
-        <p class="subtitle">HỌC TẬP · RÈN LUYỆN</p>
+        <h1>Trắc nghiệm Quốc Phòng An Ninh</h1>
+        <p class="subtitle">Ôn tập</p>
         <p class="network-status" id="network-status" role="status" aria-live="polite">Đang kiểm tra kết nối…</p>
       </div>
-      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Đổi giao diện" title="Đổi giao diện">◐</button>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Đổi giao diện" aria-pressed="false" data-icon="sun">Giao diện sáng</button>
     </header>
 
     <main id="main">
@@ -89,7 +89,7 @@
               <span>Đảo thứ tự câu hỏi</span>
             </label>
             <label class="toggle">
-              <input type="checkbox" id="chk-shuffle-a">
+              <input type="checkbox" id="chk-shuffle-a" checked>
               <span>Đảo thứ tự đáp án</span>
             </label>
           </div>
@@ -120,7 +120,6 @@
 
         <div class="actions-sticky">
           <button type="button" class="btn btn-primary btn-block" id="btn-start" data-icon="player-play">Bắt đầu ôn</button>
-          <button type="button" class="btn btn-secondary btn-block" id="btn-exam" data-icon="check">Thi thử</button>
           <button type="button" class="btn btn-secondary btn-block" id="btn-continue" hidden data-icon="arrow-right">Tiếp tục tuần tự</button>
         </div>
       </section>
