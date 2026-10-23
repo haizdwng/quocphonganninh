@@ -660,20 +660,25 @@ function renderQuestion() {
   };
 
   $('btn-prev').disabled = s.viewIndex <= 0;
-  const canCheck = item.userAnswer != null && item.status !== 'correct' && !item.checked && !viewingHistory;
-  $('btn-check').disabled = !canCheck;
-  const canNext =
-    item.status === 'correct' && s.viewIndex < s.items.length - 1
-      ? true
-      : item.status === 'correct' && s.viewIndex === s.items.length - 1
-        ? true
-        : viewingHistory && s.viewIndex < s.maxReached;
+  const nextButton = $('btn-next');
   if (viewingHistory) {
-    $('btn-next').disabled = false;
-    $('btn-check').disabled = true;
+    nextButton.textContent = 'Câu tiếp';
+    nextButton.dataset.icon = 'chevron-right';
+    nextButton.disabled = s.viewIndex >= s.maxReached;
+  } else if (item.status === 'correct') {
+    const isLastQuestion = s.viewIndex === s.items.length - 1;
+    const shouldFinish = isLastQuestion && s.mode !== 'practice-wrong';
+    nextButton.textContent = shouldFinish ? 'Kết thúc' : 'Câu tiếp';
+    nextButton.dataset.icon = shouldFinish ? 'check' : 'chevron-right';
+    nextButton.disabled = false;
+  } else if (s.mode === 'practice-wrong' && item.status === 'wrong' && item.checked) {
+    nextButton.textContent = 'Câu tiếp';
+    nextButton.dataset.icon = 'chevron-right';
+    nextButton.disabled = false;
   } else {
-    $('btn-next').disabled = item.status !== 'correct' &&
-      !(s.mode === 'practice-wrong' && item.status === 'wrong');
+    nextButton.textContent = 'Kiểm tra';
+    nextButton.dataset.icon = 'check';
+    nextButton.disabled = item.userAnswer == null || item.checked;
   };
 };
 
@@ -750,10 +755,6 @@ function onCheck() {
   persistSession();
   renderQuestion();
 
-  const roundComplete = s.items.every((entry) => entry.status === 'correct');
-  if (item.status === 'correct' && roundComplete && s.mode !== 'practice-wrong') {
-    setTimeout(() => finishSession(), 400);
-  };
 };
 
 function onNext() {
@@ -761,6 +762,13 @@ function onNext() {
   const s = state.session;
   if (!s) return;
   const item = currentItem();
+  if (!item) return;
+
+  if (s.viewIndex >= s.maxReached && item.status !== 'correct' &&
+      !(s.mode === 'practice-wrong' && item.status === 'wrong' && item.checked)) {
+    onCheck();
+    return;
+  };
 
   if (s.viewIndex < s.maxReached) {
     s.viewIndex += 1;
@@ -1176,8 +1184,7 @@ function bindKeyboardShortcuts() {
     };
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (!$('btn-check').disabled) $('btn-check').click();
-      else if (!$('btn-next').disabled) $('btn-next').click();
+      if (!$('btn-next').disabled) $('btn-next').click();
       return;
     };
     if (event.key === 'ArrowLeft' && !$('btn-prev').disabled) {
@@ -1331,7 +1338,6 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  $('btn-check').addEventListener('click', onCheck);
   $('btn-next').addEventListener('click', onNext);
   $('btn-prev').addEventListener('click', onPrev);
 
