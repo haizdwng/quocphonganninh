@@ -118,10 +118,12 @@ function confirmModal(title, body) {
     $('modal-title').textContent = title;
     $('modal-body').textContent = body;
     $('modal').hidden = false;
+    $('modal').classList.add('is-open');
     const ok = $('modal-ok');
     const cancel = $('modal-cancel');
     const cleanup = (val) => {
       $('modal').hidden = true;
+      $('modal').classList.remove('is-open');
       ok.onclick = null;
       cancel.onclick = null;
       resolve(val);
