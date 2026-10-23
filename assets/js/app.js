@@ -12,6 +12,8 @@ import {
   addCompleted,
   setSequentialCursor,
   getWrongIndices,
+  getBookmarkedIndices,
+  toggleBookmark,
   storageAvailable
 } from './storage.js';
 import {
@@ -39,7 +41,8 @@ const state = {
   currentDeck: 'qp1',
   mode: 'setup',
   session: null,
-  reviewMode: false
+  reviewMode: false,
+  searchResults: []
 };
 
 const $ = (id) => document.getElementById(id);
@@ -82,6 +85,7 @@ async function loadDeck(id) {
       progress.sequentialCursor = 0;
       progress.wrongMap = {};
       progress.practiceMap = {};
+      progress.bookmarks = [];
       progress.dataFingerprint = fp;
       if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
     }
@@ -208,6 +212,7 @@ function refreshSetupUI() {
   $('stat-remaining').textContent = String(remaining);
   $('stat-wrong').textContent = String(wrongs.length);
   $('stat-practice').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
+  $('stat-bookmarked').textContent = String(progress.bookmarks.length);
   if (progress.sequentialCursor >= total) {
     $('stat-cursor').textContent = 'Đã hết (làm lại từ đầu)';
   } else {
@@ -219,8 +224,15 @@ function refreshSetupUI() {
   btnWrong.disabled = rangeWrongCount === 0;
   btnWrong.textContent = `Luyện câu sai trong vùng (${rangeWrongCount})`;
 
+  const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
+  const rangeBookmarkCount = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex)).length;
+  const btnBookmarks = $('btn-practice-bookmarks');
+  btnBookmarks.disabled = rangeBookmarkCount === 0;
+  btnBookmarks.textContent = `Ôn câu đã đánh dấu (${rangeBookmarkCount})`;
+
   const rangeQuestions = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
   const rangeRemaining = rangeQuestions.filter((question) => !completed.has(question.originalIndex)).length;
+  refreshSearchUI();
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
   const nextIndex = Math.max(progress.sequentialCursor, start - 1);
@@ -231,6 +243,73 @@ function refreshSetupUI() {
     const n = Math.min(Number(input.value) || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự (${n} câu từ vị trí ${nextIndex + 1})`;
   }
+}
+
+function normalizeSearchText(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('vi');
+}
+
+function refreshSearchUI() {
+  const query = normalizeSearchText($('input-search').value.trim());
+  const form = readSetupForm();
+  const pool = selectedQuestions(form);
+  state.searchResults = query
+    ? pool.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
+    : [];
+  const button = $('btn-search-practice');
+  const hint = $('search-hint');
+  button.disabled = state.searchResults.length === 0;
+  button.textContent = state.searchResults.length
+    ? `Ôn ${state.searchResults.length} câu tìm được`
+    : 'Ôn kết quả tìm kiếm';
+  hint.textContent = query
+    ? state.searchResults.length
+      ? `Tìm thấy ${state.searchResults.length} câu trong vùng ${form.startQuestion}–${form.endQuestion}.`
+      : `Không tìm thấy câu phù hợp trong vùng ${form.startQuestion}–${form.endQuestion}.`
+    : 'Tìm theo nội dung câu hỏi hoặc đáp án; không phân biệt chữ hoa, chữ thường và dấu tiếng Việt.';
+}
+
+function startSearchResults() {
+  const form = readSetupForm();
+  refreshSearchUI();
+  const pool = state.searchResults.slice();
+  if (!pool.length) {
+    toast('Không có kết quả tìm kiếm để ôn.');
+    return;
+  }
+  if (form.shuffleQ) {
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+  }
+  persistSetupForm();
+  startSessionFromPool(pool, {
+    mode: 'search',
+    sequential: false,
+    forceShuffleQ: form.shuffleQ,
+    alreadyShuffled: true
+  });
+}
+
+function startPracticeBookmarks() {
+  const form = readSetupForm();
+  persistSetupForm();
+  const qs = selectedQuestions(form);
+  const bookmarked = getBookmarkedIndices(state.currentDeck);
+  const pool = pickWrong(qs, bookmarked, form.count, form.shuffleQ);
+  if (!pool.length) {
+    toast('Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.');
+    return;
+  }
+  const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
+  if (practiceSaveFailed) toast('Không thể lưu thống kê luyện lại vào trình duyệt.');
+  startSessionFromPool(pool, {
+    mode: 'practice-bookmarks',
+    sequential: false,
+    forceShuffleQ: form.shuffleQ,
+    alreadyShuffled: true
+  });
 }
 
 function readSetupForm() {
@@ -473,7 +552,16 @@ function renderQuestion() {
   $('q-badge').textContent =
     s.mode === 'practice-wrong'
       ? `Luyện câu sai · Gốc #${q.originalIndex + 1}`
-      : `Câu hỏi · Gốc #${q.originalIndex + 1}`;
+      : s.mode === 'practice-bookmarks'
+        ? `Câu đã đánh dấu · Gốc #${q.originalIndex + 1}`
+        : s.mode === 'search'
+          ? `Kết quả tìm kiếm · Gốc #${q.originalIndex + 1}`
+          : `Câu hỏi · Gốc #${q.originalIndex + 1}`;
+  const bookmarkButton = $('btn-bookmark');
+  const isBookmarked = getBookmarkedIndices(s.deckId).includes(q.originalIndex);
+  bookmarkButton.textContent = isBookmarked ? '★ Đã đánh dấu' : '☆ Đánh dấu';
+  bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
+  bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
   $('q-text').textContent = q.question;
 
   const optsEl = $('options');
@@ -683,7 +771,7 @@ function finishSession() {
   const s = state.session;
   if (!s) return;
 
-  if (s.mode === 'normal') {
+  if (s.mode !== 'practice-wrong') {
     const completedIdx = s.items
       .filter((it) => it.status === 'correct')
       .map((it) => s.pool[it.poolIdx].originalIndex);
@@ -744,7 +832,13 @@ function finishSession() {
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
   $('summary-title').textContent =
-    mode === 'practice-wrong' ? 'Kết thúc luyện câu sai' : 'Hoàn thành lượt ôn';
+    mode === 'practice-wrong'
+      ? 'Kết thúc luyện câu sai'
+      : mode === 'practice-bookmarks'
+        ? 'Hoàn thành ôn câu đã đánh dấu'
+        : mode === 'search'
+          ? 'Hoàn thành ôn kết quả tìm kiếm'
+          : 'Hoàn thành lượt ôn';
   $('sum-total').textContent = String(summary.total);
   $('sum-correct').textContent = String(summary.correct);
   $('sum-wrong-q').textContent = String(summary.wrongQuestions);
@@ -995,6 +1089,22 @@ function bindEvents() {
   $('btn-start').addEventListener('click', () => startNormal({ sequential: false }));
   $('btn-continue').addEventListener('click', () => startNormal({ sequential: true }));
   $('btn-practice-wrong').addEventListener('click', () => startPracticeWrong());
+  $('btn-practice-bookmarks').addEventListener('click', () => startPracticeBookmarks());
+  $('btn-search-practice').addEventListener('click', () => startSearchResults());
+  $('input-search').addEventListener('input', () => refreshSearchUI());
+
+  $('btn-bookmark').addEventListener('click', () => {
+    const q = currentQ();
+    const s = state.session;
+    if (!q || !s) return;
+    const result = toggleBookmark(s.deckId, q.originalIndex);
+    if (result == null) {
+      toast('Không thể lưu dấu trang. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    }
+    renderQuestion();
+    toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
+  });
 
   $('btn-reset-progress').addEventListener('click', async () => {
     const ok = await confirmModal(
