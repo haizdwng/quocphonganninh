@@ -58,10 +58,14 @@ async function loadDeck(id) {
   const meta = DECKS[id];
   const url = dataUrl(meta.file);
   let res;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    res = await fetch(url, { cache: 'no-cache' });
+    res = await fetch(url, { cache: 'no-cache', signal: controller.signal });
   } catch {
-    throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`);
+    throw new Error(`Không thể tải ${meta.label} sau 20 giây. Hãy kiểm tra kết nối mạng, sau đó tải lại trang.`);
+  } finally {
+    clearTimeout(timeout);
   };
   if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
   let raw;
