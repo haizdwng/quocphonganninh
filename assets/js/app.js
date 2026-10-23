@@ -252,6 +252,19 @@ function startNormal(opts = {}) {
   const progress = getDeckProgress(state.currentDeck);
   const completedSet = new Set(progress.completed);
 
+  if (opts.restart) {
+    const { items, nextCursor } = pickSequential(qs, 0, form.count, new Set());
+    startSessionFromPool(items, {
+      mode: 'normal',
+      sequential: true,
+      startCursor: 0,
+      nextCursor,
+      forceShuffleQ: false,
+      alreadyShuffled: true
+    });
+    return;
+  }
+
   if (opts.sequential) {
     const cursor = progress.sequentialCursor;
     if (cursor >= qs.length) {
@@ -731,6 +744,14 @@ function bindEvents() {
     showScreen('setup');
     refreshSetupUI();
     startNormal({ sequential: false });
+  });
+
+  $('btn-sum-restart').addEventListener('click', () => {
+    $('chk-shuffle-q').checked = false;
+    persistSetupForm();
+    showScreen('setup');
+    refreshSetupUI();
+    startNormal({ restart: true });
   });
 
   $('btn-sum-continue').addEventListener('click', () => {
