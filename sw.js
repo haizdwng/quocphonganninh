@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh-v25';
+const CACHE_VERSION = 'quocphonganninh-v26';
 const CACHE_PREFIX = 'quocphonganninh-';
 const ESSENTIAL = [
   './',
@@ -69,6 +69,12 @@ self.addEventListener('fetch', (event) => {
   const scope = new URL(self.registration.scope);
   if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
 
+  const interFontUrl = new URL('./assets/fonts/InterVariable.woff2', self.registration.scope);
+  if (url.href === interFontUrl.href) {
+    event.respondWith(serveInterFont(request));
+    return;
+  }
+
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
   const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico|woff2)$/i.test(url.pathname);
@@ -77,6 +83,22 @@ self.addEventListener('fetch', (event) => {
   if (isHTML || isJSON) event.respondWith(networkFirst(request));
   else event.respondWith(cacheFirst(request, event));
 });
+
+
+async function serveInterFont(request) {
+  const cache = await caches.open(CACHE_VERSION);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(INTER_FONT_URL, { mode: 'cors' });
+    if (!response.ok || response.type === 'opaque') return new Response('Không tải được font Inter.', { status: 503 });
+    await cache.put(request, response.clone());
+    return response;
+  } catch {
+    return new Response('Font Inter chưa được tải. Hãy kết nối mạng rồi tải lại trang.', { status: 503 });
+  }
+}
 
 async function cacheFirst(request, event) {
   const cache = await caches.open(CACHE_VERSION);
