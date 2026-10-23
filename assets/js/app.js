@@ -949,8 +949,9 @@ function finishSession() {
     mode: s.mode
   };
 
-  clearSession();
+  const sessionCleared = clearSession();
   state.session = null;
+  if (!sessionCleared) toast('Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.');
   showSummary(s.summary, s.deckId, s.mode);
 };
 
@@ -1028,8 +1029,15 @@ function showSummary(summary, deckId, mode) {
 
 function restoreSessionIfAny() {
   const saved = getSession();
-  if (!saved || !['qp1', 'qp2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) return false;
-  if (!state.decks[saved.deckId]) return false;
+  if (!saved) return false;
+  if (!['qp1', 'qp2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
+    clearSession();
+    return false;
+  };
+  if (!state.decks[saved.deckId]) {
+    clearSession();
+    return false;
+  };
   const fp = state.fingerprints[saved.deckId];
   const legacyCompatible = !saved.dataFingerprint && state.legacyFingerprintMatched[saved.deckId];
   const validPool = saved.pool.length > 0 && saved.pool.every((question) =>
@@ -1314,7 +1322,10 @@ function bindEvents() {
       `Xóa toàn bộ tiến độ, câu đã hoàn thành và lịch sử câu sai của bộ ${DECKS[state.currentDeck].label} trên trình duyệt này.`
     );
     if (!ok) return;
-    resetDeckProgress(state.currentDeck);
+    if (!resetDeckProgress(state.currentDeck)) {
+      toast('Không thể xóa tiến độ. Hãy kiểm tra quyền lưu trữ của trình duyệt.');
+      return;
+    };
     toast('Đã xóa tiến độ bộ đề.');
     refreshSetupUI();
   });
@@ -1329,8 +1340,9 @@ function bindEvents() {
       'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.'
     );
     if (!ok) return;
-    clearSession();
+    const cleared = clearSession();
     state.session = null;
+    if (!cleared) toast('Không thể xóa phiên đã lưu; phiên này có thể xuất hiện lại khi tải trang.');
     showScreen('setup');
     refreshSetupUI();
   });
