@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh-v32';
+const CACHE_VERSION = 'quocphonganninh-v40';
 const CACHE_PREFIX = 'quocphonganninh-';
 const ESSENTIAL = [
   './',
@@ -41,7 +41,6 @@ const INTER_FONT_CACHE_KEY = () => new URL('./assets/fonts/InterVariable.woff2',
 self.addEventListener('install', (event) => event.waitUntil((async () => {
   const cache = await caches.open(CACHE_VERSION);
   await cache.addAll(ESSENTIAL);
-  await cacheInterFont(cache);
 })()));
 
 async function fetchInterFont() {
