@@ -32,7 +32,7 @@ export function getSettings() {
     deck: normalizeDeckId(settings.deck),
     count: Number.isInteger(count) && count > 0 ? count : 20,
     shuffleQ: !!settings.shuffleQ,
-    shuffleA: settings.shuffleA !== false,
+    shuffleA: settings.shuffleA === true,
     startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0
       ? Number(settings.startQuestion)
       : 1,
@@ -52,7 +52,7 @@ export function saveSettings(settings) {
     deck: normalizeDeckId(settings.deck),
     count: Number.isInteger(count) && count > 0 ? count : 20,
     shuffleQ: !!settings.shuffleQ,
-    shuffleA: settings.shuffleA !== false,
+    shuffleA: settings.shuffleA === true,
     startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0
       ? Number(settings.startQuestion)
       : 1,
