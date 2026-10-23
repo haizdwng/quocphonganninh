@@ -72,6 +72,9 @@ export function getDeckProgress(deckId) {
     sequentialCursor: Number.isInteger(cursor) && cursor >= 0 ? cursor : 0,
     completed,
     wrongMap,
+    practiceMap: d.practiceMap && typeof d.practiceMap === 'object' && !Array.isArray(d.practiceMap)
+      ? Object.fromEntries(Object.entries(d.practiceMap).filter(([key, value]) => Number.isInteger(Number(key)) && Number(key) >= 0 && Number.isInteger(value) && value > 0))
+      : {},
     dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : ''
   };
 }
@@ -86,6 +89,9 @@ export function saveDeckProgress(deckId, progress) {
       : [],
     wrongMap: progress.wrongMap && typeof progress.wrongMap === 'object' && !Array.isArray(progress.wrongMap)
       ? progress.wrongMap
+      : {},
+    practiceMap: progress.practiceMap && typeof progress.practiceMap === 'object' && !Array.isArray(progress.practiceMap)
+      ? progress.practiceMap
       : {},
     dataFingerprint: typeof progress.dataFingerprint === 'string' ? progress.dataFingerprint : ''
   };
@@ -123,6 +129,14 @@ export function markWrong(deckId, originalIndex) {
   progress.wrongMap[key] = (progress.wrongMap[key] || 0) + 1;
   saveDeckProgress(deckId, progress);
   return progress.wrongMap[key];
+}
+
+export function markPracticed(deckId, originalIndex) {
+  const progress = getDeckProgress(deckId);
+  const key = String(originalIndex);
+  progress.practiceMap[key] = (progress.practiceMap[key] || 0) + 1;
+  saveDeckProgress(deckId, progress);
+  return progress.practiceMap[key];
 }
 
 export function addCompleted(deckId, indices, fingerprint) {
