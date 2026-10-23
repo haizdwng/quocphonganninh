@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh-v27';
+const CACHE_VERSION = 'quocphonganninh-v28';
 const CACHE_PREFIX = 'quocphonganninh-';
 const ESSENTIAL = [
   './',
@@ -58,7 +58,11 @@ async function cacheInterFont(cache) {
   try {
     const response = await fetchInterFont();
     if (response.ok && response.type !== 'opaque') {
-      await cache.put(INTER_FONT_CACHE_KEY(), response.clone());
+      const headers = new Headers(response.headers);
+      headers.set('Content-Type', 'font/woff2');
+      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      const font = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+      await cache.put(INTER_FONT_CACHE_KEY(), font);
     };
   } catch {
     // Font is optional during installation; the system font remains available as fallback.
@@ -102,11 +106,20 @@ async function serveInterFont(request) {
 
   try {
     const response = await fetchInterFont();
-    if (!response.ok || response.type === 'opaque') return new Response('Không tải được font Inter.', { status: 503 });
-    await cache.put(request, response.clone());
-    return response;
+    if (!response.ok || response.type === 'opaque') {
+      return new Response('Không tải được font Inter.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    };
+    const headers = new Headers(response.headers);
+    headers.set('Content-Type', 'font/woff2');
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    const font = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    await cache.put(request, font.clone());
+    return font;
   } catch {
-    return new Response('Font Inter chưa được tải. Hãy kết nối mạng rồi tải lại trang.', { status: 503 });
+    return new Response('Font Inter chưa được tải. Hãy kết nối mạng rồi tải lại trang.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
   }
 }
 
