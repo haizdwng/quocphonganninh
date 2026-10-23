@@ -767,7 +767,7 @@ function restoreSessionIfAny() {
         new Set(item.optionOrder).size === question.options.length &&
         item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) &&
         ['pending', 'wrong', 'correct'].includes(item.status) &&
-        (index >= saved.maxReached || item.status === 'correct') &&
+        (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') &&
         (item.userAnswer == null || (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) &&
         Number.isInteger(item.wrongCount) && item.wrongCount >= 0;
     });
