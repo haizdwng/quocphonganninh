@@ -602,8 +602,7 @@ function renderQuestion() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'option';
-    btn.setAttribute('role', 'option');
-    btn.setAttribute('aria-selected', String(item.userAnswer === displayIdx));
+    btn.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
     btn.dataset.display = String(displayIdx);
 
     if (item.userAnswer === displayIdx) btn.classList.add('selected');
@@ -1456,6 +1455,26 @@ function boot() {
     toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
   };
   bindEvents();
+
+  window.addEventListener('pagehide', () => {
+    persistSession();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      persistSession();
+      return;
+    };
+    if (!enforceSessionDeadline()) updateTimerDisplay();
+  });
+
+  window.addEventListener('pageshow', () => {
+    if (state.session && !enforceSessionDeadline()) {
+      updateTimerDisplay();
+      persistSession();
+    };
+  });
+
   registerSW();
   loadAll();
 };
