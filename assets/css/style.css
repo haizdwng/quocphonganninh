@@ -674,3 +674,307 @@ input[type="number"]:focus {
     font-size: 1.15rem;
   }
 }
+
+
+:root {
+  --touch: 48px;
+  scroll-padding-top: 12px;
+}
+
+body {
+  overflow-wrap: anywhere;
+  overscroll-behavior-y: contain;
+}
+
+button,
+input {
+  touch-action: manipulation;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-header {
+  padding-top: max(12px, env(safe-area-inset-top));
+}
+
+.actions-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin: 2px -4px 0;
+  padding: 12px 4px max(8px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, var(--bg) 20%);
+}
+
+.quiz-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+
+.question-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.q-text {
+  font-size: clamp(1rem, 4.2vw, 1.2rem);
+  line-height: 1.6;
+}
+
+.option {
+  min-height: 52px;
+  padding: 13px 12px;
+  border-radius: 12px;
+}
+
+.option:active:not(:disabled) {
+  transform: scale(0.995);
+}
+
+.btn {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-row > .btn {
+  flex: 1 1 180px;
+}
+
+.stat-list li {
+  gap: 12px;
+}
+
+.stat-list li span {
+  min-width: 0;
+}
+
+.stat-list strong {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.modal {
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+
+.modal-box {
+  max-height: min(85dvh, 620px);
+  overflow-y: auto;
+}
+
+.toast {
+  bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 520px) {
+  #app {
+    padding: 8px 12px max(28px, env(safe-area-inset-bottom));
+  }
+
+  .app-header {
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  .header-title h1,
+  .app-header h1 {
+    font-size: clamp(1.08rem, 5vw, 1.35rem);
+    line-height: 1.25;
+  }
+
+  .subtitle {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .theme-toggle {
+    min-height: 44px;
+    max-width: 112px;
+    padding: 6px 9px;
+    font-size: 0.75rem;
+  }
+
+  .screen {
+    gap: 12px;
+  }
+
+  .card {
+    padding: 14px;
+    border-radius: 13px;
+  }
+
+  .card h2 {
+    font-size: 0.98rem;
+  }
+
+  .deck-switch {
+    gap: 8px;
+  }
+
+  .deck-btn {
+    padding: 12px 10px;
+    min-height: 70px;
+  }
+
+  .deck-name {
+    font-size: 0.88rem;
+  }
+
+  .deck-count {
+    font-size: 0.75rem;
+  }
+
+  .row {
+    align-items: stretch;
+  }
+
+  #btn-all {
+    flex-shrink: 0;
+    padding: 0 11px;
+    font-size: 0.82rem;
+  }
+
+  .range-fields {
+    gap: 8px;
+  }
+
+  .range-fields input[type="number"],
+  input[type="number"] {
+    padding: 0 11px;
+  }
+
+  .btn-row {
+    flex-direction: column;
+  }
+
+  .btn-row > .btn {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .actions-sticky {
+    margin-top: 0;
+  }
+
+  .progress-meta {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+
+  .progress-meta span:last-child {
+    text-align: right;
+  }
+
+  .q-text {
+    margin-bottom: 14px;
+    font-size: 1.02rem;
+    line-height: 1.6;
+  }
+
+  .options {
+    gap: 8px;
+  }
+
+  .option {
+    gap: 10px;
+    padding: 12px 10px;
+    font-size: 0.92rem;
+  }
+
+  .option-key {
+    width: 30px;
+    height: 30px;
+  }
+
+  .quiz-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 0 -2px;
+  }
+
+  .quiz-actions #btn-check {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .quiz-actions #btn-prev,
+  .quiz-actions #btn-next {
+    grid-row: 2;
+  }
+
+  #btn-quit {
+    margin-bottom: 8px;
+  }
+
+  .stat-list li {
+    font-size: 0.9rem;
+    padding: 9px 0;
+  }
+
+  .modal-box {
+    padding: 17px;
+  }
+
+  .modal-actions .btn {
+    flex: 1;
+  }
+
+  .update-banner {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 360px) {
+  #app {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .theme-toggle {
+    max-width: 94px;
+    font-size: 0.7rem;
+  }
+
+  .quiz-actions .btn {
+    padding: 0 9px;
+    font-size: 0.85rem;
+  }
+
+  .range-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 760px) {
+  #app {
+    max-width: 760px;
+  }
+
+  .question-card {
+    padding: 24px;
+  }
+
+  .options {
+    gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
