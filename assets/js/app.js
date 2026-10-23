@@ -8,6 +8,7 @@ import {
   clearSession,
   resetDeckProgress,
   markWrong,
+  markPracticed,
   addCompleted,
   setSequentialCursor,
   getWrongIndices,
@@ -71,6 +72,7 @@ async function loadDeck(id) {
     progress.completed = [];
     progress.sequentialCursor = 0;
     progress.wrongMap = {};
+    progress.practiceMap = {};
     progress.dataFingerprint = fp;
     saveDeckProgress(id, progress);
   } else if (!progress.dataFingerprint) {
@@ -165,6 +167,7 @@ function refreshSetupUI() {
   $('stat-completed').textContent = String(completed.size);
   $('stat-remaining').textContent = String(remaining);
   $('stat-wrong').textContent = String(wrongs.length);
+  $('stat-practice').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
   $('stat-cursor').textContent = String(Math.min(progress.sequentialCursor + 1, total + (progress.sequentialCursor >= total ? 0 : 0)) || 1);
   if (progress.sequentialCursor >= total) {
     $('stat-cursor').textContent = 'Đã hết (làm lại từ đầu)';
@@ -348,6 +351,11 @@ function startPracticeWrong() {
   const form = readSetupForm();
   persistSetupForm();
   const pool = pickWrong(qs, wrongs, form.count, form.shuffleQ);
+  if (!pool.length) {
+    toast('Không tìm thấy câu sai hợp lệ. Hãy tải lại bộ đề.');
+    return;
+  }
+  pool.forEach((question) => markPracticed(state.currentDeck, question.originalIndex));
   startSessionFromPool(pool, {
     mode: 'practice-wrong',
     sequential: false,
@@ -586,6 +594,7 @@ function finishSession() {
     correct: s.completedInSession,
     wrongQuestions: wrongInSession.length,
     wrongAttempts: s.totalWrongAttempts,
+    practiceQuestions: s.mode === 'practice-wrong' ? s.items.length : 0,
     firstTryRate: s.items.length ? Math.round((s.firstTryCorrect / s.items.length) * 100) : 0,
     wrongList: wrongInSession,
     sequential: s.sequential,
@@ -606,6 +615,7 @@ function showSummary(summary, deckId, mode) {
   $('sum-correct').textContent = String(summary.correct);
   $('sum-wrong-q').textContent = String(summary.wrongQuestions);
   $('sum-wrong-times').textContent = String(summary.wrongAttempts);
+  $('sum-practice').textContent = String(summary.practiceQuestions || 0);
   $('sum-first').textContent = `${summary.firstTryRate}%`;
 
   const totalQuestions = (state.decks[deckId] || []).length;
