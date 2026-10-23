@@ -11,7 +11,7 @@ const ESSENTIAL = [
   './assets/js/storage.js',
   './data/quocphong1.json',
   './data/quocphong2.json',
-  './assets/icons/icon.svg'
+  './assets/icons/icon.svg',
   './assets/icons/tabler/sun.svg',
   './assets/icons/tabler/moon.svg',
   './assets/icons/tabler/search.svg',
