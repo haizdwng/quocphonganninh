@@ -805,7 +805,19 @@ function bindEvents() {
     $('input-count').focus();
   });
 
-  $('btn-sum-restart').addEventListener('click', () => {
+  $('btn-sum-restart').addEventListener('click', async () => {
+    const ok = await confirmModal(
+      'Làm lại từ đầu?',
+      'Tiến độ hoàn thành của bộ đề sẽ được đặt lại để bạn ôn tuần tự từ câu đầu. Lịch sử câu sai vẫn được giữ.'
+    );
+    if (!ok) return;
+    const progress = getDeckProgress(state.currentDeck);
+    progress.completed = [];
+    progress.sequentialCursor = 0;
+    if (!saveDeckProgress(state.currentDeck, progress)) {
+      toast('Không thể đặt lại tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+      return;
+    }
     $('chk-shuffle-q').checked = false;
     persistSetupForm();
     showScreen('setup');
