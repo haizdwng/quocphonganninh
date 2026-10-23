@@ -658,6 +658,10 @@ function restoreSessionIfAny() {
     clearSession();
     return false;
   }
+  saved.completedInSession = saved.items.filter((item) => item.status === 'correct').length;
+  saved.totalWrongAttempts = saved.items.reduce((sum, item) => sum + Math.max(0, Number(item.wrongCount) || 0), 0);
+  saved.firstTryCorrect = saved.items.filter((item) => item.status === 'correct' && item.wrongCount === 0).length;
+  saved.maxReached = Math.max(0, Math.min(saved.items.length - 1, Number(saved.maxReached) || 0));
   state.currentDeck = saved.deckId;
   state.session = saved;
   showScreen('quiz');
@@ -800,7 +804,10 @@ function bindEvents() {
 let reloadAfterUpdate = false;
 
 function registerSW() {
-  if (!('serviceWorker' in navigator)) return;
+  if (!('serviceWorker' in navigator)) {
+    toast('Trình duyệt này không hỗ trợ Service Worker nên không thể dùng chế độ offline.');
+    return;
+  }
   const swUrl = new URL('sw.js', document.baseURI).href;
   const scope = new URL('.', document.baseURI).href;
   navigator.serviceWorker
@@ -817,7 +824,9 @@ function registerSW() {
         });
       });
     })
-    .catch(() => {});
+    .catch(() => {
+      toast('Không thể bật chế độ offline. Hãy mở website bằng HTTPS trên GitHub Pages.');
+    });
 
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
