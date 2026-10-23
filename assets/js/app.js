@@ -50,27 +50,6 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
-function stableQuestionIds(questions) {
-  const occurrences = new Map();
-  return questions.map((question) => {
-    const identity = String(question.question || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[đĐ]/g, (letter) => letter === 'Đ' ? 'D' : 'd')
-      .replace(/[^a-zA-Z0-9]+/g, ' ')
-      .trim().toLowerCase();
-    let hash = 2166136261;
-    for (let i = 0; i < identity.length; i++) {
-      hash ^= identity.charCodeAt(i);
-      hash = Math.imul(hash, 16777619);
-    };
-    const base = (hash >>> 0).toString(36);
-    const occurrence = (occurrences.get(base) || 0) + 1;
-    occurrences.set(base, occurrence);
-    return base + (occurrence > 1 ? '-' + occurrence : '');
-  });
-};
-
 function dataUrl(rel) {
   return new URL(rel, document.baseURI).href;
 };
@@ -79,14 +58,10 @@ async function loadDeck(id) {
   const meta = DECKS[id];
   const url = dataUrl(meta.file);
   let res;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    res = await fetch(url, { cache: 'no-cache', signal: controller.signal });
+    res = await fetch(url, { cache: 'no-cache' });
   } catch {
-    throw new Error(`Không thể tải ${meta.label} sau 20 giây. Hãy kiểm tra kết nối mạng, sau đó tải lại trang.`);
-  } finally {
-    clearTimeout(timeout);
+    throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`);
   };
   if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
   let raw;
@@ -100,32 +75,27 @@ async function loadDeck(id) {
   state.decks[id] = questions;
   state.fingerprints[id] = fp;
   const progress = getDeckProgress(id);
-  const newQuestionIds = stableQuestionIds(questions);
-  questions.forEach((question, index) => { question.stableId = newQuestionIds[index]; });
-  const oldQuestionIds = Array.isArray(progress.questionIds) ? progress.questionIds : [];
   const first = questions[0]?.question?.trim().slice(0, 40) || '';
   const last = questions[questions.length - 1]?.question?.trim().slice(0, 40) || '';
   const legacyFingerprint = `${questions.length}|${first}|${last}`;
-  if (progress.dataFingerprint && progress.dataFingerprint !== fp && oldQuestionIds.length) {
-    const newIndexById = new Map(newQuestionIds.map((questionId, index) => [questionId, index]));
-    const remapIndex = (index) => {
-      const oldId = oldQuestionIds[index];
-      return oldId == null ? null : (newIndexById.has(oldId) ? newIndexById.get(oldId) : null);
+  if (progress.dataFingerprint && progress.dataFingerprint !== fp) {
+    if (progress.dataFingerprint === legacyFingerprint) {
+      state.legacyFingerprintMatched[id] = true;
+      progress.dataFingerprint = fp;
+      if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
+    } else {
+      progress.completed = [];
+      progress.sequentialCursor = 0;
+      progress.wrongMap = {};
+      progress.practiceMap = {};
+      progress.bookmarks = [];
+      progress.dataFingerprint = fp;
+      if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
     };
-    progress.completed = progress.completed.map(remapIndex).filter((index) => index != null);
-    progress.bookmarks = progress.bookmarks.map(remapIndex).filter((index) => index != null);
-    for (const key of ['wrongMap', 'practiceMap']) {
-      progress[key] = Object.fromEntries(Object.entries(progress[key]).map(([index, count]) => [remapIndex(Number(index)), count])
-        .filter(([index, count]) => index != null && Number.isInteger(count) && count > 0));
-    };
-    const cursorIndex = remapIndex(progress.sequentialCursor);
-    progress.sequentialCursor = cursorIndex == null ? Math.min(progress.sequentialCursor, questions.length) : cursorIndex;
-  } else if (progress.dataFingerprint && progress.dataFingerprint !== fp && progress.dataFingerprint === legacyFingerprint) {
-    state.legacyFingerprintMatched[id] = true;
+  } else if (!progress.dataFingerprint) {
+    progress.dataFingerprint = fp;
+    if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
   };
-  progress.questionIds = newQuestionIds;
-  progress.dataFingerprint = fp;
-  if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật tiến độ trong trình duyệt.');
 
   const progressBeforeSanitize = JSON.stringify(progress);
   const isValidIndex = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
@@ -452,28 +422,6 @@ function startSessionFromPool(pool, meta) {
   startSessionTimer();
 };
 
-function startExam() {
-  const form = readSetupForm();
-  const pool = selectedQuestions(form);
-  if (!pool.length) {
-    toast('Vùng câu hỏi đã chọn không có câu hợp lệ.');
-    return;
-  };
-  persistSetupForm();
-  if (form.shuffleQ) {
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    };
-  };
-  startSessionFromPool(pool.slice(0, form.count), {
-    mode: 'exam',
-    sequential: false,
-    forceShuffleQ: form.shuffleQ,
-    alreadyShuffled: true
-  });
-};
-
 function startNormal(opts = {}) {
   const allQuestions = currentQuestions();
   if (!allQuestions.length) {
@@ -625,11 +573,9 @@ function renderQuestion() {
   const q = currentQ();
   if (!item || !q) return;
 
-  const viewingHistory = s.viewIndex < s.maxReached && s.mode !== 'exam';
+  const viewingHistory = s.viewIndex < s.maxReached;
 
-  $('progress-label').textContent = s.mode === 'exam'
-    ? `Thi thử · Câu ${s.viewIndex + 1} / ${s.items.length}`
-    : s.mode === 'practice-wrong'
+  $('progress-label').textContent = s.mode === 'practice-wrong'
     ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
     : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
   const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
@@ -640,9 +586,7 @@ function renderQuestion() {
   $('progress-fill').parentElement.setAttribute('aria-valuenow', String(pct));
 
   $('q-badge').textContent =
-    s.mode === 'exam'
-      ? `Thi thử · Gốc #${q.originalIndex + 1}`
-      : s.mode === 'practice-wrong'
+    s.mode === 'practice-wrong'
       ? `Luyện câu sai · Gốc #${q.originalIndex + 1}`
       : s.mode === 'practice-bookmarks'
         ? `Câu đã đánh dấu · Gốc #${q.originalIndex + 1}`
@@ -702,17 +646,14 @@ function renderQuestion() {
   });
 
   const feedback = $('feedback');
-  if (s.mode === 'exam') {
-    feedback.hidden = true;
-    feedback.textContent = '';
-  } else if (item.checked && item.status === 'correct') {
+  if (item.checked && item.status === 'correct') {
     feedback.hidden = false;
     feedback.className = 'feedback ok';
-    feedback.textContent = 'Chính xác! Bạn đã trả lời đúng câu này.';
+    feedback.textContent = 'Chính xác!';
   } else if (item.checked && item.status === 'wrong') {
     feedback.hidden = false;
     feedback.className = 'feedback bad';
-    feedback.textContent = `Chưa đúng (lần ${item.wrongCount}). Đáp án này đã bị loại; hãy chọn đáp án khác để thử lại.`;
+    feedback.textContent = 'Chưa đúng. Hãy chọn lại đáp án khác.';
   } else {
     feedback.hidden = true;
     feedback.textContent = '';
@@ -720,11 +661,7 @@ function renderQuestion() {
 
   $('btn-prev').disabled = s.viewIndex <= 0;
   const nextButton = $('btn-next');
-  if (s.mode === 'exam') {
-    nextButton.textContent = s.viewIndex === s.items.length - 1 ? 'Nộp bài' : 'Câu tiếp';
-    nextButton.dataset.icon = s.viewIndex === s.items.length - 1 ? 'check' : 'chevron-right';
-    nextButton.disabled = false;
-  } else if (viewingHistory) {
+  if (viewingHistory) {
     nextButton.textContent = 'Câu tiếp';
     nextButton.dataset.icon = 'chevron-right';
     nextButton.disabled = s.viewIndex >= s.maxReached;
@@ -758,7 +695,7 @@ function onSelectOption(displayIdx) {
   const s = state.session;
   const item = currentItem();
   if (!s || !item) return;
-  if (item.status === 'correct' || (s.viewIndex < s.maxReached && s.mode !== 'exam')) return;
+  if (item.status === 'correct' || s.viewIndex < s.maxReached) return;
   const q = currentQ();
   if (!q || (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))) return;
 
@@ -826,20 +763,6 @@ function onNext() {
   if (!s) return;
   const item = currentItem();
   if (!item) return;
-  if (s.mode === 'exam') {
-    if (s.viewIndex < s.items.length - 1) {
-      s.viewIndex += 1;
-      if (s.viewIndex > s.maxReached) s.maxReached = s.viewIndex;
-      s.reviewingPast = false;
-      persistSession();
-      renderQuestion();
-      return;
-    };
-    confirmModal('Nộp bài thi thử?', 'Bài thi sẽ kết thúc và tính điểm dựa trên các đáp án hiện tại. Câu bỏ trống không được tính điểm.').then((ok) => {
-      if (ok && state.session === s) finishSession();
-    });
-    return;
-  };
 
   if (s.viewIndex >= s.maxReached && item.status !== 'correct' &&
       !(s.mode === 'practice-wrong' && item.status === 'wrong' && item.checked)) {
@@ -977,22 +900,6 @@ function finishSession() {
   if (!s) return;
   clearInterval(state.timerInterval);
   state.timerInterval = null;
-  if (s.mode === 'exam') {
-    for (const item of s.items) {
-      const question = s.pool[item.poolIdx];
-      if (!question || item.userAnswer == null) continue;
-      if (isAnswerCorrect(item, question)) {
-        item.status = 'correct';
-        item.wrongCount = 0;
-      } else {
-        item.status = 'wrong';
-        item.wrongCount = 1;
-        s.totalWrongAttempts += 1;
-      };
-    };
-    s.firstTryCorrect = s.items.filter((item) => item.status === 'correct').length;
-    s.completedInSession = s.firstTryCorrect;
-  };
 
   if (s.mode !== 'practice-wrong') {
     const completedIdx = s.items
@@ -1060,9 +967,7 @@ function finishSession() {
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
   $('summary-title').textContent =
-    mode === 'exam'
-      ? 'Hoàn thành bài thi thử'
-      : mode === 'practice-wrong'
+    mode === 'practice-wrong'
       ? 'Kết thúc luyện câu sai'
       : mode === 'practice-bookmarks'
         ? 'Hoàn thành ôn câu đã đánh dấu'
@@ -1237,6 +1142,30 @@ function initUI() {
   refreshSetupUI();
 };
 
+function applyTheme(theme) {
+  const nextTheme = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = nextTheme;
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.content = nextTheme === 'dark' ? '#07111f' : '#f3f7fb';
+  const button = $('theme-toggle');
+  if (button) {
+    button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
+    button.dataset.icon = nextTheme === 'dark' ? 'sun' : 'moon';
+    button.setAttribute('aria-pressed', String(nextTheme === 'light'));
+  };
+  try {
+    localStorage.setItem('quocphonganninh-theme', nextTheme);
+  } catch {}
+};
+
+function initTheme() {
+  let theme = 'dark';
+  try {
+    const saved = localStorage.getItem('quocphonganninh-theme');
+    if (saved === 'light' || saved === 'dark') theme = saved;
+  } catch {}
+  applyTheme(theme);
+};
 
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (event) => {
@@ -1272,6 +1201,9 @@ function bindKeyboardShortcuts() {
 };
 
 function bindEvents() {
+  $('theme-toggle').addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  });
   bindKeyboardShortcuts();
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
@@ -1327,7 +1259,6 @@ function bindEvents() {
   });
 
   $('btn-start').addEventListener('click', () => startNormal({ sequential: false }));
-  $('btn-exam').addEventListener('click', () => startExam());
   $('btn-continue').addEventListener('click', () => startNormal({ sequential: true }));
   $('btn-practice-wrong').addEventListener('click', () => startPracticeWrong());
   $('btn-practice-bookmarks').addEventListener('click', () => startPracticeBookmarks());
@@ -1541,27 +1472,6 @@ function initNetworkStatus() {
   window.addEventListener('offline', update);
   update();
 };
-
-
-function initTheme() {
-  let theme = 'dark';
-  try { theme = localStorage.getItem('quocphonganninh:theme') || 'dark'; } catch {}
-  if (!['dark', 'light'].includes(theme)) theme = 'dark';
-  document.documentElement.dataset.theme = theme;
-  const button = $('theme-toggle');
-  if (button) {
-    button.textContent = theme === 'dark' ? '☼' : '◐';
-    button.setAttribute('aria-label', theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
-    button.addEventListener('click', () => {
-      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      button.textContent = next === 'dark' ? '☼' : '◐';
-      button.setAttribute('aria-label', next === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
-      document.querySelector('meta[name="theme-color"]').content = next === 'dark' ? '#11170f' : '#f5f5ee';
-      try { localStorage.setItem('quocphonganninh:theme', next); } catch {}
-    });
-  }
-}
 
 function boot() {
   initTheme();
