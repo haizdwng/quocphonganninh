@@ -32,7 +32,7 @@ export function getSettings() {
     deck: normalizeDeckId(settings.deck),
     count: Number.isInteger(count) && count > 0 ? count : 20,
     shuffleQ: !!settings.shuffleQ,
-    shuffleA: settings.shuffleA === true,
+    shuffleA: settings.shuffleA !== false,
     startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0
       ? Number(settings.startQuestion)
       : 1,
@@ -52,7 +52,7 @@ export function saveSettings(settings) {
     deck: normalizeDeckId(settings.deck),
     count: Number.isInteger(count) && count > 0 ? count : 20,
     shuffleQ: !!settings.shuffleQ,
-    shuffleA: settings.shuffleA === true,
+    shuffleA: settings.shuffleA !== false,
     startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0
       ? Number(settings.startQuestion)
       : 1,
@@ -96,8 +96,7 @@ export function getDeckProgress(deckId) {
     bookmarks: Array.isArray(d.bookmarks)
       ? [...new Set(d.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
       : [],
-    dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : '',
-    questionIds: Array.isArray(d.questionIds) ? d.questionIds.filter((value) => typeof value === 'string') : []
+    dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : ''
   };
 };
 
@@ -118,8 +117,7 @@ export function saveDeckProgress(deckId, progress) {
     bookmarks: Array.isArray(progress.bookmarks)
       ? [...new Set(progress.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
       : [],
-    dataFingerprint: typeof progress.dataFingerprint === 'string' ? progress.dataFingerprint : '',
-    questionIds: Array.isArray(progress.questionIds) ? progress.questionIds.filter((value) => typeof value === 'string') : []
+    dataFingerprint: typeof progress.dataFingerprint === 'string' ? progress.dataFingerprint : ''
   };
   return writeRoot(root);
 };
