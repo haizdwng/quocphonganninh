@@ -50,6 +50,27 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
+function stableQuestionIds(questions) {
+  const occurrences = new Map();
+  return questions.map((question) => {
+    const identity = String(question.question || '')
+      .normalize('NFD')
+      .replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/[đĐ]/g, (letter) => letter === 'Đ' ? 'D' : 'd')
+      .replace(/[^a-zA-Z0-9]+/g, ' ')
+      .trim().toLowerCase();
+    let hash = 2166136261;
+    for (let i = 0; i < identity.length; i++) {
+      hash ^= identity.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    };
+    const base = (hash >>> 0).toString(36);
+    const occurrence = (occurrences.get(base) || 0) + 1;
+    occurrences.set(base, occurrence);
+    return base + (occurrence > 1 ? '-' + occurrence : '');
+  });
+};
+
 function dataUrl(rel) {
   return new URL(rel, document.baseURI).href;
 };
@@ -79,27 +100,32 @@ async function loadDeck(id) {
   state.decks[id] = questions;
   state.fingerprints[id] = fp;
   const progress = getDeckProgress(id);
+  const newQuestionIds = stableQuestionIds(questions);
+  questions.forEach((question, index) => { question.stableId = newQuestionIds[index]; });
+  const oldQuestionIds = Array.isArray(progress.questionIds) ? progress.questionIds : [];
   const first = questions[0]?.question?.trim().slice(0, 40) || '';
   const last = questions[questions.length - 1]?.question?.trim().slice(0, 40) || '';
   const legacyFingerprint = `${questions.length}|${first}|${last}`;
-  if (progress.dataFingerprint && progress.dataFingerprint !== fp) {
-    if (progress.dataFingerprint === legacyFingerprint) {
-      state.legacyFingerprintMatched[id] = true;
-      progress.dataFingerprint = fp;
-      if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
-    } else {
-      progress.completed = [];
-      progress.sequentialCursor = 0;
-      progress.wrongMap = {};
-      progress.practiceMap = {};
-      progress.bookmarks = [];
-      progress.dataFingerprint = fp;
-      if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+  if (progress.dataFingerprint && progress.dataFingerprint !== fp && oldQuestionIds.length) {
+    const newIndexById = new Map(newQuestionIds.map((questionId, index) => [questionId, index]));
+    const remapIndex = (index) => {
+      const oldId = oldQuestionIds[index];
+      return oldId == null ? null : (newIndexById.has(oldId) ? newIndexById.get(oldId) : null);
     };
-  } else if (!progress.dataFingerprint) {
-    progress.dataFingerprint = fp;
-    if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
+    progress.completed = progress.completed.map(remapIndex).filter((index) => index != null);
+    progress.bookmarks = progress.bookmarks.map(remapIndex).filter((index) => index != null);
+    for (const key of ['wrongMap', 'practiceMap']) {
+      progress[key] = Object.fromEntries(Object.entries(progress[key]).map(([index, count]) => [remapIndex(Number(index)), count])
+        .filter(([index, count]) => index != null && Number.isInteger(count) && count > 0));
+    };
+    const cursorIndex = remapIndex(progress.sequentialCursor);
+    progress.sequentialCursor = cursorIndex == null ? Math.min(progress.sequentialCursor, questions.length) : cursorIndex;
+  } else if (progress.dataFingerprint && progress.dataFingerprint !== fp && progress.dataFingerprint === legacyFingerprint) {
+    state.legacyFingerprintMatched[id] = true;
   };
+  progress.questionIds = newQuestionIds;
+  progress.dataFingerprint = fp;
+  if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật tiến độ trong trình duyệt.');
 
   const progressBeforeSanitize = JSON.stringify(progress);
   const isValidIndex = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
