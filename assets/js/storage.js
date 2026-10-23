@@ -96,7 +96,8 @@ export function getDeckProgress(deckId) {
     bookmarks: Array.isArray(d.bookmarks)
       ? [...new Set(d.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
       : [],
-    dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : ''
+    dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : '',
+    questionIds: Array.isArray(d.questionIds) ? d.questionIds.filter((value) => typeof value === 'string') : []
   };
 };
 
@@ -117,7 +118,8 @@ export function saveDeckProgress(deckId, progress) {
     bookmarks: Array.isArray(progress.bookmarks)
       ? [...new Set(progress.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
       : [],
-    dataFingerprint: typeof progress.dataFingerprint === 'string' ? progress.dataFingerprint : ''
+    dataFingerprint: typeof progress.dataFingerprint === 'string' ? progress.dataFingerprint : '',
+    questionIds: Array.isArray(progress.questionIds) ? progress.questionIds.filter((value) => typeof value === 'string') : []
   };
   return writeRoot(root);
 };
