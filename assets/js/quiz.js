@@ -62,6 +62,13 @@ export function buildOptionOrder(optionCount, shuffleA) {
   return order;
 };
 
+function hasAnswerReferences(question) {
+  const text = [question.question, ...question.options].join(' ').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+  return /\\b(?:ca|phuong an|dap an|y)\\s+(?:a|b|c|d)\\b/.test(text)
+    || /\\b(?:a va b|a, b va c|a, b, c va d)\\b/.test(text)
+    || /\\b(?:tren|duoi) day\\b/.test(text);
+};
+
 export function createSessionItems(pool, { shuffleQ, shuffleA }) {
   const indices = pool.map((_, i) => i);
   if (shuffleQ) shuffleInPlace(indices);
@@ -70,7 +77,7 @@ export function createSessionItems(pool, { shuffleQ, shuffleA }) {
     return {
       poolIdx,
       originalIndex: q.originalIndex,
-      optionOrder: buildOptionOrder(q.options.length, shuffleA),
+      optionOrder: buildOptionOrder(q.options.length, shuffleA && !hasAnswerReferences(q)),
       userAnswer: null,
       status: 'pending',
       wrongCount: 0,
