@@ -44,9 +44,19 @@ self.addEventListener('install', (event) => event.waitUntil((async () => {
   await cacheInterFont(cache);
 })()));
 
+async function fetchInterFont() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    return await fetch(INTER_FONT_URL, { mode: 'cors', signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  };
+}
+
 async function cacheInterFont(cache) {
   try {
-    const response = await fetch(INTER_FONT_URL, { mode: 'cors' });
+    const response = await fetchInterFont();
     if (response.ok && response.type !== 'opaque') {
       await cache.put(INTER_FONT_CACHE_KEY(), response.clone());
     };
@@ -91,7 +101,7 @@ async function serveInterFont(request) {
   if (cached) return cached;
 
   try {
-    const response = await fetch(INTER_FONT_URL, { mode: 'cors' });
+    const response = await fetchInterFont();
     if (!response.ok || response.type === 'opaque') return new Response('Không tải được font Inter.', { status: 503 });
     await cache.put(request, response.clone());
     return response;
