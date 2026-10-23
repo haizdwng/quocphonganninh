@@ -874,21 +874,26 @@ function showSummary(summary, deckId, mode) {
     listCard.hidden = true;
   }
 
+  state.currentDeck = deckId;
+  const form = readSetupForm();
+  const selectedIndices = new Set(selectedQuestions(form).map((question) => question.originalIndex));
   const btnPractice = $('btn-sum-practice');
-  const allWrong = getWrongIndices(deckId);
+  const allWrong = getWrongIndices(deckId).filter((index) => selectedIndices.has(index));
   btnPractice.hidden = allWrong.length === 0;
-  btnPractice.textContent = `Luyện lại câu sai (${allWrong.length})`;
+  btnPractice.textContent = `Luyện lại câu sai trong vùng (${allWrong.length})`;
 
   const progress = getDeckProgress(deckId);
   const totalQ = (state.decks[deckId] || []).length;
   const btnContinue = $('btn-sum-continue');
-  const canSeq = summary.sequential && progress.sequentialCursor < totalQ;
+  const rangeEnd = form.endQuestion;
+  const nextIndex = Math.max(progress.sequentialCursor, form.startQuestion - 1);
+  const canSeq = summary.sequential && nextIndex < rangeEnd;
   btnContinue.hidden = !canSeq;
   if (canSeq) {
-    const left = totalQ - progress.sequentialCursor;
+    const left = rangeEnd - nextIndex;
     const settings = getSettings();
     const n = Math.min(settings.count || 20, left);
-    btnContinue.textContent = `Tiếp tục tuần tự (${n} câu)`;
+    btnContinue.textContent = `Tiếp tục tuần tự (${n} câu trong vùng)`;
   }
 
   state._lastSummaryDeck = deckId;
@@ -1045,8 +1050,8 @@ function bindEvents() {
   document.querySelectorAll('.deck-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.currentDeck = btn.dataset.deck;
-      persistSetupForm();
       refreshSetupUI();
+      persistSetupForm();
     });
   });
 
