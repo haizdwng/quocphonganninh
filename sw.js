@@ -3,6 +3,7 @@ const CACHE_PREFIX = 'qp-quiz-';
 const ESSENTIAL = [
   './',
   './index.html',
+  './sw.js',
   './manifest.webmanifest',
   './assets/css/style.css',
   './assets/js/app.js',
