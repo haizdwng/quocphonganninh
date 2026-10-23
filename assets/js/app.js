@@ -676,7 +676,9 @@ function restoreSessionIfAny() {
   );
   const validSession = validPool && saved.items.length > 0 &&
     Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length &&
-    saved.items.every((item) => {
+    Number.isInteger(saved.maxReached) && saved.maxReached >= 0 && saved.maxReached < saved.items.length &&
+    saved.viewIndex <= saved.maxReached &&
+    saved.items.every((item, index) => {
       if (!item || typeof item !== 'object' || !Number.isInteger(item.poolIdx) ||
           item.poolIdx < 0 || item.poolIdx >= saved.pool.length) return false;
       const question = saved.pool[item.poolIdx];
@@ -684,6 +686,7 @@ function restoreSessionIfAny() {
         new Set(item.optionOrder).size === question.options.length &&
         item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) &&
         ['pending', 'wrong', 'correct'].includes(item.status) &&
+        (index >= saved.maxReached || item.status === 'correct') &&
         (item.userAnswer == null || (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) &&
         Number.isInteger(item.wrongCount) && item.wrongCount >= 0;
     });
