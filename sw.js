@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh-v23';
+const CACHE_VERSION = 'quocphonganninh-v24';
 const CACHE_PREFIX = 'quocphonganninh-';
 const ESSENTIAL = [
   './',
@@ -35,7 +35,25 @@ const ESSENTIAL = [
   './assets/icons/tabler/x.svg',
 ];
 
-self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(ESSENTIAL))));
+const INTER_FONT_URL = 'https://raw.githubusercontent.com/rsms/inter/v4.1/docs/font-files/InterVariable.woff2';
+const INTER_FONT_CACHE_KEY = () => new URL('./assets/fonts/InterVariable.woff2', self.registration.scope).href;
+
+self.addEventListener('install', (event) => event.waitUntil((async () => {
+  const cache = await caches.open(CACHE_VERSION);
+  await cache.addAll(ESSENTIAL);
+  await cacheInterFont(cache);
+})()));
+
+async function cacheInterFont(cache) {
+  try {
+    const response = await fetch(INTER_FONT_URL, { mode: 'cors' });
+    if (response.ok && response.type !== 'opaque') {
+      await cache.put(INTER_FONT_CACHE_KEY(), response.clone());
+    };
+  } catch {
+    // Font is optional during installation; the system font remains available as fallback.
+  };
+}
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
