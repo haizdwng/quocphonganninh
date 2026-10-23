@@ -577,9 +577,9 @@ function renderQuestion() {
   $('progress-label').textContent = s.mode === 'practice-wrong'
     ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
     : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
-  $('progress-score').textContent = `Điểm ${formatScore(s.firstTryCorrect || 0, s.items.length)} / 10`;
-  updateTimerDisplay();
   const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
+  $('progress-score').textContent = `Điểm ${formatScore(s.firstTryCorrect || 0, progressTotal)} / 10`;
+  updateTimerDisplay();
   const pct = progressTotal ? Math.round((s.completedInSession / progressTotal) * 100) : 0;
   $('progress-fill').style.width = `${pct}%`;
   $('progress-fill').parentElement.setAttribute('aria-valuenow', String(pct));
