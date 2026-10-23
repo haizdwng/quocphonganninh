@@ -215,7 +215,8 @@ export function importBackup(raw) {
     return false;
   }
   if (!backup || backup.format !== 'quocphong-quiz-backup' || backup.version !== 1 ||
-      !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks)) return false;
+      !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) ||
+      !Object.keys(backup.decks).every((id) => ['qp1', 'qp2'].includes(id))) return false;
 
   const settings = backup.settings && typeof backup.settings === 'object' && !Array.isArray(backup.settings)
     ? backup.settings
@@ -259,7 +260,6 @@ export function importBackup(raw) {
       dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : ''
     };
   }
-  if (!Object.keys(normalized.decks).length) return false;
   return writeRoot(normalized);
 }
 
