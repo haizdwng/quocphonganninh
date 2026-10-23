@@ -79,18 +79,36 @@ async function cacheFirst(request, event) {
 
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
+  const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+
   try {
     const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
+    if (response.ok) {
+      await cache.put(request, response.clone());
+      return response;
+    }
+    const cached = await cache.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+    if (isHTML) {
+      const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
+      if (fallback) return fallback;
+    }
     return response;
   } catch {
     const cached = await cache.match(request, { ignoreSearch: true });
     if (cached) return cached;
-    const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
-    if (fallback) return fallback;
-    return new Response('Cần kết nối mạng ít nhất một lần để tải website và hai bộ đề.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
+    if (isHTML) {
+      const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
+      if (fallback) return fallback;
+    }
+    return new Response(
+      isHTML
+        ? 'Cần kết nối mạng ít nhất một lần để tải website và hai bộ đề.'
+        : 'Chưa có dữ liệu này trong bộ nhớ offline. Hãy kết nối mạng để tải bộ đề.',
+      {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      }
+    );
   }
 }
