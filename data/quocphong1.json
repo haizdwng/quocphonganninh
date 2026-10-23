@@ -1,10 +1,4 @@
 [
- 
-  
-
-
-
-
   {
     "question": "Yếu tố cơ bản tác động đến sự hình thành nghệ thuật đánh giặc của tổ tiên ta là gì?",
     "options": [
@@ -20,7 +14,7 @@
     "options": [
       "Các dân tộc ở Việt Nam chung sống hoà thuận, yêu quê hương đất nước",
       "Yếu tố chính trị, văn hoá – xã hội",
-      "Dân tộc ta có tính thần đoàn kết, thông minh, sang tạo",
+      "Dân tộc ta có tính thần đoàn kết, thông minh, sáng tạo",
       "Dân tộc ta có tinh thần chống ngoại xâm kiên cường, bất khuất."
     ],
     "correct": 1
@@ -3038,7 +3032,7 @@
     "options": [
       "Trung quốc",
       "Thái lan",
-      "Cămpuchia",
+      "Campuchia",
       "Lào."
     ],
     "correct": 3
@@ -3076,7 +3070,7 @@
   {
     "question": "Vùng biển đặc quyền về kinh tế tính từ đường biên giới quốc gia trên biển ra phía ngoài rộng bao nhiêu hải lý?",
     "options": [
-      "Rộng 200 hải lý",
+      "Rộng 250 hải lý",
       "Rộng 100 hải lý",
       "Rộng 200 hải lý",
       "Rộng 188 hải lý"
@@ -4831,4 +4825,3 @@
     "correct": 0
   }
 ]
-  

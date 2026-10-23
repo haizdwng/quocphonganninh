@@ -51,7 +51,7 @@ const $ = (id) => document.getElementById(id);
 
 function dataUrl(rel) {
   return new URL(rel, document.baseURI).href;
-}
+};
 
 async function loadDeck(id) {
   const meta = DECKS[id];
@@ -61,14 +61,14 @@ async function loadDeck(id) {
     res = await fetch(url, { cache: 'no-cache' });
   } catch {
     throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`);
-  }
+  };
   if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
   let raw;
   try {
     raw = await res.json();
   } catch {
     throw new Error(`Tệp dữ liệu ${meta.file} không hợp lệ.`);
-  }
+  };
   const questions = normalizeQuestions(raw);
   const fp = fingerprintQuestions(questions);
   state.decks[id] = questions;
@@ -90,13 +90,13 @@ async function loadDeck(id) {
       progress.bookmarks = [];
       progress.dataFingerprint = fp;
       if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
-    }
+    };
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fp;
     if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
-  }
+  };
   return questions;
-}
+};
 
 async function loadAll() {
   state.loading = true;
@@ -110,21 +110,21 @@ async function loadAll() {
     state.error = e.message || String(e);
     showScreen('error');
     $('error-message').textContent = state.error + '\n\nNếu bạn đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.';
-  }
-}
+  };
+};
 
 function showScreen(name) {
   for (const el of document.querySelectorAll('.screen')) {
     el.classList.remove('active');
     el.hidden = true;
-  }
+  };
   const screen = $(`screen-${name}`);
   if (screen) {
     screen.hidden = false;
     screen.classList.add('active');
-  }
+  };
   state.mode = name;
-}
+};
 
 function toast(msg, ms = 2800) {
   const el = $('toast');
@@ -134,7 +134,7 @@ function toast(msg, ms = 2800) {
   toast._t = setTimeout(() => {
     el.hidden = true;
   }, ms);
-}
+};
 
 function confirmModal(title, body) {
   return new Promise((resolve) => {
@@ -156,7 +156,7 @@ function confirmModal(title, body) {
       if (event.key === 'Escape') {
         event.preventDefault();
         cleanupWithFocus(false);
-      }
+      };
     };
     const originalCleanup = cleanup;
     const cleanupWithFocus = (val) => {
@@ -169,11 +169,11 @@ function confirmModal(title, body) {
     document.addEventListener('keydown', onKeydown);
     ok.focus();
   });
-}
+};
 
 function currentQuestions() {
   return state.decks[state.currentDeck] || [];
-}
+};
 
 function refreshSetupUI() {
   const qs = currentQuestions();
@@ -219,7 +219,7 @@ function refreshSetupUI() {
     $('stat-cursor').textContent = 'Đã hết (làm lại từ đầu)';
   } else {
     $('stat-cursor').textContent = String(progress.sequentialCursor + 1);
-  }
+  };
 
   const btnWrong = $('btn-practice-wrong');
   const rangeWrongCount = wrongs.filter((index) => index >= start - 1 && index < end).length;
@@ -244,8 +244,8 @@ function refreshSetupUI() {
     const left = end - nextIndex;
     const n = Math.min(Number(input.value) || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự (${n} câu từ vị trí ${nextIndex + 1})`;
-  }
-}
+  };
+};
 
 function normalizeSearchText(value) {
   return String(value || '')
@@ -253,7 +253,7 @@ function normalizeSearchText(value) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[đĐ]/g, (letter) => letter === 'Đ' ? 'D' : 'd')
     .toLocaleLowerCase('vi');
-}
+};
 
 function refreshSearchUI() {
   const query = normalizeSearchText($('input-search').value.trim());
@@ -273,7 +273,7 @@ function refreshSearchUI() {
       ? `Tìm thấy ${state.searchResults.length} câu trong vùng ${form.startQuestion}–${form.endQuestion}.`
       : `Không tìm thấy câu phù hợp trong vùng ${form.startQuestion}–${form.endQuestion}.`
     : 'Tìm theo nội dung câu hỏi hoặc đáp án; không phân biệt chữ hoa, chữ thường và dấu tiếng Việt.';
-}
+};
 
 function startSearchResults() {
   const form = readSetupForm();
@@ -282,13 +282,13 @@ function startSearchResults() {
   if (!pool.length) {
     toast('Không có kết quả tìm kiếm để ôn.');
     return;
-  }
+  };
   if (form.shuffleQ) {
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-  }
+    };
+  };
   persistSetupForm();
   startSessionFromPool(pool, {
     mode: 'search',
@@ -296,7 +296,7 @@ function startSearchResults() {
     forceShuffleQ: form.shuffleQ,
     alreadyShuffled: true
   });
-}
+};
 
 function startPracticeBookmarks() {
   const form = readSetupForm();
@@ -307,7 +307,7 @@ function startPracticeBookmarks() {
   if (!pool.length) {
     toast('Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.');
     return;
-  }
+  };
   const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
   if (practiceSaveFailed) toast('Không thể lưu thống kê luyện lại vào trình duyệt.');
   startSessionFromPool(pool, {
@@ -316,7 +316,7 @@ function startPracticeBookmarks() {
     forceShuffleQ: form.shuffleQ,
     alreadyShuffled: true
   });
-}
+};
 
 function readSetupForm() {
   const total = currentQuestions().length;
@@ -334,7 +334,7 @@ function readSetupForm() {
   const shuffleQ = $('chk-shuffle-q').checked;
   const shuffleA = $('chk-shuffle-a').checked;
   return { count, shuffleQ, shuffleA, startQuestion, endQuestion };
-}
+};
 
 function persistSetupForm() {
   const form = readSetupForm();
@@ -347,14 +347,14 @@ function persistSetupForm() {
     endQuestion: form.endQuestion
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
-}
+};
 
 function selectedQuestions(form = readSetupForm()) {
   return currentQuestions().filter((question) =>
     question.originalIndex >= form.startQuestion - 1 &&
     question.originalIndex < form.endQuestion
   );
-}
+};
 function startSessionFromPool(pool, meta) {
   const form = readSetupForm();
   const shuffleA = form.shuffleA;
@@ -391,20 +391,20 @@ function startSessionFromPool(pool, meta) {
   if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
   showScreen('quiz');
   renderQuestion();
-}
+};
 
 function startNormal(opts = {}) {
   const allQuestions = currentQuestions();
   if (!allQuestions.length) {
     toast('Bộ đề trống.');
     return;
-  }
+  };
   const form = readSetupForm();
   const qs = selectedQuestions(form);
   if (!qs.length) {
     toast('Vùng câu hỏi đã chọn không có câu hợp lệ.');
     return;
-  }
+  };
   persistSetupForm();
   const progress = getDeckProgress(state.currentDeck);
   const completedSet = new Set(progress.completed);
@@ -423,20 +423,20 @@ function startNormal(opts = {}) {
       alreadyShuffled: true
     });
     return;
-  }
+  };
 
   if (opts.sequential) {
     const cursor = Math.max(progress.sequentialCursor, rangeStart);
     if (cursor >= rangeEnd) {
       toast('Đã hết câu tuần tự trong vùng đã chọn. Hãy đổi vùng hoặc làm lại từ đầu.');
       return;
-    }
+    };
     const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
     const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
     if (!items.length) {
       toast('Không còn câu tuần tự trong vùng đã chọn.');
       return;
-    }
+    };
     if (actualCount < form.count) toast(`Chỉ còn ${actualCount} câu theo thứ tự trong vùng đã chọn.`);
     const globalNextCursor = nextCursor > 0
       ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
@@ -450,7 +450,7 @@ function startNormal(opts = {}) {
       alreadyShuffled: true
     });
     return;
-  }
+  };
 
   if (form.shuffleQ) {
     const remainingCount = qs.filter((question) => !completedSet.has(question.originalIndex)).length;
@@ -458,12 +458,12 @@ function startNormal(opts = {}) {
     if (!pool.length) {
       toast('Không lấy được câu hỏi trong vùng đã chọn.');
       return;
-    }
+    };
     if (remainingCount === 0) {
       toast('Bạn đã hoàn thành các câu trong vùng này; lượt này lấy ngẫu nhiên trong vùng đã chọn.');
     } else if (remainingCount < form.count) {
       toast(`Chỉ còn ${remainingCount} câu chưa hoàn thành trong vùng; đã bổ sung câu đã làm để đủ ${pool.length} câu.`);
-    }
+    };
     startSessionFromPool(pool, {
       mode: 'normal',
       sequential: false,
@@ -471,7 +471,7 @@ function startNormal(opts = {}) {
       alreadyShuffled: true
     });
     return;
-  }
+  };
 
   const cursor = Math.max(progress.sequentialCursor, rangeStart);
   const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
@@ -486,7 +486,7 @@ function startNormal(opts = {}) {
     });
     toast('Đã hết chuỗi tuần tự trong vùng, chuyển sang ngẫu nhiên trong vùng đã chọn.');
     return;
-  }
+  };
   if (actualCount < form.count) toast(`Lượt này có ${actualCount} câu trong vùng đã chọn.`);
   const globalNextCursor = nextCursor > 0
     ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
@@ -499,7 +499,7 @@ function startNormal(opts = {}) {
     forceShuffleQ: false,
     alreadyShuffled: true
   });
-}
+};
 function startPracticeWrong() {
   const form = readSetupForm();
   persistSetupForm();
@@ -509,12 +509,12 @@ function startPracticeWrong() {
   if (!wrongs.length) {
     toast('Trong vùng câu hỏi đã chọn không có câu sai để luyện.');
     return;
-  }
+  };
   const pool = pickWrong(qs, wrongs, form.count, form.shuffleQ);
   if (!pool.length) {
     toast('Không tìm thấy câu sai hợp lệ trong vùng đã chọn. Hãy tải lại bộ đề.');
     return;
-  }
+  };
   const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
   if (practiceSaveFailed) toast('Không thể lưu thống kê luyện lại vào trình duyệt.');
   startSessionFromPool(pool, {
@@ -523,19 +523,19 @@ function startPracticeWrong() {
     forceShuffleQ: form.shuffleQ,
     alreadyShuffled: true
   });
-}
+};
 function currentItem() {
   const s = state.session;
   if (!s) return null;
   return s.items[s.viewIndex];
-}
+};
 
 function currentQ() {
   const s = state.session;
   const item = currentItem();
   if (!s || !item) return null;
   return s.pool[item.poolIdx];
-}
+};
 
 function renderQuestion() {
   const s = state.session;
@@ -584,10 +584,10 @@ function renderQuestion() {
     if (item.userAnswer === displayIdx) btn.classList.add('selected');
     if (item.checked && item.status === 'correct' && displayIdx === item.userAnswer) {
       btn.classList.add('correct');
-    }
+    };
     if (item.checked && item.status === 'wrong' && displayIdx === item.userAnswer) {
       btn.classList.add('incorrect');
-    }
+    };
     if (item.status === 'correct') {
       btn.classList.add('locked');
       btn.disabled = true;
@@ -595,7 +595,7 @@ function renderQuestion() {
     } else if (viewingHistory) {
       btn.disabled = true;
       btn.classList.add('locked');
-    }
+    };
 
     const key = document.createElement('span');
     key.className = 'option-key';
@@ -607,7 +607,7 @@ function renderQuestion() {
 
     if (!btn.disabled) {
       btn.addEventListener('click', () => onSelectOption(displayIdx));
-    }
+    };
     optsEl.appendChild(btn);
   });
 
@@ -623,7 +623,7 @@ function renderQuestion() {
   } else {
     feedback.hidden = true;
     feedback.textContent = '';
-  }
+  };
 
   $('btn-prev').disabled = s.viewIndex <= 0;
   const canCheck = item.userAnswer != null && item.status !== 'correct' && !item.checked && !viewingHistory;
@@ -640,8 +640,8 @@ function renderQuestion() {
   } else {
     $('btn-next').disabled = item.status !== 'correct' &&
       !(s.mode === 'practice-wrong' && item.status === 'wrong');
-  }
-}
+  };
+};
 
 function onSelectOption(displayIdx) {
   const s = state.session;
@@ -653,10 +653,10 @@ function onSelectOption(displayIdx) {
   if (item.status === 'wrong') {
     item.checked = false;
     item.status = 'pending';
-  }
+  };
   persistSession();
   renderQuestion();
-}
+};
 
 function onCheck() {
   const s = state.session;
@@ -678,12 +678,12 @@ function onCheck() {
           s.practiceCompletedIndices.push(originalIndex);
           s.completedInSession = s.practiceCompletedIndices.length;
           if (firstTime) s.firstTryCorrect += 1;
-        }
+        };
       } else {
         s.completedInSession += 1;
         if (firstTime) s.firstTryCorrect += 1;
-      }
-    }
+      };
+    };
     if (s.viewIndex >= s.maxReached) s.maxReached = s.viewIndex;
     s.reviewingPast = false;
   } else {
@@ -695,17 +695,17 @@ function onCheck() {
       const history = s.practiceWrongHistory.find((entry) => entry.originalIndex === q.originalIndex);
       if (history) history.wrongCount += 1;
       else s.practiceWrongHistory.push({ originalIndex: q.originalIndex, question: q.question, wrongCount: 1 });
-    }
+    };
     if (markWrong(s.deckId, q.originalIndex) === null) toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
-  }
+  };
   persistSession();
   renderQuestion();
 
   const roundComplete = s.items.every((entry) => entry.status === 'correct');
   if (item.status === 'correct' && roundComplete && s.mode !== 'practice-wrong') {
     setTimeout(() => finishSession(), 400);
-  }
-}
+  };
+};
 
 function onNext() {
   const s = state.session;
@@ -718,12 +718,12 @@ function onNext() {
     persistSession();
     renderQuestion();
     return;
-  }
+  };
 
   if (item.status !== 'correct' && !(s.mode === 'practice-wrong' && item.status === 'wrong')) {
     toast('Hãy kiểm tra câu trả lời trước khi sang câu tiếp.');
     return;
-  }
+  };
 
   if (s.viewIndex >= s.items.length - 1) {
     if (s.mode === 'practice-wrong') {
@@ -731,7 +731,7 @@ function onNext() {
       if (!unresolved.length) {
         finishSession();
         return;
-      }
+      };
       s.items = unresolved.map((entry) => ({
         ...entry,
         optionOrder: entry.optionOrder.slice(),
@@ -746,17 +746,17 @@ function onNext() {
       renderQuestion();
       toast(`Còn ${s.items.length} câu chưa trả lời đúng. Tiếp tục luyện các câu này.`, 3500);
       return;
-    }
+    };
     finishSession();
     return;
-  }
+  };
 
   s.viewIndex += 1;
   if (s.viewIndex > s.maxReached) s.maxReached = s.viewIndex;
   s.reviewingPast = false;
   persistSession();
   renderQuestion();
-}
+};
 
 function onPrev() {
   const s = state.session;
@@ -765,13 +765,13 @@ function onPrev() {
   s.reviewingPast = true;
   persistSession();
   renderQuestion();
-}
+};
 
 function persistSession() {
   if (state.session && !saveSession(state.session)) {
     toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
-  }
-}
+  };
+};
 
 function finishSession() {
   const s = state.session;
@@ -787,8 +787,8 @@ function finishSession() {
     } else if (s.sequential && s.nextCursor != null &&
       !setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId])) {
       toast('Không thể lưu vị trí tuần tự của bộ đề.');
-    }
-  }
+    };
+  };
 
   const wrongInSession = [];
   const seen = new Set();
@@ -797,8 +797,8 @@ function finishSession() {
       if (!seen.has(entry.originalIndex)) {
         seen.add(entry.originalIndex);
         wrongInSession.push({ ...entry });
-      }
-    }
+      };
+    };
   } else {
     for (const it of s.items) {
       if (it.wrongCount > 0) {
@@ -810,10 +810,10 @@ function finishSession() {
             question: s.pool[it.poolIdx].question,
             wrongCount: it.wrongCount
           });
-        }
-      }
-    }
-  }
+        };
+      };
+    };
+  };
 
   s.summary = {
     total: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length,
@@ -833,7 +833,7 @@ function finishSession() {
   clearSession();
   state.session = null;
   showSummary(s.summary, s.deckId, s.mode);
-}
+};
 
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
@@ -873,10 +873,10 @@ function showSummary(summary, deckId, mode) {
       idx.textContent = `#${w.originalIndex + 1}`;
       li.append(idx, document.createTextNode(w.question));
       list.appendChild(li);
-    }
+    };
   } else {
     listCard.hidden = true;
-  }
+  };
 
   state.currentDeck = deckId;
   const form = readSetupForm();
@@ -898,10 +898,10 @@ function showSummary(summary, deckId, mode) {
     const settings = getSettings();
     const n = Math.min(settings.count || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự (${n} câu trong vùng)`;
-  }
+  };
 
   state._lastSummaryDeck = deckId;
-}
+};
 
 function restoreSessionIfAny() {
   const saved = getSession();
@@ -940,13 +940,13 @@ function restoreSessionIfAny() {
   if (!validSession || (saved.dataFingerprint !== fp && !legacyCompatible)) {
     clearSession();
     return false;
-  }
+  };
   if (legacyCompatible) saved.dataFingerprint = fp;
   const progress = getDeckProgress(saved.deckId);
   if (progress.dataFingerprint && progress.dataFingerprint !== fp && !legacyCompatible) {
     clearSession();
     return false;
-  }
+  };
   saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
     ? saved.practiceInitialCount
     : (saved.mode === 'practice-wrong' ? saved.items.length : 0);
@@ -973,7 +973,7 @@ function restoreSessionIfAny() {
   renderQuestion();
   toast('Đã khôi phục lượt ôn đang làm.');
   return true;
-}
+};
 
 function initUI() {
   const settings = getSettings();
@@ -988,7 +988,7 @@ function initUI() {
 
   showScreen('setup');
   refreshSetupUI();
-}
+};
 
 function applyTheme(theme) {
   const nextTheme = theme === 'light' ? 'light' : 'dark';
@@ -998,11 +998,11 @@ function applyTheme(theme) {
     button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
     button.dataset.icon = nextTheme === 'dark' ? 'sun' : 'moon';
     button.setAttribute('aria-pressed', String(nextTheme === 'light'));
-  }
+  };
   try {
     localStorage.setItem('qp-quiz-theme', nextTheme);
   } catch {}
-}
+};
 
 function initTheme() {
   let theme = 'dark';
@@ -1011,7 +1011,7 @@ function initTheme() {
     if (saved === 'light' || saved === 'dark') theme = saved;
   } catch {}
   applyTheme(theme);
-}
+};
 
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (event) => {
@@ -1025,15 +1025,15 @@ function bindKeyboardShortcuts() {
       if (option && !option.disabled) {
         event.preventDefault();
         option.click();
-      }
+      };
       return;
-    }
+    };
     if (event.key === 'Enter') {
       event.preventDefault();
       if (!$('btn-check').disabled) $('btn-check').click();
       else if (!$('btn-next').disabled) $('btn-next').click();
       return;
-    }
+    };
     if (event.key === 'ArrowLeft' && !$('btn-prev').disabled) {
       event.preventDefault();
       $('btn-prev').click();
@@ -1043,9 +1043,9 @@ function bindKeyboardShortcuts() {
     } else if (event.key === 'Escape') {
       event.preventDefault();
       $('btn-quit').click();
-    }
+    };
   });
-}
+};
 
 function bindEvents() {
   $('theme-toggle').addEventListener('click', () => {
@@ -1087,7 +1087,7 @@ function bindEvents() {
       refreshSetupUI();
       persistSetupForm();
     });
-  }
+  };
 
   $('chk-shuffle-q').addEventListener('change', () => {
     persistSetupForm();
@@ -1114,7 +1114,7 @@ function bindEvents() {
     if (result == null) {
       toast('Không thể lưu dấu trang. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
-    }
+    };
     renderQuestion();
     toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
   });
@@ -1133,7 +1133,7 @@ function bindEvents() {
       toast('Đã tạo tệp sao lưu tiến độ.');
     } catch {
       toast('Không thể tạo tệp sao lưu trên trình duyệt này.');
-    }
+    };
   });
 
   $('btn-import-progress').addEventListener('click', () => $('input-import-progress').click());
@@ -1144,7 +1144,7 @@ function bindEvents() {
     if (file.size > 2 * 1024 * 1024) {
       toast('Tệp sao lưu quá lớn hoặc không hợp lệ.');
       return;
-    }
+    };
     const ok = await confirmModal(
       'Khôi phục tiến độ?',
       'Tiến độ đang lưu trên thiết bị này sẽ được thay bằng dữ liệu trong tệp sao lưu. Hãy chắc chắn bạn đã sao lưu dữ liệu hiện tại nếu cần.'
@@ -1156,11 +1156,11 @@ function bindEvents() {
     } catch {
       toast('Không đọc được tệp đã chọn.');
       return;
-    }
+    };
     if (!importBackup(raw)) {
       toast('Tệp sao lưu không hợp lệ hoặc không được hỗ trợ.');
       return;
-    }
+    };
     await loadAll();
     if (!state.error) toast('Đã khôi phục tiến độ từ tệp sao lưu.');
   });
@@ -1215,7 +1215,7 @@ function bindEvents() {
     if (!saveDeckProgress(state.currentDeck, progress)) {
       toast('Không thể đặt lại tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       return;
-    }
+    };
     $('chk-shuffle-q').checked = false;
     persistSetupForm();
     showScreen('setup');
@@ -1256,9 +1256,9 @@ function bindEvents() {
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     } else {
       location.reload();
-    }
+    };
   });
-}
+};
 
 let reloadAfterUpdate = false;
 
@@ -1266,7 +1266,7 @@ function registerSW() {
   if (!('serviceWorker' in navigator)) {
     toast('Trình duyệt này không hỗ trợ chế độ ngoại tuyến.');
     return;
-  }
+  };
   const swUrl = new URL('sw.js', document.baseURI).href;
   const scope = new URL('.', document.baseURI).href;
   navigator.serviceWorker
@@ -1281,7 +1281,7 @@ function registerSW() {
             $('update-banner').hidden = false;
           } else if (nw.state === 'redundant') {
             toast('Không thể cài bản ngoại tuyến mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.');
-          }
+          };
         });
       });
     })
@@ -1295,7 +1295,7 @@ function registerSW() {
     refreshing = true;
     location.reload();
   });
-}
+};
 
 function initNetworkStatus() {
   const status = $('network-status');
@@ -1309,17 +1309,17 @@ function initNetworkStatus() {
   window.addEventListener('online', update);
   window.addEventListener('offline', update);
   update();
-}
+};
 
 function boot() {
   initTheme();
   initNetworkStatus();
   if (!storageAvailable()) {
     toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
-  }
+  };
   bindEvents();
   registerSW();
   loadAll();
-}
+};
 
 boot();

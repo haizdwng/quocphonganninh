@@ -1097,8 +1097,6 @@ button {
   }
 }
 
-
-/* Official Tabler Icons, bundled locally for offline use. */
 [data-icon]::before {
   content: '';
   display: inline-block;

@@ -1,5 +1,5 @@
-const CACHE_VERSION = 'qp-quiz-v19';
-const CACHE_PREFIX = 'qp-quiz-';
+const CACHE_VERSION = 'quocphonganninh-v19';
+const CACHE_PREFIX = 'quocphonganninh-';
 const ESSENTIAL = [
   './',
   './index.html',
@@ -35,45 +35,29 @@ const ESSENTIAL = [
   './assets/icons/tabler/x.svg',
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(ESSENTIAL))
-  );
-});
+self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(ESSENTIAL))));
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys
-        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION)
-        .map((key) => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
-});
+self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  const scopeUrl = new URL(self.registration.scope);
-  if (url.origin !== scopeUrl.origin || !url.pathname.startsWith(scopeUrl.pathname)) return;
+  const scope = new URL(self.registration.scope);
+  if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
 
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
   const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico)$/i.test(url.pathname);
   if (!isHTML && !isEssentialAsset) return;
 
-  if (isHTML || isJSON) {
-    event.respondWith(networkFirst(request));
-  } else {
-    event.respondWith(cacheFirst(request, event));
-  }
+  if (isHTML || isJSON) event.respondWith(networkFirst(request));
+  else event.respondWith(cacheFirst(request, event));
 });
 
 async function cacheFirst(request, event) {
@@ -84,7 +68,7 @@ async function cacheFirst(request, event) {
       if (response.ok) return cache.put(request, response.clone());
     }).catch(() => {}));
     return cached;
-  }
+  };
 
   try {
     const response = await fetch(request);
@@ -95,8 +79,8 @@ async function cacheFirst(request, event) {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
-  }
-}
+  };
+};
 
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
@@ -107,13 +91,13 @@ async function networkFirst(request) {
     if (response.ok) {
       await cache.put(request, response.clone());
       return response;
-    }
+    };
     const cached = await cache.match(request, { ignoreSearch: true });
     if (cached) return cached;
     if (isHTML) {
       const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
       if (fallback) return fallback;
-    }
+    };
     return response;
   } catch {
     const cached = await cache.match(request, { ignoreSearch: true });
@@ -121,15 +105,10 @@ async function networkFirst(request) {
     if (isHTML) {
       const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
       if (fallback) return fallback;
-    }
-    return new Response(
-      isHTML
-        ? 'Cần kết nối mạng ít nhất một lần để tải trang và hai bộ đề.'
-        : 'Chưa có dữ liệu này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải bộ đề.',
-      {
-        status: 503,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-      }
-    );
-  }
-}
+    };
+    return new Response(isHTML ? 'Cần kết nối mạng ít nhất một lần để tải trang và hai bộ đề.' : 'Chưa có dữ liệu này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải bộ đề.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  };
+};
