@@ -33,6 +33,7 @@ const DECKS = {
 const state = {
   decks: { qp1: null, qp2: null },
   fingerprints: { qp1: '', qp2: '' },
+  legacyFingerprintMatched: { qp1: false, qp2: false },
   loading: true,
   error: null,
   currentDeck: 'qp1',
@@ -68,13 +69,22 @@ async function loadDeck(id) {
   state.decks[id] = questions;
   state.fingerprints[id] = fp;
   const progress = getDeckProgress(id);
+  const first = questions[0]?.question?.trim().slice(0, 40) || '';
+  const last = questions[questions.length - 1]?.question?.trim().slice(0, 40) || '';
+  const legacyFingerprint = `${questions.length}|${first}|${last}`;
   if (progress.dataFingerprint && progress.dataFingerprint !== fp) {
-    progress.completed = [];
-    progress.sequentialCursor = 0;
-    progress.wrongMap = {};
-    progress.practiceMap = {};
-    progress.dataFingerprint = fp;
-    if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+    if (progress.dataFingerprint === legacyFingerprint) {
+      state.legacyFingerprintMatched[id] = true;
+      progress.dataFingerprint = fp;
+      if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
+    } else {
+      progress.completed = [];
+      progress.sequentialCursor = 0;
+      progress.wrongMap = {};
+      progress.practiceMap = {};
+      progress.dataFingerprint = fp;
+      if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+    }
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fp;
     if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
@@ -677,6 +687,7 @@ function restoreSessionIfAny() {
   if (!saved || !['qp1', 'qp2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) return false;
   if (!state.decks[saved.deckId]) return false;
   const fp = state.fingerprints[saved.deckId];
+  const legacyCompatible = !saved.dataFingerprint && state.legacyFingerprintMatched[saved.deckId];
   const validPool = saved.pool.length > 0 && saved.pool.every((question) =>
     question && Number.isInteger(question.originalIndex) && question.originalIndex >= 0 &&
     typeof question.question === 'string' && Array.isArray(question.options) && question.options.length >= 2 &&
@@ -698,12 +709,13 @@ function restoreSessionIfAny() {
         (item.userAnswer == null || (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) &&
         Number.isInteger(item.wrongCount) && item.wrongCount >= 0;
     });
-  if (!validSession || saved.dataFingerprint !== fp) {
+  if (!validSession || (saved.dataFingerprint !== fp && !legacyCompatible)) {
     clearSession();
     return false;
   }
+  if (legacyCompatible) saved.dataFingerprint = fp;
   const progress = getDeckProgress(saved.deckId);
-  if (progress.dataFingerprint && progress.dataFingerprint !== fp) {
+  if (progress.dataFingerprint && progress.dataFingerprint !== fp && !legacyCompatible) {
     clearSession();
     return false;
   }
