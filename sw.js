@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh-v41';
+const CACHE_VERSION = 'quocphonganninh-v42';
 const CACHE_PREFIX = 'quocphonganninh-';
 const ESSENTIAL = [
   './',
