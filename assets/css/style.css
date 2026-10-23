@@ -172,6 +172,28 @@ input[type="number"] {
   font-size: 1rem;
 }
 
+.range-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.range-fields > div {
+  min-width: 0;
+}
+
+.range-fields label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.range-fields input[type="number"] {
+  width: 100%;
+  min-width: 0;
+}
+
 input[type="number"]:focus {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
