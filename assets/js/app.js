@@ -717,7 +717,7 @@ function bindEvents() {
       'Tiến độ lượt hiện tại vẫn được lưu và có thể khôi phục khi mở lại. Bạn có thể thoát về màn hình chính.'
     );
     if (!ok) return;
-    persistSession();
+    clearSession();
     state.session = null;
     showScreen('setup');
     refreshSetupUI();
