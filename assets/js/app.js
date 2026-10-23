@@ -164,11 +164,26 @@ function refreshSetupUI() {
     btn.classList.toggle('active', btn.dataset.deck === state.currentDeck);
   });
 
+  const startInput = $('input-range-start');
+  const endInput = $('input-range-end');
+  startInput.max = String(Math.max(1, total));
+  endInput.max = String(Math.max(1, total));
+  let start = Number.parseInt(startInput.value, 10);
+  let end = Number.parseInt(endInput.value, 10);
+  if (!Number.isInteger(start)) start = 1;
+  if (!Number.isInteger(end)) end = total;
+  start = Math.max(1, Math.min(start, Math.max(1, total)));
+  end = Math.max(start, Math.min(end, Math.max(1, total)));
+  startInput.value = String(start);
+  endInput.value = String(end);
+  $('hint-range').textContent = `Phạm vi câu gốc ${start}–${end} trong ${total} câu.`;
+
+  const rangeTotal = Math.max(0, end - start + 1);
   const input = $('input-count');
-  input.max = String(Math.max(1, total));
-  if (Number(input.value) > total) input.value = String(total);
-  if (Number(input.value) < 1) input.value = '1';
-  $('hint-count').textContent = `Tối đa ${total} câu hợp lệ trong bộ đề.`;
+  input.max = String(Math.max(1, rangeTotal));
+  if (Number(input.value) > rangeTotal) input.value = String(rangeTotal || 1);
+  if (Number(input.value) < 1 || !Number.isFinite(Number(input.value))) input.value = '1';
+  $('hint-count').textContent = `Tối đa ${rangeTotal} câu trong vùng đã chọn.`;
 
   const progress = getDeckProgress(state.currentDeck);
   const completed = new Set(progress.completed);
@@ -178,39 +193,45 @@ function refreshSetupUI() {
   $('stat-remaining').textContent = String(remaining);
   $('stat-wrong').textContent = String(wrongs.length);
   $('stat-practice').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
-  $('stat-cursor').textContent = String(Math.min(progress.sequentialCursor + 1, total + (progress.sequentialCursor >= total ? 0 : 0)) || 1);
   if (progress.sequentialCursor >= total) {
     $('stat-cursor').textContent = 'Đã hết (làm lại từ đầu)';
   } else {
-    $('stat-cursor').textContent = `${progress.sequentialCursor + 1}`;
+    $('stat-cursor').textContent = String(progress.sequentialCursor + 1);
   }
 
   const btnWrong = $('btn-practice-wrong');
-  btnWrong.disabled = wrongs.length === 0;
-  btnWrong.textContent = `Luyện câu sai (${wrongs.length})`;
+  const rangeWrongCount = wrongs.filter((index) => index >= start - 1 && index < end).length;
+  btnWrong.disabled = rangeWrongCount === 0;
+  btnWrong.textContent = `Luyện câu sai trong vùng (${rangeWrongCount})`;
 
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
-  const canContinue =
-    !shuffleQ &&
-    progress.sequentialCursor < total &&
-    remaining > 0;
+  const cursorInRange = progress.sequentialCursor < end && progress.sequentialCursor >= start - 1;
+  const canContinue = !shuffleQ && cursorInRange && remaining > 0;
   btnContinue.hidden = !canContinue;
   if (canContinue) {
-    const left = total - progress.sequentialCursor;
+    const left = end - progress.sequentialCursor;
     const n = Math.min(Number(input.value) || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự (${n} câu từ vị trí ${progress.sequentialCursor + 1})`;
   }
 }
 
 function readSetupForm() {
-  let count = parseInt($('input-count').value, 10);
   const total = currentQuestions().length;
+  let startQuestion = Number.parseInt($('input-range-start').value, 10);
+  let endQuestion = Number.parseInt($('input-range-end').value, 10);
+  if (!Number.isInteger(startQuestion)) startQuestion = 1;
+  if (!Number.isInteger(endQuestion)) endQuestion = total;
+  startQuestion = Math.max(1, Math.min(startQuestion, Math.max(1, total)));
+  endQuestion = Math.max(startQuestion, Math.min(endQuestion, Math.max(1, total)));
+
+  let count = Number.parseInt($('input-count').value, 10);
+  const rangeCount = Math.max(1, endQuestion - startQuestion + 1);
   if (!Number.isFinite(count) || count < 1) count = 1;
-  if (count > total) count = total;
+  if (count > rangeCount) count = rangeCount;
   const shuffleQ = $('chk-shuffle-q').checked;
   const shuffleA = $('chk-shuffle-a').checked;
-  return { count, shuffleQ, shuffleA };
+  return { count, shuffleQ, shuffleA, startQuestion, endQuestion };
 }
 
 function persistSetupForm() {
@@ -219,11 +240,19 @@ function persistSetupForm() {
     deck: state.currentDeck,
     count: form.count,
     shuffleQ: form.shuffleQ,
-    shuffleA: form.shuffleA
+    shuffleA: form.shuffleA,
+    startQuestion: form.startQuestion,
+    endQuestion: form.endQuestion
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 }
 
+function selectedQuestions(form = readSetupForm()) {
+  return currentQuestions().filter((question) =>
+    question.originalIndex >= form.startQuestion - 1 &&
+    question.originalIndex < form.endQuestion
+  );
+}
 function startSessionFromPool(pool, meta) {
   const form = readSetupForm();
   const shuffleA = form.shuffleA;
@@ -263,23 +292,31 @@ function startSessionFromPool(pool, meta) {
 }
 
 function startNormal(opts = {}) {
-  const qs = currentQuestions();
-  if (!qs.length) {
+  const allQuestions = currentQuestions();
+  if (!allQuestions.length) {
     toast('Bộ đề trống.');
     return;
   }
   const form = readSetupForm();
+  const qs = selectedQuestions(form);
+  if (!qs.length) {
+    toast('Vùng câu hỏi đã chọn không có câu hợp lệ.');
+    return;
+  }
   persistSetupForm();
   const progress = getDeckProgress(state.currentDeck);
   const completedSet = new Set(progress.completed);
+  const rangeStart = form.startQuestion - 1;
+  const rangeEnd = form.endQuestion;
 
   if (opts.restart) {
     const { items, nextCursor } = pickSequential(qs, 0, form.count, new Set());
+    const globalNextCursor = nextCursor > 0 ? qs[Math.min(nextCursor, qs.length) - 1].originalIndex + 1 : rangeStart;
     startSessionFromPool(items, {
       mode: 'normal',
       sequential: true,
-      startCursor: 0,
-      nextCursor,
+      startCursor: rangeStart,
+      nextCursor: globalNextCursor,
       forceShuffleQ: false,
       alreadyShuffled: true
     });
@@ -287,24 +324,26 @@ function startNormal(opts = {}) {
   }
 
   if (opts.sequential) {
-    const cursor = progress.sequentialCursor;
-    if (cursor >= qs.length) {
-      toast('Đã hoàn thành toàn bộ theo thứ tự. Hãy làm lại từ đầu hoặc chọn ngẫu nhiên.');
+    const cursor = Math.max(progress.sequentialCursor, rangeStart);
+    if (cursor >= rangeEnd) {
+      toast('Đã hết câu tuần tự trong vùng đã chọn. Hãy đổi vùng hoặc làm lại từ đầu.');
       return;
     }
-    const { items, nextCursor, actualCount } = pickSequential(qs, cursor, form.count, completedSet);
+    const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
+    const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
     if (!items.length) {
-      toast('Không còn câu tuần tự.');
+      toast('Không còn câu tuần tự trong vùng đã chọn.');
       return;
     }
-    if (actualCount < form.count) {
-      toast(`Chỉ còn ${actualCount} câu theo thứ tự.`);
-    }
+    if (actualCount < form.count) toast(`Chỉ còn ${actualCount} câu theo thứ tự trong vùng đã chọn.`);
+    const globalNextCursor = nextCursor > 0
+      ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
+      : cursor;
     startSessionFromPool(items, {
       mode: 'normal',
       sequential: true,
       startCursor: cursor,
-      nextCursor,
+      nextCursor: globalNextCursor,
       forceShuffleQ: false,
       alreadyShuffled: true
     });
@@ -315,13 +354,13 @@ function startNormal(opts = {}) {
     const remainingCount = qs.filter((question) => !completedSet.has(question.originalIndex)).length;
     const pool = pickRandom(qs, form.count, true, completedSet);
     if (!pool.length) {
-      toast('Không lấy được câu hỏi.');
+      toast('Không lấy được câu hỏi trong vùng đã chọn.');
       return;
     }
     if (remainingCount === 0) {
-      toast('Bạn đã hoàn thành toàn bộ bộ đề; lượt này lấy ngẫu nhiên từ tất cả câu.');
+      toast('Bạn đã hoàn thành các câu trong vùng này; lượt này lấy ngẫu nhiên trong vùng đã chọn.');
     } else if (remainingCount < form.count) {
-      toast(`Chỉ còn ${remainingCount} câu chưa hoàn thành; đã bổ sung câu đã làm để đủ ${pool.length} câu.`);
+      toast(`Chỉ còn ${remainingCount} câu chưa hoàn thành trong vùng; đã bổ sung câu đã làm để đủ ${pool.length} câu.`);
     }
     startSessionFromPool(pool, {
       mode: 'normal',
@@ -332,7 +371,9 @@ function startNormal(opts = {}) {
     return;
   }
 
-  const { items, nextCursor, actualCount } = pickSequential(qs, progress.sequentialCursor, form.count, completedSet);
+  const cursor = Math.max(progress.sequentialCursor, rangeStart);
+  const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
+  const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
   if (!items.length) {
     const pool = pickRandom(qs, form.count, false, completedSet);
     startSessionFromPool(pool, {
@@ -341,32 +382,35 @@ function startNormal(opts = {}) {
       forceShuffleQ: true,
       alreadyShuffled: true
     });
-    toast('Đã hết chuỗi tuần tự, chuyển sang ngẫu nhiên.');
+    toast('Đã hết chuỗi tuần tự trong vùng, chuyển sang ngẫu nhiên trong vùng đã chọn.');
     return;
   }
-  if (actualCount < form.count) toast(`Lượt này có ${actualCount} câu.`);
+  if (actualCount < form.count) toast(`Lượt này có ${actualCount} câu trong vùng đã chọn.`);
+  const globalNextCursor = nextCursor > 0
+    ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
+    : cursor;
   startSessionFromPool(items, {
     mode: 'normal',
     sequential: true,
-    startCursor: progress.sequentialCursor,
-    nextCursor,
+    startCursor: cursor,
+    nextCursor: globalNextCursor,
     forceShuffleQ: false,
     alreadyShuffled: true
   });
 }
-
 function startPracticeWrong() {
-  const qs = currentQuestions();
-  const wrongs = getWrongIndices(state.currentDeck);
-  if (!wrongs.length) {
-    toast('Không có câu sai để luyện.');
-    return;
-  }
   const form = readSetupForm();
   persistSetupForm();
+  const qs = selectedQuestions(form);
+  const rangeIndices = new Set(qs.map((question) => question.originalIndex));
+  const wrongs = getWrongIndices(state.currentDeck).filter((index) => rangeIndices.has(index));
+  if (!wrongs.length) {
+    toast('Trong vùng câu hỏi đã chọn không có câu sai để luyện.');
+    return;
+  }
   const pool = pickWrong(qs, wrongs, form.count, form.shuffleQ);
   if (!pool.length) {
-    toast('Không tìm thấy câu sai hợp lệ. Hãy tải lại bộ đề.');
+    toast('Không tìm thấy câu sai hợp lệ trong vùng đã chọn. Hãy tải lại bộ đề.');
     return;
   }
   const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
@@ -378,7 +422,6 @@ function startPracticeWrong() {
     alreadyShuffled: true
   });
 }
-
 function currentItem() {
   const s = state.session;
   if (!s) return null;
@@ -813,6 +856,8 @@ function initUI() {
   const settings = getSettings();
   state.currentDeck = settings.deck === 'qp2' ? 'qp2' : 'qp1';
   $('input-count').value = String(settings.count || 20);
+  $('input-range-start').value = String(settings.startQuestion || 1);
+  $('input-range-end').value = String(settings.endQuestion || state.decks[state.currentDeck]?.length || 1);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
   $('chk-shuffle-a').checked = settings.shuffleA !== false;
 
@@ -832,8 +877,8 @@ function bindEvents() {
   });
 
   $('btn-all').addEventListener('click', () => {
-    const total = currentQuestions().length;
-    $('input-count').value = String(total);
+    const form = readSetupForm();
+    $('input-count').value = String(Math.max(1, form.endQuestion - form.startQuestion + 1));
     persistSetupForm();
     refreshSetupUI();
   });
@@ -842,6 +887,22 @@ function bindEvents() {
     persistSetupForm();
     refreshSetupUI();
   });
+
+  for (const id of ['input-range-start', 'input-range-end']) {
+    $(id).addEventListener('change', () => {
+      const total = currentQuestions().length;
+      let start = Number.parseInt($('input-range-start').value, 10);
+      let end = Number.parseInt($('input-range-end').value, 10);
+      if (!Number.isInteger(start)) start = 1;
+      if (!Number.isInteger(end)) end = total;
+      start = Math.max(1, Math.min(start, Math.max(1, total)));
+      end = Math.max(start, Math.min(end, Math.max(1, total)));
+      $('input-range-start').value = String(start);
+      $('input-range-end').value = String(end);
+      refreshSetupUI();
+      persistSetupForm();
+    });
+  }
 
   $('chk-shuffle-q').addEventListener('change', () => {
     persistSetupForm();
