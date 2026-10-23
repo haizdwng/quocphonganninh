@@ -649,11 +649,11 @@ function renderQuestion() {
   if (item.checked && item.status === 'correct') {
     feedback.hidden = false;
     feedback.className = 'feedback ok';
-    feedback.textContent = 'Chính xác!';
+    feedback.textContent = 'Chính xác! Bạn đã trả lời đúng câu này.';
   } else if (item.checked && item.status === 'wrong') {
     feedback.hidden = false;
     feedback.className = 'feedback bad';
-    feedback.textContent = 'Chưa đúng. Hãy chọn lại đáp án khác.';
+    feedback.textContent = `Chưa đúng (lần ${item.wrongCount}). Đáp án này đã bị loại; hãy chọn đáp án khác để thử lại.`;
   } else {
     feedback.hidden = true;
     feedback.textContent = '';
@@ -1142,30 +1142,6 @@ function initUI() {
   refreshSetupUI();
 };
 
-function applyTheme(theme) {
-  const nextTheme = theme === 'light' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = nextTheme;
-  const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = nextTheme === 'dark' ? '#07111f' : '#f3f7fb';
-  const button = $('theme-toggle');
-  if (button) {
-    button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
-    button.dataset.icon = nextTheme === 'dark' ? 'sun' : 'moon';
-    button.setAttribute('aria-pressed', String(nextTheme === 'light'));
-  };
-  try {
-    localStorage.setItem('quocphonganninh-theme', nextTheme);
-  } catch {}
-};
-
-function initTheme() {
-  let theme = 'dark';
-  try {
-    const saved = localStorage.getItem('quocphonganninh-theme');
-    if (saved === 'light' || saved === 'dark') theme = saved;
-  } catch {}
-  applyTheme(theme);
-};
 
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (event) => {
@@ -1201,9 +1177,6 @@ function bindKeyboardShortcuts() {
 };
 
 function bindEvents() {
-  $('theme-toggle').addEventListener('click', () => {
-    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-  });
   bindKeyboardShortcuts();
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
@@ -1474,7 +1447,7 @@ function initNetworkStatus() {
 };
 
 function boot() {
-  initTheme();
+  document.documentElement.dataset.theme = 'dark';
   initNetworkStatus();
   if (!storageAvailable()) {
     toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
