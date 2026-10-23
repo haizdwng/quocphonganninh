@@ -138,6 +138,10 @@ function showScreen(name) {
     screen.classList.add('active');
   };
   state.mode = name;
+  if (screen) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+  };
 };
 
 function toast(msg, ms = 2800) {
@@ -1069,7 +1073,9 @@ function restoreSessionIfAny() {
   };
   saved.timeLimit = Number.isInteger(saved.timeLimit) && saved.timeLimit > 0 ? Math.min(1440, saved.timeLimit) : 0;
   saved.startedAt = Number.isFinite(saved.startedAt) && saved.startedAt > 0 ? saved.startedAt : Date.now();
-  saved.deadlineAt = Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0 ? saved.deadlineAt : null;
+  saved.deadlineAt = Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0
+    ? saved.deadlineAt
+    : (saved.timeLimit > 0 ? saved.startedAt + saved.timeLimit * 60000 : null);
   saved.timeExpired = !!saved.timeExpired;
   saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
     ? saved.practiceInitialCount
