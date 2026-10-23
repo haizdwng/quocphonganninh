@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'qp-quiz-v11';
+const CACHE_VERSION = 'qp-quiz-v12';
 const CACHE_PREFIX = 'qp-quiz-';
 const ESSENTIAL = [
   './',
