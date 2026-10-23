@@ -60,6 +60,12 @@
             </div>
             <p class="hint" id="hint-count">Tối đa — câu trong vùng đã chọn.</p>
           </div>
+          <div class="field search-field">
+            <label for="input-search">Tìm câu hỏi hoặc đáp án</label>
+            <input type="search" id="input-search" placeholder="Nhập từ khóa cần tìm…" autocomplete="off" enterkeyhint="search">
+            <p class="hint" id="search-hint" aria-live="polite">Tìm trong vùng câu hỏi đang chọn.</p>
+            <button type="button" class="btn btn-secondary btn-block" id="btn-search-practice" disabled>Ôn kết quả tìm kiếm</button>
+          </div>
           <div class="field toggles">
             <label class="toggle">
               <input type="checkbox" id="chk-shuffle-q">
@@ -80,10 +86,12 @@
             <li><span>Còn lại</span><strong id="stat-remaining">0</strong></li>
             <li><span>Câu từng sai</span><strong id="stat-wrong">0</strong></li>
             <li><span>Số lượt luyện lại</span><strong id="stat-practice">0</strong></li>
+            <li><span>Câu đã đánh dấu</span><strong id="stat-bookmarked">0</strong></li>
             <li><span>Con trỏ tuần tự</span><strong id="stat-cursor">1</strong></li>
           </ul>
           <div class="btn-row">
             <button type="button" class="btn btn-secondary" id="btn-practice-wrong" disabled>Luyện câu sai (0)</button>
+            <button type="button" class="btn btn-secondary" id="btn-practice-bookmarks" disabled>Ôn câu đã đánh dấu (0)</button>
             <button type="button" class="btn btn-ghost" id="btn-reset-progress">Xóa tiến độ bộ đề</button>
           </div>
         </div>
@@ -106,7 +114,10 @@
         </div>
 
         <div class="card question-card">
-          <p class="q-badge" id="q-badge">Câu hỏi</p>
+          <div class="question-heading">
+            <p class="q-badge" id="q-badge">Câu hỏi</p>
+            <button type="button" class="bookmark-btn" id="btn-bookmark" aria-pressed="false">☆ Đánh dấu</button>
+          </div>
           <h2 class="q-text" id="q-text"></h2>
           <div class="options" id="options" role="listbox" aria-label="Đáp án"></div>
           <div class="feedback" id="feedback" hidden></div>
