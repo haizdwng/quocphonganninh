@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh-v24';
+const CACHE_VERSION = 'quocphonganninh-v25';
 const CACHE_PREFIX = 'quocphonganninh-';
 const ESSENTIAL = [
   './',
@@ -71,7 +71,7 @@ self.addEventListener('fetch', (event) => {
 
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
-  const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico)$/i.test(url.pathname);
+  const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico|woff2)$/i.test(url.pathname);
   if (!isHTML && !isEssentialAsset) return;
 
   if (isHTML || isJSON) event.respondWith(networkFirst(request));
