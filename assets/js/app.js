@@ -1450,8 +1450,29 @@ function initNetworkStatus() {
   update();
 };
 
+
+function initTheme() {
+  let theme = 'dark';
+  try { theme = localStorage.getItem('quocphonganninh:theme') || 'dark'; } catch {}
+  if (!['dark', 'light'].includes(theme)) theme = 'dark';
+  document.documentElement.dataset.theme = theme;
+  const button = $('theme-toggle');
+  if (button) {
+    button.textContent = theme === 'dark' ? '☼' : '◐';
+    button.setAttribute('aria-label', theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
+    button.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      button.textContent = next === 'dark' ? '☼' : '◐';
+      button.setAttribute('aria-label', next === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
+      document.querySelector('meta[name="theme-color"]').content = next === 'dark' ? '#11170f' : '#f5f5ee';
+      try { localStorage.setItem('quocphonganninh:theme', next); } catch {}
+    });
+  }
+}
+
 function boot() {
-  document.documentElement.dataset.theme = 'dark';
+  initTheme();
   initNetworkStatus();
   if (!storageAvailable()) {
     toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
