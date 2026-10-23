@@ -127,16 +127,14 @@ export function markWrong(deckId, originalIndex) {
   const progress = getDeckProgress(deckId);
   const key = String(originalIndex);
   progress.wrongMap[key] = (progress.wrongMap[key] || 0) + 1;
-  saveDeckProgress(deckId, progress);
-  return progress.wrongMap[key];
+  return saveDeckProgress(deckId, progress) ? progress.wrongMap[key] : null;
 }
 
 export function markPracticed(deckId, originalIndex) {
   const progress = getDeckProgress(deckId);
   const key = String(originalIndex);
   progress.practiceMap[key] = (progress.practiceMap[key] || 0) + 1;
-  saveDeckProgress(deckId, progress);
-  return progress.practiceMap[key];
+  return saveDeckProgress(deckId, progress) ? progress.practiceMap[key] : null;
 }
 
 export function addCompleted(deckId, indices, fingerprint) {
@@ -147,15 +145,14 @@ export function addCompleted(deckId, indices, fingerprint) {
   }
   progress.completed = [...completed].sort((a, b) => a - b);
   if (fingerprint) progress.dataFingerprint = fingerprint;
-  saveDeckProgress(deckId, progress);
-  return progress;
+  return saveDeckProgress(deckId, progress) ? progress : null;
 }
 
 export function setSequentialCursor(deckId, cursor, fingerprint) {
   const progress = getDeckProgress(deckId);
   progress.sequentialCursor = Number.isInteger(cursor) ? Math.max(0, cursor) : 0;
   if (fingerprint) progress.dataFingerprint = fingerprint;
-  saveDeckProgress(deckId, progress);
+  return saveDeckProgress(deckId, progress);
 }
 
 export function getWrongIndices(deckId) {
