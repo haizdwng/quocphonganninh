@@ -87,6 +87,9 @@ export function getDeckProgress(deckId) {
     practiceMap: d.practiceMap && typeof d.practiceMap === 'object' && !Array.isArray(d.practiceMap)
       ? Object.fromEntries(Object.entries(d.practiceMap).filter(([key, value]) => Number.isInteger(Number(key)) && Number(key) >= 0 && Number.isInteger(value) && value > 0))
       : {},
+    bookmarks: Array.isArray(d.bookmarks)
+      ? [...new Set(d.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
+      : [],
     dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : ''
   };
 }
@@ -105,6 +108,9 @@ export function saveDeckProgress(deckId, progress) {
     practiceMap: progress.practiceMap && typeof progress.practiceMap === 'object' && !Array.isArray(progress.practiceMap)
       ? progress.practiceMap
       : {},
+    bookmarks: Array.isArray(progress.bookmarks)
+      ? [...new Set(progress.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
+      : [],
     dataFingerprint: typeof progress.dataFingerprint === 'string' ? progress.dataFingerprint : ''
   };
   return writeRoot(root);
@@ -173,6 +179,21 @@ export function getWrongIndices(deckId) {
     .map(Number)
     .filter((index) => Number.isInteger(index) && index >= 0 && progress.wrongMap[String(index)] > 0)
     .sort((a, b) => a - b);
+}
+
+export function getBookmarkedIndices(deckId) {
+  return getDeckProgress(deckId).bookmarks;
+}
+
+export function toggleBookmark(deckId, originalIndex) {
+  if (!Number.isInteger(originalIndex) || originalIndex < 0) return null;
+  const progress = getDeckProgress(deckId);
+  const bookmarks = new Set(progress.bookmarks);
+  const key = String(originalIndex);
+  if (bookmarks.has(originalIndex)) bookmarks.delete(originalIndex);
+  else bookmarks.add(originalIndex);
+  progress.bookmarks = [...bookmarks].sort((a, b) => a - b);
+  return saveDeckProgress(deckId, progress) ? bookmarks.has(originalIndex) : null;
 }
 
 export function storageAvailable() {
