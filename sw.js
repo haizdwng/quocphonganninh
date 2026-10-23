@@ -70,7 +70,7 @@ async function cacheFirst(request, event) {
     if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch {
-    return new Response('Chưa có tài nguyên này trong bộ nhớ offline. Hãy kết nối mạng để tải ứng dụng và bộ đề.', {
+    return new Response('Chưa có tài nguyên này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải ứng dụng và bộ đề.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
@@ -103,8 +103,8 @@ async function networkFirst(request) {
     }
     return new Response(
       isHTML
-        ? 'Cần kết nối mạng ít nhất một lần để tải website và hai bộ đề.'
-        : 'Chưa có dữ liệu này trong bộ nhớ offline. Hãy kết nối mạng để tải bộ đề.',
+        ? 'Cần kết nối mạng ít nhất một lần để tải trang và hai bộ đề.'
+        : 'Chưa có dữ liệu này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải bộ đề.',
       {
         status: 503,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' }
