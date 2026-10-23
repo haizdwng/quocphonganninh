@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'qp-quiz-v4';
+const CACHE_VERSION = 'qp-quiz-v5';
 const CACHE_PREFIX = 'qp-quiz-';
 const ESSENTIAL = [
   './',
@@ -44,10 +44,11 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== scopeUrl.origin || !url.pathname.startsWith(scopeUrl.pathname)) return;
 
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+  const isJSON = url.pathname.endsWith('.json');
   const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico)$/i.test(url.pathname);
   if (!isHTML && !isEssentialAsset) return;
 
-  if (isHTML) {
+  if (isHTML || isJSON) {
     event.respondWith(networkFirst(request));
   } else {
     event.respondWith(cacheFirst(request, event));
