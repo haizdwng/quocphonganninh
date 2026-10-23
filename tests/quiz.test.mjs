@@ -114,3 +114,13 @@ test('answer shuffling is disabled for questions that reference option letters',
     assert.equal(isAnswerCorrect(item, questions[0]), true);
   }
 });
+
+test('answer shuffling is disabled for relative phrases such as all options above', () => {
+  const questions = normalizeQuestions([{
+    question: 'Phương án nào chính xác?',
+    options: ['Phương án A', 'Phương án B', 'Tất cả các phương án trên', 'Không có phương án nào'],
+    correct: 2
+  }]);
+  const [item] = createSessionItems(questions, { shuffleQ: false, shuffleA: true });
+  assert.deepEqual(item.optionOrder, [0, 1, 2, 3]);
+});
