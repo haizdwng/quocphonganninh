@@ -398,6 +398,7 @@ function renderQuestion() {
     btn.type = 'button';
     btn.className = 'option';
     btn.setAttribute('role', 'option');
+    btn.setAttribute('aria-selected', String(item.userAnswer === displayIdx));
     btn.dataset.display = String(displayIdx);
 
     if (item.userAnswer === displayIdx) btn.classList.add('selected');
@@ -607,6 +608,15 @@ function showSummary(summary, deckId, mode) {
   $('sum-wrong-times').textContent = String(summary.wrongAttempts);
   $('sum-first').textContent = `${summary.firstTryRate}%`;
 
+  const totalQuestions = (state.decks[deckId] || []).length;
+  const progressAfterSession = getDeckProgress(deckId);
+  const completedAfterSession = new Set(progressAfterSession.completed).size;
+  $('summary-note').textContent = completedAfterSession >= totalQuestions
+    ? `Bạn đã hoàn thành toàn bộ bộ đề ${DECKS[deckId].label}.`
+    : summary.wrongQuestions === 0
+      ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.'
+      : 'Bạn có thể luyện lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
+
   const listCard = $('wrong-list-card');
   const list = $('wrong-list');
   list.replaceChildren();
@@ -763,7 +773,7 @@ function bindEvents() {
   $('btn-sum-again').addEventListener('click', () => {
     showScreen('setup');
     refreshSetupUI();
-    startNormal({ sequential: false });
+    $('input-count').focus();
   });
 
   $('btn-sum-restart').addEventListener('click', () => {
