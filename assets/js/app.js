@@ -66,6 +66,7 @@ async function loadDeck(id) {
   if (progress.dataFingerprint && progress.dataFingerprint !== fp) {
     progress.completed = [];
     progress.sequentialCursor = 0;
+    progress.wrongMap = {};
     progress.dataFingerprint = fp;
     saveDeckProgress(id, progress);
   } else if (!progress.dataFingerprint) {
@@ -191,11 +192,7 @@ function readSetupForm() {
   if (!Number.isFinite(count) || count < 1) count = 1;
   if (count > total) count = total;
   const shuffleQ = $('chk-shuffle-q').checked;
-  let shuffleA = $('chk-shuffle-a').checked;
-  if (!shuffleQ && !$('chk-shuffle-a').dataset.userTouched) {
-    shuffleA = true;
-    $('chk-shuffle-a').checked = true;
-  }
+  const shuffleA = $('chk-shuffle-a').checked;
   return { count, shuffleQ, shuffleA };
 }
 
@@ -214,10 +211,9 @@ function startSessionFromPool(pool, meta) {
   const shuffleA = form.shuffleA;
   const shuffleQ = meta.forceShuffleQ != null ? meta.forceShuffleQ : form.shuffleQ;
   const items = createSessionItems(pool, { shuffleQ: false, shuffleA });
-  if (shuffleQ && meta.alreadyShuffled !== true) {
-  }
   const session = {
     deckId: state.currentDeck,
+    dataFingerprint: state.fingerprints[state.currentDeck],
     mode: meta.mode || 'normal',
     sequential: !!meta.sequential,
     startCursor: meta.startCursor ?? null,
@@ -262,7 +258,7 @@ function startNormal(opts = {}) {
       toast('Đã hoàn thành toàn bộ theo thứ tự. Hãy làm lại từ đầu hoặc chọn ngẫu nhiên.');
       return;
     }
-    const { items, nextCursor, actualCount } = pickSequential(qs, cursor, form.count);
+    const { items, nextCursor, actualCount } = pickSequential(qs, cursor, form.count, completedSet);
     if (!items.length) {
       toast('Không còn câu tuần tự.');
       return;
@@ -296,7 +292,7 @@ function startNormal(opts = {}) {
     return;
   }
 
-  const { items, nextCursor, actualCount } = pickSequential(qs, progress.sequentialCursor, form.count);
+  const { items, nextCursor, actualCount } = pickSequential(qs, progress.sequentialCursor, form.count, completedSet);
   if (!items.length) {
     const pool = pickRandom(qs, form.count, false, completedSet);
     startSessionFromPool(pool, {
@@ -357,9 +353,7 @@ function renderQuestion() {
   const q = currentQ();
   if (!item || !q) return;
 
-  const isPast = s.viewIndex < s.maxReached || (item.status === 'correct' && s.reviewingPast);
-  const locked = item.status === 'correct' || (s.viewIndex < s.maxReached && item.status === 'correct');
-  const viewingHistory = s.viewIndex < s.maxReached && item.status === 'correct';
+  const viewingHistory = s.viewIndex < s.maxReached;
 
   $('progress-label').textContent = `Câu ${s.viewIndex + 1} / ${s.items.length}`;
   $('progress-score').textContent = `Đúng ${s.completedInSession}`;
@@ -448,9 +442,7 @@ function onSelectOption(displayIdx) {
   const s = state.session;
   const item = currentItem();
   if (!s || !item) return;
-  if (item.status === 'correct') return;
-  if (s.viewIndex < s.maxReached && item.status === 'correct') return;
-  if (s.reviewingPast && item.status === 'correct') return;
+  if (item.status === 'correct' || s.viewIndex < s.maxReached) return;
 
   item.userAnswer = displayIdx;
   if (item.status === 'wrong') {
@@ -466,7 +458,7 @@ function onCheck() {
   const item = currentItem();
   const q = currentQ();
   if (!s || !item || !q || item.userAnswer == null) return;
-  if (item.status === 'correct') return;
+  if (item.status === 'correct' || s.viewIndex < s.maxReached) return;
 
   item.checked = true;
   if (isAnswerCorrect(item, q)) {
@@ -498,7 +490,7 @@ function onNext() {
   if (!s) return;
   const item = currentItem();
 
-  if (s.viewIndex < s.maxReached && item.status === 'correct') {
+  if (s.viewIndex < s.maxReached) {
     s.viewIndex += 1;
     s.reviewingPast = s.viewIndex < s.maxReached;
     persistSession();
@@ -631,9 +623,17 @@ function showSummary(summary, deckId, mode) {
 
 function restoreSessionIfAny() {
   const saved = getSession();
-  if (!saved || !saved.deckId || !saved.items || !saved.pool) return false;
+  if (!saved || !['qp1', 'qp2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) return false;
   if (!state.decks[saved.deckId]) return false;
   const fp = state.fingerprints[saved.deckId];
+  const validSession = saved.items.length > 0 &&
+    Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length &&
+    saved.items.every((item) => Number.isInteger(item.poolIdx) && item.poolIdx >= 0 && item.poolIdx < saved.pool.length &&
+      Array.isArray(item.optionOrder) && item.optionOrder.length === saved.pool[item.poolIdx].options?.length);
+  if (!validSession || saved.dataFingerprint !== fp) {
+    clearSession();
+    return false;
+  }
   const progress = getDeckProgress(saved.deckId);
   if (progress.dataFingerprint && progress.dataFingerprint !== fp) {
     clearSession();
@@ -682,9 +682,6 @@ function bindEvents() {
   });
 
   $('chk-shuffle-q').addEventListener('change', () => {
-    if (!$('chk-shuffle-q').checked) {
-      $('chk-shuffle-a').checked = true;
-    }
     persistSetupForm();
     refreshSetupUI();
   });
@@ -762,10 +759,18 @@ function bindEvents() {
     loadAll();
   });
 
-  $('btn-update').addEventListener('click', () => {
-    location.reload();
+  $('btn-update').addEventListener('click', async () => {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration?.waiting) {
+      reloadAfterUpdate = true;
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      location.reload();
+    }
   });
 }
+
+let reloadAfterUpdate = false;
 
 function registerSW() {
   if (!('serviceWorker' in navigator)) return;
@@ -774,6 +779,7 @@ function registerSW() {
   navigator.serviceWorker
     .register(swUrl, { scope })
     .then((reg) => {
+      if (reg.waiting && navigator.serviceWorker.controller) $('update-banner').hidden = false;
       reg.addEventListener('updatefound', () => {
         const nw = reg.installing;
         if (!nw) return;
@@ -788,8 +794,9 @@ function registerSW() {
 
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
+    if (!reloadAfterUpdate || refreshing) return;
     refreshing = true;
+    location.reload();
   });
 }
 
