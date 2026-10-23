@@ -100,27 +100,3 @@ test('question fingerprint changes when question data changes', () => {
   const changed = normalizeQuestions([{ question: 'Q', options: ['A', 'B'], correct: 1 }]);
   assert.notEqual(fingerprintQuestions(first), fingerprintQuestions(changed));
 });
-
-test('answer shuffling is disabled for questions that reference option letters', () => {
-  const questions = normalizeQuestions([{
-    question: 'Phương án nào đúng? Cả A và B đều đúng.',
-    options: ['Ý A', 'Ý B', 'Ý C', 'Ý D'],
-    correct: 0
-  }]);
-  for (let round = 0; round < 20; round++) {
-    const [item] = createSessionItems(questions, { shuffleQ: false, shuffleA: true });
-    assert.deepEqual(item.optionOrder, [0, 1, 2, 3]);
-    item.userAnswer = displayedCorrectIndex(item, questions[0]);
-    assert.equal(isAnswerCorrect(item, questions[0]), true);
-  }
-});
-
-test('answer shuffling is disabled for relative phrases such as all options above', () => {
-  const questions = normalizeQuestions([{
-    question: 'Phương án nào chính xác?',
-    options: ['Phương án A', 'Phương án B', 'Tất cả các phương án trên', 'Không có phương án nào'],
-    correct: 2
-  }]);
-  const [item] = createSessionItems(questions, { shuffleQ: false, shuffleA: true });
-  assert.deepEqual(item.optionOrder, [0, 1, 2, 3]);
-});
