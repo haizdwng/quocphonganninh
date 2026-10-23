@@ -662,7 +662,7 @@ function finishSession() {
   }
 
   s.summary = {
-    total: s.items.length,
+    total: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length,
     correct: s.completedInSession,
     wrongQuestions: wrongInSession.length,
     wrongAttempts: s.totalWrongAttempts,
