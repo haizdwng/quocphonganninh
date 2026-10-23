@@ -1014,14 +1014,14 @@ function applyTheme(theme) {
     button.setAttribute('aria-pressed', String(nextTheme === 'light'));
   };
   try {
-    localStorage.setItem('qp-quiz-theme', nextTheme);
+    localStorage.setItem('quocphonganninh-theme', nextTheme);
   } catch {}
 };
 
 function initTheme() {
   let theme = 'dark';
   try {
-    const saved = localStorage.getItem('qp-quiz-theme');
+    const saved = localStorage.getItem('quocphonganninh-theme');
     if (saved === 'light' || saved === 'dark') theme = saved;
   } catch {}
   applyTheme(theme);

@@ -199,7 +199,7 @@ export function toggleBookmark(deckId, originalIndex) {
 export function exportBackup() {
   const root = readRoot();
   return JSON.stringify({
-    format: 'quocphong-quiz-backup',
+    format: 'quocphonganninh-backup',
     version: 1,
     exportedAt: new Date().toISOString(),
     settings: root.settings || {},
@@ -214,7 +214,7 @@ export function importBackup(raw) {
   } catch {
     return false;
   };
-  if (!backup || backup.format !== 'quocphong-quiz-backup' || backup.version !== 1 ||
+  if (!backup || backup.format !== 'quocphonganninh-backup' || backup.version !== 1 ||
       !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) ||
       !Object.keys(backup.decks).every((id) => ['qp1', 'qp2'].includes(id))) return false;
 
