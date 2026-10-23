@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== scopeUrl.origin || !url.pathname.startsWith(scopeUrl.pathname)) return;
 
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
-  const isEssentialAsset = /\\.(css|js|json|webmanifest|svg|png|ico)$/i.test(url.pathname);
+  const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico)$/i.test(url.pathname);
   if (!isHTML && !isEssentialAsset) return;
 
   if (isHTML) {
