@@ -204,15 +204,17 @@ function refreshSetupUI() {
   btnWrong.disabled = rangeWrongCount === 0;
   btnWrong.textContent = `Luyện câu sai trong vùng (${rangeWrongCount})`;
 
+  const rangeQuestions = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
+  const rangeRemaining = rangeQuestions.filter((question) => !completed.has(question.originalIndex)).length;
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
-  const cursorInRange = progress.sequentialCursor < end && progress.sequentialCursor >= start - 1;
-  const canContinue = !shuffleQ && cursorInRange && remaining > 0;
+  const nextIndex = Math.max(progress.sequentialCursor, start - 1);
+  const canContinue = !shuffleQ && nextIndex < end && rangeRemaining > 0;
   btnContinue.hidden = !canContinue;
   if (canContinue) {
-    const left = end - progress.sequentialCursor;
+    const left = end - nextIndex;
     const n = Math.min(Number(input.value) || 20, left);
-    btnContinue.textContent = `Tiếp tục tuần tự (${n} câu từ vị trí ${progress.sequentialCursor + 1})`;
+    btnContinue.textContent = `Tiếp tục tuần tự (${n} câu từ vị trí ${nextIndex + 1})`;
   }
 }
 
