@@ -19,12 +19,20 @@ export function normalizeQuestions(raw) {
   const out = [];
   for (let i = 0; i < raw.length; i++) {
     const q = raw[i];
-    if (!q || typeof q.question !== 'string' || !q.question.trim()) continue;
-    if (!Array.isArray(q.options) || q.options.length < 2) continue;
-    if (q.options.some((option) => typeof option !== 'string' || !option.trim())) continue;
+    if (!q || typeof q.question !== 'string' || !q.question.trim()) {
+      throw new Error(`Câu ${i + 1} thiếu nội dung câu hỏi.`);
+    }
+    if (!Array.isArray(q.options) || q.options.length < 2) {
+      throw new Error(`Câu ${i + 1} phải có ít nhất hai đáp án.`);
+    }
+    if (q.options.some((option) => typeof option !== 'string' || !option.trim())) {
+      throw new Error(`Câu ${i + 1} có đáp án trống hoặc không hợp lệ.`);
+    }
     const options = q.options.slice();
     const correct = q.correct;
-    if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) continue;
+    if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) {
+      throw new Error(`Câu ${i + 1} có chỉ số đáp án đúng không hợp lệ.`);
+    }
     out.push({
       originalIndex: i,
       question: q.question,
