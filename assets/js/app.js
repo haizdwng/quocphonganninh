@@ -251,6 +251,7 @@ function startSessionFromPool(pool, meta) {
     completedInSession: 0,
     practiceInitialCount: meta.mode === 'practice-wrong' ? pool.length : 0,
     practiceCompletedIndices: [],
+    practiceWrongHistory: [],
     firstTryCorrect: 0,
     totalWrongAttempts: 0
   };
@@ -483,7 +484,8 @@ function renderQuestion() {
     $('btn-next').disabled = false;
     $('btn-check').disabled = true;
   } else {
-    $('btn-next').disabled = item.status !== 'correct';
+    $('btn-next').disabled = item.status !== 'correct' &&
+      !(s.mode === 'practice-wrong' && item.status === 'wrong');
   }
 }
 
@@ -534,6 +536,12 @@ function onCheck() {
     item.status = 'wrong';
     item.wrongCount += 1;
     s.totalWrongAttempts += 1;
+    if (s.mode === 'practice-wrong') {
+      if (!Array.isArray(s.practiceWrongHistory)) s.practiceWrongHistory = [];
+      const history = s.practiceWrongHistory.find((entry) => entry.originalIndex === q.originalIndex);
+      if (history) history.wrongCount += 1;
+      else s.practiceWrongHistory.push({ originalIndex: q.originalIndex, question: q.question, wrongCount: 1 });
+    }
     if (markWrong(s.deckId, q.originalIndex) === null) toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
   }
   persistSession();
@@ -630,16 +638,25 @@ function finishSession() {
 
   const wrongInSession = [];
   const seen = new Set();
-  for (const it of s.items) {
-    if (it.wrongCount > 0) {
-      const oi = s.pool[it.poolIdx].originalIndex;
-      if (!seen.has(oi)) {
-        seen.add(oi);
-        wrongInSession.push({
-          originalIndex: oi,
-          question: s.pool[it.poolIdx].question,
-          wrongCount: it.wrongCount
-        });
+  if (s.mode === 'practice-wrong' && Array.isArray(s.practiceWrongHistory)) {
+    for (const entry of s.practiceWrongHistory) {
+      if (!seen.has(entry.originalIndex)) {
+        seen.add(entry.originalIndex);
+        wrongInSession.push({ ...entry });
+      }
+    }
+  } else {
+    for (const it of s.items) {
+      if (it.wrongCount > 0) {
+        const oi = s.pool[it.poolIdx].originalIndex;
+        if (!seen.has(oi)) {
+          seen.add(oi);
+          wrongInSession.push({
+            originalIndex: oi,
+            question: s.pool[it.poolIdx].question,
+            wrongCount: it.wrongCount
+          });
+        }
       }
     }
   }
@@ -650,7 +667,9 @@ function finishSession() {
     wrongQuestions: wrongInSession.length,
     wrongAttempts: s.totalWrongAttempts,
     practiceQuestions: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : 0,
-    firstTryRate: s.items.length ? Math.round((s.firstTryCorrect / s.items.length) * 100) : 0,
+    firstTryRate: (s.mode === 'practice-wrong' ? s.practiceInitialCount : s.items.length)
+      ? Math.round((s.firstTryCorrect / (s.mode === 'practice-wrong' ? s.practiceInitialCount : s.items.length)) * 100)
+      : 0,
     wrongList: wrongInSession,
     sequential: s.sequential,
     nextCursor: s.nextCursor,
@@ -767,6 +786,9 @@ function restoreSessionIfAny() {
     : (saved.mode === 'practice-wrong' ? saved.items.length : 0);
   saved.practiceCompletedIndices = Array.isArray(saved.practiceCompletedIndices)
     ? [...new Set(saved.practiceCompletedIndices.filter((index) => Number.isInteger(index) && index >= 0))]
+    : [];
+  saved.practiceWrongHistory = Array.isArray(saved.practiceWrongHistory)
+    ? saved.practiceWrongHistory.filter((entry) => entry && Number.isInteger(entry.originalIndex) && entry.originalIndex >= 0 && typeof entry.question === 'string' && Number.isInteger(entry.wrongCount) && entry.wrongCount > 0)
     : [];
   saved.completedInSession = saved.mode === 'practice-wrong'
     ? saved.practiceCompletedIndices.length
