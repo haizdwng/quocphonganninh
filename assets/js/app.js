@@ -115,6 +115,7 @@ async function loadDeck(id) {
 async function loadAll() {
   state.loading = true;
   state.error = null;
+  showScreen('loading');
   try {
     await Promise.all([loadDeck('qp1'), loadDeck('qp2')]);
     state.loading = false;
