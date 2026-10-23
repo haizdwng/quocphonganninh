@@ -721,7 +721,7 @@ button {
   bottom: 0;
   z-index: 15;
   padding: 8px 0 max(8px, env(safe-area-inset-bottom));
-  background: var(--bg);
+  background: transparent;
 }
 
 .question-card {
@@ -1271,7 +1271,7 @@ button:disabled { opacity:.46; cursor:not-allowed; transform:none; }
 .feedback { margin-top:18px; padding:14px 16px; border-radius:12px; line-height:1.55; }
 .feedback.ok { border:1px solid color-mix(in srgb,var(--success) 35%,transparent); background:var(--success-soft); }
 .feedback.bad { border:1px solid color-mix(in srgb,var(--danger) 35%,transparent); background:var(--danger-soft); }
-.quiz-actions { display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:10px; padding:10px 0; background:var(--bg); }
+.quiz-actions { display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:10px; padding:10px 0; background:transparent; }
 .quiz-actions .btn { min-height:50px; }
 #btn-quit { width:100%; border:1px solid var(--border); }
 #screen-summary > .card:first-child,#screen-summary > .actions-stack { grid-column:1/-1; }
