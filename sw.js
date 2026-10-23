@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'qp-quiz-v1';
+const CACHE_VERSION = 'qp-quiz-v2';
 const ESSENTIAL = [
   './',
   './index.html',
