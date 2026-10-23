@@ -249,6 +249,8 @@ function startSessionFromPool(pool, meta) {
     reviewingPast: false,
     maxReached: 0,
     completedInSession: 0,
+    practiceInitialCount: meta.mode === 'practice-wrong' ? pool.length : 0,
+    practiceCompletedIndices: [],
     firstTryCorrect: 0,
     totalWrongAttempts: 0
   };
@@ -398,9 +400,12 @@ function renderQuestion() {
 
   const viewingHistory = s.viewIndex < s.maxReached;
 
-  $('progress-label').textContent = `Câu ${s.viewIndex + 1} / ${s.items.length}`;
+  $('progress-label').textContent = s.mode === 'practice-wrong'
+    ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
+    : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
   $('progress-score').textContent = `Đúng ${s.completedInSession}`;
-  const pct = s.items.length ? Math.round((s.completedInSession / s.items.length) * 100) : 0;
+  const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
+  const pct = progressTotal ? Math.round((s.completedInSession / progressTotal) * 100) : 0;
   $('progress-fill').style.width = `${pct}%`;
   $('progress-fill').parentElement.setAttribute('aria-valuenow', String(pct));
 
@@ -510,8 +515,18 @@ function onCheck() {
     const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
     item.status = 'correct';
     if (!wasAlreadyCorrect) {
-      s.completedInSession += 1;
-      if (firstTime) s.firstTryCorrect += 1;
+      if (s.mode === 'practice-wrong') {
+        if (!Array.isArray(s.practiceCompletedIndices)) s.practiceCompletedIndices = [];
+        const originalIndex = q.originalIndex;
+        if (!s.practiceCompletedIndices.includes(originalIndex)) {
+          s.practiceCompletedIndices.push(originalIndex);
+          s.completedInSession = s.practiceCompletedIndices.length;
+          if (firstTime) s.firstTryCorrect += 1;
+        }
+      } else {
+        s.completedInSession += 1;
+        if (firstTime) s.firstTryCorrect += 1;
+      }
     }
     if (s.viewIndex >= s.maxReached) s.maxReached = s.viewIndex;
     s.reviewingPast = false;
@@ -524,7 +539,8 @@ function onCheck() {
   persistSession();
   renderQuestion();
 
-  if (item.status === 'correct' && s.completedInSession >= s.items.length) {
+  const roundComplete = s.items.every((entry) => entry.status === 'correct');
+  if (item.status === 'correct' && roundComplete && s.mode !== 'practice-wrong') {
     setTimeout(() => finishSession(), 400);
   }
 }
@@ -542,12 +558,33 @@ function onNext() {
     return;
   }
 
-  if (item.status !== 'correct') {
-    toast('Hãy trả lời đúng trước khi sang câu tiếp.');
+  if (item.status !== 'correct' && !(s.mode === 'practice-wrong' && item.status === 'wrong')) {
+    toast('Hãy kiểm tra câu trả lời trước khi sang câu tiếp.');
     return;
   }
 
   if (s.viewIndex >= s.items.length - 1) {
+    if (s.mode === 'practice-wrong') {
+      const unresolved = s.items.filter((entry) => entry.status !== 'correct');
+      if (!unresolved.length) {
+        finishSession();
+        return;
+      }
+      s.items = unresolved.map((entry) => ({
+        ...entry,
+        optionOrder: entry.optionOrder.slice(),
+        userAnswer: null,
+        status: 'pending',
+        checked: false
+      }));
+      s.viewIndex = 0;
+      s.maxReached = 0;
+      s.reviewingPast = false;
+      persistSession();
+      renderQuestion();
+      toast(`Còn ${s.items.length} câu chưa trả lời đúng. Tiếp tục luyện các câu này.`, 3500);
+      return;
+    }
     finishSession();
     return;
   }
@@ -612,7 +649,7 @@ function finishSession() {
     correct: s.completedInSession,
     wrongQuestions: wrongInSession.length,
     wrongAttempts: s.totalWrongAttempts,
-    practiceQuestions: s.mode === 'practice-wrong' ? s.items.length : 0,
+    practiceQuestions: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : 0,
     firstTryRate: s.items.length ? Math.round((s.firstTryCorrect / s.items.length) * 100) : 0,
     wrongList: wrongInSession,
     sequential: s.sequential,
@@ -725,9 +762,22 @@ function restoreSessionIfAny() {
     clearSession();
     return false;
   }
-  saved.completedInSession = saved.items.filter((item) => item.status === 'correct').length;
-  saved.totalWrongAttempts = saved.items.reduce((sum, item) => sum + Math.max(0, Number(item.wrongCount) || 0), 0);
-  saved.firstTryCorrect = saved.items.filter((item) => item.status === 'correct' && item.wrongCount === 0).length;
+  saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
+    ? saved.practiceInitialCount
+    : (saved.mode === 'practice-wrong' ? saved.items.length : 0);
+  saved.practiceCompletedIndices = Array.isArray(saved.practiceCompletedIndices)
+    ? [...new Set(saved.practiceCompletedIndices.filter((index) => Number.isInteger(index) && index >= 0))]
+    : [];
+  saved.completedInSession = saved.mode === 'practice-wrong'
+    ? saved.practiceCompletedIndices.length
+    : saved.items.filter((item) => item.status === 'correct').length;
+  saved.totalWrongAttempts = Math.max(
+    Number.isInteger(saved.totalWrongAttempts) ? saved.totalWrongAttempts : 0,
+    saved.items.reduce((sum, item) => sum + Math.max(0, Number(item.wrongCount) || 0), 0)
+  );
+  saved.firstTryCorrect = Number.isInteger(saved.firstTryCorrect)
+    ? saved.firstTryCorrect
+    : saved.items.filter((item) => item.status === 'correct' && item.wrongCount === 0).length;
   saved.maxReached = Math.max(0, Math.min(saved.items.length - 1, Number(saved.maxReached) || 0));
   state.currentDeck = saved.deckId;
   state.session = saved;
