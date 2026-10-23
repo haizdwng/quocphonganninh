@@ -145,8 +145,26 @@ function confirmModal(title, body) {
       cancel.onclick = null;
       resolve(val);
     };
-    ok.onclick = () => cleanup(true);
-    cancel.onclick = () => cleanup(false);
+    const previousFocus = document.activeElement;
+    const onKeydown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        cleanup(false);
+      } else if (event.key === 'Enter' && $('modal').classList.contains('is-open')) {
+        event.preventDefault();
+        cleanup(true);
+      }
+    };
+    const originalCleanup = cleanup;
+    const cleanupWithFocus = (val) => {
+      document.removeEventListener('keydown', onKeydown);
+      originalCleanup(val);
+      if (previousFocus instanceof HTMLElement) previousFocus.focus({ preventScroll: true });
+    };
+    ok.onclick = () => cleanupWithFocus(true);
+    cancel.onclick = () => cleanupWithFocus(false);
+    document.addEventListener('keydown', onKeydown);
+    ok.focus();
   });
 }
 
@@ -517,7 +535,7 @@ function renderQuestion() {
   }
 
   $('btn-prev').disabled = s.viewIndex <= 0;
-  const canCheck = item.userAnswer != null && item.status !== 'correct' && !viewingHistory;
+  const canCheck = item.userAnswer != null && item.status !== 'correct' && !item.checked && !viewingHistory;
   $('btn-check').disabled = !canCheck;
   const canNext =
     item.status === 'correct' && s.viewIndex < s.items.length - 1
@@ -554,7 +572,7 @@ function onCheck() {
   const item = currentItem();
   const q = currentQ();
   if (!s || !item || !q || item.userAnswer == null) return;
-  if (item.status === 'correct' || s.viewIndex < s.maxReached) return;
+  if (item.status === 'correct' || item.checked || s.viewIndex < s.maxReached) return;
 
   item.checked = true;
   if (isAnswerCorrect(item, q)) {
