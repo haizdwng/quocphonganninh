@@ -149,10 +149,7 @@ function confirmModal(title, body) {
     const onKeydown = (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        cleanup(false);
-      } else if (event.key === 'Enter' && $('modal').classList.contains('is-open')) {
-        event.preventDefault();
-        cleanup(true);
+        cleanupWithFocus(false);
       }
     };
     const originalCleanup = cleanup;
