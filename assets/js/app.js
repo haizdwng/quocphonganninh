@@ -74,10 +74,10 @@ async function loadDeck(id) {
     progress.wrongMap = {};
     progress.practiceMap = {};
     progress.dataFingerprint = fp;
-    saveDeckProgress(id, progress);
+    if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fp;
-    saveDeckProgress(id, progress);
+    if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
   }
   return questions;
 }
@@ -205,12 +205,13 @@ function readSetupForm() {
 
 function persistSetupForm() {
   const form = readSetupForm();
-  saveSettings({
+  const saved = saveSettings({
     deck: state.currentDeck,
     count: form.count,
     shuffleQ: form.shuffleQ,
     shuffleA: form.shuffleA
   });
+  if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 }
 
 function startSessionFromPool(pool, meta) {
@@ -243,7 +244,7 @@ function startSessionFromPool(pool, meta) {
   };
   state.session = session;
   state.reviewMode = false;
-  saveSession(session);
+  if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
   showScreen('quiz');
   renderQuestion();
 }
@@ -355,7 +356,8 @@ function startPracticeWrong() {
     toast('Không tìm thấy câu sai hợp lệ. Hãy tải lại bộ đề.');
     return;
   }
-  pool.forEach((question) => markPracticed(state.currentDeck, question.originalIndex));
+  const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
+  if (practiceSaveFailed) toast('Không thể lưu thống kê luyện lại vào trình duyệt.');
   startSessionFromPool(pool, {
     mode: 'practice-wrong',
     sequential: false,
@@ -507,7 +509,7 @@ function onCheck() {
     item.status = 'wrong';
     item.wrongCount += 1;
     s.totalWrongAttempts += 1;
-    markWrong(s.deckId, q.originalIndex);
+    if (markWrong(s.deckId, q.originalIndex) === null) toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
   }
   persistSession();
   renderQuestion();
@@ -557,7 +559,9 @@ function onPrev() {
 }
 
 function persistSession() {
-  if (state.session) saveSession(state.session);
+  if (state.session && !saveSession(state.session)) {
+    toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
+  }
 }
 
 function finishSession() {
@@ -568,10 +572,12 @@ function finishSession() {
     const completedIdx = s.items
       .filter((it) => it.status === 'correct')
       .map((it) => s.pool[it.poolIdx].originalIndex);
-    addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
-
-    if (s.sequential && s.nextCursor != null) {
-      setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId]);
+    const progressSaved = addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
+    if (!progressSaved) {
+      toast('Không thể lưu tiến độ hoàn thành. Hãy kiểm tra dung lượng bộ nhớ trình duyệt.');
+    } else if (s.sequential && s.nextCursor != null &&
+      !setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId])) {
+      toast('Không thể lưu vị trí tuần tự của bộ đề.');
     }
   }
 
