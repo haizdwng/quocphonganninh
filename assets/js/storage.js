@@ -196,6 +196,73 @@ export function toggleBookmark(deckId, originalIndex) {
   return saveDeckProgress(deckId, progress) ? bookmarks.has(originalIndex) : null;
 }
 
+export function exportBackup() {
+  const root = readRoot();
+  return JSON.stringify({
+    format: 'quocphong-quiz-backup',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    settings: root.settings || {},
+    decks: root.decks || {}
+  }, null, 2);
+}
+
+export function importBackup(raw) {
+  let backup;
+  try {
+    backup = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return false;
+  }
+  if (!backup || backup.format !== 'quocphong-quiz-backup' || backup.version !== 1 ||
+      !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks)) return false;
+
+  const settings = backup.settings && typeof backup.settings === 'object' && !Array.isArray(backup.settings)
+    ? backup.settings
+    : {};
+  const normalized = {
+    settings: {
+      deck: normalizeDeckId(settings.deck),
+      count: Number.isInteger(Number(settings.count)) && Number(settings.count) > 0 ? Number(settings.count) : 20,
+      shuffleQ: !!settings.shuffleQ,
+      shuffleA: settings.shuffleA !== false,
+      startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0 ? Number(settings.startQuestion) : 1,
+      endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0 ? Number(settings.endQuestion) : 0
+    },
+    decks: {}
+  };
+
+  for (const id of ['qp1', 'qp2']) {
+    const d = backup.decks[id];
+    if (!d || typeof d !== 'object' || Array.isArray(d)) continue;
+    const wrongMap = {};
+    if (d.wrongMap && typeof d.wrongMap === 'object' && !Array.isArray(d.wrongMap)) {
+      for (const [key, value] of Object.entries(d.wrongMap)) {
+        const index = Number(key);
+        const count = Number(value);
+        if (Number.isInteger(index) && index >= 0 && Number.isInteger(count) && count > 0) wrongMap[String(index)] = count;
+      }
+    }
+    const practiceMap = {};
+    if (d.practiceMap && typeof d.practiceMap === 'object' && !Array.isArray(d.practiceMap)) {
+      for (const [key, value] of Object.entries(d.practiceMap)) {
+        const index = Number(key);
+        if (Number.isInteger(index) && index >= 0 && Number.isInteger(value) && value > 0) practiceMap[String(index)] = value;
+      }
+    }
+    normalized.decks[id] = {
+      sequentialCursor: Number.isInteger(d.sequentialCursor) && d.sequentialCursor >= 0 ? d.sequentialCursor : 0,
+      completed: Array.isArray(d.completed) ? [...new Set(d.completed.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b) : [],
+      wrongMap,
+      practiceMap,
+      bookmarks: Array.isArray(d.bookmarks) ? [...new Set(d.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b) : [],
+      dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : ''
+    };
+  }
+  if (!Object.keys(normalized.decks).length) return false;
+  return writeRoot(normalized);
+}
+
 export function storageAvailable() {
   try {
     const key = NS + ':probe';
