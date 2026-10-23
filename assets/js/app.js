@@ -869,7 +869,68 @@ function initUI() {
   refreshSetupUI();
 }
 
+function applyTheme(theme) {
+  const nextTheme = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = nextTheme;
+  const button = $('theme-toggle');
+  if (button) {
+    button.textContent = nextTheme === 'dark' ? '☀️ Giao diện sáng' : '🌙 Giao diện tối';
+    button.setAttribute('aria-pressed', String(nextTheme === 'light'));
+  }
+  try {
+    localStorage.setItem('qp-quiz-theme', nextTheme);
+  } catch {}
+}
+
+function initTheme() {
+  let theme = 'dark';
+  try {
+    const saved = localStorage.getItem('qp-quiz-theme');
+    if (saved === 'light' || saved === 'dark') theme = saved;
+  } catch {}
+  applyTheme(theme);
+}
+
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!$('screen-quiz') || $('screen-quiz').hidden || !$('modal').hidden) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+
+    if (/^[1-6]$/.test(event.key)) {
+      const option = $('options').querySelectorAll('.option')[Number(event.key) - 1];
+      if (option && !option.disabled) {
+        event.preventDefault();
+        option.click();
+      }
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (!$('btn-check').disabled) $('btn-check').click();
+      else if (!$('btn-next').disabled) $('btn-next').click();
+      return;
+    }
+    if (event.key === 'ArrowLeft' && !$('btn-prev').disabled) {
+      event.preventDefault();
+      $('btn-prev').click();
+    } else if (event.key === 'ArrowRight' && !$('btn-next').disabled) {
+      event.preventDefault();
+      $('btn-next').click();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      $('btn-quit').click();
+    }
+  });
+}
+
 function bindEvents() {
+  $('theme-toggle').addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  });
+  bindKeyboardShortcuts();
+
   document.querySelectorAll('.deck-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.currentDeck = btn.dataset.deck;
@@ -1053,6 +1114,7 @@ function registerSW() {
 }
 
 function boot() {
+  initTheme();
   if (!storageAvailable()) {
     toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
   }
