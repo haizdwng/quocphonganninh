@@ -1151,7 +1151,7 @@ function bindEvents() {
       return;
     }
     await loadAll();
-    toast('Đã khôi phục tiến độ từ tệp sao lưu.');
+    if (!state.error) toast('Đã khôi phục tiến độ từ tệp sao lưu.');
   });
 
   $('btn-reset-progress').addEventListener('click', async () => {
