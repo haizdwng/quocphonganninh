@@ -863,6 +863,8 @@ function registerSW() {
         nw.addEventListener('statechange', () => {
           if (nw.state === 'installed' && navigator.serviceWorker.controller) {
             $('update-banner').hidden = false;
+          } else if (nw.state === 'redundant') {
+            toast('Không thể cài bản offline mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.');
           }
         });
       });
