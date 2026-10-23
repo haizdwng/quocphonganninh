@@ -39,7 +39,8 @@ test('settings, progress and bookmarks persist through localStorage', () => {
     shuffleQ: true,
     shuffleA: false,
     startQuestion: 4,
-    endQuestion: 30
+    endQuestion: 30,
+    timeLimit: 25
   }), true);
   assert.deepEqual(getSettings(), {
     deck: 'qp2',
@@ -47,7 +48,8 @@ test('settings, progress and bookmarks persist through localStorage', () => {
     shuffleQ: true,
     shuffleA: false,
     startQuestion: 4,
-    endQuestion: 30
+    endQuestion: 30,
+    timeLimit: 25
   });
 
   assert.equal(saveDeckProgress('qp1', {
@@ -66,7 +68,7 @@ test('settings, progress and bookmarks persist through localStorage', () => {
 
 test('backup round-trip preserves settings and progress but excludes active sessions', () => {
   globalThis.localStorage = new MemoryStorage();
-  saveSettings({ deck: 'qp1', count: 7, shuffleQ: false, shuffleA: true, startQuestion: 1, endQuestion: 20 });
+  saveSettings({ deck: 'qp1', count: 7, shuffleQ: false, shuffleA: true, startQuestion: 1, endQuestion: 20, timeLimit: 5 });
   saveDeckProgress('qp2', {
     sequentialCursor: 12,
     completed: [1, 3],
@@ -78,13 +80,14 @@ test('backup round-trip preserves settings and progress but excludes active sess
   saveSession({ deckId: 'qp1', items: [] });
 
   const backup = exportBackup();
-  assert.equal(JSON.parse(backup).format, 'quocphong-quiz-backup');
+  assert.equal(JSON.parse(backup).format, 'quocphonganninh-backup');
   assert.equal(JSON.parse(backup).decks.qp2.bookmarks.length, 2);
   assert.equal('session' in JSON.parse(backup), false);
 
   globalThis.localStorage = new MemoryStorage();
   assert.equal(importBackup(backup), true);
   assert.equal(getSettings().count, 7);
+  assert.equal(getSettings().timeLimit, 5);
   assert.deepEqual(getDeckProgress('qp2').completed, [1, 3]);
   assert.deepEqual(getDeckProgress('qp2').bookmarks, [3, 8]);
   assert.equal(getSession(), null);
