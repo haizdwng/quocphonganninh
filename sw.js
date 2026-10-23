@@ -49,17 +49,17 @@ self.addEventListener('fetch', (event) => {
   if (isHTML) {
     event.respondWith(networkFirst(request));
   } else {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(cacheFirst(request, event));
   }
 });
 
-async function cacheFirst(request) {
+async function cacheFirst(request, event) {
   const cache = await caches.open(CACHE_VERSION);
   const cached = await cache.match(request, { ignoreSearch: true });
   if (cached) {
-    fetch(request).then((response) => {
-      if (response.ok) cache.put(request, response.clone());
-    }).catch(() => {});
+    event.waitUntil(fetch(request).then((response) => {
+      if (response.ok) return cache.put(request, response.clone());
+    }).catch(() => {}));
     return cached;
   }
 
