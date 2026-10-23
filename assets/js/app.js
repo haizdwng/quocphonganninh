@@ -248,7 +248,11 @@ function refreshSetupUI() {
 }
 
 function normalizeSearchText(value) {
-  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('vi');
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, (letter) => letter === 'Đ' ? 'D' : 'd')
+    .toLocaleLowerCase('vi');
 }
 
 function refreshSearchUI() {
@@ -910,13 +914,14 @@ function restoreSessionIfAny() {
     typeof question.question === 'string' && Array.isArray(question.options) && question.options.length >= 2 &&
     Number.isInteger(question.correct) && question.correct >= 0 && question.correct < question.options.length
   );
-  const legacyPoolCompatible = !legacyCompatible || saved.pool.every((question) => {
+  const poolMatchesCurrentData = saved.pool.every((question) => {
     const current = state.decks[saved.deckId][question.originalIndex];
-    return current && current.question.trim() === question.question.trim() &&
+    return current && current.question === question.question &&
       current.correct === question.correct &&
       JSON.stringify(current.options) === JSON.stringify(question.options);
   });
-  const validSession = validPool && legacyPoolCompatible && saved.items.length > 0 &&
+  const legacyPoolCompatible = !legacyCompatible || poolMatchesCurrentData;
+  const validSession = validPool && poolMatchesCurrentData && legacyPoolCompatible && saved.items.length > 0 &&
     Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length &&
     Number.isInteger(saved.maxReached) && saved.maxReached >= 0 && saved.maxReached < saved.items.length &&
     saved.viewIndex <= saved.maxReached &&
