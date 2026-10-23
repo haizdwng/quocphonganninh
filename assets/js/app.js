@@ -1123,6 +1123,8 @@ function initUI() {
 function applyTheme(theme) {
   const nextTheme = theme === 'light' ? 'light' : 'dark';
   document.documentElement.dataset.theme = nextTheme;
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.content = nextTheme === 'dark' ? '#07111f' : '#f3f7fb';
   const button = $('theme-toggle');
   if (button) {
     button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
