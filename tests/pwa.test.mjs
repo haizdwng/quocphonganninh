@@ -27,10 +27,10 @@ test('service worker routes the local font URL through its cache-aware handler',
 
 test('quiz UI keeps accessible live regions for changing questions and feedback', () => {
   const html = read('index.html');
-  assert.match(html, /id="q-text"[^>]*aria-live="polite"/);
-  assert.match(html, /id="feedback"[^>]*role="status"/);
-  assert.match(html, /id="network-status"[^>]*aria-live="polite"/);
-  assert.match(html, /id="screen-loading"[^>]*aria-label="Đang tải dữ liệu"/);
+  assert.match(html, /id=["']q-text["'][^>]*aria-live=["']polite["']/);
+  assert.match(html, /id=["']feedback["'][^>]*role=["']status["']/);
+  assert.match(html, /id=["']network-status["'][^>]*aria-live=["']polite["']/);
+  assert.match(html, /id=["']screen-loading["'][^>]*aria-label=["']Đang tải dữ liệu["']/);
   assert.ok(read('assets/css/style.css').includes('.loading-spinner'));
 });
 
