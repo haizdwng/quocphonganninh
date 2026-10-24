@@ -88,3 +88,20 @@ test('saved active sessions are read and cleared by deck id', () => {
   assert.match(storage, /root\.sessions\[session\.deckId\] = session/);
   assert.match(storage, /sessions\[id\] \|\| \(root\.session\?\.deckId === id \? root\.session : null\)/);
 });
+
+
+test('fresh setup defaults match the requested quiz configuration', () => {
+  const app = read('assets/js/app.js');
+  const storage = read('assets/js/storage.js');
+  const html = read('index.html');
+  assert.ok(storage.includes('count: Number.isInteger(count) && count > 0 ? count : 30'));
+  assert.ok(storage.includes('shuffleQ: settings.shuffleQ !== false'));
+  assert.ok(storage.includes(': 35,\n    practiceMode: settings.practiceMode === \'exam\' ? \'exam\' : \'practice\''));
+  assert.ok(app.includes("setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice')"));
+  assert.ok(html.includes("id='input-range-start' min='1' value='1'"));
+  assert.ok(html.includes("id='input-range-end' min='1' value='0'"));
+  assert.ok(html.includes("id='input-count' min='1' value='30'"));
+  assert.ok(html.includes("id='input-time-limit' min='0' max='1440' value='35'"));
+  assert.ok(html.includes("id='chk-shuffle-q' checked"));
+  assert.ok(html.includes("id='chk-shuffle-a' checked"));
+});
