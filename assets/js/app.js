@@ -1530,7 +1530,7 @@ function showSummary(summary, deckId, mode) {
   const scoreNum = Number(String(scoreVal).replace(',', '.')) || 0;
 
   $('sum-total').textContent = String(summary.total);
-  \( ('sum-score').textContent = ` \){scoreVal} / 10`;
+  $('sum-score').textContent = `${scoreVal} / 10`;
 
   const scoreBig = $('sum-score-big');
   const ringFg = $('score-ring-fg');
