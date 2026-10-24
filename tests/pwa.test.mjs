@@ -67,3 +67,24 @@ test('summary wrong-practice uses mistakes from the completed session, not all w
   assert.match(app, /startPracticeWrong\(\{ indices: state\._lastSummaryWrongIndices \}\)/);
   assert.match(app, /getRangeWrongIndices\(state\.currentDeck, form\.startQuestion, form\.endQuestion\)/);
 });
+
+
+test('whole-deck wrong-question practice uses the current deck history and all wrong indices', () => {
+  const app = read('assets/js/app.js');
+  const html = read('index.html');
+  assert.match(html, /id=['"]btn-practice-all-wrong['"]/);
+  assert.match(app, /const allWrongCount = getWrongIndices\(state\.currentDeck\)/);
+  assert.match(app, /startPracticeWrong\(\{ allDeck: true \}\)/);
+  assert.match(app, /allDeck \? getWrongIndices\(state\.currentDeck\)/);
+  assert.match(app, /allDeck \? wrongs\.length : form\.count/);
+  assert.match(app, /rangeStart: 1, rangeEnd: qs\.length, requestedCount: pool\.length/);
+});
+
+test('saved active sessions are read and cleared by deck id', () => {
+  const app = read('assets/js/app.js');
+  const storage = read('assets/js/storage.js');
+  assert.match(app, /getSession\(state\.currentDeck\)/);
+  assert.match(app, /clearSession\(s\.deckId\)/);
+  assert.match(storage, /root\.sessions\[session\.deckId\] = session/);
+  assert.match(storage, /sessions\[id\] \|\| \(root\.session\?\.deckId === id \? root\.session : null\)/);
+});
