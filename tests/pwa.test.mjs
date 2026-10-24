@@ -59,3 +59,11 @@ test('exam submission rechecks the deadline after awaiting confirmation', () => 
   const app = read('assets/js/app.js');
   assert.match(app, /if \(!ok\) return;[\s\S]*?enforceSessionDeadline\(\) \|\| state\.session !== s \|\| s\.reviewMode/);
 });
+
+
+test('summary wrong-practice uses mistakes from the completed session, not all wrongs in its range', () => {
+  const app = read('assets/js/app.js');
+  assert.match(app, /const sessionWrong = \[\.\.\.new Set\(summary\.wrongList\.map\(\(entry\) => entry\.originalIndex\)\)\]/);
+  assert.match(app, /startPracticeWrong\(\{ indices: state\._lastSummaryWrongIndices \}\)/);
+  assert.match(app, /getRangeWrongIndices\(state\.currentDeck, form\.startQuestion, form\.endQuestion\)/);
+});
