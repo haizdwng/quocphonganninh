@@ -57,7 +57,8 @@
       "Bôi nhọ văn hoá cách mạng",
       "Các phương án đều đúng"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Nắm vững mục tiêu, quan điểm, phương châm, nhiệm vụ phòng chống chiến lược “DBHB”, BLLĐ nhằm làm gì?",
@@ -107,7 +108,8 @@
       "Khoét sâu mâu thuẫn nội bộ",
       "Tất cả các hoạt động trên"
     ],
-    "correct": 2
+    "correct": 2,
+    "fixed": true
   },
   {
     "question": "Mục đích chống phá lực lượng vũ trang nhân dân của chiến lược “DBHB” là gì?",
@@ -167,7 +169,8 @@
       "Tạo sự cạnh tranh các Đảng phái",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nguyên tắc cơ bản trong đấu tranh chống BLLĐ là gì?",
@@ -247,7 +250,8 @@
       "Gây rối và bạo loạn lật đổ",
       "Các phương án trên"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Chiến lược “DBHB” là chiến lược nhằm mục đích gì?",
@@ -337,7 +341,8 @@
       "Tự diễn biến mà thắng",
       "Phương án B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -347,7 +352,8 @@
       "Do sự khác biệt về lợi ích của các dân tộc",
       "Do sự khác biệt về ngôn ngữ, văn hóa, tâm lý"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -357,7 +363,8 @@
       "Do tàn dư tư tưởng dân tộc tự ti dân tộc",
       "Tất cả phương án A, B và C"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -367,7 +374,8 @@
       "Sự khác biệt lợi ích các dân tộc",
       "Thiếu sót, hạn chế trong hoặch địch chính sách"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -377,7 +385,8 @@
       "Sự khác biệt lợi ích của các dân tộc",
       "Sự kích động chia rẽ các dân tộc của địch"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -387,7 +396,8 @@
       "Tàn dư tư tưởng tự ti dân tộc",
       "Sự khác biệt ngôn ngữ, văn hóa, tâm lý"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -397,7 +407,8 @@
       "Tất cả các phương án",
       "Mâu thuẫn dân tộc không thể giải quyết"
     ],
-    "correct": 1
+    "correct": 1,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -407,7 +418,8 @@
       "Mâu thuẫn dân tộc không thể giải quyết",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -417,7 +429,8 @@
       "Tất cả các phương án",
       "Mâu thuẫn dân tộc không thể giải quyết"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -427,7 +440,8 @@
       "Mâu thuẫn dân tộc không thể giải quyết",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -437,7 +451,8 @@
       "Tất cả các phương án",
       "Mâu thuẫn dân tộc không thể giải quyết"
     ],
-    "correct": 1
+    "correct": 1,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, tư tưởng Hồ Chí Minh vấn đề dân tộc là vấn đề có vị trí như thế nào trong cách mạng XHCN",
@@ -457,7 +472,8 @@
       "Đào tạo nguồn nhân lực là con em đồng bào Dân tộc thiểu số",
       "Phương án B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Đảng ta có quan điểm về vấn đề Dân tộc và đại đoàn kết Dân tộc như thế nào trong sự nghiệp cách mạng của nước ta?",
@@ -467,7 +483,8 @@
       "Cùng nhau thực hiện thắng lợi sự nghiệp XD và BVTQ",
       "Chăm lo đời sống vật chất tinh thần, phát huy bản sắc VH Dân tộc"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Quan điểm của Đảng ta về Dân tộc và đoàn kết Dân tộc hiện nay có vị trí như thế nào?",
@@ -477,7 +494,8 @@
       "Đặc biệt quan trọng trong xây dựng đại đoàn kết dân tộc",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Một trong những quan điểm chính sách của Đảng về quan hệ các dân tộc được đặt ra trong đại hội Đảng lần thứ X là gì?",
@@ -487,7 +505,8 @@
       "Không đối xử phân biệt địa vị chính trị giữa các dân tộc",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Đai hội Đảng lần thứ X đã đề ra quan điểm, chính sách trọng tâm đối với các Dân tộc ở Việt nam như thế nào?",
@@ -497,7 +516,8 @@
       "Động viên trí thức là người Dân tộc thiểu số về công tác tại địa phương",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Đai hội Đảng lần thứ X đã đề ra quan điểm, chính sách trọng tâm đối với các Dân tộc ở Việt nam như thế nào?",
@@ -507,7 +527,8 @@
       "Bảo đảm thông tin, giao thông phát triển kinh tế vùng sâu, vùng xa",
       "Phương án A và B"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách trọng tâm về vấn đề dân tộc là gì?",
@@ -517,7 +538,8 @@
       "Đầu tư vững mạnh cho y tế, giáo dục, giao thông miền núi",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách dân tộc là gì?",
@@ -527,7 +549,8 @@
       "Duy trì tất cả các chính sách về xây dựng kinh tế mới",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách dân tộc là gì?",
@@ -537,7 +560,8 @@
       "Thực hiện tốt các chính sách động viên nhân dân sống định canh",
       "Phương án A và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách dân tộc là gì?",
@@ -547,7 +571,8 @@
       "Ưu tiên phát hiện nhân lực là nguồn đồng bào thiểu số",
       "Phương án B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách dân tộc là gì?",
@@ -557,7 +582,8 @@
       "Cử cán bộ có khả năng và trình độ công tác lâu dài vùng đồng bảo dân tộc thiểu số",
       "Phương án A và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách dân tộc là gì?",
@@ -567,7 +593,8 @@
       "Phương án A và D",
       "Bài trừ tư tưởng phân biệt địa vị xã hội giữa các dân tộc"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Trong đời sống xã hội, tôn giáo là tổ chức có qui mô, hoạt động như thế nào?",
@@ -597,7 +624,8 @@
       "Tổ chức tôn giáo",
       "Tất cả các phương án"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Hoạt động xã hội tôn giáo bị chi phối bởi những yếu tố nào?",
@@ -607,7 +635,8 @@
       "Cuồng tín của tín đồ",
       "Phương án A và B"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Những yếu tố nào liên quan đến hoạt động xã hội của tôn giáo?",
@@ -617,7 +646,8 @@
       "Niềm tin nơi tôn giáo",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Hoạt động xã hội của tôn giáo không thể hoạt động khi thiếu yếu tố nào sau đây?",
@@ -627,7 +657,8 @@
       "Hệ thống giáo lý",
       "Phương án A và C"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của Đảng nhà nước ta, hoạt động mê tín dị đoan phải được giải quyết như thế nào?",
@@ -657,7 +688,8 @@
       "Nguồn gốc nhận thức tôn giáo",
       "Nguồn gốc tâm lý tôn giáo"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Một trong những nguồn gốc hình thành tôn giáo trong xã hội là yếu tố nào?",
@@ -697,7 +729,8 @@
       "Tính quần chúng",
       "Tính chính trị"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Một trong những tính chất của tôn giáo được bộc lộ trong đời sống xã hội là gì?",
@@ -737,7 +770,8 @@
       "Tôn trọng và bảo đảm quyền tự do tín ngưỡng và không tín ngưỡng",
       "Quán triệt quan điểm lịch sử khi giải quyết vấn đề tôn giáo"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Nội dung cốt lõi trong công tác tôn giáo của Đảng là công tác vận động quần chúng như thế nào?",
@@ -747,7 +781,8 @@
       "Sống tự do tín ngưỡng",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Chính sách tôn giáo của Đảng khẳng định vị trí của đồng bào tôn giáo là một bộ phận như thế nào trong khối đại đoàn kết dân tộc?",
@@ -777,7 +812,8 @@
       "Xóa bỏ sự lãnh đạo của Đảng",
       "Vô hiệu hiệa sự quản lý của nhà nước"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Địch nhằm vào mục tiêu nào để thực hiện âm mưu lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt nam,?",
@@ -787,7 +823,8 @@
       "Xuyên tạc chủ nghĩa Mác-Lênin, tư tưởng Hồ Chí Minh",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt nam, địch thường nhằm vào mục tiêu nào?",
@@ -797,7 +834,8 @@
       "Xuyên tạc chủ nghĩa Mác-Lênin, tư tưởng Hồ Chí Minh",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Thực hiện âm mưu lợi dụng vấn đề dân tộc tôn giáo địch nhằm vào mục tiêu nào để chống phá cách mạng Việt nam,?",
@@ -807,7 +845,8 @@
       "Xuyên tạc CNML, tư tưởng HCM",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch là gì?",
@@ -817,7 +856,8 @@
       "Chúng lợi dụng dân tộc, tôn giáo để kích động",
       "Chúng tập trung phá hoại các cơ sở KT,XH"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Thủ đoạn nào là thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch?",
@@ -827,7 +867,8 @@
       "Xóa bỏ sự lãnh đạo của Đảng ta",
       "Tất cả các phương án"
     ],
-    "correct": 1
+    "correct": 1,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -837,7 +878,8 @@
       "Tăng cường xây dựng, củng cố khối ĐĐK dân tộc",
       "Chăm lo, nâng cao đời sống vật chất tinh thần cho nhân dân"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -847,7 +889,8 @@
       "Tăng cường xây dựng, củng cố khối đại đoàn kết dân tộc",
       "Phát huy vai trò của cả hệ thống chinh trị tham gia phòng chống"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -857,7 +900,8 @@
       "Tăng cường xây dựng, củng cố khối ĐĐK dân tộc",
       "Đấu tranh trên mặt trận tư tưởng làm thất bại âm mưu của địch"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -867,7 +911,8 @@
       "Phát huy vai trò của cả hệ thống chính trị phòng chống sự lợi dụng của địch",
       "Chăm lo, nâng cao đời sống vật chất tinh thần cho nhân dân"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -877,7 +922,8 @@
       "Đấu tranh trên mặt trận tư tưởng, làm thất bại âm mưu của địch",
       "Chăm lo, nâng cao đời sống vật chất tinh thần cho nhân dân"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -887,7 +933,8 @@
       "Phát huy vai trò của cả hệ thống chinh trị phòng chống sự lợi dụng của địch",
       "Đấu tranh trên mặt trận tư tưởng, làm thất bại mọi âm mưu của địch"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -897,7 +944,8 @@
       "Phát huy vai trò của cả hệ thống chính trị phòng chống sự lợi dụng của địch",
       "Chăm lo, nâng cao đời sống vật chất tinh thần cho nhân dân"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -907,7 +955,8 @@
       "Tuyên truyền, quán triệt quan điểm chinh sách DT, TG của Đảng",
       "Chăm lo, nâng cao đời sống vật chất tinh thần cho nhân dân"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -917,7 +966,8 @@
       "Chủ động đấu tranh trên mặt trận tư tưởng làm thất bại mọi âm mưu của địch",
       "Chăm lo, nâng cao đời sống vật chất tinh thần cho nhân dân"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -927,7 +977,8 @@
       "Chủ động đập tan âm mưu chống phá của các tổ chức phản động",
       "Tất cả các phương án A, B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -937,7 +988,8 @@
       "Chủ động đập tan âm mưu chống phá của các tổ chức phản động",
       "Tất cả các phương án A, B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -947,7 +999,8 @@
       "Chủ động đập tan âm mưu chống phá của các tổ chức phản động",
       "Tất cả các phương án A, B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -957,7 +1010,8 @@
       "Chủ động đập tan âm mưu chống phá của các tổ chức phản động",
       "Tất cả các phương án"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam",
@@ -967,7 +1021,8 @@
       "Chủ động đập tan âm mưu chống phá của các tổ chức phản động",
       "Tất cả các phương án A, B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo từ điển bách khoa tôn giáo năm 2001, tôn giáo nào có số lượng chức sắc tín đồ lớn nhất thế giới?",
@@ -987,7 +1042,8 @@
       "Sự thống trị kích động chia rẽ dân tộc",
       "Sự khác biệt về ngôn ngữ, văn hóa, tâm lý"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -997,7 +1053,8 @@
       "Mâu thuẫn dân tộc không thể giải quyết",
       "Tất cả các phương án A, B và C"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Các dân tộc của Việt Nam có đặc điểm như thế nào?",
@@ -1007,7 +1064,8 @@
       "Dân tộc thiểu số ở Việt Nam cư trú phân tán, xen kẽ trên dịa bàn rộng lớn",
       "Các Dân tộc VN có sắc thái văn hóa riêng tạo nên sự đa dạng phong phú văn hoá Việt Nam"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Đảng ta xác định tập trung vào những vấn đề gì trong công tác dân tộc hiện nay ?",
@@ -1017,7 +1075,8 @@
       "Nâng cao đời sống đồng bào các dân tộc, giữ gìn, phát huy bản sắc VH",
       "Thực hiện bình đẳng, đoàn kết, tôn trọng giúp đỡ nhau cùng tiến bộ"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Đảng, Nhà nước ta xác định tập trung vào vấn đề gì trong công tác dân tộc hiện nay ?",
@@ -1027,7 +1086,8 @@
       "Thay đổi chính sách kinh tế, xã hội phù hợp với từng vùng",
       "Phương án A và B"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Đảng, Nhà nước ta xác định tập trung vào vấn đề gì trong công tác dân tộc hiện nay ?",
@@ -1037,7 +1097,8 @@
       "Ưu tiên phát triển ở vùng sâu, vùng xa, vùng biên giới",
       "Xây dựng kế hoạch nhân lực công tác ở những vùng khó khăn"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Các dân tộc của Việt Nam có đặc điểm như thế nào?",
@@ -1047,7 +1108,8 @@
       "Dân tộc thiểu số ở Việt Nam cư trú phân tán, xen kẽ trên địa bàn rộng lớn",
       "Dân tộc ở nước ta có quy mô dân số, trình độ phát triển không đồng đều"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Thủ đoạn nào là thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch?",
@@ -1057,7 +1119,8 @@
       "Chúng lợi dụng vấn đề daan tộc, tôn giáo để kích động",
       "Xây dựng, nuôi dưỡng tổ chức phản động"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Thủ đoạn nào là thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch?",
@@ -1067,7 +1130,8 @@
       "Tập trung phá hoại các cơ sở KT, XH",
       "Xây dựng, nuôi dưỡng tổ chức phản động"
     ],
-    "correct": 0
+    "correct": 0,
+    "fixed": true
   },
   {
     "question": "Thủ đoạn nào là thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch?",
@@ -1077,7 +1141,8 @@
       "Xây dựng, nuôi dưỡng tổ chức phản động",
       "Tất cả các phương án A, B và C"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Thủ đoạn nào là thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch?",
@@ -1087,7 +1152,8 @@
       "Tất cả các phương án A, B và D",
       "Chúng tập trung phá hoại các cơ sở kinh tế - xã hội"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Vị trí, vai trò của việc phòng chống vi phạm pháp luật về bảo đảm trật tự An toàn giao thông ở Việt Nam hiện nay?",
@@ -2575,7 +2641,8 @@
       "Tham gia tích cực và hưởng ứng các chương trình, hành động về bảo vệ môi trường do Nhà nước, các Bộ ngành phát động.",
       "Cả A,B,C đều đúng"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Trách nhiệm của các nhà trường trong công tác phòng, chống vi phạm pháp luật về môi trường ?",
@@ -2585,7 +2652,8 @@
       "Cả A,B đều đúng",
       "Cả A,B,C đều sai"
     ],
-    "correct": 2
+    "correct": 2,
+    "fixed": true
   },
   {
     "question": "Trách nhiệm của sinh viên trong công tác phòng, chống vi phạm pháp luật về môi trường ?",
@@ -2595,7 +2663,8 @@
       "Cả A,B đều sai",
       "Cả A,B đều đúng"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   },
   {
     "question": "Trách nhiệm của sinh viên trong công tác phòng, chống vi phạm pháp luật về môi trường ?",
@@ -2605,7 +2674,8 @@
       "Cả A, B đều đúng",
       "Cả A, B, C đều sai"
     ],
-    "correct": 2
+    "correct": 2,
+    "fixed": true
   },
   {
     "question": "Trách nhiệm của sinh viên trong công tác phòng, chống vi phạm pháp luật về môi trường ?",
@@ -2615,6 +2685,7 @@
       "Xây dựng văn hóa ứng xử, ý thức thức trách nhiệm với môi trường như sống thân thiện với môi trường xung quanh; tích cực trồng cây xanh; hạn chế sử dụng các phương tiện giao thông cá nhân để bảo vệ môi trường không khí; tham gia thu gom rác thải tại nơi sinh sống và học tập",
       "Cả A,B,C đều đúng"
     ],
-    "correct": 3
+    "correct": 3,
+    "fixed": true
   }
 ]
