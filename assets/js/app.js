@@ -1642,29 +1642,14 @@ function initUI() {
   refreshSetupUI();
 };
 
-function applyTheme(theme) {
-  const nextTheme = theme === 'light' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = nextTheme;
+function applyTheme() {
+  document.documentElement.dataset.theme = 'dark';
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = nextTheme === 'dark' ? '#07111f' : '#f3f7fb';
-  const button = $('theme-toggle');
-  if (button) {
-    button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
-    button.dataset.icon = nextTheme === 'dark' ? 'sun' : 'moon';
-    button.setAttribute('aria-pressed', String(nextTheme === 'light'));
-  };
-  try {
-    localStorage.setItem('theme', nextTheme);
-  } catch {};
+  if (themeColor) themeColor.content = '#07111f';
 };
 
 function initTheme() {
-  let theme = 'dark';
-  try {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'light' || saved === 'dark') theme = saved;
-  } catch {};
-  applyTheme(theme);
+  applyTheme();
 };
 
 function bindKeyboardShortcuts() {
@@ -1724,9 +1709,6 @@ function bindKeyboardShortcuts() {
 };
 
 function bindEvents() {
-  $('theme-toggle').addEventListener('click', () => {
-    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-  });
   bindKeyboardShortcuts();
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
