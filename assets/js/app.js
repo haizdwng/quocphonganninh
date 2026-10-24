@@ -1086,6 +1086,9 @@ async function onExamSubmit() {
     const ok = await confirmModal('Nộp bài thi?', `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`);
     if (!ok) return;
   };
+
+  // The deadline may expire while the confirmation dialog is open.
+  if (enforceSessionDeadline() || state.session !== s || s.reviewMode) return;
   state.examSubmitting = true;
   updateExamProgressHeader();
   try {
