@@ -972,6 +972,7 @@ function renderQuestion() {
   const highlightToolbar = $('quiz-highlight-toolbar');
   if (highlightToolbar) {
     highlightToolbar.hidden = s.examMode === true;
+    $('highlight-help').hidden = s.examMode === true;
     $('btn-highlight-edit').setAttribute('aria-pressed', String(state.highlightEditMode));
     $('btn-highlight-edit').textContent = state.highlightEditMode ? 'Xong chỉnh sửa' : 'Chỉnh highlight';
     $('btn-highlight-apply').hidden = !state.highlightEditMode;
