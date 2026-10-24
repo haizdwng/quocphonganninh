@@ -2172,23 +2172,8 @@ function registerSW() {
   });
 };
 
-function initNetworkStatus() {
-  const status = $('network-status');
-  if (!status) return;
-  const update = () => {
-    const online = navigator.onLine;
-    status.textContent = online ? 'Có kết nối mạng' : 'Ngoại tuyến · dùng dữ liệu đã lưu';
-    status.dataset.state = online ? 'online' : 'offline';
-    status.setAttribute('aria-label', online ? 'Trình duyệt đang có kết nối mạng' : 'Trình duyệt đang ngoại tuyến');
-  };
-  window.addEventListener('online', update);
-  window.addEventListener('offline', update);
-  update();
-};
-
 function boot() {
   initTheme();
-  initNetworkStatus();
   if (!storageAvailable()) {
     toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
   };

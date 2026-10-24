@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh:v39';
+const CACHE_VERSION = 'quocphonganninh:40';
 const CACHE_PREFIX = 'quocphonganninh:';
 const ESSENTIAL = [
   './',
@@ -12,8 +12,6 @@ const ESSENTIAL = [
   './data/quocphong1.json',
   './data/quocphong2.json',
   './assets/icons/icon.svg',
-  './assets/icons/tabler/sun.svg',
-  './assets/icons/tabler/moon.svg',
   './assets/icons/tabler/search.svg',
   './assets/icons/tabler/bookmark.svg',
   './assets/icons/tabler/check.svg',
@@ -25,14 +23,12 @@ const ESSENTIAL = [
   './assets/icons/tabler/upload.svg',
   './assets/icons/tabler/trash.svg',
   './assets/icons/tabler/alert-circle.svg',
-  './assets/icons/tabler/wifi.svg',
-  './assets/icons/tabler/wifi-off.svg',
   './assets/icons/tabler/book-2.svg',
   './assets/icons/tabler/list-check.svg',
   './assets/icons/tabler/arrow-right.svg',
   './assets/icons/tabler/arrow-left.svg',
   './assets/icons/tabler/rotate-clockwise.svg',
-  './assets/icons/tabler/x.svg',
+  './assets/icons/tabler/x.svg'
 ];
 
 const INTER_FONT_URL = 'https://raw.githubusercontent.com/rsms/inter/v4.1/docs/font-files/InterVariable.woff2';
