@@ -284,6 +284,35 @@ export function toggleBookmark(deckId, originalIndex) {
   return saveDeckProgress(deckId, progress) ? bookmarks.has(originalIndex) : null;
 };
 
+function normalizeHighlightRanges(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((range) =>
+    range && typeof range === 'object' &&
+    (range.target === 'question' || /^option:\\d+$/.test(range.target)) &&
+    Number.isInteger(range.start) && range.start >= 0 &&
+    Number.isInteger(range.end) && range.end > range.start
+  ).map((range) => ({ target: range.target, start: range.start, end: range.end }));
+};
+
+export function getQuestionHighlights(deckId, originalIndex) {
+  const root = readRoot();
+  const highlights = root.highlights && typeof root.highlights === 'object' ? root.highlights : {};
+  const deck = highlights[normalizeDeckId(deckId)];
+  return normalizeHighlightRanges(deck && deck[String(originalIndex)]);
+};
+
+export function saveQuestionHighlights(deckId, originalIndex, ranges) {
+  if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
+  const root = readRoot();
+  if (!root.highlights || typeof root.highlights !== 'object' || Array.isArray(root.highlights)) root.highlights = {};
+  const id = normalizeDeckId(deckId);
+  if (!root.highlights[id] || typeof root.highlights[id] !== 'object' || Array.isArray(root.highlights[id])) root.highlights[id] = {};
+  const normalized = normalizeHighlightRanges(ranges);
+  if (normalized.length) root.highlights[id][String(originalIndex)] = normalized;
+  else delete root.highlights[id][String(originalIndex)];
+  return writeRoot(root);
+};
+
 export function exportBackup() {
   const root = readRoot();
   const list = readSettingsList(root);
@@ -293,7 +322,8 @@ export function exportBackup() {
     exportedAt: new Date().toISOString(),
     settings: list.length ? list : [],
     activeDeck: root.activeDeck || 'qp1',
-    decks: root.decks || {}
+    decks: root.decks || {},
+    highlights: root.highlights || { qp1: {}, qp2: {} }
   }, null, 2);
 };
 
@@ -324,7 +354,21 @@ export function importBackup(raw) {
   const normalized = {
     settings: settingsList,
     activeDeck: normalizeDeckId(backup.activeDeck || settingsList[0]?.deck || 'qp1'),
-    decks: {}
+    decks: {},
+    highlights: { qp1: {}, qp2: {} }
+  };
+
+  if (backup.highlights && typeof backup.highlights === 'object' && !Array.isArray(backup.highlights)) {
+    for (const id of ['qp1', 'qp2']) {
+      const deck = backup.highlights[id];
+      if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
+      for (const [key, ranges] of Object.entries(deck)) {
+        const index = Number(key);
+        if (!Number.isInteger(index) || index < 0) continue;
+        const valid = normalizeHighlightRanges(ranges);
+        if (valid.length) normalized.highlights[id][String(index)] = valid;
+      };
+    };
   };
 
   for (const id of ['qp1', 'qp2']) {
