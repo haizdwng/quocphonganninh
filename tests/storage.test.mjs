@@ -181,7 +181,11 @@ test('missing deck settings do not inherit the other deck settings', () => {
   saveSettings({ deck: 'qp1', count: 37, shuffleQ: false, shuffleA: true, startQuestion: 1, endQuestion: 100 });
   const qp2 = getSettings('qp2');
   assert.equal(qp2.deck, 'qp2');
-  assert.equal(qp2.count, 20);
+  assert.equal(qp2.count, 30);
+  assert.equal(qp2.timeLimit, 35);
+  assert.equal(qp2.shuffleQ, true);
+  assert.equal(qp2.shuffleA, true);
+  assert.equal(qp2.practiceMode, 'practice');
   assert.equal(qp2.endQuestion, 0);
 });
 
@@ -197,4 +201,22 @@ test('clearing one deck session does not delete a legacy session belonging to th
   assert.equal(clearSession(), true);
   assert.equal(getSession('qp1'), null);
   assert.deepEqual(getSession('qp2'), legacy);
+});
+
+
+test('new settings default to the requested quiz configuration while preserving explicit values', () => {
+  globalThis.localStorage = new MemoryStorage();
+  assert.deepEqual(getSettings('qp1'), {
+    deck: 'qp1', count: 30, shuffleQ: true, shuffleA: true,
+    startQuestion: 1, endQuestion: 0, timeLimit: 35, practiceMode: 'practice'
+  });
+  assert.equal(saveSettings({ deck: 'qp1', count: 12, shuffleQ: false, shuffleA: false, startQuestion: 3, endQuestion: 20, timeLimit: 0, practiceMode: 'exam' }), true);
+  assert.deepEqual(getSettings('qp1'), {
+    deck: 'qp1', count: 12, shuffleQ: false, shuffleA: false,
+    startQuestion: 3, endQuestion: 20, timeLimit: 0, practiceMode: 'exam'
+  });
+  assert.deepEqual(getSettings('qp2'), {
+    deck: 'qp2', count: 30, shuffleQ: true, shuffleA: true,
+    startQuestion: 1, endQuestion: 0, timeLimit: 35, practiceMode: 'practice'
+  });
 });
