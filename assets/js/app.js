@@ -53,6 +53,9 @@ const state = {
   examFilter: 'all',
   examSubmitting: false,
   reviewSearch: '',
+  reviewSelectMode: false,
+  reviewSelectedIndices: new Set(),
+  _lastSummarySession: null,
   _lastSummaryWrongIndices: [],
   _lastSummaryRangeStart: null,
   _lastSummaryRangeEnd: null,
@@ -209,24 +212,54 @@ function currentQuestions() {
 
 function renderQuestionBank() {
   const questions = currentQuestions();
+  const form = readSetupForm();
   const query = normalizeSearchText(state.reviewSearch.trim());
-  const filtered = query
-    ? questions.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
+  const inRange = state.reviewSelectMode
+    ? questions.filter((question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion)
     : questions;
+  const filtered = (query
+    ? inRange.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
+    : inRange);
+  const selectedCount = state.reviewSelectedIndices.size;
+  $('btn-review-select-mode').textContent = state.reviewSelectMode ? 'Thoát chọn câu' : 'Tự chọn câu';
+  $('review-selection-tools').hidden = !state.reviewSelectMode;
+  $('btn-review-start-selected').textContent = `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${selectedCount} câu đã chọn`;
+  $('btn-review-start-selected').disabled = selectedCount === 0;
+  $('review-selection-count').textContent = state.reviewSelectMode
+    ? `Đã chọn ${selectedCount} câu · Phạm vi câu gốc ${form.startQuestion}–${form.endQuestion}.`
+    : '';
   const list = $('review-list');
   const fragment = document.createDocumentFragment();
   $('review-title').textContent = DECKS[state.currentDeck].label;
   $('review-description').textContent = `${questions.length} câu.`;
-  $('review-count').textContent = query
-    ? `Hiển thị ${filtered.length}/${questions.length} câu phù hợp.`
-    : `Hiển thị toàn bộ ${questions.length} câu.`;
+  $('review-count').textContent = state.reviewSelectMode
+    ? `Hiển thị ${filtered.length} câu trong vùng đã chọn.`
+    : query
+      ? `Hiển thị ${filtered.length}/${questions.length} câu phù hợp.`
+      : `Hiển thị toàn bộ ${questions.length} câu.`;
 
   for (const question of filtered) {
     const card = document.createElement('article');
     card.className = 'review-q-card';
+    card.id = `review-question-${question.originalIndex + 1}`;
     const heading = document.createElement('h3');
     heading.className = 'review-q-heading';
     heading.textContent = `Câu ${question.originalIndex + 1}`;
+    if (state.reviewSelectMode) {
+      const selectLabel = document.createElement('label');
+      selectLabel.className = 'review-select-label';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = state.reviewSelectedIndices.has(question.originalIndex);
+      checkbox.setAttribute('aria-label', `Chọn câu ${question.originalIndex + 1}`);
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) state.reviewSelectedIndices.add(question.originalIndex);
+        else state.reviewSelectedIndices.delete(question.originalIndex);
+        renderQuestionBank();
+      });
+      selectLabel.append(checkbox, document.createTextNode('Chọn câu này'));
+      card.appendChild(selectLabel);
+    };
     const prompt = document.createElement('p');
     prompt.className = 'review-q-text';
     prompt.textContent = question.question;
@@ -266,7 +299,9 @@ function renderQuestionBank() {
 
 function openQuestionBank() {
   state.reviewSearch = '';
+  state.reviewSelectMode = false;
   $('input-review-search').value = '';
+  $('input-review-goto').value = '';
   renderQuestionBank();
   showScreen('review');
 };
@@ -1539,6 +1574,16 @@ function finishSession() {
       toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
     };
   };
+  state._lastSummarySession = {
+    deckId: s.deckId,
+    mode: s.examMode || s.mode === 'exam' ? 'exam' : 'practice',
+    sourceMode: s.mode,
+    indices: [...new Set(s.pool.map((question) => question.originalIndex))],
+    rangeStart: Number.isInteger(s.rangeStart) ? s.rangeStart : 1,
+    rangeEnd: Number.isInteger(s.rangeEnd) ? s.rangeEnd : (state.decks[s.deckId] || []).length,
+    requestedCount: s.items.length,
+    timeLimit: Number.isInteger(s.timeLimit) ? s.timeLimit : 0
+  };
   state._lastSummaryWrongIndices = wrongInSession.map((entry) => entry.originalIndex);
   state._lastSummaryRangeStart = Number.isInteger(s.rangeStart) ? s.rangeStart : null;
   state._lastSummaryRangeEnd = Number.isInteger(s.rangeEnd) ? s.rangeEnd : null;
@@ -1625,6 +1670,10 @@ function showSummary(summary, deckId, mode) {
   };
 
   state.currentDeck = deckId;
+  const retryButton = $('btn-sum-retry-session');
+  retryButton.hidden = !['normal', 'exam'].includes(mode);
+  retryButton.textContent = mode === 'exam' ? 'Thi lại lượt thi này' : 'Ôn lại lượt ôn này';
+
   const btnPractice = $('btn-sum-practice');
   const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.originalIndex))];
   state._lastSummaryWrongIndices = sessionWrong;
@@ -1927,6 +1976,60 @@ function bindEvents() {
     state.reviewSearch = $('input-review-search').value;
     renderQuestionBank();
   });
+  $('btn-review-select-mode').addEventListener('click', () => {
+    state.reviewSelectMode = !state.reviewSelectMode;
+    renderQuestionBank();
+  });
+  $('btn-review-start-selected').addEventListener('click', () => {
+    const selected = currentQuestions().filter((question) => state.reviewSelectedIndices.has(question.originalIndex));
+    if (!selected.length) {
+      toast('Hãy chọn ít nhất một câu hỏi.');
+      return;
+    };
+    const form = readSetupForm();
+    $('input-count').value = String(selected.length);
+    persistSetupForm();
+    const selectedIndices = selected.map((question) => question.originalIndex);
+    const pool = selected.slice();
+    state.reviewSelectedIndices.clear();
+    state.reviewSelectMode = false;
+    startSessionFromPool(pool, {
+      mode: 'normal',
+      sequential: false,
+      rangeStart: Math.min(...selectedIndices) + 1,
+      rangeEnd: Math.max(...selectedIndices) + 1,
+      requestedCount: selected.length,
+      examMode: state.practiceMode === 'exam',
+      forceShuffleQ: form.shuffleQ,
+      alreadyShuffled: false
+    });
+  });
+  $('btn-review-goto').addEventListener('click', () => {
+    const n = Number.parseInt($('input-review-goto').value, 10);
+    const total = currentQuestions().length;
+    if (!Number.isInteger(n) || n < 1 || n > total) {
+      toast(`Nhập số câu từ 1 đến ${total}.`);
+      return;
+    };
+    if (state.reviewSelectMode) {
+      const form = readSetupForm();
+      if (n < form.startQuestion || n > form.endQuestion) {
+        toast(`Câu này nằm ngoài vùng ${form.startQuestion}–${form.endQuestion} đang chọn.`);
+        return;
+      };
+    };
+    const target = `review-question-${n}`;
+    if (!$(target)) {
+      state.reviewSearch = '';
+      $('input-review-search').value = '';
+      renderQuestionBank();
+    };
+    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById(target)?.classList.add('review-q-highlight');
+  });
+  $('input-review-goto').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') $('btn-review-goto').click();
+  });
 
   $('btn-start').addEventListener('click', () => startNormal({ sequential: false }));
   $('btn-continue').addEventListener('click', () => startNormal({ sequential: true }));
@@ -2057,6 +2160,39 @@ function bindEvents() {
     if (!cleared) toast('Không thể xóa phiên đã lưu; phiên này có thể xuất hiện lại khi tải trang.');
     showScreen('setup');
     refreshSetupUI();
+  });
+
+  $('btn-sum-retry-session').addEventListener('click', () => {
+    const previous = state._lastSummarySession;
+    if (!previous || !state.decks[previous.deckId]) {
+      toast('Không tìm thấy dữ liệu lượt vừa hoàn thành.');
+      return;
+    };
+    state.currentDeck = previous.deckId;
+    const byIndex = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
+    const pool = previous.indices.map((index) => byIndex.get(index)).filter(Boolean);
+    if (!pool.length) {
+      toast('Không còn câu hỏi phù hợp để làm lại.');
+      return;
+    };
+    $('input-range-start').value = String(previous.rangeStart);
+    $('input-range-end').value = String(previous.rangeEnd);
+    $('input-count').value = String(pool.length);
+    $('input-time-limit').value = String(previous.timeLimit);
+    $('chk-shuffle-q').checked = true;
+    $('chk-shuffle-a').checked = true;
+    setPracticeMode(previous.mode === 'exam' ? 'exam' : 'practice');
+    persistSetupForm();
+    startSessionFromPool(pool, {
+      mode: 'normal',
+      sequential: false,
+      rangeStart: previous.rangeStart,
+      rangeEnd: previous.rangeEnd,
+      requestedCount: pool.length,
+      examMode: previous.mode === 'exam',
+      forceShuffleQ: true,
+      alreadyShuffled: false
+    });
   });
 
   $('btn-sum-home').addEventListener('click', () => {
