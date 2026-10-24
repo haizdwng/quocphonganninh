@@ -152,10 +152,6 @@ function showScreen(name) {
   };
   state.mode = name;
   document.body.dataset.screen = name;
-  const header = document.querySelector('.app-header');
-  if (header) {
-    header.hidden = name === 'quiz' || name === 'exam';
-  };
   if (screen) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
@@ -873,8 +869,6 @@ function setPracticeMode(mode) {
   document.querySelectorAll('.mode-btn').forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.mode === state.practiceMode);
   });
-  const subtitle = document.querySelector('.app-header .subtitle');
-  if (subtitle) subtitle.textContent = state.practiceMode === 'exam' ? 'Thi thử' : 'Ôn luyện';
   const startBtn = $('btn-start');
   if (startBtn) {
     startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn';

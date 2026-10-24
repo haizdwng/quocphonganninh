@@ -14,14 +14,6 @@
 </head>
 <body>
   <div id='app'>
-    <header class='app-header'>
-      <div class='header-title'>
-        <h1>Trắc nghiệm Quốc Phòng An Ninh</h1>
-        <p class='subtitle'>Ôn luyện</p>
-        <p class='network-status' id='network-status' role='status' aria-live='polite'>Đang kiểm tra kết nối…</p>
-      </div>
-    </header>
-
     <main id='main'>
       <section id='screen-loading' class='screen active' aria-label='Đang tải dữ liệu'>
         <div class='card loading-card' role='status' aria-live='polite'>
@@ -111,17 +103,6 @@
           </div>
         </div>
 
-        <div class='card resume-card' id='resume-card' hidden>
-          <div class='resume-body'>
-            <strong id='resume-title'>Có phiên đang dở</strong>
-            <p class='hint' id='resume-hint'>Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
-          </div>
-          <div class='resume-actions'>
-            <button type='button' class='btn btn-primary' id='btn-resume-session' data-icon='arrow-right'>Tiếp tục</button>
-            <button type='button' class='btn btn-ghost' id='btn-discard-session' data-icon='x'>Bỏ phiên</button>
-          </div>
-        </div>
-
         <div class='card stats-card' id='deck-stats'>
           <h2>Tiến độ bộ đề</h2>
           <ul class='stat-list'>
@@ -145,10 +126,21 @@
           </div>
         </div>
 
+        <div class='card resume-card' id='resume-card' hidden>
+          <div class='resume-body'>
+            <strong id='resume-title'>Có phiên đang dở</strong>
+            <p class='hint' id='resume-hint'>Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
+          </div>
+          <div class='resume-actions'>
+            <button type='button' class='btn btn-primary' id='btn-resume-session' data-icon='arrow-right'>Tiếp tục</button>
+            <button type='button' class='btn btn-ghost' id='btn-discard-session' data-icon='x'>Bỏ phiên</button>
+          </div>
+        </div>
+
         <div class='card setup-start-card' id='setup-actions'>
+          <button type='button' class='btn btn-ghost btn-block' id='btn-view-bank' data-icon='book-2'>Xem toàn bộ câu hỏi & đáp án</button>
           <button type='button' class='btn btn-primary btn-block' id='btn-start' data-icon='player-play'>Bắt đầu</button>
           <button type='button' class='btn btn-secondary btn-block' id='btn-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
-          <button type='button' class='btn btn-ghost btn-block' id='btn-view-bank' data-icon='book-2'>Xem toàn bộ câu hỏi & đáp án</button>
         </div>
       </section>
 
