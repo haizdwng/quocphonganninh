@@ -40,3 +40,16 @@ test('quiz session persists on page lifecycle changes and checks deadlines on re
   assert.match(app, /document\.addEventListener\('visibilitychange',[\s\S]*?enforceSessionDeadline\(\)/);
   assert.match(app, /window\.addEventListener\('pageshow',[\s\S]*?enforceSessionDeadline\(\)/);
 });
+
+
+test('the interface remains dark-only and uses a matching browser theme color', () => {
+  const html = read('index.html');
+  const css = read('assets/css/style.css');
+  const manifest = JSON.parse(read('manifest.webmanifest'));
+
+  assert.match(html, /name='color-scheme' content='dark'/);
+  assert.doesNotMatch(html, /id='theme-toggle'/);
+  assert.match(css, /color-scheme:\s*dark/);
+  assert.doesNotMatch(read('assets/js/app.js'), /theme-toggle/);
+  assert.equal(manifest.theme_color, '#07111f');
+});
