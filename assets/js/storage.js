@@ -64,8 +64,6 @@ export function getSettings(deckId) {
   const id = normalizeDeckId(deckId || root.activeDeck || 'qp1');
   const found = list.find((entry) => entry.deck === id);
   if (found) return { ...found };
-  const legacy = list[0];
-  if (legacy && !deckId) return { ...legacy, deck: id };
   return normalizeSettingsEntry({}, id);
 };
 
@@ -162,20 +160,32 @@ export function saveDeckProgress(deckId, progress) {
   return writeRoot(root);
 };
 
-export function getSession() {
-  const session = readRoot().session;
+export function getSession(deckId) {
+  const root = readRoot();
+  const id = normalizeDeckId(deckId || root.activeDeck || 'qp1');
+  const sessions = root.sessions && typeof root.sessions === 'object' && !Array.isArray(root.sessions)
+    ? root.sessions
+    : {};
+  const session = sessions[id] || (root.session?.deckId === id ? root.session : null);
   return session && typeof session === 'object' && !Array.isArray(session) ? session : null;
 };
 
 export function saveSession(session) {
+  if (!session || !['qp1', 'qp2'].includes(session.deckId)) return false;
   const root = readRoot();
-  root.session = session;
+  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
+  root.sessions[session.deckId] = session;
+  if (root.session?.deckId === session.deckId) delete root.session;
   return writeRoot(root);
 };
 
-export function clearSession() {
+export function clearSession(deckId) {
   const root = readRoot();
-  delete root.session;
+  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
+  const id = deckId ? normalizeDeckId(deckId) : null;
+  if (id) delete root.sessions[id];
+  else delete root.sessions[normalizeDeckId(root.session?.deckId || root.activeDeck || 'qp1')];
+  if (!id || root.session?.deckId === id) delete root.session;
   return writeRoot(root);
 };
 
@@ -183,6 +193,8 @@ export function resetDeckProgress(deckId) {
   const root = readRoot();
   if (!root.decks || typeof root.decks !== 'object' || Array.isArray(root.decks)) root.decks = {};
   delete root.decks[normalizeDeckId(deckId)];
+  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
+  delete root.sessions[normalizeDeckId(deckId)];
   if (root.session?.deckId === normalizeDeckId(deckId)) delete root.session;
   return writeRoot(root);
 };
