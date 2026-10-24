@@ -1527,17 +1527,32 @@ function showSummary(summary, deckId, mode) {
             ? 'Kết quả thi thử'
             : 'Hoàn thành lượt ôn';
   const scoreVal = summary.score ?? formatScore(summary.correct, summary.total);
+  const scoreNum = Number(String(scoreVal).replace(',', '.')) || 0;
+
   $('sum-total').textContent = String(summary.total);
-  $('sum-score').textContent = `${scoreVal} / 10`;
+  \( ('sum-score').textContent = ` \){scoreVal} / 10`;
+
   const scoreBig = $('sum-score-big');
-  if (scoreBig) scoreBig.textContent = String(scoreVal);
   const ringFg = $('score-ring-fg');
+  const circumference = 2 * Math.PI * 52;
+
   if (ringFg) {
-    const circumference = 2 * Math.PI * 52;
-    const pct = Math.max(0, Math.min(1, Number(scoreVal) / 10));
     ringFg.style.strokeDasharray = `${circumference}`;
-    ringFg.style.strokeDashoffset = `${circumference * (1 - pct)}`;
+    ringFg.style.strokeDashoffset = `${circumference}`;
+    ringFg.style.transition = 'none';
+    ringFg.style.stroke = 'var(--primary)';
   };
+  if (scoreBig) {
+    scoreBig.textContent = '0';
+    scoreBig.style.transform = 'scale(1)';
+    scoreBig.style.color = 'var(--primary)';
+  };
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      animateScore(scoreNum, scoreVal, circumference);
+    });
+  });
   $('sum-time').textContent = formatTime(summary.elapsedSeconds || 0);
   $('sum-correct').textContent = String(summary.correct);
   $('sum-wrong-q').textContent = String(summary.wrongQuestions);
