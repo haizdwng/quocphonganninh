@@ -48,7 +48,8 @@ const state = {
   searchResults: [],
   timerInterval: null,
   examFilter: 'all',
-  examSubmitting: false
+  examSubmitting: false,
+  reviewSearch: ''
 };
 
 const $ = (id) => document.getElementById(id);
@@ -201,6 +202,71 @@ function confirmModal(title, body) {
 function currentQuestions() {
   return state.decks[state.currentDeck] || [];
 };
+
+function renderQuestionBank() {
+  const questions = currentQuestions();
+  const query = normalizeSearchText(state.reviewSearch.trim());
+  const filtered = query
+    ? questions.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
+    : questions;
+  const list = $('review-list');
+  const fragment = document.createDocumentFragment();
+  $('review-title').textContent = `\${DECKS[state.currentDeck].label} · toàn bộ câu hỏi và đáp án`;
+  $('review-description').textContent = `Có \${questions.length} câu. Đáp án đúng được tô nổi bật để bạn đọc trước khi ôn hoặc thi.`;
+  $('review-count').textContent = query
+    ? `Hiển thị \${filtered.length}/\${questions.length} câu phù hợp.`
+    : `Hiển thị toàn bộ \${questions.length} câu.`;
+
+  for (const question of filtered) {
+    const card = document.createElement('article');
+    card.className = 'review-q-card';
+    const heading = document.createElement('h3');
+    heading.className = 'review-q-heading';
+    heading.textContent = `Câu \${question.originalIndex + 1}`;
+    const prompt = document.createElement('p');
+    prompt.className = 'review-q-text';
+    prompt.textContent = question.question;
+    const options = document.createElement('ol');
+    options.className = 'review-options';
+    options.type = 'A';
+    const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+    question.options.forEach((option, index) => {
+      const item = document.createElement('li');
+      item.className = index === question.correct ? 'review-option is-correct' : 'review-option';
+      const label = document.createElement('span');
+      label.className = 'review-option-label';
+      label.textContent = labels[index] || String(index + 1);
+      const text = document.createElement('span');
+      text.className = 'review-option-text';
+      text.textContent = option;
+      item.append(label, text);
+      if (index === question.correct) {
+        const badge = document.createElement('span');
+        badge.className = 'review-correct-badge';
+        badge.textContent = 'Đáp án đúng';
+        item.appendChild(badge);
+      };
+      options.appendChild(item);
+    });
+    card.append(heading, prompt, options);
+    fragment.appendChild(card);
+  };
+  list.replaceChildren(fragment);
+  if (!filtered.length) {
+    const empty = document.createElement('p');
+    empty.className = 'card review-empty';
+    empty.textContent = 'Không tìm thấy câu hỏi hoặc đáp án phù hợp.';
+    list.appendChild(empty);
+  };
+};
+
+function openQuestionBank() {
+  state.reviewSearch = '';
+  $('input-review-search').value = '';
+  renderQuestionBank();
+  showScreen('review');
+};
+
 
 function refreshSetupUI() {
   const qs = currentQuestions();
@@ -1754,6 +1820,16 @@ function bindEvents() {
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode));
+  });
+
+  $('btn-view-bank').addEventListener('click', openQuestionBank);
+  $('btn-review-back').addEventListener('click', () => {
+    showScreen('setup');
+    refreshSetupUI();
+  });
+  $('input-review-search').addEventListener('input', () => {
+    state.reviewSearch = $('input-review-search').value;
+    renderQuestionBank();
   });
 
   $('btn-start').addEventListener('click', () => startNormal({ sequential: false }));
