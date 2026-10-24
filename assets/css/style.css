@@ -2514,9 +2514,10 @@ body {
 .question-tools-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   margin: 10px 0 12px;
+  min-width: 0;
 }
 .question-tools-row > .bookmark-btn {
   flex: 0 0 auto;
@@ -2527,8 +2528,19 @@ body {
   margin: 0;
 }
 .question-tools-row .highlight-toolbar {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.question-tools-row .highlight-toolbar .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .question-tools-row .highlight-toolbar[hidden] {
   display: none;
@@ -2536,6 +2548,10 @@ body {
 @media (max-width: 480px) {
   .question-tools-row {
     gap: 6px;
+  }
+  .question-tools-row > .bookmark-btn {
+    padding: 0 9px;
+    white-space: nowrap;
   }
   .question-tools-row .highlight-toolbar {
     gap: 6px;
