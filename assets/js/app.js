@@ -497,12 +497,12 @@ function persistSetupForm() {
 function applySettingsToForm(settings) {
   if (!settings) return;
   const total = currentQuestions().length || settings.endQuestion || 1;
-  $('input-count').value = String(settings.count || 20);
-  $('input-time-limit').value = String(settings.timeLimit || 0);
+  $('input-count').value = String(settings.count || 30);
+  $('input-time-limit').value = String(settings.timeLimit || 35);
   $('input-range-start').value = String(settings.startQuestion || 1);
   $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
-  $('chk-shuffle-a').checked = settings.shuffleA !== false;
+  $('chk-shuffle-a').checked = !!settings.shuffleA;
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
 };
 
