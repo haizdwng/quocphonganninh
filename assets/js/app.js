@@ -219,8 +219,8 @@ function renderQuestionBank() {
     : questions;
   const list = $('review-list');
   const fragment = document.createDocumentFragment();
-  $('review-title').textContent = `${DECKS[state.currentDeck].label} · toàn bộ câu hỏi và đáp án`;
-  $('review-description').textContent = `Có ${questions.length} câu. Đáp án đúng được tô nổi bật để bạn đọc trước khi ôn hoặc thi.`;
+  $('review-title').textContent = DECKS[state.currentDeck].label;
+  $('review-description').textContent = `${questions.length} câu.`;
   $('review-count').textContent = query
     ? `Hiển thị ${filtered.length}/${questions.length} câu phù hợp.`
     : `Hiển thị toàn bộ ${questions.length} câu.`;
