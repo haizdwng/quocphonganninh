@@ -182,10 +182,9 @@ export function saveSession(session) {
 export function clearSession(deckId) {
   const root = readRoot();
   if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
-  const id = deckId ? normalizeDeckId(deckId) : null;
-  if (id) delete root.sessions[id];
-  else delete root.sessions[normalizeDeckId(root.session?.deckId || root.activeDeck || 'qp1')];
-  if (!id || root.session?.deckId === id) delete root.session;
+  const id = normalizeDeckId(deckId || root.activeDeck || 'qp1');
+  delete root.sessions[id];
+  if (root.session?.deckId === id) delete root.session;
   return writeRoot(root);
 };
 
