@@ -74,7 +74,8 @@ export function createSessionItems(pool, { shuffleQ, shuffleA }) {
       userAnswer: null,
       status: 'pending',
       wrongCount: 0,
-      checked: false
+      checked: false,
+      wrongOptions: []
     };
   });
 };

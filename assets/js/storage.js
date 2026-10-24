@@ -24,12 +24,11 @@ function normalizeDeckId(deckId) {
   return deckId === 'qp2' ? 'qp2' : 'qp1';
 };
 
-export function getSettings() {
-  const root = readRoot();
-  const settings = root.settings && typeof root.settings === 'object' ? root.settings : {};
+function normalizeSettingsEntry(raw, deckId) {
+  const settings = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
   const count = Number(settings.count);
   return {
-    deck: normalizeDeckId(settings.deck),
+    deck: normalizeDeckId(deckId || settings.deck),
     count: Number.isInteger(count) && count > 0 ? count : 20,
     shuffleQ: !!settings.shuffleQ,
     shuffleA: settings.shuffleA !== false,
@@ -41,28 +40,50 @@ export function getSettings() {
       : 0,
     timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0
       ? Math.min(1440, Number(settings.timeLimit))
-      : 0
+      : 0,
+    practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice'
   };
+};
+
+function readSettingsList(root) {
+  const raw = root.settings;
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((entry) => entry && typeof entry === 'object')
+      .map((entry) => normalizeSettingsEntry(entry, entry.deck));
+  }
+  if (raw && typeof raw === 'object') {
+    return [normalizeSettingsEntry(raw, raw.deck)];
+  }
+  return [];
+};
+
+export function getSettings(deckId) {
+  const root = readRoot();
+  const list = readSettingsList(root);
+  const id = normalizeDeckId(deckId || root.activeDeck || 'qp1');
+  const found = list.find((entry) => entry.deck === id);
+  if (found) return { ...found };
+  const legacy = list[0];
+  if (legacy && !deckId) return { ...legacy, deck: id };
+  return normalizeSettingsEntry({}, id);
 };
 
 export function saveSettings(settings) {
   const root = readRoot();
-  const count = Number(settings.count);
-  root.settings = {
-    deck: normalizeDeckId(settings.deck),
-    count: Number.isInteger(count) && count > 0 ? count : 20,
-    shuffleQ: !!settings.shuffleQ,
-    shuffleA: settings.shuffleA !== false,
-    startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0
-      ? Number(settings.startQuestion)
-      : 1,
-    endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0
-      ? Number(settings.endQuestion)
-      : 0,
-    timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0
-      ? Math.min(1440, Number(settings.timeLimit))
-      : 0
-  };
+  const entry = normalizeSettingsEntry(settings, settings?.deck);
+  const list = readSettingsList(root);
+  const idx = list.findIndex((item) => item.deck === entry.deck);
+  if (idx >= 0) list[idx] = entry;
+  else list.push(entry);
+  // Always keep qp1 + qp2 slots when possible
+  for (const deck of ['qp1', 'qp2']) {
+    if (!list.some((item) => item.deck === deck)) {
+      list.push(normalizeSettingsEntry(deck === entry.deck ? entry : {}, deck));
+    }
+  }
+  root.settings = list;
+  root.activeDeck = entry.deck;
   return writeRoot(root);
 };
 
@@ -204,11 +225,13 @@ export function toggleBookmark(deckId, originalIndex) {
 
 export function exportBackup() {
   const root = readRoot();
+  const list = readSettingsList(root);
   return JSON.stringify({
     format: 'quocphonganninh-backup',
     version: 1,
     exportedAt: new Date().toISOString(),
-    settings: root.settings || {},
+    settings: list.length ? list : [],
+    activeDeck: root.activeDeck || 'qp1',
     decks: root.decks || {}
   }, null, 2);
 };
@@ -224,19 +247,22 @@ export function importBackup(raw) {
       !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) ||
       !Object.keys(backup.decks).every((id) => ['qp1', 'qp2'].includes(id))) return false;
 
-  const settings = backup.settings && typeof backup.settings === 'object' && !Array.isArray(backup.settings)
-    ? backup.settings
-    : {};
+  let settingsList = [];
+  if (Array.isArray(backup.settings)) {
+    settingsList = backup.settings
+      .filter((entry) => entry && typeof entry === 'object')
+      .map((entry) => normalizeSettingsEntry(entry, entry.deck));
+  } else if (backup.settings && typeof backup.settings === 'object') {
+    settingsList = [normalizeSettingsEntry(backup.settings, backup.settings.deck)];
+  }
+  for (const deck of ['qp1', 'qp2']) {
+    if (!settingsList.some((entry) => entry.deck === deck)) {
+      settingsList.push(normalizeSettingsEntry({}, deck));
+    }
+  }
   const normalized = {
-    settings: {
-      deck: normalizeDeckId(settings.deck),
-      count: Number.isInteger(Number(settings.count)) && Number(settings.count) > 0 ? Number(settings.count) : 20,
-      shuffleQ: !!settings.shuffleQ,
-      shuffleA: settings.shuffleA !== false,
-      startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0 ? Number(settings.startQuestion) : 1,
-      endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0 ? Number(settings.endQuestion) : 0,
-      timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0 ? Math.min(1440, Number(settings.timeLimit)) : 0
-    },
+    settings: settingsList,
+    activeDeck: normalizeDeckId(backup.activeDeck || settingsList[0]?.deck || 'qp1'),
     decks: {}
   };
 

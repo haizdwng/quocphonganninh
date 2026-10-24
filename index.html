@@ -49,7 +49,24 @@
         </div>
 
         <div class="card">
-          <h2>Thiết lập lượt ôn</h2>
+          <h2>Chế độ làm bài</h2>
+          <div class="mode-switch" role="group" aria-label="Chế độ">
+            <button type="button" class="mode-btn is-active" data-mode="practice" id="btn-mode-practice">
+              <span class="mode-icon" aria-hidden="true">📝</span>
+              <span class="mode-name">Ôn luyện</span>
+              <span class="mode-desc">Từng câu · kiểm tra ngay</span>
+            </button>
+            <button type="button" class="mode-btn" data-mode="exam" id="btn-mode-exam">
+              <span class="mode-icon" aria-hidden="true">📋</span>
+              <span class="mode-name">Thi thử</span>
+              <span class="mode-desc">Tất cả câu · nộp một lần</span>
+            </button>
+          </div>
+          <p class="hint" id="hint-mode">Ôn luyện: xem đáp án ngay sau mỗi câu. Thi thử: làm hết rồi nộp bài một lượt.</p>
+        </div>
+
+        <div class="card">
+          <h2>Thiết lập lượt</h2>
           <div class="field">
             <label>Vùng câu hỏi</label>
             <div class="range-fields">
@@ -70,6 +87,12 @@
               <input type="number" id="input-count" min="1" value="20" inputmode="numeric">
               <button type="button" class="btn btn-ghost" id="btn-all" data-icon="list-check">Toàn bộ vùng</button>
             </div>
+            <div class="preset-row" role="group" aria-label="Chọn nhanh số câu">
+              <button type="button" class="preset-btn" data-count="10">10</button>
+              <button type="button" class="preset-btn" data-count="20">20</button>
+              <button type="button" class="preset-btn" data-count="30">30</button>
+              <button type="button" class="preset-btn" data-count="50">50</button>
+            </div>
             <p class="hint" id="hint-count">Tối đa — câu trong vùng đã chọn.</p>
           </div>
           <div class="field">
@@ -77,7 +100,7 @@
             <input type="number" id="input-time-limit" min="0" max="1440" value="0" step="1" inputmode="numeric">
             <p class="hint">0 là không giới hạn thời gian. Khi hết giờ, lượt làm bài sẽ tự động kết thúc.</p>
           </div>
-          <div class="field search-field">
+          <div class="field search-field" id="search-field-wrap">
             <label for="input-search">Tìm câu hỏi hoặc đáp án</label>
             <input type="search" id="input-search" placeholder="Nhập từ khóa cần tìm…" autocomplete="off" enterkeyhint="search">
             <p class="hint" id="search-hint" aria-live="polite">Tìm trong vùng câu hỏi đang chọn.</p>
@@ -118,14 +141,25 @@
           </div>
         </div>
 
-        <div class="actions-sticky">
-          <button type="button" class="btn btn-primary btn-block" id="btn-start" data-icon="player-play">Bắt đầu ôn</button>
+        <div class="card resume-card" id="resume-card" hidden>
+          <div class="resume-body">
+            <strong id="resume-title">Có phiên đang dở</strong>
+            <p class="hint" id="resume-hint">Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
+          </div>
+          <div class="resume-actions">
+            <button type="button" class="btn btn-primary" id="btn-resume-session" data-icon="arrow-right">Tiếp tục</button>
+            <button type="button" class="btn btn-ghost" id="btn-discard-session" data-icon="x">Bỏ phiên</button>
+          </div>
+        </div>
+
+        <div class="actions-fixed" id="setup-actions">
+          <button type="button" class="btn btn-primary btn-block" id="btn-start" data-icon="player-play">Bắt đầu</button>
           <button type="button" class="btn btn-secondary btn-block" id="btn-continue" hidden data-icon="arrow-right">Tiếp tục tuần tự</button>
         </div>
       </section>
 
-      <section id="screen-quiz" class="screen" aria-label="Làm bài" hidden>
-        <div class="progress-wrap">
+      <section id="screen-quiz" class="screen" aria-label="Ôn luyện" hidden>
+        <div class="progress-wrap is-fixed-top">
           <div class="progress-meta" aria-live="polite" aria-atomic="true">
             <span id="progress-label">Câu 1 / 20</span>
             <span id="progress-score">Điểm 0 / 10</span>
@@ -146,16 +180,59 @@
           <div class="feedback" id="feedback" role="status" aria-live="polite" hidden></div>
         </div>
 
-        <div class="quiz-actions">
-          <button type="button" class="btn btn-ghost" id="btn-prev" disabled data-icon="chevron-left">Câu trước</button>
-          <button type="button" class="btn btn-primary" id="btn-next" disabled data-icon="check">Kiểm tra</button>
+        <div class="quiz-actions is-fixed-bottom">
+          <div class="quiz-actions-row">
+            <button type="button" class="btn btn-ghost" id="btn-prev" disabled data-icon="chevron-left">Trước</button>
+            <button type="button" class="btn btn-primary" id="btn-next" disabled data-icon="check">Kiểm tra</button>
+          </div>
+          <button type="button" class="btn btn-ghost btn-block" id="btn-quit" data-icon="x">Thoát</button>
         </div>
-        <button type="button" class="btn btn-ghost btn-block" id="btn-quit" data-icon="arrow-left">Thoát lượt ôn</button>
+      </section>
+
+      <section id="screen-exam" class="screen" aria-label="Thi thử" hidden>
+        <div class="progress-wrap is-fixed-top exam-progress">
+          <div class="progress-meta" aria-live="polite" aria-atomic="true">
+            <span id="exam-progress-label">Đã chọn 0 / 20</span>
+            <span id="exam-progress-time" aria-live="polite">00:00</span>
+          </div>
+          <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="progress-fill" id="exam-progress-fill"></div>
+          </div>
+          <div class="exam-toolbar">
+            <div class="exam-filter" role="group" aria-label="Lọc câu hỏi">
+              <button type="button" class="filter-chip is-active" data-filter="all" id="exam-filter-all">Tất cả</button>
+              <button type="button" class="filter-chip" data-filter="unanswered" id="exam-filter-unanswered">Chưa chọn</button>
+              <button type="button" class="filter-chip" data-filter="correct" id="exam-filter-correct" hidden>Đúng</button>
+              <button type="button" class="filter-chip" data-filter="wrong" id="exam-filter-wrong" hidden>Sai</button>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-exam-next-empty" data-icon="arrow-right">Câu chưa chọn</button>
+          </div>
+          <div class="exam-nav" id="exam-nav" role="navigation" aria-label="Điều hướng câu hỏi"></div>
+        </div>
+
+        <div class="exam-list" id="exam-list"></div>
+
+        <div class="exam-actions is-fixed-bottom">
+          <div class="exam-actions-row">
+            <button type="button" class="btn btn-primary" id="btn-exam-submit" data-icon="check">Nộp bài</button>
+            <button type="button" class="btn btn-ghost" id="btn-exam-quit" data-icon="x">Thoát</button>
+          </div>
+        </div>
       </section>
 
       <section id="screen-summary" class="screen" aria-label="Tổng kết" hidden>
-        <div class="card">
+        <div class="card summary-hero">
           <h2 id="summary-title">Hoàn thành lượt ôn</h2>
+          <div class="score-ring" id="score-ring" aria-hidden="true">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle class="score-ring-bg" cx="60" cy="60" r="52" />
+              <circle class="score-ring-fg" id="score-ring-fg" cx="60" cy="60" r="52" />
+            </svg>
+            <div class="score-ring-value">
+              <strong id="sum-score-big">0</strong>
+              <span>/ 10</span>
+            </div>
+          </div>
           <p class="hint" id="summary-note"></p>
           <ul class="stat-list">
             <li><span>Tổng số câu</span><strong id="sum-total">0</strong></li>

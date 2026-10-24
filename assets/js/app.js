@@ -42,10 +42,13 @@ const state = {
   error: null,
   currentDeck: 'qp1',
   mode: 'setup',
+  practiceMode: 'practice',
   session: null,
   reviewMode: false,
   searchResults: [],
-  timerInterval: null
+  timerInterval: null,
+  examFilter: 'all',
+  examSubmitting: false
 };
 
 const $ = (id) => document.getElementById(id);
@@ -139,6 +142,11 @@ function showScreen(name) {
     screen.classList.add('active');
   };
   state.mode = name;
+  document.body.dataset.screen = name;
+  const header = document.querySelector('.app-header');
+  if (header) {
+    header.hidden = name === 'quiz' || name === 'exam';
+  }
   if (screen) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
@@ -242,13 +250,13 @@ function refreshSetupUI() {
 
   const btnWrong = $('btn-practice-wrong');
   const rangeWrongCount = wrongs.filter((index) => index >= start - 1 && index < end).length;
-  btnWrong.disabled = rangeWrongCount === 0;
+  btnWrong.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
   btnWrong.textContent = `Luyện câu sai trong vùng (${rangeWrongCount})`;
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
   const rangeBookmarkCount = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex)).length;
   const btnBookmarks = $('btn-practice-bookmarks');
-  btnBookmarks.disabled = rangeBookmarkCount === 0;
+  btnBookmarks.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
   btnBookmarks.textContent = `Ôn câu đã đánh dấu (${rangeBookmarkCount})`;
 
   const rangeQuestions = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
@@ -257,14 +265,42 @@ function refreshSetupUI() {
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
   const nextIndex = Math.max(progress.sequentialCursor, start - 1);
-  const canContinue = !shuffleQ && nextIndex < end && rangeRemaining > 0;
+  const canContinue = state.practiceMode !== 'exam' && !shuffleQ && nextIndex < end && rangeRemaining > 0;
   btnContinue.hidden = !canContinue;
   if (canContinue) {
     const left = end - nextIndex;
     const n = Math.min(Number(input.value) || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự (${n} câu từ vị trí ${nextIndex + 1})`;
   };
+
+  document.querySelectorAll('.preset-btn').forEach((btn) => {
+    const n = Number(btn.dataset.count);
+    btn.classList.toggle('is-active', Number(input.value) === n);
+    btn.disabled = n > rangeTotal;
+  });
+
+  refreshResumeCard();
 };
+
+function refreshResumeCard() {
+  const card = $('resume-card');
+  if (!card) return;
+  const saved = getSession();
+  if (!saved || !Array.isArray(saved.items) || !saved.items.length) {
+    card.hidden = true;
+    return;
+  }
+  const answered = saved.items.filter((it) => it.userAnswer != null).length;
+  const isExam = !!saved.examMode || saved.mode === 'exam';
+  const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
+  card.hidden = false;
+  $('resume-title').textContent = isExam
+    ? (saved.reviewMode ? 'Có bài thi đã chấm (chưa xem tổng kết)' : 'Có bài thi thử đang dở')
+    : 'Có lượt ôn đang dở';
+  $('resume-hint').textContent = isExam
+    ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · đã chấm' : ''}`
+    : `${deckLabel} · câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
+}
 
 function normalizeSearchText(value) {
   return String(value || '')
@@ -368,9 +404,33 @@ function persistSetupForm() {
     shuffleA: form.shuffleA,
     startQuestion: form.startQuestion,
     endQuestion: form.endQuestion,
-    timeLimit: form.timeLimit
+    timeLimit: form.timeLimit,
+    practiceMode: state.practiceMode
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+};
+
+function applySettingsToForm(settings) {
+  if (!settings) return;
+  const total = currentQuestions().length || settings.endQuestion || 1;
+  $('input-count').value = String(settings.count || 20);
+  $('input-time-limit').value = String(settings.timeLimit || 0);
+  $('input-range-start').value = String(settings.startQuestion || 1);
+  $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
+  $('chk-shuffle-q').checked = !!settings.shuffleQ;
+  $('chk-shuffle-a').checked = settings.shuffleA !== false;
+  setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
+};
+
+function stopSessionTimer(freeze = true) {
+  clearInterval(state.timerInterval);
+  state.timerInterval = null;
+  const s = state.session;
+  if (freeze && s && !s.finishedAt) {
+    s.finishedAt = Date.now();
+    persistSession();
+  }
+  updateTimerDisplay();
 };
 
 function selectedQuestions(form = readSetupForm()) {
@@ -383,7 +443,8 @@ function startSessionFromPool(pool, meta) {
   const form = readSetupForm();
   const shuffleA = form.shuffleA;
   const shuffleQ = meta.forceShuffleQ != null ? meta.forceShuffleQ : form.shuffleQ;
-  const items = createSessionItems(pool, { shuffleQ: false, shuffleA });
+  const shouldShuffleQ = meta.alreadyShuffled ? false : !!shuffleQ;
+  const items = createSessionItems(pool, { shuffleQ: shouldShuffleQ, shuffleA });
   const session = {
     deckId: state.currentDeck,
     dataFingerprint: state.fingerprints[state.currentDeck],
@@ -414,11 +475,22 @@ function startSessionFromPool(pool, meta) {
     deadlineAt: form.timeLimit > 0 ? Date.now() + form.timeLimit * 60000 : null,
     timeExpired: false
   };
+  if (meta.examMode || state.practiceMode === 'exam') {
+    session.examMode = true;
+    session.mode = session.mode === 'normal' ? 'exam' : session.mode;
+  }
   state.session = session;
   state.reviewMode = false;
+  state.examFilter = 'all';
+  state.examSubmitting = false;
   if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
-  showScreen('quiz');
-  renderQuestion();
+  if (session.examMode) {
+    showScreen('exam');
+    renderExam();
+  } else {
+    showScreen('quiz');
+    renderQuestion();
+  }
   startSessionTimer();
 };
 
@@ -682,10 +754,341 @@ function renderQuestion() {
   };
 };
 
+function setPracticeMode(mode) {
+  state.practiceMode = mode === 'exam' ? 'exam' : 'practice';
+  document.querySelectorAll('.mode-btn').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.dataset.mode === state.practiceMode);
+  });
+  const subtitle = document.querySelector('.app-header .subtitle');
+  if (subtitle) subtitle.textContent = state.practiceMode === 'exam' ? 'Thi thử' : 'Ôn tập';
+  const startBtn = $('btn-start');
+  if (startBtn) {
+    startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn';
+  }
+  const searchWrap = $('search-field-wrap');
+  if (searchWrap) searchWrap.hidden = state.practiceMode === 'exam';
+  const hint = $('hint-mode');
+  if (hint) {
+    hint.textContent = state.practiceMode === 'exam'
+      ? 'Thi thử: hiện tất cả câu đã chọn, chọn đáp án rồi nộp bài một lần. Không hiện đáp án đúng trước khi nộp.'
+      : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
+  }
+  persistSetupForm();
+  if (state.mode === 'setup' && state.decks.qp1) refreshSetupUI();
+}
+
+function updateExamProgressHeader() {
+  const s = state.session;
+  if (!s || !s.examMode) return;
+  const answered = s.items.filter((it) => it.userAnswer != null).length;
+  const unanswered = s.items.length - answered;
+  $('exam-progress-label').textContent = s.reviewMode
+    ? `Kết quả · ${s.firstTryCorrect || 0}/${s.items.length} đúng`
+    : `Đã chọn ${answered} / ${s.items.length}${unanswered ? ` · còn ${unanswered}` : ''}`;
+  const pct = s.items.length ? Math.round((answered / s.items.length) * 100) : 0;
+  const fill = $('exam-progress-fill');
+  if (fill) {
+    fill.style.width = `${pct}%`;
+    fill.parentElement?.setAttribute('aria-valuenow', String(pct));
+  }
+  updateTimerDisplay();
+  const filterWrong = $('exam-filter-wrong');
+  const filterCorrect = $('exam-filter-correct');
+  if (filterWrong) filterWrong.hidden = !s.reviewMode;
+  if (filterCorrect) filterCorrect.hidden = !s.reviewMode;
+  const nextEmpty = $('btn-exam-next-empty');
+  if (nextEmpty) {
+    nextEmpty.hidden = s.reviewMode || unanswered === 0;
+    nextEmpty.textContent = unanswered ? `Còn ${unanswered} câu` : 'Đủ đáp án';
+  }
+  const submitBtn = $('btn-exam-submit');
+  if (submitBtn) {
+    if (s.reviewMode) {
+      submitBtn.textContent = 'Xem tổng kết';
+      submitBtn.dataset.icon = 'list-check';
+      submitBtn.disabled = false;
+    } else {
+      submitBtn.textContent = `Nộp bài (${answered}/${s.items.length})`;
+      submitBtn.dataset.icon = 'check';
+      submitBtn.disabled = !!state.examSubmitting;
+    }
+  }
+  document.querySelectorAll('.filter-chip').forEach((chip) => {
+    chip.classList.toggle('is-active', chip.dataset.filter === state.examFilter);
+  });
+}
+
+function applyExamFilter() {
+  const s = state.session;
+  if (!s?.examMode) return;
+  const filter = state.examFilter || 'all';
+  s.items.forEach((item, idx) => {
+    const card = $(`exam-q-${idx}`);
+    if (!card) return;
+    let show = true;
+    if (filter === 'unanswered') show = item.userAnswer == null;
+    else if (filter === 'wrong') show = item.status === 'wrong';
+    else if (filter === 'correct') show = item.status === 'correct';
+    card.hidden = !show;
+  });
+}
+
+function scrollToExamQuestion(idx) {
+  const card = $(`exam-q-${idx}`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function jumpToNextUnanswered(fromIdx = -1) {
+  const s = state.session;
+  if (!s?.examMode || s.reviewMode) return;
+  const start = fromIdx + 1;
+  let found = s.items.findIndex((it, i) => i >= start && it.userAnswer == null);
+  if (found < 0) found = s.items.findIndex((it) => it.userAnswer == null);
+  if (found >= 0) {
+    state.examFilter = 'all';
+    applyExamFilter();
+    updateExamProgressHeader();
+    scrollToExamQuestion(found);
+  } else {
+    toast('Bạn đã chọn đủ đáp án.');
+  }
+}
+
+function renderExam() {
+  const s = state.session;
+  if (!s || !s.examMode) return;
+  const list = $('exam-list');
+  const nav = $('exam-nav');
+  if (!list || !nav) return;
+  const scrollY = window.scrollY;
+  list.replaceChildren();
+  nav.replaceChildren();
+  const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+  updateExamProgressHeader();
+
+  s.items.forEach((item, idx) => {
+    const q = s.pool[item.poolIdx];
+    const card = document.createElement('article');
+    card.className = 'exam-q-card';
+    card.id = `exam-q-${idx}`;
+    if (item.userAnswer != null) card.classList.add('is-answered');
+    if (s.reviewMode) {
+      if (item.status === 'correct') card.classList.add('is-correct');
+      else if (item.status === 'wrong') card.classList.add('is-wrong');
+    }
+
+    const head = document.createElement('div');
+    head.className = 'exam-q-head';
+    const num = document.createElement('span');
+    num.className = 'exam-q-num';
+    num.textContent = `Câu ${idx + 1} · Gốc #${q.originalIndex + 1}`;
+    head.appendChild(num);
+    if (s.reviewMode) {
+      const badge = document.createElement('span');
+      badge.className = `exam-status-badge ${item.status === 'correct' ? 'ok' : 'bad'}`;
+      badge.textContent = item.status === 'correct' ? 'Đúng' : (item.userAnswer == null ? 'Bỏ trống' : 'Sai');
+      head.appendChild(badge);
+    }
+    card.appendChild(head);
+
+    const text = document.createElement('h3');
+    text.className = 'exam-q-text';
+    text.textContent = q.question;
+    card.appendChild(text);
+
+    const opts = document.createElement('div');
+    opts.className = 'exam-options options';
+    opts.setAttribute('role', 'group');
+    opts.setAttribute('aria-label', `Đáp án câu ${idx + 1}`);
+
+    item.optionOrder.forEach((origIdx, displayIdx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option';
+      btn.dataset.q = String(idx);
+      btn.dataset.display = String(displayIdx);
+      btn.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
+      if (item.userAnswer === displayIdx) btn.classList.add('selected');
+      if (s.reviewMode) {
+        btn.disabled = true;
+        const correctDisplay = item.optionOrder.indexOf(q.correct);
+        if (displayIdx === correctDisplay) btn.classList.add('correct');
+        if (item.userAnswer === displayIdx && item.status === 'wrong') btn.classList.add('incorrect');
+      }
+      const label = document.createElement('span');
+      label.className = 'option-key';
+      label.textContent = labels[displayIdx] || String(displayIdx + 1);
+      const body = document.createElement('span');
+      body.className = 'option-text';
+      body.textContent = q.options[origIdx];
+      btn.append(label, body);
+      if (!s.reviewMode) {
+        btn.addEventListener('click', () => onExamSelect(idx, displayIdx));
+      }
+      opts.appendChild(btn);
+    });
+    card.appendChild(opts);
+    list.appendChild(card);
+
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'exam-nav-dot';
+    dot.textContent = String(idx + 1);
+    dot.title = `Câu ${idx + 1}`;
+    dot.dataset.idx = String(idx);
+    if (item.userAnswer != null) dot.classList.add('is-answered');
+    if (s.reviewMode) {
+      if (item.status === 'correct') dot.classList.add('is-correct');
+      else if (item.status === 'wrong') dot.classList.add('is-wrong');
+    }
+    dot.addEventListener('click', () => scrollToExamQuestion(idx));
+    nav.appendChild(dot);
+  });
+
+  applyExamFilter();
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
+}
+
+function patchExamQuestion(qIdx) {
+  const s = state.session;
+  if (!s?.examMode) return;
+  const item = s.items[qIdx];
+  const card = $(`exam-q-${qIdx}`);
+  if (!item || !card) {
+    renderExam();
+    return;
+  }
+  card.classList.toggle('is-answered', item.userAnswer != null);
+  card.querySelectorAll('.option').forEach((btn) => {
+    const displayIdx = Number(btn.dataset.display);
+    const selected = item.userAnswer === displayIdx;
+    btn.classList.toggle('selected', selected);
+    btn.setAttribute('aria-pressed', String(selected));
+  });
+  const dot = $('exam-nav')?.querySelector(`.exam-nav-dot[data-idx="${qIdx}"]`);
+  if (dot) dot.classList.toggle('is-answered', item.userAnswer != null);
+  updateExamProgressHeader();
+  applyExamFilter();
+}
+
+function onExamSelect(qIdx, displayIdx) {
+  if (enforceSessionDeadline()) return;
+  const s = state.session;
+  if (!s || s.reviewMode || !s.examMode || state.examSubmitting) return;
+  const item = s.items[qIdx];
+  if (!item) return;
+  item.userAnswer = displayIdx;
+  item.checked = false;
+  item.status = 'pending';
+  persistSession();
+  patchExamQuestion(qIdx);
+}
+
+async function onExamSubmit() {
+  if (state.examSubmitting) return;
+  if (enforceSessionDeadline()) return;
+  const s = state.session;
+  if (!s || !s.examMode) return;
+  if (s.reviewMode) {
+    finishSession();
+    return;
+  }
+  const unanswered = s.items.filter((it) => it.userAnswer == null).length;
+  if (unanswered > 0) {
+    const ok = await confirmModal(
+      'Còn câu chưa chọn',
+      `Bạn còn ${unanswered} câu chưa chọn đáp án. Vẫn nộp bài?`
+    );
+    if (!ok) return;
+  } else {
+    const ok = await confirmModal('Nộp bài thi?', `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`);
+    if (!ok) return;
+  }
+  state.examSubmitting = true;
+  updateExamProgressHeader();
+  try {
+    let firstTry = 0;
+    let wrongAttempts = 0;
+    const completedIdx = [];
+    for (const item of s.items) {
+      const q = s.pool[item.poolIdx];
+      if (item.userAnswer == null) {
+        item.status = 'wrong';
+        item.checked = true;
+        item.wrongCount = 1;
+        wrongAttempts += 1;
+        markWrong(s.deckId, q.originalIndex);
+        continue;
+      }
+      const correct = isAnswerCorrect(item, q);
+      item.checked = true;
+      if (correct) {
+        item.status = 'correct';
+        firstTry += 1;
+        completedIdx.push(q.originalIndex);
+      } else {
+        item.status = 'wrong';
+        item.wrongCount = 1;
+        wrongAttempts += 1;
+        const wrongOriginalIndex = item.optionOrder[item.userAnswer];
+        if (!item.wrongOptions) item.wrongOptions = [];
+        if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
+        markWrong(s.deckId, q.originalIndex);
+      }
+    }
+    if (completedIdx.length) addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
+    s.firstTryCorrect = firstTry;
+    s.totalWrongAttempts = wrongAttempts;
+    s.completedInSession = s.items.length;
+    s.reviewMode = true;
+    state.reviewMode = true;
+    state.examFilter = 'all';
+    stopSessionTimer(true);
+    persistSession();
+    renderExam();
+    toast(`Đã chấm bài: ${firstTry}/${s.items.length} đúng · Điểm ${formatScore(firstTry, s.items.length)}/10`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } finally {
+    state.examSubmitting = false;
+    updateExamProgressHeader();
+  }
+}
+
 function enforceSessionDeadline() {
   const session = state.session;
   if (!session || !(session.timeLimit > 0) || !session.deadlineAt || Date.now() < session.deadlineAt) return false;
   session.timeExpired = true;
+  if (session.examMode && !session.reviewMode) {
+    session.reviewMode = true;
+    state.reviewMode = true;
+    let firstTry = 0;
+    let wrongAttempts = 0;
+    const completedIdx = [];
+    for (const item of session.items) {
+      const q = session.pool[item.poolIdx];
+      item.checked = true;
+      if (item.userAnswer != null && isAnswerCorrect(item, q)) {
+        item.status = 'correct';
+        firstTry += 1;
+        completedIdx.push(q.originalIndex);
+      } else {
+        item.status = 'wrong';
+        item.wrongCount = Math.max(1, item.wrongCount || 0);
+        wrongAttempts += 1;
+        markWrong(session.deckId, q.originalIndex);
+      }
+    }
+    if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
+    session.firstTryCorrect = firstTry;
+    session.totalWrongAttempts = wrongAttempts;
+    session.completedInSession = session.items.length;
+    state.examFilter = 'all';
+    stopSessionTimer(true);
+    persistSession();
+    renderExam();
+    toast('Hết giờ — đã tự động nộp bài.');
+    return true;
+  }
   finishSession();
   return true;
 };
@@ -848,25 +1251,34 @@ function formatScore(correct, total) {
 function getElapsedSeconds(session = state.session) {
   if (!session) return 0;
   const startedAt = Number(session.startedAt) || Date.now();
-  return Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+  let end = Date.now();
+  if (session.finishedAt) end = Number(session.finishedAt);
+  else if (session.timeExpired && session.deadlineAt) end = Number(session.deadlineAt);
+  return Math.max(0, Math.floor((end - startedAt) / 1000));
 };
 
 function updateTimerDisplay() {
-  const el = $('progress-time');
   const s = state.session;
+  const el = s?.examMode ? $('exam-progress-time') : $('progress-time');
   if (!el) return;
   if (!s) {
     el.hidden = true;
     return;
   };
   const elapsed = getElapsedSeconds(s);
-  const hasLimit = Number(s.timeLimit) > 0 && Number(s.deadlineAt) > 0;
+  const stopped = !!s.finishedAt || !!s.reviewMode;
+  const hasLimit = Number(s.timeLimit) > 0 && Number(s.deadlineAt) > 0 && !stopped;
   const remaining = hasLimit ? Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000)) : null;
   el.hidden = false;
-  el.textContent = hasLimit
-    ? `Còn ${formatTime(remaining)} · Đã làm ${formatTime(elapsed)}`
-    : `Đã làm ${formatTime(elapsed)}`;
-  el.classList.toggle('time-warning', hasLimit && remaining <= 60);
+  if (stopped) {
+    el.textContent = `Hoàn thành · ${formatTime(elapsed)}`;
+    el.classList.remove('time-warning');
+  } else {
+    el.textContent = hasLimit
+      ? `Còn ${formatTime(remaining)} · Đã làm ${formatTime(elapsed)}`
+      : `Đã làm ${formatTime(elapsed)}`;
+    el.classList.toggle('time-warning', hasLimit && remaining <= 60);
+  }
 };
 
 function startSessionTimer() {
@@ -876,6 +1288,10 @@ function startSessionTimer() {
     updateTimerDisplay();
     return;
   };
+  if (state.session.finishedAt || state.session.reviewMode) {
+    updateTimerDisplay();
+    return;
+  }
   const tick = () => {
     const session = state.session;
     if (!session) {
@@ -883,23 +1299,27 @@ function startSessionTimer() {
       state.timerInterval = null;
       return;
     };
+    if (session.finishedAt || session.reviewMode) {
+      stopSessionTimer(false);
+      return;
+    }
     updateTimerDisplay();
     if (session.timeLimit > 0 && session.deadlineAt && Date.now() >= session.deadlineAt) {
-      session.timeExpired = true;
       clearInterval(state.timerInterval);
       state.timerInterval = null;
-      finishSession();
+      enforceSessionDeadline();
     };
   };
   tick();
-  if (state.session) state.timerInterval = setInterval(tick, 1000);
+  if (state.session && !state.session.finishedAt && !state.session.reviewMode) {
+    state.timerInterval = setInterval(tick, 1000);
+  }
 };
 
 function finishSession() {
   const s = state.session;
   if (!s) return;
-  clearInterval(state.timerInterval);
-  state.timerInterval = null;
+  stopSessionTimer(true);
 
   if (s.mode !== 'practice-wrong') {
     const completedIdx = s.items
@@ -973,9 +1393,21 @@ function showSummary(summary, deckId, mode) {
         ? 'Hoàn thành ôn câu đã đánh dấu'
         : mode === 'search'
           ? 'Hoàn thành ôn kết quả tìm kiếm'
-          : 'Hoàn thành lượt ôn';
+          : mode === 'exam'
+            ? 'Kết quả thi thử'
+            : 'Hoàn thành lượt ôn';
+  const scoreVal = summary.score ?? formatScore(summary.correct, summary.total);
   $('sum-total').textContent = String(summary.total);
-  $('sum-score').textContent = `${summary.score ?? formatScore(summary.correct, summary.total)} / 10`;
+  $('sum-score').textContent = `${scoreVal} / 10`;
+  const scoreBig = $('sum-score-big');
+  if (scoreBig) scoreBig.textContent = String(scoreVal);
+  const ringFg = $('score-ring-fg');
+  if (ringFg) {
+    const circumference = 2 * Math.PI * 52;
+    const pct = Math.max(0, Math.min(1, Number(scoreVal) / 10));
+    ringFg.style.strokeDasharray = `${circumference}`;
+    ringFg.style.strokeDashoffset = `${circumference * (1 - pct)}`;
+  }
   $('sum-time').textContent = formatTime(summary.elapsedSeconds || 0);
   $('sum-correct').textContent = String(summary.correct);
   $('sum-wrong-q').textContent = String(summary.wrongQuestions);
@@ -1028,7 +1460,7 @@ function showSummary(summary, deckId, mode) {
   btnContinue.hidden = !canSeq;
   if (canSeq) {
     const left = rangeEnd - nextIndex;
-    const settings = getSettings();
+    const settings = getSettings(deckId);
     const n = Math.min(settings.count || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự (${n} câu trong vùng)`;
   };
@@ -1117,27 +1549,30 @@ function restoreSessionIfAny() {
     ? saved.firstTryCorrect
     : saved.items.filter((item) => item.status === 'correct' && item.wrongCount === 0).length;
   saved.maxReached = Math.max(0, Math.min(saved.items.length - 1, Number(saved.maxReached) || 0));
+  saved.examMode = !!saved.examMode || saved.mode === 'exam';
   state.currentDeck = saved.deckId;
   state.session = saved;
-  showScreen('quiz');
-  renderQuestion();
+  state.reviewMode = !!saved.reviewMode;
+  state.examFilter = 'all';
+  state.examSubmitting = false;
+  if (saved.examMode) {
+    showScreen('exam');
+    renderExam();
+  } else {
+    showScreen('quiz');
+    renderQuestion();
+  }
   startSessionTimer();
-  toast('Đã khôi phục lượt ôn đang làm.');
+  toast(saved.examMode ? 'Đã khôi phục bài thi thử đang làm.' : 'Đã khôi phục lượt ôn đang làm.');
   return true;
 };
 
 function initUI() {
-  const settings = getSettings();
-  state.currentDeck = settings.deck === 'qp2' ? 'qp2' : 'qp1';
-  $('input-count').value = String(settings.count || 20);
-  $('input-time-limit').value = String(settings.timeLimit || 0);
-  $('input-range-start').value = String(settings.startQuestion || 1);
-  $('input-range-end').value = String(settings.endQuestion || state.decks[state.currentDeck]?.length || 1);
-  $('chk-shuffle-q').checked = !!settings.shuffleQ;
-  $('chk-shuffle-a').checked = settings.shuffleA !== false;
-
-  if (restoreSessionIfAny()) return;
-
+  const active = getSettings();
+  state.currentDeck = active.deck === 'qp2' ? 'qp2' : 'qp1';
+  const settings = getSettings(state.currentDeck);
+  applySettingsToForm(settings);
+  // Avoid double-write from setPracticeMode during init
   showScreen('setup');
   refreshSetupUI();
 };
@@ -1170,9 +1605,32 @@ function initTheme() {
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (!$('screen-quiz') || $('screen-quiz').hidden || !$('modal').hidden) return;
+    if (!$('modal').hidden) return;
     const target = event.target;
     if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+    const quizActive = $('screen-quiz') && !$('screen-quiz').hidden;
+    const examActive = $('screen-exam') && !$('screen-exam').hidden;
+
+    if (examActive) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        $('btn-exam-quit')?.click();
+        return;
+      }
+      if ((event.key === 'Enter' || event.key === 's') && !state.session?.reviewMode) {
+        event.preventDefault();
+        $('btn-exam-submit')?.click();
+        return;
+      }
+      if (event.key === 'n' || event.key === 'N') {
+        event.preventDefault();
+        jumpToNextUnanswered();
+      }
+      return;
+    }
+
+    if (!quizActive) return;
 
     if (/^[1-6]$/.test(event.key)) {
       const option = $('options').querySelectorAll('.option')[Number(event.key) - 1];
@@ -1208,7 +1666,10 @@ function bindEvents() {
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
+      if (state.currentDeck === btn.dataset.deck) return;
+      persistSetupForm();
       state.currentDeck = btn.dataset.deck;
+      applySettingsToForm(getSettings(state.currentDeck));
       refreshSetupUI();
       persistSetupForm();
     });
@@ -1220,6 +1681,40 @@ function bindEvents() {
     persistSetupForm();
     refreshSetupUI();
   });
+
+  document.querySelectorAll('.preset-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const form = readSetupForm();
+      const max = Math.max(1, form.endQuestion - form.startQuestion + 1);
+      const n = Math.min(Number(btn.dataset.count) || 20, max);
+      $('input-count').value = String(n);
+      persistSetupForm();
+      refreshSetupUI();
+    });
+  });
+
+  $('btn-resume-session')?.addEventListener('click', () => {
+    if (!restoreSessionIfAny()) toast('Không còn phiên để tiếp tục.');
+    else refreshSetupUI();
+  });
+  $('btn-discard-session')?.addEventListener('click', async () => {
+    const ok = await confirmModal('Bỏ phiên đang dở?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
+    if (!ok) return;
+    clearSession();
+    state.session = null;
+    state.reviewMode = false;
+    refreshResumeCard();
+    toast('Đã bỏ phiên cũ.');
+  });
+
+  document.querySelectorAll('.filter-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      state.examFilter = chip.dataset.filter || 'all';
+      applyExamFilter();
+      updateExamProgressHeader();
+    });
+  });
+  $('btn-exam-next-empty')?.addEventListener('click', () => jumpToNextUnanswered());
 
   $('input-count').addEventListener('change', () => {
     persistSetupForm();
@@ -1258,12 +1753,45 @@ function bindEvents() {
     persistSetupForm();
   });
 
+  document.querySelectorAll('.mode-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode));
+  });
+
   $('btn-start').addEventListener('click', () => startNormal({ sequential: false }));
   $('btn-continue').addEventListener('click', () => startNormal({ sequential: true }));
-  $('btn-practice-wrong').addEventListener('click', () => startPracticeWrong());
-  $('btn-practice-bookmarks').addEventListener('click', () => startPracticeBookmarks());
-  $('btn-search-practice').addEventListener('click', () => startSearchResults());
+  $('btn-practice-wrong').addEventListener('click', () => {
+    setPracticeMode('practice');
+    startPracticeWrong();
+  });
+  $('btn-practice-bookmarks').addEventListener('click', () => {
+    setPracticeMode('practice');
+    startPracticeBookmarks();
+  });
+  $('btn-search-practice').addEventListener('click', () => {
+    setPracticeMode('practice');
+    startSearchResults();
+  });
   $('input-search').addEventListener('input', () => refreshSearchUI());
+
+  $('btn-exam-submit')?.addEventListener('click', () => onExamSubmit());
+  $('btn-exam-quit')?.addEventListener('click', async () => {
+    const s = state.session;
+    const reviewing = s?.reviewMode;
+    const ok = await confirmModal(
+      reviewing ? 'Thoát kết quả thi?' : 'Thoát bài thi?',
+      reviewing
+        ? 'Bạn sẽ quay về màn hình thiết lập. Kết quả lần thi này không lưu lại phiên đang mở.'
+        : 'Phiên thi hiện tại sẽ bị đóng. Tiến độ bộ đề (câu đã hoàn thành, câu sai) vẫn được giữ nếu bạn đã nộp bài.'
+    );
+    if (!ok) return;
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+    clearSession();
+    state.session = null;
+    state.reviewMode = false;
+    showScreen('setup');
+    refreshSetupUI();
+  });
 
   $('btn-bookmark').addEventListener('click', () => {
     const q = currentQ();
@@ -1347,8 +1875,11 @@ function bindEvents() {
       'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.'
     );
     if (!ok) return;
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
     const cleared = clearSession();
     state.session = null;
+    state.reviewMode = false;
     if (!cleared) toast('Không thể xóa phiên đã lưu; phiên này có thể xuất hiện lại khi tải trang.');
     showScreen('setup');
     refreshSetupUI();

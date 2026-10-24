@@ -98,7 +98,7 @@ test('invalid backups are rejected without replacing saved data', () => {
   saveSettings({ deck: 'qp2', count: 9, shuffleQ: false, shuffleA: true, startQuestion: 1, endQuestion: 9 });
   assert.equal(importBackup('{not json'), false);
   assert.equal(importBackup({ format: 'wrong', version: 1, decks: {} }), false);
-  assert.equal(importBackup({ format: 'quocphong-quiz-backup', version: 1, decks: { qp3: {} } }), false);
+  assert.equal(importBackup({ format: 'quocphonganninh-backup', version: 1, decks: { qp3: {} } }), false);
   assert.equal(getSettings().count, 9);
 });
 
