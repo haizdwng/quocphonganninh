@@ -2416,3 +2416,33 @@ body {
 .review-select-label input { width: 20px; height: 20px; accent-color: var(--primary); }
 .review-q-card { scroll-margin-top: 20px; }
 .review-q-highlight { outline: 2px solid var(--primary); }
+
+/* Search field in the question bank */
+#input-review-search {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+#input-review-search::placeholder { color: var(--muted); opacity: .85; }
+#input-review-search:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+#input-review-search::-webkit-search-cancel-button { cursor: pointer; }
+#input-review-goto { min-width: 0; width: 100%; }
+.review-navigation .row { align-items: stretch; gap: 8px; }
+.review-navigation .row .btn { flex: 0 0 auto; }
+@media (max-width: 420px) {
+  #input-review-search { min-height: 44px; padding: 11px 12px; }
+}
