@@ -229,6 +229,7 @@ function renderTextWithHighlights(element, text, deckId, originalIndex, target, 
   element.replaceChildren();
   element.dataset.highlightTarget = target;
   element.dataset.questionIndex = String(originalIndex);
+  element.dataset.deckId = deckId;
   const ranges = getVisibleHighlights(deckId, originalIndex, includePending)
     .filter((range) => range.target === target && range.start < text.length && range.end > 0)
     .map((range) => ({ start: Math.max(0, range.start), end: Math.min(text.length, range.end) }))
@@ -333,7 +334,7 @@ function captureHighlightSelection() {
   const selectedText = range.toString();
   if (!selectedText.trim()) return;
   state.lastTextSelection = {
-    deckId: state.currentDeck,
+    deckId: target.dataset.deckId || state.currentDeck,
     questionIndex: Number(target.dataset.questionIndex),
     target: target.dataset.highlightTarget,
     start,
@@ -972,7 +973,6 @@ function renderQuestion() {
   const highlightToolbar = $('quiz-highlight-toolbar');
   if (highlightToolbar) {
     highlightToolbar.hidden = s.examMode === true;
-    $('highlight-help').hidden = s.examMode === true;
     $('btn-highlight-edit').setAttribute('aria-pressed', String(state.highlightEditMode));
     $('btn-highlight-edit').textContent = state.highlightEditMode ? 'Xong chỉnh sửa' : 'Chỉnh highlight';
     $('btn-highlight-apply').hidden = !state.highlightEditMode;
