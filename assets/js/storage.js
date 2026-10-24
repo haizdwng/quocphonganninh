@@ -110,6 +110,16 @@ export function getDeckProgress(deckId) {
     sequentialCursor: Number.isInteger(cursor) && cursor >= 0 ? cursor : 0,
     completed,
     wrongMap,
+    wrongRangeMap: d.wrongRangeMap && typeof d.wrongRangeMap === 'object' && !Array.isArray(d.wrongRangeMap)
+      ? Object.fromEntries(Object.entries(d.wrongRangeMap)
+        .filter(([range, indices]) => /^\d+-\d+$/.test(range) && Array.isArray(indices))
+        .map(([range, indices]) => {
+          const [start, end] = range.split('-').map(Number);
+          return [range, [...new Set(indices.filter((index) =>
+            Number.isInteger(index) && index >= start - 1 && index < end
+          ))].sort((a, b) => a - b)];
+        }))
+      : {},
     practiceMap: d.practiceMap && typeof d.practiceMap === 'object' && !Array.isArray(d.practiceMap)
       ? Object.fromEntries(Object.entries(d.practiceMap).filter(([key, value]) => Number.isInteger(Number(key)) && Number(key) >= 0 && Number.isInteger(value) && value > 0))
       : {},
@@ -130,6 +140,16 @@ export function saveDeckProgress(deckId, progress) {
       : [],
     wrongMap: progress.wrongMap && typeof progress.wrongMap === 'object' && !Array.isArray(progress.wrongMap)
       ? progress.wrongMap
+      : {},
+    wrongRangeMap: progress.wrongRangeMap && typeof progress.wrongRangeMap === 'object' && !Array.isArray(progress.wrongRangeMap)
+      ? Object.fromEntries(Object.entries(progress.wrongRangeMap)
+        .filter(([range, indices]) => /^\d+-\d+$/.test(range) && Array.isArray(indices))
+        .map(([range, indices]) => {
+          const [start, end] = range.split('-').map(Number);
+          return [range, [...new Set(indices.filter((index) =>
+            Number.isInteger(index) && index >= start - 1 && index < end
+          ))].sort((a, b) => a - b)];
+        }))
       : {},
     practiceMap: progress.practiceMap && typeof progress.practiceMap === 'object' && !Array.isArray(progress.practiceMap)
       ? progress.practiceMap
@@ -205,6 +225,37 @@ export function getWrongIndices(deckId) {
     .map(Number)
     .filter((index) => Number.isInteger(index) && index >= 0 && progress.wrongMap[String(index)] > 0)
     .sort((a, b) => a - b);
+};
+
+export function getRangeWrongIndices(deckId, startQuestion, endQuestion) {
+  const start = Number(startQuestion);
+  const end = Number(endQuestion);
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start) return [];
+  const progress = getDeckProgress(deckId);
+  const key = `${start}-${end}`;
+  if (!Object.prototype.hasOwnProperty.call(progress.wrongRangeMap, key)) {
+    // Migrate old per-question wrong history into this range the first time it is opened.
+    progress.wrongRangeMap[key] = Object.keys(progress.wrongMap)
+      .map(Number)
+      .filter((index) => index >= start - 1 && index < end && progress.wrongMap[String(index)] > 0)
+      .sort((a, b) => a - b);
+    saveDeckProgress(deckId, progress);
+  };
+  return progress.wrongRangeMap[key].filter((index) => index >= start - 1 && index < end);
+};
+
+export function addWrongIndicesForRange(deckId, startQuestion, endQuestion, indices) {
+  const start = Number(startQuestion);
+  const end = Number(endQuestion);
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || !Array.isArray(indices)) return false;
+  const progress = getDeckProgress(deckId);
+  const key = `${start}-${end}`;
+  const existing = new Set(progress.wrongRangeMap[key] || []);
+  for (const index of indices) {
+    if (Number.isInteger(index) && index >= start - 1 && index < end) existing.add(index);
+  };
+  progress.wrongRangeMap[key] = [...existing].sort((a, b) => a - b);
+  return saveDeckProgress(deckId, progress);
 };
 
 export function getBookmarkedIndices(deckId) {
@@ -287,6 +338,16 @@ export function importBackup(raw) {
       sequentialCursor: Number.isInteger(d.sequentialCursor) && d.sequentialCursor >= 0 ? d.sequentialCursor : 0,
       completed: Array.isArray(d.completed) ? [...new Set(d.completed.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b) : [],
       wrongMap,
+      wrongRangeMap: d.wrongRangeMap && typeof d.wrongRangeMap === 'object' && !Array.isArray(d.wrongRangeMap)
+        ? Object.fromEntries(Object.entries(d.wrongRangeMap)
+          .filter(([range, indices]) => /^\d+-\d+$/.test(range) && Array.isArray(indices))
+          .map(([range, indices]) => {
+            const [start, end] = range.split('-').map(Number);
+            return [range, [...new Set(indices.filter((index) =>
+              Number.isInteger(index) && index >= start - 1 && index < end
+            ))].sort((a, b) => a - b)];
+          }))
+        : {},
       practiceMap,
       bookmarks: Array.isArray(d.bookmarks) ? [...new Set(d.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b) : [],
       dataFingerprint: typeof d.dataFingerprint === 'string' ? d.dataFingerprint : ''

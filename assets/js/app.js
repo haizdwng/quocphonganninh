@@ -12,6 +12,8 @@ import {
   addCompleted,
   setSequentialCursor,
   getWrongIndices,
+  getRangeWrongIndices,
+  addWrongIndicesForRange,
   getBookmarkedIndices,
   toggleBookmark,
   exportBackup,
@@ -50,7 +52,11 @@ const state = {
   timerInterval: null,
   examFilter: 'all',
   examSubmitting: false,
-  reviewSearch: ''
+  reviewSearch: '',
+  _lastSummaryWrongIndices: [],
+  _lastSummaryRangeStart: null,
+  _lastSummaryRangeEnd: null,
+  _lastSummaryCount: null
 };
 
 const $ = (id) => document.getElementById(id);
@@ -92,6 +98,7 @@ async function loadDeck(id) {
       progress.completed = [];
       progress.sequentialCursor = 0;
       progress.wrongMap = {};
+      progress.wrongRangeMap = {};
       progress.practiceMap = {};
       progress.bookmarks = [];
       progress.dataFingerprint = fp;
@@ -316,7 +323,7 @@ function refreshSetupUI() {
   };
 
   const btnWrong = $('btn-practice-wrong');
-  const rangeWrongCount = wrongs.filter((index) => index >= start - 1 && index < end).length;
+  const rangeWrongCount = getRangeWrongIndices(state.currentDeck, start, end).length;
   btnWrong.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
   btnWrong.textContent = `Luyện câu sai trong vùng (${rangeWrongCount})`;
 
@@ -521,6 +528,9 @@ function startSessionFromPool(pool, meta) {
     deckId: state.currentDeck,
     dataFingerprint: state.fingerprints[state.currentDeck],
     mode: meta.mode || 'normal',
+    rangeStart: form.startQuestion,
+    rangeEnd: form.endQuestion,
+    requestedCount: form.count,
     sequential: !!meta.sequential,
     startCursor: meta.startCursor ?? null,
     nextCursor: meta.nextCursor ?? null,
@@ -683,12 +693,15 @@ function startNormal(opts = {}) {
     alreadyShuffled: true
   });
 };
-function startPracticeWrong() {
+function startPracticeWrong(options = {}) {
   const form = readSetupForm();
   persistSetupForm();
   const qs = selectedQuestions(form);
   const rangeIndices = new Set(qs.map((question) => question.originalIndex));
-  const wrongs = getWrongIndices(state.currentDeck).filter((index) => rangeIndices.has(index));
+  const sourceIndices = Array.isArray(options.indices)
+    ? options.indices
+    : getRangeWrongIndices(state.currentDeck, form.startQuestion, form.endQuestion);
+  const wrongs = [...new Set(sourceIndices)].filter((index) => rangeIndices.has(index));
   if (!wrongs.length) {
     toast('Trong vùng câu hỏi đã chọn không có câu sai để luyện.');
     return;
@@ -707,6 +720,16 @@ function startPracticeWrong() {
     alreadyShuffled: true
   });
 };
+function recordWrongAnswer(session, originalIndex) {
+  if (markWrong(session.deckId, originalIndex) === null) {
+    toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
+  };
+  if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) &&
+      !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [originalIndex])) {
+    toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
+  };
+};
+
 function currentItem() {
   const s = state.session;
   if (!s) return null;
@@ -1102,7 +1125,7 @@ async function onExamSubmit() {
         item.checked = true;
         item.wrongCount = 1;
         wrongAttempts += 1;
-        markWrong(s.deckId, q.originalIndex);
+        recordWrongAnswer(s, q.originalIndex);
         continue;
       };
       const correct = isAnswerCorrect(item, q);
@@ -1118,7 +1141,7 @@ async function onExamSubmit() {
         const wrongOriginalIndex = item.optionOrder[item.userAnswer];
         if (!item.wrongOptions) item.wrongOptions = [];
         if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
-        markWrong(s.deckId, q.originalIndex);
+        recordWrongAnswer(s, q.originalIndex);
       };
     };
     if (completedIdx.length) addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
@@ -1160,7 +1183,7 @@ function enforceSessionDeadline() {
         item.status = 'wrong';
         item.wrongCount = Math.max(1, item.wrongCount || 0);
         wrongAttempts += 1;
-        markWrong(session.deckId, q.originalIndex);
+        recordWrongAnswer(session, q.originalIndex);
       };
     };
     if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
@@ -1238,7 +1261,7 @@ function onCheck() {
       if (history) history.wrongCount += 1;
       else s.practiceWrongHistory.push({ originalIndex: q.originalIndex, question: q.question, wrongCount: 1 });
     };
-    if (markWrong(s.deckId, q.originalIndex) === null) toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
+    recordWrongAnswer(s, q.originalIndex);
   };
   persistSession();
   renderQuestion();
@@ -1508,6 +1531,16 @@ function finishSession() {
     mode: s.mode
   };
 
+  if (Number.isInteger(s.rangeStart) && Number.isInteger(s.rangeEnd) && wrongInSession.length) {
+    if (!addWrongIndicesForRange(s.deckId, s.rangeStart, s.rangeEnd, wrongInSession.map((entry) => entry.originalIndex))) {
+      toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
+    };
+  };
+  state._lastSummaryWrongIndices = wrongInSession.map((entry) => entry.originalIndex);
+  state._lastSummaryRangeStart = Number.isInteger(s.rangeStart) ? s.rangeStart : null;
+  state._lastSummaryRangeEnd = Number.isInteger(s.rangeEnd) ? s.rangeEnd : null;
+  state._lastSummaryCount = Number.isInteger(s.requestedCount) ? s.requestedCount : s.items.length;
+
   const sessionCleared = clearSession();
   state.session = null;
   if (!sessionCleared) toast('Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.');
@@ -1589,12 +1622,11 @@ function showSummary(summary, deckId, mode) {
   };
 
   state.currentDeck = deckId;
-  const form = readSetupForm();
-  const selectedIndices = new Set(selectedQuestions(form).map((question) => question.originalIndex));
   const btnPractice = $('btn-sum-practice');
-  const allWrong = getWrongIndices(deckId).filter((index) => selectedIndices.has(index));
-  btnPractice.hidden = allWrong.length === 0;
-  btnPractice.textContent = `Luyện lại câu sai trong vùng (${allWrong.length})`;
+  const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.originalIndex))];
+  state._lastSummaryWrongIndices = sessionWrong;
+  btnPractice.hidden = sessionWrong.length === 0;
+  btnPractice.textContent = `Luyện lại câu sai trong lượt này (${sessionWrong.length})`;
 
   const progress = getDeckProgress(deckId);
   const totalQ = (state.decks[deckId] || []).length;
@@ -2068,9 +2100,17 @@ function bindEvents() {
 
   $('btn-sum-practice').addEventListener('click', () => {
     if (state._lastSummaryDeck) state.currentDeck = state._lastSummaryDeck;
+    if (Number.isInteger(state._lastSummaryRangeStart) && Number.isInteger(state._lastSummaryRangeEnd)) {
+      $('input-range-start').value = String(state._lastSummaryRangeStart);
+      $('input-range-end').value = String(state._lastSummaryRangeEnd);
+    };
+    if (Number.isInteger(state._lastSummaryCount) && state._lastSummaryCount > 0) {
+      $('input-count').value = String(state._lastSummaryCount);
+    };
+    setPracticeMode('practice');
     showScreen('setup');
     refreshSetupUI();
-    startPracticeWrong();
+    startPracticeWrong({ indices: state._lastSummaryWrongIndices });
   });
 
   $('btn-retry').addEventListener('click', () => {

@@ -5,6 +5,8 @@ import {
   saveSettings,
   getDeckProgress,
   saveDeckProgress,
+  getRangeWrongIndices,
+  addWrongIndicesForRange,
   getSession,
   saveSession,
   clearSession,
@@ -131,4 +133,30 @@ test('settings are isolated by deck and preserve the selected practice mode', ()
   assert.equal(getSettings('qp2').count, 30);
   assert.equal(getSettings('qp2').practiceMode, 'exam');
   assert.equal(getSettings().deck, 'qp2');
+});
+
+
+test('wrong-question history is stored separately for each exact range and survives backup', () => {
+  globalThis.localStorage = new MemoryStorage();
+  saveDeckProgress('qp1', {
+    sequentialCursor: 0,
+    completed: [],
+    wrongMap: { 1: 1, 4: 2, 7: 1 },
+    wrongRangeMap: {},
+    practiceMap: {},
+    bookmarks: [],
+    dataFingerprint: 'range-test'
+  });
+
+  assert.deepEqual(getRangeWrongIndices('qp1', 1, 5), [1, 4]);
+  assert.deepEqual(getRangeWrongIndices('qp1', 6, 10), [7]);
+  assert.equal(addWrongIndicesForRange('qp1', 1, 5, [2, 4, 8]), true);
+  assert.deepEqual(getRangeWrongIndices('qp1', 1, 5), [1, 2, 4]);
+  assert.deepEqual(getRangeWrongIndices('qp1', 6, 10), [7]);
+
+  const backup = exportBackup();
+  globalThis.localStorage = new MemoryStorage();
+  assert.equal(importBackup(backup), true);
+  assert.deepEqual(getRangeWrongIndices('qp1', 1, 5), [1, 2, 4]);
+  assert.deepEqual(getRangeWrongIndices('qp1', 6, 10), [7]);
 });
