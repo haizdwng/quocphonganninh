@@ -23,6 +23,7 @@ import {
   normalizeQuestions,
   createSessionItems,
   pickSequential,
+  findNextUncompletedQuestion,
   pickRandom,
   pickWrong,
   isAnswerCorrect,
@@ -330,8 +331,13 @@ function refreshSetupUI() {
   refreshSearchUI();
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
-  const nextIndex = Math.max(progress.sequentialCursor, start - 1);
-  const canContinue = state.practiceMode !== 'exam' && !shuffleQ && nextIndex < end && rangeRemaining > 0;
+  const nextQuestion = findNextUncompletedQuestion(
+    rangeQuestions,
+    Math.max(progress.sequentialCursor, start - 1),
+    completed
+  );
+  const nextIndex = nextQuestion?.originalIndex ?? end;
+  const canContinue = state.practiceMode !== 'exam' && !shuffleQ && !!nextQuestion;
   btnContinue.hidden = !canContinue;
   if (canContinue) {
     const left = end - nextIndex;
@@ -593,11 +599,16 @@ function startNormal(opts = {}) {
   };
 
   if (opts.sequential) {
-    const cursor = Math.max(progress.sequentialCursor, rangeStart);
-    if (cursor >= rangeEnd) {
-      toast('Đã hết câu tuần tự trong vùng đã chọn. Hãy đổi vùng hoặc làm lại từ đầu.');
+    const nextQuestion = findNextUncompletedQuestion(
+      qs,
+      Math.max(progress.sequentialCursor, rangeStart),
+      completedSet
+    );
+    if (!nextQuestion) {
+      toast('Đã hoàn thành toàn bộ câu trong vùng đã chọn.');
       return;
     };
+    const cursor = nextQuestion.originalIndex;
     const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
     const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
     if (!items.length) {
@@ -640,7 +651,12 @@ function startNormal(opts = {}) {
     return;
   };
 
-  const cursor = Math.max(progress.sequentialCursor, rangeStart);
+  const nextQuestion = findNextUncompletedQuestion(
+    qs,
+    Math.max(progress.sequentialCursor, rangeStart),
+    completedSet
+  );
+  const cursor = nextQuestion?.originalIndex ?? rangeEnd;
   const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
   const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
   if (!items.length) {
@@ -1070,6 +1086,9 @@ async function onExamSubmit() {
     const ok = await confirmModal('Nộp bài thi?', `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`);
     if (!ok) return;
   };
+
+  // The deadline may expire while the confirmation dialog is open.
+  if (enforceSessionDeadline() || state.session !== s || s.reviewMode) return;
   state.examSubmitting = true;
   updateExamProgressHeader();
   try {
@@ -1642,29 +1661,14 @@ function initUI() {
   refreshSetupUI();
 };
 
-function applyTheme(theme) {
-  const nextTheme = theme === 'light' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = nextTheme;
+function applyTheme() {
+  document.documentElement.dataset.theme = 'dark';
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = nextTheme === 'dark' ? '#07111f' : '#f3f7fb';
-  const button = $('theme-toggle');
-  if (button) {
-    button.textContent = nextTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
-    button.dataset.icon = nextTheme === 'dark' ? 'sun' : 'moon';
-    button.setAttribute('aria-pressed', String(nextTheme === 'light'));
-  };
-  try {
-    localStorage.setItem('theme', nextTheme);
-  } catch {};
+  if (themeColor) themeColor.content = '#07111f';
 };
 
 function initTheme() {
-  let theme = 'dark';
-  try {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'light' || saved === 'dark') theme = saved;
-  } catch {};
-  applyTheme(theme);
+  applyTheme();
 };
 
 function bindKeyboardShortcuts() {
@@ -1724,9 +1728,6 @@ function bindKeyboardShortcuts() {
 };
 
 function bindEvents() {
-  $('theme-toggle').addEventListener('click', () => {
-    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-  });
   bindKeyboardShortcuts();
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
