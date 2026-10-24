@@ -2508,3 +2508,33 @@ body {
   user-select: text;
   -webkit-user-select: text;
 }
+
+
+/* Keep bookmark and highlight actions aligned in one row */
+.question-tools-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+.question-tools-row > .bookmark-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0;
+}
+.question-tools-row .highlight-toolbar {
+  flex: 1 1 auto;
+  margin: 0;
+}
+.question-tools-row .highlight-toolbar[hidden] {
+  display: none;
+}
+@media (max-width: 480px) {
+  .question-tools-row {
+    gap: 6px;
+  }
+  .question-tools-row .highlight-toolbar {
+    gap: 6px;
+  }
+}
