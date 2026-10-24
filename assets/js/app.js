@@ -2043,6 +2043,14 @@ function bindEvents() {
     document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById(target)?.classList.add('review-q-highlight');
   });
+  $('input-review-goto').addEventListener('input', (event) => {
+    const input = event.currentTarget;
+    if (input.value === '') return;
+    const total = currentQuestions().length;
+    const value = Number.parseInt(input.value, 10);
+    if (!Number.isFinite(value)) return;
+    input.value = String(Math.min(Math.max(value, 1), Math.max(1, total)));
+  });
   $('input-review-goto').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') $('btn-review-goto').click();
   });
