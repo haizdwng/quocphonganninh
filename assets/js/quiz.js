@@ -37,7 +37,8 @@ export function normalizeQuestions(raw) {
       originalIndex: i,
       question: question.question,
       options,
-      correct
+      correct,
+      fixed: question.fixed === true
     });
   };
   if (!out.length) {
@@ -56,9 +57,9 @@ function shuffleInPlace(array) {
   return array;
 };
 
-export function buildOptionOrder(optionCount, shuffleA) {
+export function buildOptionOrder(optionCount, shuffleA, fixed = false) {
   const order = Array.from({ length: optionCount }, (_, i) => i);
-  if (shuffleA) shuffleInPlace(order);
+  if (shuffleA && !fixed) shuffleInPlace(order);
   return order;
 };
 
@@ -70,7 +71,7 @@ export function createSessionItems(pool, { shuffleQ, shuffleA }) {
     return {
       poolIdx,
       originalIndex: q.originalIndex,
-      optionOrder: buildOptionOrder(q.options.length, shuffleA),
+      optionOrder: buildOptionOrder(q.options.length, shuffleA, q.fixed),
       userAnswer: null,
       status: 'pending',
       wrongCount: 0,
