@@ -220,7 +220,7 @@ function renderQuestionBank() {
   const filtered = (query
     ? inRange.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
     : inRange);
-  const selectedCount = state.reviewSelectedIndices.size;
+  const selectedCount = [...state.reviewSelectedIndices].filter((index) => index >= form.startQuestion - 1 && index < form.endQuestion).length;
   $('btn-review-select-mode').textContent = state.reviewSelectMode ? 'Thoát chọn câu' : 'Tự chọn câu';
   $('review-selection-tools').hidden = !state.reviewSelectMode;
   $('btn-review-start-selected').textContent = `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${selectedCount} câu đã chọn`;
@@ -1981,12 +1981,16 @@ function bindEvents() {
     renderQuestionBank();
   });
   $('btn-review-start-selected').addEventListener('click', () => {
-    const selected = currentQuestions().filter((question) => state.reviewSelectedIndices.has(question.originalIndex));
+    const form = readSetupForm();
+    const selected = currentQuestions().filter((question) =>
+      state.reviewSelectedIndices.has(question.originalIndex) &&
+      question.originalIndex >= form.startQuestion - 1 &&
+      question.originalIndex < form.endQuestion
+    );
     if (!selected.length) {
       toast('Hãy chọn ít nhất một câu hỏi.');
       return;
     };
-    const form = readSetupForm();
     $('input-count').value = String(selected.length);
     persistSetupForm();
     const selectedIndices = selected.map((question) => question.originalIndex);
