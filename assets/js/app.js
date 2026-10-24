@@ -497,8 +497,8 @@ function persistSetupForm() {
 function applySettingsToForm(settings) {
   if (!settings) return;
   const total = currentQuestions().length || settings.endQuestion || 1;
-  $('input-count').value = String(settings.count || 30);
-  $('input-time-limit').value = String(settings.timeLimit || 35);
+  $('input-count').value = String(Number.isInteger(settings.count) && settings.count > 0 ? settings.count : 30);
+  $('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? settings.timeLimit : 35);
   $('input-range-start').value = String(settings.startQuestion || 1);
   $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
