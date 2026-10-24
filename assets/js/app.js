@@ -211,18 +211,18 @@ function renderQuestionBank() {
     : questions;
   const list = $('review-list');
   const fragment = document.createDocumentFragment();
-  $('review-title').textContent = `\${DECKS[state.currentDeck].label} · toàn bộ câu hỏi và đáp án`;
-  $('review-description').textContent = `Có \${questions.length} câu. Đáp án đúng được tô nổi bật để bạn đọc trước khi ôn hoặc thi.`;
+  $('review-title').textContent = `${DECKS[state.currentDeck].label} · toàn bộ câu hỏi và đáp án`;
+  $('review-description').textContent = `Có ${questions.length} câu. Đáp án đúng được tô nổi bật để bạn đọc trước khi ôn hoặc thi.`;
   $('review-count').textContent = query
-    ? `Hiển thị \${filtered.length}/\${questions.length} câu phù hợp.`
-    : `Hiển thị toàn bộ \${questions.length} câu.`;
+    ? `Hiển thị ${filtered.length}/${questions.length} câu phù hợp.`
+    : `Hiển thị toàn bộ ${questions.length} câu.`;
 
   for (const question of filtered) {
     const card = document.createElement('article');
     card.className = 'review-q-card';
     const heading = document.createElement('h3');
     heading.className = 'review-q-heading';
-    heading.textContent = `Câu \${question.originalIndex + 1}`;
+    heading.textContent = `Câu ${question.originalIndex + 1}`;
     const prompt = document.createElement('p');
     prompt.className = 'review-q-text';
     prompt.textContent = question.question;
