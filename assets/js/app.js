@@ -23,6 +23,7 @@ import {
   normalizeQuestions,
   createSessionItems,
   pickSequential,
+  findNextUncompletedQuestion,
   pickRandom,
   pickWrong,
   isAnswerCorrect,
@@ -330,8 +331,13 @@ function refreshSetupUI() {
   refreshSearchUI();
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
-  const nextIndex = Math.max(progress.sequentialCursor, start - 1);
-  const canContinue = state.practiceMode !== 'exam' && !shuffleQ && nextIndex < end && rangeRemaining > 0;
+  const nextQuestion = findNextUncompletedQuestion(
+    rangeQuestions,
+    Math.max(progress.sequentialCursor, start - 1),
+    completed
+  );
+  const nextIndex = nextQuestion?.originalIndex ?? end;
+  const canContinue = state.practiceMode !== 'exam' && !shuffleQ && !!nextQuestion;
   btnContinue.hidden = !canContinue;
   if (canContinue) {
     const left = end - nextIndex;
@@ -593,11 +599,16 @@ function startNormal(opts = {}) {
   };
 
   if (opts.sequential) {
-    const cursor = Math.max(progress.sequentialCursor, rangeStart);
-    if (cursor >= rangeEnd) {
-      toast('Đã hết câu tuần tự trong vùng đã chọn. Hãy đổi vùng hoặc làm lại từ đầu.');
+    const nextQuestion = findNextUncompletedQuestion(
+      qs,
+      Math.max(progress.sequentialCursor, rangeStart),
+      completedSet
+    );
+    if (!nextQuestion) {
+      toast('Đã hoàn thành toàn bộ câu trong vùng đã chọn.');
       return;
     };
+    const cursor = nextQuestion.originalIndex;
     const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
     const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
     if (!items.length) {
@@ -640,7 +651,12 @@ function startNormal(opts = {}) {
     return;
   };
 
-  const cursor = Math.max(progress.sequentialCursor, rangeStart);
+  const nextQuestion = findNextUncompletedQuestion(
+    qs,
+    Math.max(progress.sequentialCursor, rangeStart),
+    completedSet
+  );
+  const cursor = nextQuestion?.originalIndex ?? rangeEnd;
   const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
   const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
   if (!items.length) {
