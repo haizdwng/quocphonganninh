@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh:41';
+const CACHE_VERSION = 'quocphonganninh:42';
 const CACHE_PREFIX = 'quocphonganninh:';
 const ESSENTIAL = [
   './',
@@ -28,6 +28,8 @@ const ESSENTIAL = [
   './assets/icons/tabler/arrow-right.svg',
   './assets/icons/tabler/arrow-left.svg',
   './assets/icons/tabler/rotate-clockwise.svg',
+  './assets/icons/tabler/pencil.svg',
+  './assets/icons/tabler/underline.svg',
   './assets/icons/tabler/x.svg'
 ];
 
