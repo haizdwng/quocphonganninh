@@ -215,8 +215,8 @@ function renderQuestionBank() {
     : questions;
   const list = $('review-list');
   const fragment = document.createDocumentFragment();
-  $('review-title').textContent = `${DECKS[state.currentDeck].label} · toàn bộ câu hỏi và đáp án`;
-  $('review-description').textContent = `Có ${questions.length} câu. Đáp án đúng được tô nổi bật để bạn đọc trước khi ôn hoặc thi.`;
+  $('review-title').textContent = DECKS[state.currentDeck].label;
+  $('review-description').textContent = `${questions.length} câu.`;
   $('review-count').textContent = query
     ? `Hiển thị ${filtered.length}/${questions.length} câu phù hợp.`
     : `Hiển thị toàn bộ ${questions.length} câu.`;
@@ -493,12 +493,12 @@ function persistSetupForm() {
 function applySettingsToForm(settings) {
   if (!settings) return;
   const total = currentQuestions().length || settings.endQuestion || 1;
-  $('input-count').value = String(settings.count || 20);
-  $('input-time-limit').value = String(settings.timeLimit || 0);
+  $('input-count').value = String(settings.count || 30);
+  $('input-time-limit').value = String(settings.timeLimit || 35);
   $('input-range-start').value = String(settings.startQuestion || 1);
   $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
-  $('chk-shuffle-a').checked = settings.shuffleA !== false;
+  $('chk-shuffle-a').checked = !!settings.shuffleA;
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
 };
 

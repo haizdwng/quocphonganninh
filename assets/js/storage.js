@@ -29,8 +29,8 @@ function normalizeSettingsEntry(raw, deckId) {
   const count = Number(settings.count);
   return {
     deck: normalizeDeckId(deckId || settings.deck),
-    count: Number.isInteger(count) && count > 0 ? count : 20,
-    shuffleQ: !!settings.shuffleQ,
+    count: Number.isInteger(count) && count > 0 ? count : 30,
+    shuffleQ: settings.shuffleQ !== false,
     shuffleA: settings.shuffleA !== false,
     startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0
       ? Number(settings.startQuestion)
@@ -40,7 +40,7 @@ function normalizeSettingsEntry(raw, deckId) {
       : 0,
     timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0
       ? Math.min(1440, Number(settings.timeLimit))
-      : 0,
+      : 35,
     practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice'
   };
 };
