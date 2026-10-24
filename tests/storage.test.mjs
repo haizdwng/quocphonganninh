@@ -49,7 +49,8 @@ test('settings, progress and bookmarks persist through localStorage', () => {
     shuffleA: false,
     startQuestion: 4,
     endQuestion: 30,
-    timeLimit: 25
+    timeLimit: 25,
+    practiceMode: 'practice'
   });
 
   assert.equal(saveDeckProgress('qp1', {
@@ -117,4 +118,17 @@ test('session persistence can be cleared without resetting deck progress', () =>
   assert.equal(clearSession(), true);
   assert.equal(getSession(), null);
   assert.deepEqual(getDeckProgress('qp1').completed, [1]);
+});
+
+
+test('settings are isolated by deck and preserve the selected practice mode', () => {
+  globalThis.localStorage = new MemoryStorage();
+  saveSettings({ deck: 'qp1', count: 12, shuffleQ: false, shuffleA: true, startQuestion: 1, endQuestion: 40, timeLimit: 0, practiceMode: 'practice' });
+  saveSettings({ deck: 'qp2', count: 30, shuffleQ: true, shuffleA: false, startQuestion: 5, endQuestion: 60, timeLimit: 45, practiceMode: 'exam' });
+
+  assert.equal(getSettings('qp1').count, 12);
+  assert.equal(getSettings('qp1').practiceMode, 'practice');
+  assert.equal(getSettings('qp2').count, 30);
+  assert.equal(getSettings('qp2').practiceMode, 'exam');
+  assert.equal(getSettings().deck, 'qp2');
 });
