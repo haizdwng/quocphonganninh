@@ -184,3 +184,17 @@ test('missing deck settings do not inherit the other deck settings', () => {
   assert.equal(qp2.count, 20);
   assert.equal(qp2.endQuestion, 0);
 });
+
+
+test('clearing one deck session does not delete a legacy session belonging to the other deck', () => {
+  globalThis.localStorage = new MemoryStorage();
+  const legacy = { deckId: 'qp2', items: [], pool: [] };
+  globalThis.localStorage.setItem('quocphonganninh', JSON.stringify({
+    activeDeck: 'qp1',
+    session: legacy
+  }));
+
+  assert.equal(clearSession(), true);
+  assert.equal(getSession('qp1'), null);
+  assert.deepEqual(getSession('qp2'), legacy);
+});
