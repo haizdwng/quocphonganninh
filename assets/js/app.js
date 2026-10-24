@@ -213,6 +213,11 @@ function currentQuestions() {
 function renderQuestionBank() {
   const questions = currentQuestions();
   const form = readSetupForm();
+  const gotoInput = $('input-review-goto');
+  gotoInput.min = '1';
+  gotoInput.max = String(Math.max(1, questions.length));
+  gotoInput.placeholder = `1–${questions.length}`;
+  gotoInput.setAttribute('aria-label', `Đi đến câu số từ 1 đến ${questions.length}`);
   const query = normalizeSearchText(state.reviewSearch.trim());
   const inRange = state.reviewSelectMode
     ? questions.filter((question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion)
