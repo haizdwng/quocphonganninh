@@ -1333,6 +1333,51 @@ function formatScore(correct, total) {
   return score.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
 };
 
+function animateScore(target, displayStr, circumference) {
+  const scoreBig = $('sum-score-big');
+  const ringFg = $('score-ring-fg');
+  if (!scoreBig || !ringFg) return;
+
+  const duration = 1100;
+  const start = performance.now();
+
+  let color = 'var(--primary)';
+  if (target >= 8) color = '#22c55e';
+  else if (target >= 5) color = '#eab308';
+  else color = '#ef4444';
+
+  ringFg.style.stroke = color;
+  scoreBig.style.color = color;
+  ringFg.style.transition = `stroke-dashoffset ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+
+  function frame(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const current = target * eased;
+
+    const shown = Math.round(current * 10) / 10;
+    scoreBig.textContent = shown.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+
+    const pct = Math.max(0, Math.min(1, current / 10));
+    ringFg.style.strokeDashoffset = `${circumference * (1 - pct)}`;
+
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      scoreBig.textContent = displayStr;
+      ringFg.style.strokeDashoffset = `${circumference * (1 - target / 10)}`;
+
+      scoreBig.style.transition = 'transform 0.25s ease';
+      scoreBig.style.transform = 'scale(1.08)';
+      setTimeout(() => {
+        scoreBig.style.transform = 'scale(1)';
+      }, 220);
+    };
+  };
+
+  requestAnimationFrame(frame);
+};
+
 function getElapsedSeconds(session = state.session) {
   if (!session) return 0;
   const startedAt = Number(session.startedAt) || Date.now();
