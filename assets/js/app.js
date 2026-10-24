@@ -30,8 +30,8 @@ import {
 } from './quiz.js';
 
 const DECKS = {
-  qp1: { id: 'qp1', label: 'Quốc phòng 1', file: 'data/quocphong1.json' },
-  qp2: { id: 'qp2', label: 'Quốc phòng 2', file: 'data/quocphong2.json' }
+  qp1: { id: 'qp1', label: 'Quốc Phòng 1', file: 'data/quocphong1.json' },
+  qp2: { id: 'qp2', label: 'Quốc Phòng 2', file: 'data/quocphong2.json' }
 };
 
 const state = {
@@ -66,7 +66,7 @@ async function loadDeck(id) {
   } catch {
     throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`);
   };
-  if (!res.ok) throw new Error(`Không tải được ${meta.label} (HTTP ${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
+  if (!res.ok) throw new Error(`Không tải được ${meta.label} (${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
   let raw;
   try {
     raw = await res.json();
@@ -146,7 +146,7 @@ function showScreen(name) {
   const header = document.querySelector('.app-header');
   if (header) {
     header.hidden = name === 'quiz' || name === 'exam';
-  }
+  };
   if (screen) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
@@ -289,18 +289,18 @@ function refreshResumeCard() {
   if (!saved || !Array.isArray(saved.items) || !saved.items.length) {
     card.hidden = true;
     return;
-  }
+  };
   const answered = saved.items.filter((it) => it.userAnswer != null).length;
   const isExam = !!saved.examMode || saved.mode === 'exam';
   const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
   card.hidden = false;
   $('resume-title').textContent = isExam
-    ? (saved.reviewMode ? 'Có bài thi đã chấm (chưa xem tổng kết)' : 'Có bài thi thử đang dở')
+    ? (saved.reviewMode ? 'Có bài thi đã chấm' : 'Có bài thi thử đang dở')
     : 'Có lượt ôn đang dở';
   $('resume-hint').textContent = isExam
     ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · đã chấm' : ''}`
     : `${deckLabel} · câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
-}
+};
 
 function normalizeSearchText(value) {
   return String(value || '')
@@ -327,7 +327,7 @@ function refreshSearchUI() {
     ? state.searchResults.length
       ? `Tìm thấy ${state.searchResults.length} câu trong vùng ${form.startQuestion}–${form.endQuestion}.`
       : `Không tìm thấy câu phù hợp trong vùng ${form.startQuestion}–${form.endQuestion}.`
-    : 'Tìm theo nội dung câu hỏi hoặc đáp án; không phân biệt chữ hoa, chữ thường và dấu tiếng Việt.';
+    : '';
 };
 
 function startSearchResults() {
@@ -429,7 +429,7 @@ function stopSessionTimer(freeze = true) {
   if (freeze && s && !s.finishedAt) {
     s.finishedAt = Date.now();
     persistSession();
-  }
+  };
   updateTimerDisplay();
 };
 
@@ -478,7 +478,7 @@ function startSessionFromPool(pool, meta) {
   if (meta.examMode || state.practiceMode === 'exam') {
     session.examMode = true;
     session.mode = session.mode === 'normal' ? 'exam' : session.mode;
-  }
+  };
   state.session = session;
   state.reviewMode = false;
   state.examFilter = 'all';
@@ -490,7 +490,7 @@ function startSessionFromPool(pool, meta) {
   } else {
     showScreen('quiz');
     renderQuestion();
-  }
+  };
   startSessionTimer();
 };
 
@@ -760,11 +760,11 @@ function setPracticeMode(mode) {
     btn.classList.toggle('is-active', btn.dataset.mode === state.practiceMode);
   });
   const subtitle = document.querySelector('.app-header .subtitle');
-  if (subtitle) subtitle.textContent = state.practiceMode === 'exam' ? 'Thi thử' : 'Ôn tập';
+  if (subtitle) subtitle.textContent = state.practiceMode === 'exam' ? 'Thi thử' : 'Ôn luyện';
   const startBtn = $('btn-start');
   if (startBtn) {
     startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn';
-  }
+  };
   const searchWrap = $('search-field-wrap');
   if (searchWrap) searchWrap.hidden = state.practiceMode === 'exam';
   const hint = $('hint-mode');
@@ -772,7 +772,7 @@ function setPracticeMode(mode) {
     hint.textContent = state.practiceMode === 'exam'
       ? 'Thi thử: hiện tất cả câu đã chọn, chọn đáp án rồi nộp bài một lần. Không hiện đáp án đúng trước khi nộp.'
       : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
-  }
+  };
   persistSetupForm();
   if (state.mode === 'setup' && state.decks.qp1) refreshSetupUI();
 }
@@ -790,7 +790,7 @@ function updateExamProgressHeader() {
   if (fill) {
     fill.style.width = `${pct}%`;
     fill.parentElement?.setAttribute('aria-valuenow', String(pct));
-  }
+  };
   updateTimerDisplay();
   const filterWrong = $('exam-filter-wrong');
   const filterCorrect = $('exam-filter-correct');
@@ -800,7 +800,7 @@ function updateExamProgressHeader() {
   if (nextEmpty) {
     nextEmpty.hidden = s.reviewMode || unanswered === 0;
     nextEmpty.textContent = unanswered ? `Còn ${unanswered} câu` : 'Đủ đáp án';
-  }
+  };
   const submitBtn = $('btn-exam-submit');
   if (submitBtn) {
     if (s.reviewMode) {
@@ -811,12 +811,12 @@ function updateExamProgressHeader() {
       submitBtn.textContent = `Nộp bài (${answered}/${s.items.length})`;
       submitBtn.dataset.icon = 'check';
       submitBtn.disabled = !!state.examSubmitting;
-    }
-  }
+    };
+  };
   document.querySelectorAll('.filter-chip').forEach((chip) => {
     chip.classList.toggle('is-active', chip.dataset.filter === state.examFilter);
   });
-}
+};
 
 function applyExamFilter() {
   const s = state.session;
@@ -831,12 +831,12 @@ function applyExamFilter() {
     else if (filter === 'correct') show = item.status === 'correct';
     card.hidden = !show;
   });
-}
+};
 
 function scrollToExamQuestion(idx) {
   const card = $(`exam-q-${idx}`);
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
+};
 
 function jumpToNextUnanswered(fromIdx = -1) {
   const s = state.session;
@@ -851,8 +851,8 @@ function jumpToNextUnanswered(fromIdx = -1) {
     scrollToExamQuestion(found);
   } else {
     toast('Bạn đã chọn đủ đáp án.');
-  }
-}
+  };
+};
 
 function renderExam() {
   const s = state.session;
@@ -875,7 +875,7 @@ function renderExam() {
     if (s.reviewMode) {
       if (item.status === 'correct') card.classList.add('is-correct');
       else if (item.status === 'wrong') card.classList.add('is-wrong');
-    }
+    };
 
     const head = document.createElement('div');
     head.className = 'exam-q-head';
@@ -888,7 +888,7 @@ function renderExam() {
       badge.className = `exam-status-badge ${item.status === 'correct' ? 'ok' : 'bad'}`;
       badge.textContent = item.status === 'correct' ? 'Đúng' : (item.userAnswer == null ? 'Bỏ trống' : 'Sai');
       head.appendChild(badge);
-    }
+    };
     card.appendChild(head);
 
     const text = document.createElement('h3');
@@ -914,7 +914,7 @@ function renderExam() {
         const correctDisplay = item.optionOrder.indexOf(q.correct);
         if (displayIdx === correctDisplay) btn.classList.add('correct');
         if (item.userAnswer === displayIdx && item.status === 'wrong') btn.classList.add('incorrect');
-      }
+      };
       const label = document.createElement('span');
       label.className = 'option-key';
       label.textContent = labels[displayIdx] || String(displayIdx + 1);
@@ -924,7 +924,7 @@ function renderExam() {
       btn.append(label, body);
       if (!s.reviewMode) {
         btn.addEventListener('click', () => onExamSelect(idx, displayIdx));
-      }
+      };
       opts.appendChild(btn);
     });
     card.appendChild(opts);
@@ -940,14 +940,14 @@ function renderExam() {
     if (s.reviewMode) {
       if (item.status === 'correct') dot.classList.add('is-correct');
       else if (item.status === 'wrong') dot.classList.add('is-wrong');
-    }
+    };
     dot.addEventListener('click', () => scrollToExamQuestion(idx));
     nav.appendChild(dot);
   });
 
   applyExamFilter();
   requestAnimationFrame(() => window.scrollTo(0, scrollY));
-}
+};
 
 function patchExamQuestion(qIdx) {
   const s = state.session;
@@ -957,7 +957,7 @@ function patchExamQuestion(qIdx) {
   if (!item || !card) {
     renderExam();
     return;
-  }
+  };
   card.classList.toggle('is-answered', item.userAnswer != null);
   card.querySelectorAll('.option').forEach((btn) => {
     const displayIdx = Number(btn.dataset.display);
@@ -969,7 +969,7 @@ function patchExamQuestion(qIdx) {
   if (dot) dot.classList.toggle('is-answered', item.userAnswer != null);
   updateExamProgressHeader();
   applyExamFilter();
-}
+};
 
 function onExamSelect(qIdx, displayIdx) {
   if (enforceSessionDeadline()) return;
@@ -982,7 +982,7 @@ function onExamSelect(qIdx, displayIdx) {
   item.status = 'pending';
   persistSession();
   patchExamQuestion(qIdx);
-}
+};
 
 async function onExamSubmit() {
   if (state.examSubmitting) return;
@@ -992,7 +992,7 @@ async function onExamSubmit() {
   if (s.reviewMode) {
     finishSession();
     return;
-  }
+  };
   const unanswered = s.items.filter((it) => it.userAnswer == null).length;
   if (unanswered > 0) {
     const ok = await confirmModal(
@@ -1003,7 +1003,7 @@ async function onExamSubmit() {
   } else {
     const ok = await confirmModal('Nộp bài thi?', `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`);
     if (!ok) return;
-  }
+  };
   state.examSubmitting = true;
   updateExamProgressHeader();
   try {
@@ -1019,7 +1019,7 @@ async function onExamSubmit() {
         wrongAttempts += 1;
         markWrong(s.deckId, q.originalIndex);
         continue;
-      }
+      };
       const correct = isAnswerCorrect(item, q);
       item.checked = true;
       if (correct) {
@@ -1034,8 +1034,8 @@ async function onExamSubmit() {
         if (!item.wrongOptions) item.wrongOptions = [];
         if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
         markWrong(s.deckId, q.originalIndex);
-      }
-    }
+      };
+    };
     if (completedIdx.length) addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
     s.firstTryCorrect = firstTry;
     s.totalWrongAttempts = wrongAttempts;
@@ -1051,8 +1051,8 @@ async function onExamSubmit() {
   } finally {
     state.examSubmitting = false;
     updateExamProgressHeader();
-  }
-}
+  };
+};
 
 function enforceSessionDeadline() {
   const session = state.session;
@@ -1076,8 +1076,8 @@ function enforceSessionDeadline() {
         item.wrongCount = Math.max(1, item.wrongCount || 0);
         wrongAttempts += 1;
         markWrong(session.deckId, q.originalIndex);
-      }
-    }
+      };
+    };
     if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
     session.firstTryCorrect = firstTry;
     session.totalWrongAttempts = wrongAttempts;
@@ -1088,7 +1088,7 @@ function enforceSessionDeadline() {
     renderExam();
     toast('Hết giờ — đã tự động nộp bài.');
     return true;
-  }
+  };
   finishSession();
   return true;
 };
@@ -1278,7 +1278,7 @@ function updateTimerDisplay() {
       ? `Còn ${formatTime(remaining)} · Đã làm ${formatTime(elapsed)}`
       : `Đã làm ${formatTime(elapsed)}`;
     el.classList.toggle('time-warning', hasLimit && remaining <= 60);
-  }
+  };
 };
 
 function startSessionTimer() {
@@ -1291,7 +1291,7 @@ function startSessionTimer() {
   if (state.session.finishedAt || state.session.reviewMode) {
     updateTimerDisplay();
     return;
-  }
+  };
   const tick = () => {
     const session = state.session;
     if (!session) {
@@ -1302,7 +1302,7 @@ function startSessionTimer() {
     if (session.finishedAt || session.reviewMode) {
       stopSessionTimer(false);
       return;
-    }
+    };
     updateTimerDisplay();
     if (session.timeLimit > 0 && session.deadlineAt && Date.now() >= session.deadlineAt) {
       clearInterval(state.timerInterval);
@@ -1313,7 +1313,7 @@ function startSessionTimer() {
   tick();
   if (state.session && !state.session.finishedAt && !state.session.reviewMode) {
     state.timerInterval = setInterval(tick, 1000);
-  }
+  };
 };
 
 function finishSession() {
@@ -1407,7 +1407,7 @@ function showSummary(summary, deckId, mode) {
     const pct = Math.max(0, Math.min(1, Number(scoreVal) / 10));
     ringFg.style.strokeDasharray = `${circumference}`;
     ringFg.style.strokeDashoffset = `${circumference * (1 - pct)}`;
-  }
+  };
   $('sum-time').textContent = formatTime(summary.elapsedSeconds || 0);
   $('sum-correct').textContent = String(summary.correct);
   $('sum-wrong-q').textContent = String(summary.wrongQuestions);
@@ -1561,7 +1561,7 @@ function restoreSessionIfAny() {
   } else {
     showScreen('quiz');
     renderQuestion();
-  }
+  };
   startSessionTimer();
   toast(saved.examMode ? 'Đã khôi phục bài thi thử đang làm.' : 'Đã khôi phục lượt ôn đang làm.');
   return true;
@@ -1589,16 +1589,16 @@ function applyTheme(theme) {
     button.setAttribute('aria-pressed', String(nextTheme === 'light'));
   };
   try {
-    localStorage.setItem('quocphonganninh-theme', nextTheme);
-  } catch {}
+    localStorage.setItem('theme', nextTheme);
+  } catch {};
 };
 
 function initTheme() {
   let theme = 'dark';
   try {
-    const saved = localStorage.getItem('quocphonganninh-theme');
+    const saved = localStorage.getItem('theme');
     if (saved === 'light' || saved === 'dark') theme = saved;
-  } catch {}
+  } catch {};
   applyTheme(theme);
 };
 
@@ -1617,18 +1617,18 @@ function bindKeyboardShortcuts() {
         event.preventDefault();
         $('btn-exam-quit')?.click();
         return;
-      }
+      };
       if ((event.key === 'Enter' || event.key === 's') && !state.session?.reviewMode) {
         event.preventDefault();
         $('btn-exam-submit')?.click();
         return;
-      }
+      };
       if (event.key === 'n' || event.key === 'N') {
         event.preventDefault();
         jumpToNextUnanswered();
-      }
+      };
       return;
-    }
+    };
 
     if (!quizActive) return;
 

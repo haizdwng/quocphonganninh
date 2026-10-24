@@ -1,4 +1,4 @@
-const NS = 'quocphonganninh:v1';
+const NS = 'quocphonganninh';
 
 function readRoot() {
   try {
@@ -51,10 +51,10 @@ function readSettingsList(root) {
     return raw
       .filter((entry) => entry && typeof entry === 'object')
       .map((entry) => normalizeSettingsEntry(entry, entry.deck));
-  }
+  };
   if (raw && typeof raw === 'object') {
     return [normalizeSettingsEntry(raw, raw.deck)];
-  }
+  };
   return [];
 };
 
@@ -80,8 +80,8 @@ export function saveSettings(settings) {
   for (const deck of ['qp1', 'qp2']) {
     if (!list.some((item) => item.deck === deck)) {
       list.push(normalizeSettingsEntry(deck === entry.deck ? entry : {}, deck));
-    }
-  }
+    };
+  };
   root.settings = list;
   root.activeDeck = entry.deck;
   return writeRoot(root);
@@ -227,7 +227,7 @@ export function exportBackup() {
   const root = readRoot();
   const list = readSettingsList(root);
   return JSON.stringify({
-    format: 'quocphonganninh-backup',
+    format: 'backup',
     version: 1,
     exportedAt: new Date().toISOString(),
     settings: list.length ? list : [],
@@ -243,7 +243,7 @@ export function importBackup(raw) {
   } catch {
     return false;
   };
-  if (!backup || backup.format !== 'quocphonganninh-backup' || backup.version !== 1 ||
+  if (!backup || backup.format !== 'backup' || backup.version !== 1 ||
       !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) ||
       !Object.keys(backup.decks).every((id) => ['qp1', 'qp2'].includes(id))) return false;
 
@@ -254,12 +254,12 @@ export function importBackup(raw) {
       .map((entry) => normalizeSettingsEntry(entry, entry.deck));
   } else if (backup.settings && typeof backup.settings === 'object') {
     settingsList = [normalizeSettingsEntry(backup.settings, backup.settings.deck)];
-  }
+  };
   for (const deck of ['qp1', 'qp2']) {
     if (!settingsList.some((entry) => entry.deck === deck)) {
       settingsList.push(normalizeSettingsEntry({}, deck));
-    }
-  }
+    };
+  };
   const normalized = {
     settings: settingsList,
     activeDeck: normalizeDeckId(backup.activeDeck || settingsList[0]?.deck || 'qp1'),

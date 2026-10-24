@@ -80,7 +80,7 @@ test('backup round-trip preserves settings and progress but excludes active sess
   saveSession({ deckId: 'qp1', items: [] });
 
   const backup = exportBackup();
-  assert.equal(JSON.parse(backup).format, 'quocphonganninh-backup');
+  assert.equal(JSON.parse(backup).format, 'backup');
   assert.equal(JSON.parse(backup).decks.qp2.bookmarks.length, 2);
   assert.equal('session' in JSON.parse(backup), false);
 
@@ -98,7 +98,7 @@ test('invalid backups are rejected without replacing saved data', () => {
   saveSettings({ deck: 'qp2', count: 9, shuffleQ: false, shuffleA: true, startQuestion: 1, endQuestion: 9 });
   assert.equal(importBackup('{not json'), false);
   assert.equal(importBackup({ format: 'wrong', version: 1, decks: {} }), false);
-  assert.equal(importBackup({ format: 'quocphonganninh-backup', version: 1, decks: { qp3: {} } }), false);
+  assert.equal(importBackup({ format: 'backup', version: 1, decks: { qp3: {} } }), false);
   assert.equal(getSettings().count, 9);
 });
 

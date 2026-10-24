@@ -1,290 +1,283 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang='vi'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#07111f">
-  <meta name="color-scheme" content="dark light">
-  <meta name="description" content="Trắc nghiệm Quốc Phòng An Ninh">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'>
+  <meta name='theme-color' content='#07111f'>
+  <meta name='color-scheme' content='dark light'>
+  <meta name='description' content='Trắc nghiệm Quốc Phòng An Ninh'>
   <title>Trắc nghiệm Quốc Phòng An Ninh</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
-  <link rel="preload" href="assets/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel='manifest' href='manifest.webmanifest'>
+  <link rel='icon' href='assets/icons/icon.svg' type='image/svg+xml'>
+  <link rel='preload' href='assets/fonts/InterVariable.woff2' as='font' type='font/woff2' crossorigin>
+  <link rel='stylesheet' href='assets/css/style.css'>
 </head>
 <body>
-  <div id="app">
-    <header class="app-header">
-      <div class="header-title">
+  <div id='app'>
+    <header class='app-header'>
+      <div class='header-title'>
         <h1>Trắc nghiệm Quốc Phòng An Ninh</h1>
-        <p class="subtitle">Ôn tập</p>
-        <p class="network-status" id="network-status" role="status" aria-live="polite">Đang kiểm tra kết nối…</p>
+        <p class='subtitle'>Ôn luyện</p>
+        <p class='network-status' id='network-status' role='status' aria-live='polite'>Đang kiểm tra kết nối…</p>
       </div>
-      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Đổi giao diện" aria-pressed="false" data-icon="sun">Giao diện sáng</button>
+      <button type='button' class='theme-toggle' id='theme-toggle' aria-label='Đổi giao diện' aria-pressed='false' data-icon='sun'>Giao diện sáng</button>
     </header>
 
-    <main id="main">
-      <section id="screen-loading" class="screen active" aria-label="Đang tải dữ liệu">
-        <div class="card loading-card" role="status" aria-live="polite">
-          <span class="loading-spinner" aria-hidden="true"></span>
+    <main id='main'>
+      <section id='screen-loading' class='screen active' aria-label='Đang tải dữ liệu'>
+        <div class='card loading-card' role='status' aria-live='polite'>
+          <span class='loading-spinner' aria-hidden='true'></span>
           <h2>Đang chuẩn bị bộ đề</h2>
-          <p class="hint">Đang tải câu hỏi, kiểm tra dữ liệu và khôi phục tiến độ của bạn…</p>
-          <div class="loading-track" aria-hidden="true"><span></span></div>
+          <p class='hint'>Đang tải câu hỏi, kiểm tra dữ liệu và khôi phục tiến độ của bạn…</p>
+          <div class='loading-track' aria-hidden='true'><span></span></div>
         </div>
       </section>
 
-      <section id="screen-setup" class="screen" aria-label="Thiết lập lượt ôn" hidden>
-        <div class="card">
+      <section id='screen-setup' class='screen' aria-label='Thiết lập lượt ôn' hidden>
+        <div class='card'>
           <h2>Chọn bộ đề</h2>
-          <div class="deck-switch" role="group" aria-label="Bộ đề">
-            <button type="button" class="deck-btn" data-deck="qp1" id="btn-deck-qp1">
-              <span class="deck-name">Quốc Phòng 1</span>
-              <span class="deck-count" id="count-qp1">— câu</span>
+          <div class='deck-switch' role='group' aria-label='Bộ đề'>
+            <button type='button' class='deck-btn' data-deck='qp1' id='btn-deck-qp1'>
+              <span class='deck-name'>Quốc Phòng 1</span>
+              <span class='deck-count' id='count-qp1'>— câu</span>
             </button>
-            <button type="button" class="deck-btn" data-deck="qp2" id="btn-deck-qp2">
-              <span class="deck-name">Quốc Phòng 2</span>
-              <span class="deck-count" id="count-qp2">— câu</span>
+            <button type='button' class='deck-btn' data-deck='qp2' id='btn-deck-qp2'>
+              <span class='deck-name'>Quốc Phòng 2</span>
+              <span class='deck-count' id='count-qp2'>— câu</span>
             </button>
           </div>
         </div>
 
-        <div class="card">
+        <div class='card'>
           <h2>Chế độ làm bài</h2>
-          <div class="mode-switch" role="group" aria-label="Chế độ">
-            <button type="button" class="mode-btn is-active" data-mode="practice" id="btn-mode-practice">
-              <span class="mode-icon" aria-hidden="true">📝</span>
-              <span class="mode-name">Ôn luyện</span>
-              <span class="mode-desc">Từng câu · kiểm tra ngay</span>
+          <div class='mode-switch' role='group' aria-label='Chế độ'>
+            <button type='button' class='mode-btn is-active' data-mode='practice' id='btn-mode-practice'>
+              <span class='mode-icon' aria-hidden='true'>📝</span>
+              <span class='mode-name'>Ôn luyện</span>
+              <span class='mode-desc'>Từng câu · kiểm tra ngay</span>
             </button>
-            <button type="button" class="mode-btn" data-mode="exam" id="btn-mode-exam">
-              <span class="mode-icon" aria-hidden="true">📋</span>
-              <span class="mode-name">Thi thử</span>
-              <span class="mode-desc">Tất cả câu · nộp một lần</span>
+            <button type='button' class='mode-btn' data-mode='exam' id='btn-mode-exam'>
+              <span class='mode-icon' aria-hidden='true'>📋</span>
+              <span class='mode-name'>Thi thử</span>
+              <span class='mode-desc'>Tất cả câu · nộp một lần</span>
             </button>
           </div>
-          <p class="hint" id="hint-mode">Ôn luyện: xem đáp án ngay sau mỗi câu. Thi thử: làm hết rồi nộp bài một lượt.</p>
+          <p class='hint' id='hint-mode'>Ôn luyện: xem đáp án ngay sau mỗi câu. Thi thử: làm hết rồi nộp bài một lượt.</p>
         </div>
 
-        <div class="card">
+        <div class='card'>
           <h2>Thiết lập lượt</h2>
-          <div class="field">
+          <div class='field'>
             <label>Vùng câu hỏi</label>
-            <div class="range-fields">
+            <div class='range-fields'>
               <div>
-                <label for="input-range-start">Từ câu</label>
-                <input type="number" id="input-range-start" min="1" value="1" inputmode="numeric">
+                <label for='input-range-start'>Từ câu</label>
+                <input type='number' id='input-range-start' min='1' value='1' inputmode='numeric'>
               </div>
               <div>
-                <label for="input-range-end">Đến câu</label>
-                <input type="number" id="input-range-end" min="1" value="479" inputmode="numeric">
+                <label for='input-range-end'>Đến câu</label>
+                <input type='number' id='input-range-end' min='1' value='479' inputmode='numeric'>
               </div>
             </div>
-            <p class="hint" id="hint-range">Chọn phạm vi câu hỏi theo số thứ tự gốc.</p>
+            <p class='hint' id='hint-range'>Chọn phạm vi câu hỏi theo số thứ tự gốc.</p>
           </div>
-          <div class="field">
-            <label for="input-count">Số câu trong lượt</label>
-            <div class="row">
-              <input type="number" id="input-count" min="1" value="20" inputmode="numeric">
-              <button type="button" class="btn btn-ghost" id="btn-all" data-icon="list-check">Toàn bộ vùng</button>
+          <div class='field'>
+            <label for='input-count'>Số câu trong lượt</label>
+            <div class='row'>
+              <input type='number' id='input-count' min='1' value='20' inputmode='numeric'>
+              <button type='button' class='btn btn-ghost' id='btn-all' data-icon='list-check'>Toàn bộ vùng</button>
             </div>
-            <div class="preset-row" role="group" aria-label="Chọn nhanh số câu">
-              <button type="button" class="preset-btn" data-count="10">10</button>
-              <button type="button" class="preset-btn" data-count="20">20</button>
-              <button type="button" class="preset-btn" data-count="30">30</button>
-              <button type="button" class="preset-btn" data-count="50">50</button>
-            </div>
-            <p class="hint" id="hint-count">Tối đa — câu trong vùng đã chọn.</p>
+            <p class='hint' id='hint-count'>Số câu trong vùng đã chọn.</p>
           </div>
-          <div class="field">
-            <label for="input-time-limit">Thời gian làm bài (phút)</label>
-            <input type="number" id="input-time-limit" min="0" max="1440" value="0" step="1" inputmode="numeric">
-            <p class="hint">0 là không giới hạn thời gian. Khi hết giờ, lượt làm bài sẽ tự động kết thúc.</p>
+          <div class='field'>
+            <label for='input-time-limit'>Thời gian làm bài</label>
+            <input type='number' id='input-time-limit' min='0' max='1440' value='0' step='1' inputmode='numeric'>
+            <p class='hint'>0 là không giới hạn thời gian. Khi hết giờ, lượt làm bài sẽ tự động kết thúc.</p>
           </div>
-          <div class="field search-field" id="search-field-wrap">
-            <label for="input-search">Tìm câu hỏi hoặc đáp án</label>
-            <input type="search" id="input-search" placeholder="Nhập từ khóa cần tìm…" autocomplete="off" enterkeyhint="search">
-            <p class="hint" id="search-hint" aria-live="polite">Tìm trong vùng câu hỏi đang chọn.</p>
-            <button type="button" class="btn btn-secondary btn-block" id="btn-search-practice" disabled data-icon="search">Ôn kết quả tìm kiếm</button>
+          <div class='field search-field' id='search-field-wrap'>
+            <label for='input-search'>Tìm câu hỏi hoặc đáp án</label>
+            <input type='search' id='input-search' placeholder='Nhập từ khóa cần tìm…' autocomplete='off' enterkeyhint='search'>
+            <p class='hint' id='search-hint' aria-live='polite'>Tìm trong vùng câu hỏi đang chọn.</p>
+            <button type='button' class='btn btn-secondary btn-block' id='btn-search-practice' disabled data-icon='search'>Ôn kết quả tìm kiếm</button>
           </div>
-          <div class="field toggles">
-            <label class="toggle">
-              <input type="checkbox" id="chk-shuffle-q">
+          <div class='field toggles'>
+            <label class='toggle'>
+              <input type='checkbox' id='chk-shuffle-q' checked>
               <span>Đảo thứ tự câu hỏi</span>
             </label>
-            <label class="toggle">
-              <input type="checkbox" id="chk-shuffle-a" checked>
+            <label class='toggle'>
+              <input type='checkbox' id='chk-shuffle-a' checked>
               <span>Đảo thứ tự đáp án</span>
             </label>
           </div>
-          <p class="hint" id="hint-shuffle-a">Đảo câu hỏi và đảo đáp án là hai tùy chọn độc lập.</p>
         </div>
 
-        <div class="card stats-card" id="deck-stats">
+        <div class='card stats-card' id='deck-stats'>
           <h2>Tiến độ bộ đề</h2>
-          <ul class="stat-list">
-            <li><span>Đã hoàn thành</span><strong id="stat-completed">0</strong></li>
-            <li><span>Còn lại</span><strong id="stat-remaining">0</strong></li>
-            <li><span>Câu từng sai</span><strong id="stat-wrong">0</strong></li>
-            <li><span>Số lượt luyện lại</span><strong id="stat-practice">0</strong></li>
-            <li><span>Câu đã đánh dấu</span><strong id="stat-bookmarked">0</strong></li>
-            <li><span>Con trỏ tuần tự</span><strong id="stat-cursor">1</strong></li>
+          <ul class='stat-list'>
+            <li><span>Đã hoàn thành</span><strong id='stat-completed'>0</strong></li>
+            <li><span>Còn lại</span><strong id='stat-remaining'>0</strong></li>
+            <li><span>Câu từng sai</span><strong id='stat-wrong'>0</strong></li>
+            <li><span>Số lượt luyện lại</span><strong id='stat-practice'>0</strong></li>
+            <li><span>Câu đã đánh dấu</span><strong id='stat-bookmarked'>0</strong></li>
+            <li><span>Con trỏ tuần tự</span><strong id='stat-cursor'>1</strong></li>
           </ul>
-          <div class="btn-row">
-            <button type="button" class="btn btn-secondary" id="btn-practice-wrong" disabled data-icon="refresh">Luyện câu sai (0)</button>
-            <button type="button" class="btn btn-secondary" id="btn-practice-bookmarks" disabled data-icon="bookmark">Ôn câu đã đánh dấu (0)</button>
-            <button type="button" class="btn btn-ghost" id="btn-reset-progress" data-icon="trash">Xóa tiến độ bộ đề</button>
-            <div class="backup-actions">
-              <button type="button" class="btn btn-ghost" id="btn-export-progress" data-icon="download">Sao lưu tiến độ</button>
-              <button type="button" class="btn btn-ghost" id="btn-import-progress" data-icon="upload">Khôi phục tiến độ</button>
-              <input type="file" id="input-import-progress" accept=".json,application/json" hidden>
+          <div class='btn-row'>
+            <button type='button' class='btn btn-secondary' id='btn-practice-wrong' disabled data-icon='refresh'>Luyện câu sai (0)</button>
+            <button type='button' class='btn btn-secondary' id='btn-practice-bookmarks' disabled data-icon='bookmark'>Ôn câu đã đánh dấu (0)</button>
+            <button type='button' class='btn btn-ghost' id='btn-reset-progress' data-icon='trash'>Xóa tiến độ bộ đề</button>
+            <div class='backup-actions'>
+              <button type='button' class='btn btn-ghost' id='btn-export-progress' data-icon='download'>Sao lưu tiến độ</button>
+              <button type='button' class='btn btn-ghost' id='btn-import-progress' data-icon='upload'>Khôi phục tiến độ</button>
+              <input type='file' id='input-import-progress' accept='.json,application/json' hidden>
             </div>
           </div>
         </div>
 
-        <div class="card resume-card" id="resume-card" hidden>
-          <div class="resume-body">
-            <strong id="resume-title">Có phiên đang dở</strong>
-            <p class="hint" id="resume-hint">Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
+        <div class='card resume-card' id='resume-card' hidden>
+          <div class='resume-body'>
+            <strong id='resume-title'>Có phiên đang dở</strong>
+            <p class='hint' id='resume-hint'>Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
           </div>
-          <div class="resume-actions">
-            <button type="button" class="btn btn-primary" id="btn-resume-session" data-icon="arrow-right">Tiếp tục</button>
-            <button type="button" class="btn btn-ghost" id="btn-discard-session" data-icon="x">Bỏ phiên</button>
-          </div>
-        </div>
-
-        <div class="actions-fixed" id="setup-actions">
-          <button type="button" class="btn btn-primary btn-block" id="btn-start" data-icon="player-play">Bắt đầu</button>
-          <button type="button" class="btn btn-secondary btn-block" id="btn-continue" hidden data-icon="arrow-right">Tiếp tục tuần tự</button>
-        </div>
-      </section>
-
-      <section id="screen-quiz" class="screen" aria-label="Ôn luyện" hidden>
-        <div class="progress-wrap is-fixed-top">
-          <div class="progress-meta" aria-live="polite" aria-atomic="true">
-            <span id="progress-label">Câu 1 / 20</span>
-            <span id="progress-score">Điểm 0 / 10</span>
-            <span id="progress-time" aria-live="polite">Đã làm 00:00</span>
-          </div>
-          <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <div class="progress-fill" id="progress-fill"></div>
+          <div class='resume-actions'>
+            <button type='button' class='btn btn-primary' id='btn-resume-session' data-icon='arrow-right'>Tiếp tục</button>
+            <button type='button' class='btn btn-ghost' id='btn-discard-session' data-icon='x'>Bỏ phiên</button>
           </div>
         </div>
 
-        <div class="card question-card">
-          <div class="question-heading">
-            <p class="q-badge" id="q-badge">Câu hỏi</p>
-            <button type="button" class="bookmark-btn" id="btn-bookmark" aria-pressed="false" data-icon="bookmark">☆ Đánh dấu</button>
-          </div>
-          <h2 class="q-text" id="q-text" aria-live="polite" aria-atomic="true"></h2>
-          <div class="options" id="options" role="group" aria-label="Chọn một đáp án"></div>
-          <div class="feedback" id="feedback" role="status" aria-live="polite" hidden></div>
-        </div>
-
-        <div class="quiz-actions is-fixed-bottom">
-          <div class="quiz-actions-row">
-            <button type="button" class="btn btn-ghost" id="btn-prev" disabled data-icon="chevron-left">Trước</button>
-            <button type="button" class="btn btn-primary" id="btn-next" disabled data-icon="check">Kiểm tra</button>
-          </div>
-          <button type="button" class="btn btn-ghost btn-block" id="btn-quit" data-icon="x">Thoát</button>
+        <div class='actions-fixed' id='setup-actions'>
+          <button type='button' class='btn btn-primary btn-block' id='btn-start' data-icon='player-play'>Bắt đầu</button>
+          <button type='button' class='btn btn-secondary btn-block' id='btn-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
         </div>
       </section>
 
-      <section id="screen-exam" class="screen" aria-label="Thi thử" hidden>
-        <div class="progress-wrap is-fixed-top exam-progress">
-          <div class="progress-meta" aria-live="polite" aria-atomic="true">
-            <span id="exam-progress-label">Đã chọn 0 / 20</span>
-            <span id="exam-progress-time" aria-live="polite">00:00</span>
+      <section id='screen-quiz' class='screen' aria-label='Ôn luyện' hidden>
+        <div class='progress-wrap is-fixed-top'>
+          <div class='progress-meta' aria-live='polite' aria-atomic='true'>
+            <span id='progress-label'>Câu 1 / 20</span>
+            <span id='progress-score'>Điểm 0 / 10</span>
+            <span id='progress-time' aria-live='polite'>Đã làm 00:00</span>
           </div>
-          <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <div class="progress-fill" id="exam-progress-fill"></div>
+          <div class='progress-bar' role='progressbar' aria-valuemin='0' aria-valuemax='100' aria-valuenow='0'>
+            <div class='progress-fill' id='progress-fill'></div>
           </div>
-          <div class="exam-toolbar">
-            <div class="exam-filter" role="group" aria-label="Lọc câu hỏi">
-              <button type="button" class="filter-chip is-active" data-filter="all" id="exam-filter-all">Tất cả</button>
-              <button type="button" class="filter-chip" data-filter="unanswered" id="exam-filter-unanswered">Chưa chọn</button>
-              <button type="button" class="filter-chip" data-filter="correct" id="exam-filter-correct" hidden>Đúng</button>
-              <button type="button" class="filter-chip" data-filter="wrong" id="exam-filter-wrong" hidden>Sai</button>
+        </div>
+
+        <div class='card question-card'>
+          <div class='question-heading'>
+            <p class='q-badge' id='q-badge'>Câu hỏi</p>
+            <button type='button' class='bookmark-btn' id='btn-bookmark' aria-pressed='false' data-icon='bookmark'>☆ Đánh dấu</button>
+          </div>
+          <h2 class='q-text' id='q-text' aria-live='polite' aria-atomic='true'></h2>
+          <div class='options' id='options' role='group' aria-label='Chọn một đáp án'></div>
+          <div class='feedback' id='feedback' role='status' aria-live='polite' hidden></div>
+        </div>
+
+        <div class='quiz-actions is-fixed-bottom'>
+          <div class='quiz-actions-row'>
+            <button type='button' class='btn btn-ghost' id='btn-prev' disabled data-icon='chevron-left'>Trước</button>
+            <button type='button' class='btn btn-primary' id='btn-next' disabled data-icon='check'>Kiểm tra</button>
+          </div>
+          <button type='button' class='btn btn-ghost btn-block' id='btn-quit' data-icon='x'>Thoát</button>
+        </div>
+      </section>
+
+      <section id='screen-exam' class='screen' aria-label='Thi thử' hidden>
+        <div class='progress-wrap is-fixed-top exam-progress'>
+          <div class='progress-meta' aria-live='polite' aria-atomic='true'>
+            <span id='exam-progress-label'>Đã chọn 0 / 20</span>
+            <span id='exam-progress-time' aria-live='polite'>00:00</span>
+          </div>
+          <div class='progress-bar' role='progressbar' aria-valuemin='0' aria-valuemax='100' aria-valuenow='0'>
+            <div class='progress-fill' id='exam-progress-fill'></div>
+          </div>
+          <div class='exam-toolbar'>
+            <div class='exam-filter' role='group' aria-label='Lọc câu hỏi'>
+              <button type='button' class='filter-chip is-active' data-filter='all' id='exam-filter-all'>Tất cả</button>
+              <button type='button' class='filter-chip' data-filter='unanswered' id='exam-filter-unanswered'>Chưa chọn</button>
+              <button type='button' class='filter-chip' data-filter='correct' id='exam-filter-correct' hidden>Đúng</button>
+              <button type='button' class='filter-chip' data-filter='wrong' id='exam-filter-wrong' hidden>Sai</button>
             </div>
-            <button type="button" class="btn btn-ghost btn-sm" id="btn-exam-next-empty" data-icon="arrow-right">Câu chưa chọn</button>
+            <button type='button' class='btn btn-ghost btn-sm' id='btn-exam-next-empty' data-icon='arrow-right'>Câu chưa chọn</button>
           </div>
-          <div class="exam-nav" id="exam-nav" role="navigation" aria-label="Điều hướng câu hỏi"></div>
+          <div class='exam-nav' id='exam-nav' role='navigation' aria-label='Điều hướng câu hỏi'></div>
         </div>
 
-        <div class="exam-list" id="exam-list"></div>
+        <div class='exam-list' id='exam-list'></div>
 
-        <div class="exam-actions is-fixed-bottom">
-          <div class="exam-actions-row">
-            <button type="button" class="btn btn-primary" id="btn-exam-submit" data-icon="check">Nộp bài</button>
-            <button type="button" class="btn btn-ghost" id="btn-exam-quit" data-icon="x">Thoát</button>
+        <div class='exam-actions is-fixed-bottom'>
+          <div class='exam-actions-row'>
+            <button type='button' class='btn btn-primary' id='btn-exam-submit' data-icon='check'>Nộp bài</button>
+            <button type='button' class='btn btn-ghost' id='btn-exam-quit' data-icon='x'>Thoát</button>
           </div>
         </div>
       </section>
 
-      <section id="screen-summary" class="screen" aria-label="Tổng kết" hidden>
-        <div class="card summary-hero">
-          <h2 id="summary-title">Hoàn thành lượt ôn</h2>
-          <div class="score-ring" id="score-ring" aria-hidden="true">
-            <svg viewBox="0 0 120 120" width="120" height="120">
-              <circle class="score-ring-bg" cx="60" cy="60" r="52" />
-              <circle class="score-ring-fg" id="score-ring-fg" cx="60" cy="60" r="52" />
+      <section id='screen-summary' class='screen' aria-label='Tổng kết' hidden>
+        <div class='card summary-hero'>
+          <h2 id='summary-title'>Hoàn thành lượt ôn</h2>
+          <div class='score-ring' id='score-ring' aria-hidden='true'>
+            <svg viewBox='0 0 120 120' width='120' height='120'>
+              <circle class='score-ring-bg' cx='60' cy='60' r='52' />
+              <circle class='score-ring-fg' id='score-ring-fg' cx='60' cy='60' r='52' />
             </svg>
-            <div class="score-ring-value">
-              <strong id="sum-score-big">0</strong>
+            <div class='score-ring-value'>
+              <strong id='sum-score-big'>0</strong>
               <span>/ 10</span>
             </div>
           </div>
-          <p class="hint" id="summary-note"></p>
-          <ul class="stat-list">
-            <li><span>Tổng số câu</span><strong id="sum-total">0</strong></li>
-            <li><span>Điểm (thang điểm 10)</span><strong id="sum-score">0 / 10</strong></li>
-            <li><span>Thời gian làm bài</span><strong id="sum-time">00:00</strong></li>
-            <li><span>Đúng ngay lần đầu</span><strong id="sum-correct">0</strong></li>
-            <li><span>Câu từng sai</span><strong id="sum-wrong-q">0</strong></li>
-            <li><span>Tổng lần sai</span><strong id="sum-wrong-times">0</strong></li>
-            <li><span>Câu trong lượt luyện lại</span><strong id="sum-practice">0</strong></li>
-            <li><span>Đúng lần đầu</span><strong id="sum-first">0%</strong></li>
+          <p class='hint' id='summary-note'></p>
+          <ul class='stat-list'>
+            <li><span>Tổng số câu</span><strong id='sum-total'>0</strong></li>
+            <li><span>Điểm</span><strong id='sum-score'>0 / 10</strong></li>
+            <li><span>Thời gian làm bài</span><strong id='sum-time'>00:00</strong></li>
+            <li><span>Đúng ngay lần đầu</span><strong id='sum-correct'>0</strong></li>
+            <li><span>Câu từng sai</span><strong id='sum-wrong-q'>0</strong></li>
+            <li><span>Tổng lần sai</span><strong id='sum-wrong-times'>0</strong></li>
+            <li><span>Câu trong lượt luyện lại</span><strong id='sum-practice'>0</strong></li>
+            <li><span>Đúng lần đầu</span><strong id='sum-first'>0%</strong></li>
           </ul>
         </div>
-        <div class="card" id="wrong-list-card" hidden>
+        <div class='card' id='wrong-list-card' hidden>
           <h2>Câu đã từng trả lời sai</h2>
-          <ul class="wrong-list" id="wrong-list"></ul>
+          <ul class='wrong-list' id='wrong-list'></ul>
         </div>
-        <div class="actions-stack">
-          <button type="button" class="btn btn-primary btn-block" id="btn-sum-practice" hidden data-icon="refresh">Luyện lại câu sai</button>
-          <button type="button" class="btn btn-primary btn-block" id="btn-sum-continue" hidden data-icon="arrow-right">Tiếp tục tuần tự</button>
-          <button type="button" class="btn btn-secondary btn-block" id="btn-sum-random" data-icon="refresh">Lấy ngẫu nhiên tiếp</button>
-          <button type="button" class="btn btn-secondary btn-block" id="btn-sum-again" data-icon="book-2">Thiết lập lượt ôn mới</button>
-          <button type="button" class="btn btn-ghost btn-block" id="btn-sum-restart" data-icon="rotate-clockwise">Làm lại từ đầu</button>
-          <button type="button" class="btn btn-ghost btn-block" id="btn-sum-home" data-icon="arrow-left">Về màn hình thiết lập</button>
+        <div class='actions-stack'>
+          <button type='button' class='btn btn-primary btn-block' id='btn-sum-practice' hidden data-icon='refresh'>Luyện lại câu sai</button>
+          <button type='button' class='btn btn-primary btn-block' id='btn-sum-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
+          <button type='button' class='btn btn-secondary btn-block' id='btn-sum-random' data-icon='refresh'>Lấy ngẫu nhiên tiếp</button>
+          <button type='button' class='btn btn-secondary btn-block' id='btn-sum-again' data-icon='book-2'>Thiết lập lượt ôn mới</button>
+          <button type='button' class='btn btn-ghost btn-block' id='btn-sum-restart' data-icon='rotate-clockwise'>Làm lại từ đầu</button>
+          <button type='button' class='btn btn-ghost btn-block' id='btn-sum-home' data-icon='arrow-left'>Về màn hình thiết lập</button>
         </div>
       </section>
 
-      <section id="screen-error" class="screen" aria-label="Lỗi" hidden>
-        <div class="card error-card">
+      <section id='screen-error' class='screen' aria-label='Lỗi' hidden>
+        <div class='card error-card'>
           <h2>Không thể tải dữ liệu</h2>
-          <p id="error-message"></p>
-          <button type="button" class="btn btn-primary" id="btn-retry" data-icon="refresh">Thử lại</button>
+          <p id='error-message'></p>
+          <button type='button' class='btn btn-primary' id='btn-retry' data-icon='refresh'>Thử lại</button>
         </div>
       </section>
     </main>
 
-    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-    <div id="modal" class="modal" hidden>
-      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <h3 id="modal-title">Xác nhận</h3>
-        <p id="modal-body"></p>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-ghost" id="modal-cancel" data-icon="x">Hủy</button>
-          <button type="button" class="btn btn-primary" id="modal-ok" data-icon="check">Đồng ý</button>
+    <div id='toast' class='toast' role='status' aria-live='polite' hidden></div>
+    <div id='modal' class='modal' hidden>
+      <div class='modal-box' role='dialog' aria-modal='true' aria-labelledby='modal-title'>
+        <h3 id='modal-title'>Xác nhận</h3>
+        <p id='modal-body'></p>
+        <div class='modal-actions'>
+          <button type='button' class='btn btn-ghost' id='modal-cancel' data-icon='x'>Hủy</button>
+          <button type='button' class='btn btn-primary' id='modal-ok' data-icon='check'>Đồng ý</button>
         </div>
       </div>
     </div>
 
-    <div id="update-banner" class="update-banner" hidden>
+    <div id='update-banner' class='update-banner' hidden>
       <span>Có phiên bản mới.</span>
-      <button type="button" class="btn btn-primary btn-sm" id="btn-update" data-icon="refresh">Tải lại</button>
+      <button type='button' class='btn btn-primary btn-sm' id='btn-update' data-icon='refresh'>Tải lại</button>
     </div>
   </div>
-  <script type="module" src="assets/js/app.js"></script>
+  <script type='module' src='assets/js/app.js'></script>
 </body>
 </html>
