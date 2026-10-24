@@ -160,3 +160,27 @@ test('wrong-question history is stored separately for each exact range and survi
   assert.deepEqual(getRangeWrongIndices('qp1', 1, 5), [1, 2, 4]);
   assert.deepEqual(getRangeWrongIndices('qp1', 6, 10), [7]);
 });
+
+
+test('active sessions are isolated per deck and can be cleared independently', () => {
+  globalThis.localStorage = new MemoryStorage();
+  const qp1 = { deckId: 'qp1', items: [{ id: 'first' }], pool: [] };
+  const qp2 = { deckId: 'qp2', items: [{ id: 'second' }], pool: [] };
+
+  assert.equal(saveSession(qp1), true);
+  assert.equal(saveSession(qp2), true);
+  assert.deepEqual(getSession('qp1'), qp1);
+  assert.deepEqual(getSession('qp2'), qp2);
+  assert.equal(clearSession('qp1'), true);
+  assert.equal(getSession('qp1'), null);
+  assert.deepEqual(getSession('qp2'), qp2);
+});
+
+test('missing deck settings do not inherit the other deck settings', () => {
+  globalThis.localStorage = new MemoryStorage();
+  saveSettings({ deck: 'qp1', count: 37, shuffleQ: false, shuffleA: true, startQuestion: 1, endQuestion: 100 });
+  const qp2 = getSettings('qp2');
+  assert.equal(qp2.deck, 'qp2');
+  assert.equal(qp2.count, 20);
+  assert.equal(qp2.endQuestion, 0);
+});
