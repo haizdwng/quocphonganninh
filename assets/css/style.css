@@ -2282,7 +2282,6 @@ body[data-screen="exam"] #app {
   stroke: var(--primary);
   stroke-width: 10;
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.6s ease;
 }
 .score-ring-value {
   position: absolute;
@@ -2293,12 +2292,14 @@ body[data-screen="exam"] #app {
   justify-content: center;
   gap: 0;
   line-height: 1.1;
+  pointer-events: none;
 }
 .score-ring-value strong {
   font-size: 1.75rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--primary);
+  transition: color 0.3s ease, transform 0.25s ease;
 }
 .score-ring-value span {
   font-size: 0.85rem;
