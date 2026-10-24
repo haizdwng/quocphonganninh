@@ -112,6 +112,17 @@
           </div>
         </div>
 
+        <div class='card resume-card' id='resume-card' hidden>
+          <div class='resume-body'>
+            <strong id='resume-title'>Có phiên đang dở</strong>
+            <p class='hint' id='resume-hint'>Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
+          </div>
+          <div class='resume-actions'>
+            <button type='button' class='btn btn-primary' id='btn-resume-session' data-icon='arrow-right'>Tiếp tục</button>
+            <button type='button' class='btn btn-ghost' id='btn-discard-session' data-icon='x'>Bỏ phiên</button>
+          </div>
+        </div>
+
         <div class='card stats-card' id='deck-stats'>
           <h2>Tiến độ bộ đề</h2>
           <ul class='stat-list'>
@@ -134,18 +145,7 @@
           </div>
         </div>
 
-        <div class='card resume-card' id='resume-card' hidden>
-          <div class='resume-body'>
-            <strong id='resume-title'>Có phiên đang dở</strong>
-            <p class='hint' id='resume-hint'>Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
-          </div>
-          <div class='resume-actions'>
-            <button type='button' class='btn btn-primary' id='btn-resume-session' data-icon='arrow-right'>Tiếp tục</button>
-            <button type='button' class='btn btn-ghost' id='btn-discard-session' data-icon='x'>Bỏ phiên</button>
-          </div>
-        </div>
-
-        <div class='actions-fixed' id='setup-actions'>
+        <div class='card setup-start-card' id='setup-actions'>
           <button type='button' class='btn btn-primary btn-block' id='btn-start' data-icon='player-play'>Bắt đầu</button>
           <button type='button' class='btn btn-secondary btn-block' id='btn-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
         </div>
@@ -173,7 +173,7 @@
           <div class='feedback' id='feedback' role='status' aria-live='polite' hidden></div>
         </div>
 
-        <div class='quiz-actions is-fixed-bottom'>
+        <div class='card quiz-actions-card' id='quiz-actions'>
           <div class='quiz-actions-row'>
             <button type='button' class='btn btn-ghost' id='btn-prev' disabled data-icon='chevron-left'>Trước</button>
             <button type='button' class='btn btn-primary' id='btn-next' disabled data-icon='check'>Kiểm tra</button>
@@ -205,7 +205,7 @@
 
         <div class='exam-list' id='exam-list'></div>
 
-        <div class='exam-actions is-fixed-bottom'>
+        <div class='card exam-actions-card' id='exam-actions'>
           <div class='exam-actions-row'>
             <button type='button' class='btn btn-primary' id='btn-exam-submit' data-icon='check'>Nộp bài</button>
             <button type='button' class='btn btn-ghost' id='btn-exam-quit' data-icon='x'>Thoát</button>

@@ -1572,7 +1572,6 @@ function initUI() {
   state.currentDeck = active.deck === 'qp2' ? 'qp2' : 'qp1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
-  // Avoid double-write from setPracticeMode during init
   showScreen('setup');
   refreshSetupUI();
 };

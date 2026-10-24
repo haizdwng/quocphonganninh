@@ -76,7 +76,6 @@ export function saveSettings(settings) {
   const idx = list.findIndex((item) => item.deck === entry.deck);
   if (idx >= 0) list[idx] = entry;
   else list.push(entry);
-  // Always keep qp1 + qp2 slots when possible
   for (const deck of ['qp1', 'qp2']) {
     if (!list.some((item) => item.deck === deck)) {
       list.push(normalizeSettingsEntry(deck === entry.deck ? entry : {}, deck));

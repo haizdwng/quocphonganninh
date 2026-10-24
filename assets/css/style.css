@@ -1171,8 +1171,6 @@ button {
   color: var(--primary);
 }
 
-
-/* Giao diện nâng cấp: ưu tiên đọc rõ, thao tác nhanh và hoạt động hoàn toàn ngoại tuyến. */
 :root {
   --bg: #07111f; --surface: #0e1b2d; --surface-2: #14243a; --border: #253951;
   --text: #edf4ff; --muted: #9cb0c8; --primary: #2dd4bf; --primary-hover: #5eead4;
@@ -1207,13 +1205,6 @@ body {
   padding:clamp(16px,2.4vw,24px);
 }
 .card h2 { margin-bottom:16px; font-size:1.04rem; letter-spacing:-.015em; }
-#screen-setup.active { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr); align-items:start; gap:16px; }
-#screen-setup > .card:first-child,
-#screen-setup > .card:nth-child(2),
-#screen-setup > .actions-fixed,
-#screen-setup > .actions-sticky { grid-column:1/-1; }
-#screen-setup > .card:nth-child(3) { grid-column:1; grid-row:3; }
-#screen-setup > .stats-card { grid-column:2; grid-row:3; }
 .deck-btn { border-width:1px; border-radius:14px; padding:17px; min-height:82px; background:var(--surface-2); }
 .deck-btn.active { border-color:var(--primary); box-shadow:inset 0 0 0 1px var(--primary),0 0 0 3px var(--primary-soft); }
 .deck-name { font-size:1rem; }
@@ -1294,13 +1285,7 @@ button:disabled { opacity:.46; cursor:not-allowed; transform:none; }
 .update-banner { z-index:90; border:1px solid var(--border); border-radius:16px; background:var(--surface); box-shadow:var(--shadow); }
 @media (max-width:760px) {
   #app { width:min(100% - 24px,620px); padding-top:10px; }
-  #screen-setup.active { grid-template-columns:minmax(0,1fr); gap:12px; }
-  #screen-setup > .card:first-child,
-  #screen-setup > .card:nth-child(2),
-  #screen-setup > .card:nth-child(3),
-  #screen-setup > .stats-card,
-  #screen-setup > .actions-fixed,
-  #screen-setup > .actions-sticky { grid-column:1; grid-row:auto; }
+  #screen-setup.active { gap:12px; }
   #screen-summary.active { grid-template-columns:minmax(0,1fr); }
   #screen-summary > .card:first-child,#screen-summary > .actions-stack { grid-column:1; }
   #screen-summary .stat-list { grid-template-columns:minmax(0,1fr); }
@@ -1333,8 +1318,6 @@ button:disabled { opacity:.46; cursor:not-allowed; transform:none; }
   #progress-time.time-warning { animation:none; }
 }
 
-
-/* Refinement: giao diện thống nhất, chuyển động nhẹ và ưu tiên màn hình cảm ứng. */
 :root {
   color-scheme: dark;
   --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -1539,8 +1522,6 @@ input[type="number"]:focus, .search-field input[type="search"]:focus {
   }
 }
 
-
-/* Hoàn thiện trải nghiệm: chuyển động nhẹ, trạng thái rõ ràng và hỗ trợ thiết bị cảm ứng. */
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -1820,9 +1801,6 @@ input:focus-visible {
   .loading-track span { width: 100%; transform: none; }
 }
 
-
-/* ========== v2 UI: mode · exam · fixed bars · polish ========== */
-
 :root {
   --bar-h: 64px;
   --safe-b: env(safe-area-inset-bottom, 0px);
@@ -1830,7 +1808,6 @@ input:focus-visible {
   --app-max: 720px;
 }
 
-/* Mode cards */
 .mode-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1880,86 +1857,15 @@ input:focus-visible {
   line-height: 1.35;
 }
 
-/* Fixed bottom bars — true viewport dock */
-.actions-fixed,
-.quiz-actions.is-fixed-bottom,
-.exam-actions.is-fixed-bottom {
-  position: fixed !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  transform: none !important;
-  z-index: 100;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: stretch;
-  justify-content: center;
-  padding: 12px max(16px, env(safe-area-inset-right))
-           calc(12px + var(--safe-b))
-           max(16px, env(safe-area-inset-left));
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  border-top: 1px solid var(--border);
-  border-radius: 0;
-  backdrop-filter: blur(20px) saturate(1.15);
-  -webkit-backdrop-filter: blur(20px) saturate(1.15);
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.28);
-}
-
-/* Inner content max-width centered */
-.actions-fixed,
-.quiz-actions.is-fixed-bottom,
-.exam-actions.is-fixed-bottom {
-  /* children stretch full bar width up to app-max via wrapper feel */
-}
-
-.actions-fixed {
-  flex-direction: row;
-  gap: 10px;
-  max-width: none;
-}
-.actions-fixed > .btn {
-  flex: 1 1 0;
-  min-height: 50px;
-  border-radius: 14px;
-  font-weight: 700;
-  max-width: none;
-}
-
-.quiz-actions.is-fixed-bottom {
-  display: flex !important;
-  flex-direction: column;
-  gap: 8px;
-}
-.quiz-actions.is-fixed-bottom .btn {
-  min-height: 48px;
-  min-width: 0;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 650;
-  padding: 0 8px;
-}
-
-.exam-actions.is-fixed-bottom {
-  display: flex !important;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Screen padding for fixed chrome */
 body[data-screen="setup"] #screen-setup.active {
-  padding-bottom: calc(88px + var(--safe-b));
+  padding-bottom: calc(20px + var(--safe-b));
 }
 body[data-screen="quiz"] #screen-quiz.active {
-  padding-bottom: calc(120px + var(--safe-b));
+  padding-bottom: calc(20px + var(--safe-b));
   gap: 14px;
 }
 body[data-screen="exam"] #screen-exam.active {
-  padding-bottom: calc(140px + var(--safe-b));
+  padding-bottom: calc(20px + var(--safe-b));
   gap: 12px;
 }
 body[data-screen="quiz"] #app,
@@ -1967,7 +1873,6 @@ body[data-screen="exam"] #app {
   padding-top: 8px;
 }
 
-/* Progress (sticky top) */
 .progress-wrap.is-fixed-top {
   position: sticky;
   top: 0;
@@ -1987,7 +1892,6 @@ body[data-screen="exam"] #app {
 #exam-progress-time { color: var(--muted); }
 #exam-progress-time.time-warning { color: var(--danger); font-weight: 800; }
 
-/* Exam list */
 .exam-list {
   display: flex;
   flex-direction: column;
@@ -2044,7 +1948,6 @@ body[data-screen="exam"] #app {
   width: 100%;
 }
 
-/* Exam nav dots */
 .exam-nav {
   display: flex;
   flex-wrap: wrap;
@@ -2092,42 +1995,95 @@ body[data-screen="exam"] #app {
   color: var(--danger);
 }
 
-/* Setup grid with mode card */
 #screen-setup.active {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-}
-#screen-setup > .card:nth-child(1),
-#screen-setup > .card:nth-child(2) {
-  grid-column: 1 / -1;
-}
-#screen-setup > .card:nth-child(3) {
-  grid-column: 1;
-  grid-row: 3;
+  align-items: stretch;
 }
 #screen-setup > .stats-card {
-  grid-column: 2;
-  grid-row: 3;
-}
-#screen-setup > .actions-fixed {
-  grid-column: 1 / -1;
+  order: 10;
+  width: 100%;
+  border: 1.5px solid color-mix(in srgb, var(--border) 90%, var(--primary) 10%);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
 }
 
-/* Deck buttons polish */
+.setup-start-card {
+  order: 11;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  padding: 14px;
+}
+.setup-start-card .btn {
+  width: 100%;
+  min-height: 50px;
+  font-weight: 700;
+}
+.setup-start-card .btn-block {
+  display: flex;
+  width: 100%;
+}
+
+.quiz-actions-card,
+.exam-actions-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  padding: 14px;
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  top: auto !important;
+  transform: none !important;
+  max-width: none !important;
+  margin: 0 !important;
+  z-index: auto !important;
+}
+.quiz-actions-card .quiz-actions-row,
+.exam-actions-card .exam-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 12px;
+  width: 100%;
+}
+.exam-actions-card .exam-actions-row {
+  grid-template-columns: 1.4fr 1fr;
+}
+.quiz-actions-card .btn,
+.exam-actions-card .btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  margin: 0;
+}
+.quiz-actions-card > #btn-quit {
+  width: 100%;
+}
+
 .deck-btn {
   transition: border-color .15s, box-shadow .15s, background .15s, transform .1s;
 }
 .deck-btn:active { transform: scale(0.985); }
 
-/* Primary CTA stronger */
 .btn-primary {
   font-weight: 750;
   letter-spacing: -0.01em;
 }
 
-/* Feedback clearer */
 .feedback.ok {
   margin-top: 12px;
   padding: 10px 12px;
@@ -2145,26 +2101,16 @@ body[data-screen="exam"] #app {
   font-weight: 650;
 }
 
-/* Summary score emphasis */
 #sum-score {
   color: var(--primary);
   font-variant-numeric: tabular-nums;
 }
 
-/* Hide legacy sticky when fixed is used */
 #screen-setup .actions-sticky { display: none; }
 
 @media (max-width: 760px) {
   #screen-setup.active {
-    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
-  }
-  #screen-setup > .card:nth-child(1),
-  #screen-setup > .card:nth-child(2),
-  #screen-setup > .card:nth-child(3),
-  #screen-setup > .stats-card {
-    grid-column: 1;
-    grid-row: auto;
   }
   .mode-switch { gap: 10px; }
   .mode-btn { padding: 14px 12px; }
@@ -2194,7 +2140,6 @@ body[data-screen="exam"] #app {
   }
 }
 
-/* Light theme tweaks for fixed bars */
 :root[data-theme="light"] .actions-fixed,
 :root[data-theme="light"] .quiz-actions.is-fixed-bottom,
 :root[data-theme="light"] .exam-actions.is-fixed-bottom {
@@ -2206,7 +2151,6 @@ body[data-screen="exam"] #app {
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
 }
 
-/* ========== v3 features polish ========== */
 .preset-row {
   display: flex;
   flex-wrap: wrap;
@@ -2378,7 +2322,6 @@ body[data-screen="exam"] #app {
   #btn-exam-next-empty { width: 100%; }
 }
 
-/* Quiz / exam action rows — full width equal buttons */
 .quiz-actions-row,
 .exam-actions-row {
   display: grid;
@@ -2413,83 +2356,51 @@ body[data-screen="exam"] #app {
 :root[data-theme="light"] .actions-fixed,
 :root[data-theme="light"] .quiz-actions.is-fixed-bottom,
 :root[data-theme="light"] .exam-actions.is-fixed-bottom {
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.1);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.12), var(--shadow);
 }
 
-/* ========== Fixed bars: true viewport dock (final) ========== */
-#app .actions-fixed,
-#app .quiz-actions.is-fixed-bottom,
-#app .exam-actions.is-fixed-bottom,
-.actions-fixed,
 .quiz-actions.is-fixed-bottom,
 .exam-actions.is-fixed-bottom {
-  position: fixed !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
   top: auto !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
-  margin: 0 !important;
   transform: none !important;
-  inset-inline: 0 !important;
-  z-index: 200 !important;
-  box-sizing: border-box !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  align-items: stretch !important;
-  justify-content: flex-end !important;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
-  background: color-mix(in srgb, var(--bg) 94%, transparent) !important;
-  border: none !important;
-  border-top: 1px solid var(--border) !important;
-  border-radius: 0 !important;
-  box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.35) !important;
-  backdrop-filter: blur(18px) saturate(1.2) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(1.2) !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  z-index: auto !important;
 }
 
 .quiz-actions-row,
 .exam-actions-row {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 10px !important;
-  width: 100% !important;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 12px;
+  width: 100%;
 }
-.quiz-actions-row {
-  grid-template-columns: 1fr 1.2fr !important;
+.exam-actions-row {
+  grid-template-columns: 1.4fr 1fr;
 }
-
-#app .quiz-actions.is-fixed-bottom > .btn,
-#app .exam-actions.is-fixed-bottom > .btn,
-#app .actions-fixed > .btn,
-.quiz-actions.is-fixed-bottom > .btn,
-.exam-actions.is-fixed-bottom > .btn,
-.actions-fixed > .btn,
 .quiz-actions-row .btn,
 .exam-actions-row .btn {
-  width: 100% !important;
-  max-width: none !important;
-  flex: none !important;
-  min-height: 48px !important;
-  margin: 0 !important;
-  border-radius: 12px !important;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  border-radius: 12px;
 }
 
-/* Enough space so last question is not under the bar */
 body[data-screen="setup"] #screen-setup.active {
-  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
 }
-body[data-screen="quiz"] #screen-quiz.active {
-  padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)) !important;
-}
-body[data-screen="exam"] #screen-exam.active {
-  padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)) !important;
+body[data-screen="quiz"] #screen-quiz.active,
+body[data-screen="exam"] #screen-exam.active,
+body[data-screen="setup"] #screen-setup.active {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
-/* Icons: ensure visible on all buttons */
 [data-icon]::before {
   opacity: 1;
 }
@@ -2497,20 +2408,6 @@ body[data-screen="exam"] #screen-exam.active {
   background-color: currentColor;
 }
 
-/* Setup bottom bar stays horizontal when 2 buttons */
-#app .actions-fixed,
-.actions-fixed {
-  flex-direction: row !important;
-  gap: 10px !important;
-}
-#app .actions-fixed > .btn {
-  flex: 1 1 0 !important;
-  width: auto !important;
-}
-
-/* ========== Final action bar layout (clean) ========== */
-
-/* Never override [hidden] */
 [hidden],
 [hidden].exam-actions-row,
 [hidden].quiz-actions-row,
@@ -2521,92 +2418,19 @@ button[hidden],
   display: none !important;
 }
 
-/* Exam: one row, two equal buttons full width of bar */
-#app .exam-actions.is-fixed-bottom,
-.exam-actions.is-fixed-bottom {
-  flex-direction: column !important;
-  gap: 0 !important;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-}
-.exam-actions-row {
-  display: grid !important;
-  grid-template-columns: 1.4fr 1fr !important;
-  gap: 10px !important;
-  width: 100% !important;
-}
-.exam-actions-row .btn {
-  width: 100% !important;
-  min-height: 50px !important;
-  margin: 0 !important;
-  border-radius: 14px !important;
-  font-weight: 700 !important;
-}
-
-/* Practice quiz: row of prev/next + full quit */
-#app .quiz-actions.is-fixed-bottom,
-.quiz-actions.is-fixed-bottom {
-  flex-direction: column !important;
-  gap: 8px !important;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-}
-.quiz-actions-row {
-  display: grid !important;
-  grid-template-columns: 1fr 1.25fr !important;
-  gap: 10px !important;
-  width: 100% !important;
-}
-.quiz-actions-row .btn,
-.quiz-actions.is-fixed-bottom > #btn-quit {
-  width: 100% !important;
-  min-height: 48px !important;
-  border-radius: 14px !important;
-}
-
-/* Setup actions: side by side */
-#app .actions-fixed,
-.actions-fixed {
-  flex-direction: row !important;
-  gap: 10px !important;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-}
-.actions-fixed > .btn {
-  flex: 1 1 0 !important;
-  min-height: 50px !important;
-  border-radius: 14px !important;
-}
-
-/* Content clearance under bars */
-body[data-screen="exam"] #screen-exam.active {
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
-}
-body[data-screen="quiz"] #screen-quiz.active {
-  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
-}
-body[data-screen="setup"] #screen-setup.active {
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
-}
-
-/* Responsive compact */
 @media (max-width: 480px) {
   .exam-actions-row,
   .quiz-actions-row {
-    gap: 8px !important;
+    gap: 10px;
   }
   .exam-actions-row .btn,
   .quiz-actions-row .btn,
-  .quiz-actions.is-fixed-bottom > #btn-quit {
-    min-height: 46px !important;
-    font-size: 0.9rem !important;
-  }
-  #app .exam-actions.is-fixed-bottom,
-  #app .quiz-actions.is-fixed-bottom,
-  #app .actions-fixed {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
+  .quiz-actions-card > #btn-quit {
+    min-height: 46px;
+    font-size: 0.9rem;
   }
 }
 
-/* Soften option borders / cards for cleaner look */
 .exam-q-card,
 .question-card {
   border-radius: 16px;
@@ -2618,25 +2442,6 @@ body[data-screen="setup"] #screen-setup.active {
   border-radius: 16px;
 }
 
-/* Keep fixed action bars inside the same responsive frame as the app. */
 body {
   overflow-x: hidden;
-}
-
-#app .actions-fixed,
-#app .quiz-actions.is-fixed-bottom,
-#app .exam-actions.is-fixed-bottom {
-  left: 50% !important;
-  right: auto !important;
-  width: min(calc(100% - 28px), 1080px) !important;
-  max-width: 1080px !important;
-  transform: translateX(-50%) !important;
-}
-
-@media (max-width: 760px) {
-  #app .actions-fixed,
-  #app .quiz-actions.is-fixed-bottom,
-  #app .exam-actions.is-fixed-bottom {
-    width: calc(100% - 24px) !important;
-  }
 }
