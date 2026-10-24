@@ -422,7 +422,7 @@ function renderQuestionBank() {
     const prompt = document.createElement('p');
     prompt.className = 'review-q-text';
     renderTextWithHighlights(prompt, question.question, state.currentDeck, question.originalIndex, 'question');
-    card.appendChild(createHighlightToolbar(question.originalIndex, true));
+    const highlightToolbar = createHighlightToolbar(question.originalIndex, true);
     const options = document.createElement('ol');
     options.className = 'review-options';
     options.type = 'A';
@@ -445,7 +445,7 @@ function renderQuestionBank() {
       };
       options.appendChild(item);
     });
-    card.append(heading, prompt, options);
+    card.append(heading, prompt, highlightToolbar, options);
     fragment.appendChild(card);
   };
   list.replaceChildren(fragment);
