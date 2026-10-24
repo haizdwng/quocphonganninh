@@ -18,7 +18,9 @@ import {
   toggleBookmark,
   exportBackup,
   importBackup,
-  storageAvailable
+  storageAvailable,
+  getQuestionHighlights,
+  saveQuestionHighlights
 } from './storage.js';
 import {
   fingerprintQuestions,
@@ -59,7 +61,10 @@ const state = {
   _lastSummaryWrongIndices: [],
   _lastSummaryRangeStart: null,
   _lastSummaryRangeEnd: null,
-  _lastSummaryCount: null
+  _lastSummaryCount: null,
+  highlightEditMode: false,
+  lastTextSelection: null,
+  pendingHighlights: {}
 };
 
 const $ = (id) => document.getElementById(id);
@@ -210,6 +215,149 @@ function currentQuestions() {
   return state.decks[state.currentDeck] || [];
 };
 
+function highlightKey(deckId, originalIndex) {
+  return `${deckId}:${originalIndex}`;
+};
+
+function getVisibleHighlights(deckId, originalIndex, includePending = false) {
+  const saved = getQuestionHighlights(deckId, originalIndex);
+  if (!includePending) return saved;
+  return [...saved, ...(state.pendingHighlights[highlightKey(deckId, originalIndex)] || [])];
+};
+
+function renderTextWithHighlights(element, text, deckId, originalIndex, target, includePending = false) {
+  element.replaceChildren();
+  element.dataset.highlightTarget = target;
+  element.dataset.questionIndex = String(originalIndex);
+  const ranges = getVisibleHighlights(deckId, originalIndex, includePending)
+    .filter((range) => range.target === target && range.start < text.length && range.end > 0)
+    .map((range) => ({ start: Math.max(0, range.start), end: Math.min(text.length, range.end) }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const merged = [];
+  for (const range of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
+    else merged.push({ ...range });
+  };
+  let cursor = 0;
+  for (const range of merged) {
+    if (range.start > cursor) element.appendChild(document.createTextNode(text.slice(cursor, range.start)));
+    const mark = document.createElement('span');
+    mark.className = 'text-highlight';
+    mark.textContent = text.slice(range.start, range.end);
+    element.appendChild(mark);
+    cursor = range.end;
+  };
+  if (cursor < text.length) element.appendChild(document.createTextNode(text.slice(cursor)));
+};
+
+function createHighlightToolbar(questionIndex, bankMode = false) {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'highlight-toolbar';
+  const edit = document.createElement('button');
+  edit.type = 'button';
+  edit.className = 'btn btn-ghost btn-sm';
+  edit.dataset.icon = 'pencil';
+  edit.textContent = 'Chỉnh highlight';
+  edit.setAttribute('aria-pressed', 'false');
+  const apply = document.createElement('button');
+  apply.type = 'button';
+  apply.className = 'btn btn-secondary btn-sm';
+  apply.dataset.icon = 'highlight';
+  apply.textContent = 'Highlight đoạn chọn';
+  apply.hidden = true;
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'btn btn-ghost btn-sm';
+  clear.dataset.icon = 'x';
+  clear.textContent = 'Xóa highlight';
+  clear.hidden = true;
+  edit.addEventListener('click', () => {
+    const editing = !toolbar.classList.contains('is-editing');
+    toolbar.classList.toggle('is-editing', editing);
+    edit.setAttribute('aria-pressed', String(editing));
+    edit.textContent = editing ? 'Xong chỉnh sửa' : 'Chỉnh highlight';
+    apply.hidden = !editing;
+    clear.hidden = !editing;
+    if (bankMode) toolbar.closest('.review-q-card')?.classList.toggle('is-highlight-editing', editing);
+    else {
+      state.highlightEditMode = editing;
+      renderQuestion();
+    };
+  });
+  apply.addEventListener('click', () => {
+    const selection = state.lastTextSelection;
+    if (!selection || selection.questionIndex !== questionIndex || selection.deckId !== state.currentDeck) {
+      toast('Hãy bôi đen một đoạn chữ trong câu hỏi hoặc đáp án trước.');
+      return;
+    };
+    const s = state.session;
+    const item = currentItem();
+    const alreadyCorrect = !bankMode && item?.status === 'correct';
+    const range = { target: selection.target, start: selection.start, end: selection.end };
+    const key = highlightKey(state.currentDeck, questionIndex);
+    if (bankMode || alreadyCorrect) {
+      if (!saveQuestionHighlights(state.currentDeck, questionIndex, [...getQuestionHighlights(state.currentDeck, questionIndex), range])) {
+        toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
+        return;
+      };
+    } else {
+      const pending = state.pendingHighlights[key] || [];
+      if (!pending.some((r) => r.target === range.target && r.start === range.start && r.end === range.end)) pending.push(range);
+      state.pendingHighlights[key] = pending;
+    };
+    state.lastTextSelection = null;
+    if (bankMode) renderQuestionBank();
+    else renderQuestion();
+    toast(bankMode || alreadyCorrect ? 'Đã lưu highlight.' : 'Đã tạm đánh dấu. Chọn đúng đáp án để lưu highlight.');
+  });
+  clear.addEventListener('click', () => {
+    if (!saveQuestionHighlights(state.currentDeck, questionIndex, [])) {
+      toast('Không thể xóa highlight.');
+      return;
+    };
+    delete state.pendingHighlights[highlightKey(state.currentDeck, questionIndex)];
+    state.lastTextSelection = null;
+    if (bankMode) renderQuestionBank();
+    else renderQuestion();
+    toast('Đã xóa highlight của câu này.');
+  });
+  toolbar.append(edit, apply, clear);
+  return toolbar;
+};
+
+function captureHighlightSelection() {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+  const range = selection.getRangeAt(0);
+  const startElement = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
+  const endElement = range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement;
+  const target = startElement?.closest?.('[data-highlight-target]');
+  if (!target || endElement?.closest?.('[data-highlight-target]') !== target) return;
+  const prefix = document.createRange();
+  prefix.selectNodeContents(target);
+  prefix.setEnd(range.startContainer, range.startOffset);
+  const start = prefix.toString().length;
+  const selectedText = range.toString();
+  if (!selectedText.trim()) return;
+  state.lastTextSelection = {
+    deckId: state.currentDeck,
+    questionIndex: Number(target.dataset.questionIndex),
+    target: target.dataset.highlightTarget,
+    start,
+    end: start + selectedText.length
+  };
+};
+
+function commitPendingHighlights(deckId, originalIndex) {
+  const key = highlightKey(deckId, originalIndex);
+  const pending = state.pendingHighlights[key];
+  if (!pending?.length) return;
+  if (saveQuestionHighlights(deckId, originalIndex, [...getQuestionHighlights(deckId, originalIndex), ...pending])) {
+    delete state.pendingHighlights[key];
+  } else toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
+};
+
 function renderQuestionBank() {
   const questions = currentQuestions();
   const form = readSetupForm();
@@ -273,7 +421,8 @@ function renderQuestionBank() {
     };
     const prompt = document.createElement('p');
     prompt.className = 'review-q-text';
-    prompt.textContent = question.question;
+    renderTextWithHighlights(prompt, question.question, state.currentDeck, question.originalIndex, 'question');
+    card.appendChild(createHighlightToolbar(question.originalIndex, true));
     const options = document.createElement('ol');
     options.className = 'review-options';
     options.type = 'A';
@@ -286,7 +435,7 @@ function renderQuestionBank() {
       label.textContent = labels[index] || String(index + 1);
       const text = document.createElement('span');
       text.className = 'review-option-text';
-      text.textContent = option;
+      renderTextWithHighlights(text, option, state.currentDeck, question.originalIndex, `option:${index}`);
       item.append(label, text);
       if (index === question.correct) {
         const badge = document.createElement('span');
@@ -827,7 +976,16 @@ function renderQuestion() {
   bookmarkButton.textContent = isBookmarked ? 'Đã đánh dấu' : 'Đánh dấu';
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
-  $('q-text').textContent = q.question;
+  renderTextWithHighlights($('q-text'), q.question, s.deckId, q.originalIndex, 'question', true);
+  const highlightToolbar = $('quiz-highlight-toolbar');
+  if (highlightToolbar) {
+    highlightToolbar.hidden = s.examMode === true;
+    $('btn-highlight-edit').setAttribute('aria-pressed', String(state.highlightEditMode));
+    $('btn-highlight-edit').textContent = state.highlightEditMode ? 'Xong chỉnh sửa' : 'Chỉnh highlight';
+    $('btn-highlight-apply').hidden = !state.highlightEditMode;
+    $('btn-highlight-clear').hidden = !state.highlightEditMode;
+    highlightToolbar.classList.toggle('is-editing', state.highlightEditMode);
+  };
 
   const optsEl = $('options');
   optsEl.replaceChildren();
@@ -865,7 +1023,7 @@ function renderQuestion() {
     key.textContent = labels[displayIdx] || String(displayIdx + 1);
     const text = document.createElement('span');
     text.className = 'option-text';
-    text.textContent = q.options[origIdx];
+    renderTextWithHighlights(text, q.options[origIdx], s.deckId, q.originalIndex, `option:${origIdx}`, true);
     btn.append(key, text);
 
     if (!btn.disabled) {
@@ -1280,6 +1438,7 @@ function onCheck() {
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
   if (isAnswerCorrect(item, q)) {
+    commitPendingHighlights(s.deckId, q.originalIndex);
     const wasAlreadyCorrect = item.status === 'correct';
     const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
     item.status = 'correct';
@@ -1809,6 +1968,48 @@ function restoreSessionIfAny() {
 };
 
 function initUI() {
+  document.addEventListener('selectionchange', captureHighlightSelection);
+  $('btn-highlight-edit')?.addEventListener('click', () => {
+    state.highlightEditMode = !state.highlightEditMode;
+    renderQuestion();
+  });
+  $('btn-highlight-apply')?.addEventListener('click', () => {
+    const q = currentQ();
+    const s = state.session;
+    const selection = state.lastTextSelection;
+    if (!q || !s || !selection || selection.questionIndex !== q.originalIndex || selection.deckId !== s.deckId) {
+      toast('Hãy bôi đen một đoạn chữ trong câu hỏi hoặc đáp án trước.');
+      return;
+    };
+    const range = { target: selection.target, start: selection.start, end: selection.end };
+    const key = highlightKey(s.deckId, q.originalIndex);
+    const item = currentItem();
+    if (item?.status === 'correct') {
+      if (!saveQuestionHighlights(s.deckId, q.originalIndex, [...getQuestionHighlights(s.deckId, q.originalIndex), range])) {
+        toast('Không thể lưu highlight.');
+        return;
+      };
+    } else {
+      const pending = state.pendingHighlights[key] || [];
+      if (!pending.some((r) => r.target === range.target && r.start === range.start && r.end === range.end)) pending.push(range);
+      state.pendingHighlights[key] = pending;
+    };
+    state.lastTextSelection = null;
+    renderQuestion();
+    toast(item?.status === 'correct' ? 'Đã lưu highlight.' : 'Đã tạm đánh dấu. Chọn đúng đáp án để lưu highlight.');
+  });
+  $('btn-highlight-clear')?.addEventListener('click', () => {
+    const q = currentQ();
+    const s = state.session;
+    if (!q || !s || !saveQuestionHighlights(s.deckId, q.originalIndex, [])) {
+      toast('Không thể xóa highlight.');
+      return;
+    };
+    delete state.pendingHighlights[highlightKey(s.deckId, q.originalIndex)];
+    state.lastTextSelection = null;
+    renderQuestion();
+    toast('Đã xóa highlight của câu này.');
+  });
   const active = getSettings();
   state.currentDeck = active.deck === 'qp2' ? 'qp2' : 'qp1';
   const settings = getSettings(state.currentDeck);
