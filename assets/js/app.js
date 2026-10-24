@@ -255,7 +255,13 @@ function renderQuestionBank() {
       checkbox.addEventListener('change', () => {
         if (checkbox.checked) state.reviewSelectedIndices.add(question.originalIndex);
         else state.reviewSelectedIndices.delete(question.originalIndex);
-        renderQuestionBank();
+        const currentForm = readSetupForm();
+        const count = [...state.reviewSelectedIndices].filter((index) =>
+          index >= currentForm.startQuestion - 1 && index < currentForm.endQuestion
+        ).length;
+        $('review-selection-count').textContent = `Đã chọn ${count} câu · Phạm vi câu gốc ${currentForm.startQuestion}–${currentForm.endQuestion}.`;
+        $('btn-review-start-selected').textContent = `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${count} câu đã chọn`;
+        $('btn-review-start-selected').disabled = count === 0;
       });
       selectLabel.append(checkbox, document.createTextNode('Chọn câu này'));
       card.appendChild(selectLabel);
@@ -298,6 +304,7 @@ function renderQuestionBank() {
 };
 
 function openQuestionBank() {
+  state.reviewSelectedIndices.clear();
   state.reviewSearch = '';
   state.reviewSelectMode = false;
   $('input-review-search').value = '';
