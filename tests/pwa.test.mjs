@@ -53,3 +53,9 @@ test('the interface remains dark-only and uses a matching browser theme color', 
   assert.doesNotMatch(read('assets/js/app.js'), /theme-toggle/);
   assert.equal(manifest.theme_color, '#07111f');
 });
+
+
+test('exam submission rechecks the deadline after awaiting confirmation', () => {
+  const app = read('assets/js/app.js');
+  assert.match(app, /if \(!ok\) return;[\s\S]*?enforceSessionDeadline\(\) \|\| state\.session !== s \|\| s\.reviewMode/);
+});
