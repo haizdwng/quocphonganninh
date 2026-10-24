@@ -90,18 +90,19 @@ test('saved active sessions are read and cleared by deck id', () => {
 });
 
 
+
 test('default setup uses practice mode, full deck, 30 questions, 35 minutes and shuffles both', () => {
   const app = read('assets/js/app.js');
   const storage = read('assets/js/storage.js');
   const html = read('index.html');
-  assert.match(storage, /count: Number\\.isInteger\\(count\\) && count > 0 \\? count : 30/);
-  assert.match(storage, /shuffleQ: settings\\.shuffleQ !== false/);
-  assert.match(storage, /: 35,\\s*practiceMode: settings\\.practiceMode === 'exam' \\? 'exam' : 'practice'/);
-  assert.match(app, /setPracticeMode\\(settings\\.practiceMode === 'exam' \\? 'exam' : 'practice'\\)/);
-  assert.match(html, /id='input-range-start' min='1' value='1'/);
-  assert.match(html, /id='input-range-end' min='1' value='0'/);
-  assert.match(html, /id='input-count' min='1' value='30'/);
-  assert.match(html, /id='input-time-limit' min='0' max='1440' value='35'/);
-  assert.match(html, /id='chk-shuffle-q' checked/);
-  assert.match(html, /id='chk-shuffle-a' checked/);
+  assert.ok(storage.includes('count: Number.isInteger(count) && count > 0 ? count : 30'));
+  assert.ok(storage.includes('shuffleQ: settings.shuffleQ !== false'));
+  assert.ok(storage.includes(': 35,\n    practiceMode: settings.practiceMode === \'exam\' ? \'exam\' : \'practice\''));
+  assert.ok(app.includes("setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice')"));
+  assert.ok(html.includes("id='input-range-start' min='1' value='1'"));
+  assert.ok(html.includes("id='input-range-end' min='1' value='0'"));
+  assert.ok(html.includes("id='input-count' min='1' value='30'"));
+  assert.ok(html.includes("id='input-time-limit' min='0' max='1440' value='35'"));
+  assert.ok(html.includes("id='chk-shuffle-q' checked"));
+  assert.ok(html.includes("id='chk-shuffle-a' checked"));
 });
