@@ -719,6 +719,16 @@ function startPracticeWrong(options = {}) {
     alreadyShuffled: true
   });
 };
+function recordWrongAnswer(session, originalIndex) {
+  if (markWrong(session.deckId, originalIndex) === null) {
+    toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
+  };
+  if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) &&
+      !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [originalIndex])) {
+    toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
+  };
+};
+
 function currentItem() {
   const s = state.session;
   if (!s) return null;
@@ -1114,7 +1124,7 @@ async function onExamSubmit() {
         item.checked = true;
         item.wrongCount = 1;
         wrongAttempts += 1;
-        markWrong(s.deckId, q.originalIndex);
+        recordWrongAnswer(s, q.originalIndex);
         continue;
       };
       const correct = isAnswerCorrect(item, q);
@@ -1172,7 +1182,7 @@ function enforceSessionDeadline() {
         item.status = 'wrong';
         item.wrongCount = Math.max(1, item.wrongCount || 0);
         wrongAttempts += 1;
-        markWrong(session.deckId, q.originalIndex);
+        recordWrongAnswer(session, q.originalIndex);
       };
     };
     if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
@@ -1250,7 +1260,7 @@ function onCheck() {
       if (history) history.wrongCount += 1;
       else s.practiceWrongHistory.push({ originalIndex: q.originalIndex, question: q.question, wrongCount: 1 });
     };
-    if (markWrong(s.deckId, q.originalIndex) === null) toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
+    recordWrongAnswer(s, q.originalIndex);
   };
   persistSession();
   renderQuestion();
