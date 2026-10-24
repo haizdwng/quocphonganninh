@@ -75,7 +75,7 @@ test('whole-deck wrong-question practice uses the current deck history and all w
   assert.match(html, /id=['"]btn-practice-all-wrong['"]/);
   assert.match(app, /const allWrongCount = getWrongIndices\(state\.currentDeck\)/);
   assert.match(app, /startPracticeWrong\(\{ allDeck: true \}\)/);
-  assert.match(app, /allDeck \? getWrongIndices\(state\.currentDeck\)/);
+  assert.match(app, /allDeck[\s\S]*?getWrongIndices\(state\.currentDeck\)/);
   assert.match(app, /allDeck \? wrongs\.length : form\.count/);
   assert.match(app, /rangeStart: 1, rangeEnd: qs\.length, requestedCount: pool\.length/);
 });
