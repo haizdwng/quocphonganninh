@@ -291,25 +291,17 @@ function createHighlightToolbar(questionIndex, bankMode = false) {
       toast('Hãy bôi đen một đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
     };
-    const s = state.session;
-    const item = currentItem();
-    const alreadyCorrect = !bankMode && item?.status === 'correct';
     const range = { target: selection.target, start: selection.start, end: selection.end };
-    const key = highlightKey(state.currentDeck, questionIndex);
-    if (bankMode || alreadyCorrect) {
-      if (!saveQuestionHighlights(state.currentDeck, questionIndex, [...getQuestionHighlights(state.currentDeck, questionIndex), range])) {
-        toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
-        return;
-      };
-    } else {
-      const pending = state.pendingHighlights[key] || [];
-      if (!pending.some((r) => r.target === range.target && r.start === range.start && r.end === range.end)) pending.push(range);
-      state.pendingHighlights[key] = pending;
+    const saved = getQuestionHighlights(state.currentDeck, questionIndex);
+    if (!saved.some((r) => r.target === range.target && r.start === range.start && r.end === range.end) &&
+        !saveQuestionHighlights(state.currentDeck, questionIndex, [...saved, range])) {
+      toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
+      return;
     };
     state.lastTextSelection = null;
     if (bankMode) renderQuestionBank();
     else renderQuestion();
-    toast(bankMode || alreadyCorrect ? 'Đã lưu highlight.' : 'Đã tạm đánh dấu. Chọn đúng đáp án để lưu highlight.');
+    toast('Đã lưu highlight.');
   });
   clear.addEventListener('click', () => {
     if (!saveQuestionHighlights(state.currentDeck, questionIndex, [])) {
@@ -1438,7 +1430,6 @@ function onCheck() {
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
   if (isAnswerCorrect(item, q)) {
-    commitPendingHighlights(s.deckId, q.originalIndex);
     const wasAlreadyCorrect = item.status === 'correct';
     const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
     item.status = 'correct';
@@ -1982,21 +1973,15 @@ function initUI() {
       return;
     };
     const range = { target: selection.target, start: selection.start, end: selection.end };
-    const key = highlightKey(s.deckId, q.originalIndex);
-    const item = currentItem();
-    if (item?.status === 'correct') {
-      if (!saveQuestionHighlights(s.deckId, q.originalIndex, [...getQuestionHighlights(s.deckId, q.originalIndex), range])) {
-        toast('Không thể lưu highlight.');
-        return;
-      };
-    } else {
-      const pending = state.pendingHighlights[key] || [];
-      if (!pending.some((r) => r.target === range.target && r.start === range.start && r.end === range.end)) pending.push(range);
-      state.pendingHighlights[key] = pending;
+    const saved = getQuestionHighlights(s.deckId, q.originalIndex);
+    if (!saved.some((r) => r.target === range.target && r.start === range.start && r.end === range.end) &&
+        !saveQuestionHighlights(s.deckId, q.originalIndex, [...saved, range])) {
+      toast('Không thể lưu highlight.');
+      return;
     };
     state.lastTextSelection = null;
     renderQuestion();
-    toast(item?.status === 'correct' ? 'Đã lưu highlight.' : 'Đã tạm đánh dấu. Chọn đúng đáp án để lưu highlight.');
+    toast('Đã lưu highlight.');
   });
   $('btn-highlight-clear')?.addEventListener('click', () => {
     const q = currentQ();
