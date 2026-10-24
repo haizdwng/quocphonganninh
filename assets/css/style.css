@@ -2445,3 +2445,117 @@ button[hidden],
 body {
   overflow-x: hidden;
 }
+
+/* Full question-bank review */
+#screen-review.active {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+.review-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.review-header h2 { margin: 2px 0 0; }
+.review-header > .btn { align-self: flex-start; }
+.review-header input[type="search"] { width: 100%; }
+.review-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.review-q-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.review-q-heading {
+  margin: 0 0 8px;
+  color: var(--primary);
+  font-size: .82rem;
+  font-weight: 800;
+}
+.review-q-text {
+  margin: 0 0 14px;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.65;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.review-options {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+.review-option {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--text);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.review-option-label {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  min-height: 26px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted) 13%, transparent);
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 800;
+}
+.review-option-text { min-width: 0; }
+.review-option.is-correct {
+  border-color: color-mix(in srgb, var(--success) 65%, var(--border));
+  background: var(--success-soft);
+}
+.review-option.is-correct .review-option-label {
+  background: var(--success);
+  color: #fff;
+}
+.review-correct-badge {
+  align-self: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+  font-size: .7rem;
+  line-height: 1.4;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.review-empty {
+  text-align: center;
+  color: var(--muted);
+}
+@media (max-width: 520px) {
+  .review-q-card { padding: 13px; }
+  .review-option {
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 8px;
+    padding: 9px;
+  }
+  .review-correct-badge {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 1px;
+  }
+}
