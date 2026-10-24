@@ -98,6 +98,7 @@ async function loadDeck(id) {
       progress.completed = [];
       progress.sequentialCursor = 0;
       progress.wrongMap = {};
+      progress.wrongRangeMap = {};
       progress.practiceMap = {};
       progress.bookmarks = [];
       progress.dataFingerprint = fp;
@@ -1140,7 +1141,7 @@ async function onExamSubmit() {
         const wrongOriginalIndex = item.optionOrder[item.userAnswer];
         if (!item.wrongOptions) item.wrongOptions = [];
         if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
-        markWrong(s.deckId, q.originalIndex);
+        recordWrongAnswer(s, q.originalIndex);
       };
     };
     if (completedIdx.length) addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
