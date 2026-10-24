@@ -8,6 +8,7 @@ import {
   fingerprintQuestions,
   createSessionItems,
   pickSequential,
+  findNextUncompletedQuestion,
   pickRandom,
   pickWrong,
   isAnswerCorrect,
@@ -99,4 +100,18 @@ test('question fingerprint changes when question data changes', () => {
   const first = normalizeQuestions([{ question: 'Q', options: ['A', 'B'], correct: 0 }]);
   const changed = normalizeQuestions([{ question: 'Q', options: ['A', 'B'], correct: 1 }]);
   assert.notEqual(fingerprintQuestions(first), fingerprintQuestions(changed));
+});
+
+
+test('sequential continuation returns to unresolved questions when the cursor reaches the end', () => {
+  const questions = normalizeQuestions(Array.from({ length: 6 }, (_, index) => ({
+    question: `Q${index + 1}`,
+    options: ['A', 'B'],
+    correct: 0
+  })));
+  const completed = new Set([0, 1, 3, 4, 5]);
+
+  assert.equal(findNextUncompletedQuestion(questions, 2, completed).originalIndex, 2);
+  assert.equal(findNextUncompletedQuestion(questions, 6, completed).originalIndex, 2);
+  assert.equal(findNextUncompletedQuestion(questions, 0, new Set([0, 1, 2, 3, 4, 5])), null);
 });
