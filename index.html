@@ -148,7 +148,20 @@
         <div class='card setup-start-card' id='setup-actions'>
           <button type='button' class='btn btn-primary btn-block' id='btn-start' data-icon='player-play'>Bắt đầu</button>
           <button type='button' class='btn btn-secondary btn-block' id='btn-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
+          <button type='button' class='btn btn-ghost btn-block' id='btn-view-bank' data-icon='book-open'>Xem toàn bộ câu hỏi & đáp án</button>
         </div>
+      </section>
+
+      <section id='screen-review' class='screen' aria-label='Xem toàn bộ câu hỏi và đáp án' hidden>
+        <div class='card review-header'>
+          <button type='button' class='btn btn-ghost' id='btn-review-back' data-icon='arrow-left'>Quay lại thiết lập</button>
+          <h2 id='review-title'>Toàn bộ câu hỏi và đáp án</h2>
+          <p class='hint' id='review-description'>Đọc trước nội dung và đáp án đúng của bộ đề.</p>
+          <label for='input-review-search'>Tìm câu hỏi hoặc đáp án</label>
+          <input type='search' id='input-review-search' placeholder='Nhập từ khóa cần tìm…' autocomplete='off'>
+          <p class='hint' id='review-count' aria-live='polite'></p>
+        </div>
+        <div class='review-list' id='review-list' aria-live='polite'></div>
       </section>
 
       <section id='screen-quiz' class='screen' aria-label='Ôn luyện' hidden>
