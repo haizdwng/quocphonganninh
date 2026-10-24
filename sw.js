@@ -1,5 +1,5 @@
-const CACHE_VERSION = 'quocphonganninh-v39';
-const CACHE_PREFIX = 'quocphonganninh-';
+const CACHE_VERSION = 'quocphonganninh:v39';
+const CACHE_PREFIX = 'quocphonganninh:';
 const ESSENTIAL = [
   './',
   './index.html',
@@ -52,7 +52,7 @@ async function fetchInterFont() {
   } finally {
     clearTimeout(timeout);
   };
-}
+};
 
 async function cacheInterFont(cache) {
   try {
@@ -64,10 +64,8 @@ async function cacheInterFont(cache) {
       const font = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
       await cache.put(INTER_FONT_CACHE_KEY(), font);
     };
-  } catch {
-    // Font is optional during installation; the system font remains available as fallback.
-  };
-}
+  } catch {};
+};
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
@@ -87,7 +85,7 @@ self.addEventListener('fetch', (event) => {
   if (url.href === interFontUrl.href) {
     event.respondWith(serveInterFont(request));
     return;
-  }
+  };
 
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
@@ -116,12 +114,12 @@ async function serveInterFont(request) {
     await cache.put(request, font.clone());
     return font;
   } catch {
-    return new Response('Font Inter chưa được tải. Hãy kết nối mạng rồi tải lại trang.', {
+    return new Response('Phông chữ Inter chưa được tải. Hãy kết nối mạng rồi tải lại trang.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
-  }
-}
+  };
+};
 
 async function cacheFirst(request, event) {
   const cache = await caches.open(CACHE_VERSION);

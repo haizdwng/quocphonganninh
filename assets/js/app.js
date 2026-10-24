@@ -1993,9 +1993,8 @@ function bindEvents() {
       const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const date = new Date().toISOString().slice(0, 10);
       link.href = url;
-      link.download = `quocphong-tien-do-${date}.json`;
+      link.download = `quocphonganninh:${Date.now()}.json`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       toast('Đã tạo tệp sao lưu tiến độ.');

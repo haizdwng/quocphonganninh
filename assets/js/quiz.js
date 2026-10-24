@@ -1,8 +1,8 @@
 export function fingerprintQuestions(questions) {
-  const source = JSON.stringify(questions.map((q) => ({
-    question: q.question,
-    options: q.options,
-    correct: q.correct
+  const source = JSON.stringify(questions.map((question) => ({
+    question: question.question,
+    options: question.options,
+    correct: question.correct
   })));
   let hash = 2166136261;
   for (let i = 0; i < source.length; i++) {
@@ -18,24 +18,24 @@ export function normalizeQuestions(raw) {
   };
   const out = [];
   for (let i = 0; i < raw.length; i++) {
-    const q = raw[i];
-    if (!q || typeof q.question !== 'string' || !q.question.trim()) {
+    const question = raw[i];
+    if (!question || typeof question.question !== 'string' || !question.question.trim()) {
       throw new Error(`Câu ${i + 1} thiếu nội dung câu hỏi.`);
     };
-    if (!Array.isArray(q.options) || q.options.length < 2) {
+    if (!Array.isArray(question.options) || question.options.length < 2) {
       throw new Error(`Câu ${i + 1} phải có ít nhất hai đáp án.`);
     };
-    if (q.options.some((option) => typeof option !== 'string' || !option.trim())) {
+    if (question.options.some((option) => typeof option !== 'string' || !option.trim())) {
       throw new Error(`Câu ${i + 1} có đáp án trống hoặc không hợp lệ.`);
     };
-    const options = q.options.slice();
-    const correct = q.correct;
+    const options = question.options.slice();
+    const correct = question.correct;
     if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) {
       throw new Error(`Câu ${i + 1} có chỉ số đáp án đúng không hợp lệ.`);
     };
     out.push({
       originalIndex: i,
-      question: q.question,
+      question: question.question,
       options,
       correct
     });
@@ -46,14 +46,14 @@ export function normalizeQuestions(raw) {
   return out;
 };
 
-function shuffleInPlace(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
+function shuffleInPlace(array) {
+  for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    const t = arr[i];
-    arr[i] = arr[j];
-    arr[j] = t;
+    const t = array[i];
+    array[i] = array[j];
+    array[j] = t;
   };
-  return arr;
+  return array;
 };
 
 export function buildOptionOrder(optionCount, shuffleA) {
@@ -99,17 +99,15 @@ export function pickSequential(allQuestions, cursor, count, completedSet = new S
 
 export function findNextUncompletedQuestion(allQuestions, cursor, completedSet = new Set()) {
   const start = Math.max(0, Number.isInteger(cursor) ? cursor : 0);
-  return allQuestions.find((question) =>
-    question.originalIndex >= start && !completedSet.has(question.originalIndex)
-  ) || allQuestions.find((question) => !completedSet.has(question.originalIndex)) || null;
+  return allQuestions.find((question) => question.originalIndex >= start && !completedSet.has(question.originalIndex)) || allQuestions.find((question) => !completedSet.has(question.originalIndex)) || null;
 };
 
 export function pickRandom(allQuestions, count, preferUncompleted, completedSet) {
   const uncompleted = [];
   const completed = [];
-  for (const q of allQuestions) {
-    if (completedSet.has(q.originalIndex)) completed.push(q);
-    else uncompleted.push(q);
+  for (const question of allQuestions) {
+    if (completedSet.has(question.originalIndex)) completed.push(question);
+    else uncompleted.push(question);
   };
   let pool = preferUncompleted ? uncompleted.slice() : allQuestions.slice();
   if (preferUncompleted && pool.length < count && completed.length) {
