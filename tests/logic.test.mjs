@@ -168,7 +168,7 @@ test('màn hình thiết lập dùng thẻ phiên đang dở thay cho lịch s�
   const app = fs.readFileSync(new URL('../assets/js/app.js', import.meta.url), 'utf8');
   const css = fs.readFileSync(new URL('../assets/css/style.css', import.meta.url), 'utf8');
   assert.match(html, /id='resume-card'/);
-  assert.match(html, /Có lượt ôn đang dở/);
+  assert.match(app, /Có lượt ôn đang dở/);
   assert.doesNotMatch(html, /session-history|10 phiên gần nhất/);
   assert.match(app, /function refreshResumeCard\(\)/);
   assert.doesNotMatch(css, /session-history|history-item/);
