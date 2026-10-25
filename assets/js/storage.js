@@ -21,7 +21,7 @@ function writeRoot(data) {
 };
 
 function normalizeDeckId(deckId) {
-  return deckId === 'qp2' ? 'qp2' : 'qp1';
+  return deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
 };
 
 function normalizeSettingsEntry(raw, deckId) {
@@ -61,7 +61,7 @@ function readSettingsList(root) {
 export function getSettings(deckId) {
   const root = readRoot();
   const list = readSettingsList(root);
-  const id = normalizeDeckId(deckId || root.activeDeck || 'qp1');
+  const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   const found = list.find((entry) => entry.deck === id);
   if (found) return { ...found };
   return normalizeSettingsEntry({}, id);
@@ -74,7 +74,7 @@ export function saveSettings(settings) {
   const idx = list.findIndex((item) => item.deck === entry.deck);
   if (idx >= 0) list[idx] = entry;
   else list.push(entry);
-  for (const deck of ['qp1', 'qp2']) {
+  for (const deck of ['quocphong1', 'quocphong2']) {
     if (!list.some((item) => item.deck === deck)) {
       list.push(normalizeSettingsEntry(deck === entry.deck ? entry : {}, deck));
     };
@@ -162,7 +162,7 @@ export function saveDeckProgress(deckId, progress) {
 
 export function getSession(deckId) {
   const root = readRoot();
-  const id = normalizeDeckId(deckId || root.activeDeck || 'qp1');
+  const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   const sessions = root.sessions && typeof root.sessions === 'object' && !Array.isArray(root.sessions)
     ? root.sessions
     : {};
@@ -171,7 +171,7 @@ export function getSession(deckId) {
 };
 
 export function saveSession(session) {
-  if (!session || !['qp1', 'qp2'].includes(session.deckId)) return false;
+  if (!session || !['quocphong1', 'quocphong2'].includes(session.deckId)) return false;
   const root = readRoot();
   if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
   root.sessions[session.deckId] = session;
@@ -182,7 +182,7 @@ export function saveSession(session) {
 export function clearSession(deckId) {
   const root = readRoot();
   if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
-  const id = normalizeDeckId(deckId || root.activeDeck || 'qp1');
+  const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   delete root.sessions[id];
   if (root.session?.deckId === id) delete root.session;
   return writeRoot(root);
@@ -321,9 +321,9 @@ export function exportBackup() {
     version: 1,
     exportedAt: new Date().toISOString(),
     settings: list.length ? list : [],
-    activeDeck: root.activeDeck || 'qp1',
+    activeDeck: root.activeDeck || 'quocphong1',
     decks: root.decks || {},
-    highlights: root.highlights || { qp1: {}, qp2: {} }
+    highlights: root.highlights || { quocphong1: {}, quocphong2: {} }
   }, null, 2);
 };
 
@@ -336,7 +336,7 @@ export function importBackup(raw) {
   };
   if (!backup || backup.format !== 'backup' || backup.version !== 1 ||
       !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) ||
-      !Object.keys(backup.decks).every((id) => ['qp1', 'qp2'].includes(id))) return false;
+      !Object.keys(backup.decks).every((id) => ['quocphong1', 'quocphong2'].includes(id))) return false;
 
   let settingsList = [];
   if (Array.isArray(backup.settings)) {
@@ -346,20 +346,20 @@ export function importBackup(raw) {
   } else if (backup.settings && typeof backup.settings === 'object') {
     settingsList = [normalizeSettingsEntry(backup.settings, backup.settings.deck)];
   };
-  for (const deck of ['qp1', 'qp2']) {
+  for (const deck of ['quocphong1', 'quocphong2']) {
     if (!settingsList.some((entry) => entry.deck === deck)) {
       settingsList.push(normalizeSettingsEntry({}, deck));
     };
   };
   const normalized = {
     settings: settingsList,
-    activeDeck: normalizeDeckId(backup.activeDeck || settingsList[0]?.deck || 'qp1'),
+    activeDeck: normalizeDeckId(backup.activeDeck || settingsList[0]?.deck || 'quocphong1'),
     decks: {},
-    highlights: { qp1: {}, qp2: {} }
+    highlights: { quocphong1: {}, quocphong2: {} }
   };
 
   if (backup.highlights && typeof backup.highlights === 'object' && !Array.isArray(backup.highlights)) {
-    for (const id of ['qp1', 'qp2']) {
+    for (const id of ['quocphong1', 'quocphong2']) {
       const deck = backup.highlights[id];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
       for (const [key, ranges] of Object.entries(deck)) {
@@ -371,7 +371,7 @@ export function importBackup(raw) {
     };
   };
 
-  for (const id of ['qp1', 'qp2']) {
+  for (const id of ['quocphong1', 'quocphong2']) {
     const d = backup.decks[id];
     if (!d || typeof d !== 'object' || Array.isArray(d)) continue;
     const wrongMap = {};

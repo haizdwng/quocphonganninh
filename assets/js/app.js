@@ -35,17 +35,17 @@ import {
 } from './quiz.js';
 
 const DECKS = {
-  qp1: { id: 'qp1', label: 'Quốc Phòng 1', file: 'data/quocphong1.json' },
-  qp2: { id: 'qp2', label: 'Quốc Phòng 2', file: 'data/quocphong2.json' }
+  quocphong1: { id: 'quocphong1', label: 'Quốc Phòng 1', file: 'data/quocphong1.json' },
+  quocphong2: { id: 'quocphong2', label: 'Quốc Phòng 2', file: 'data/quocphong2.json' }
 };
 
 const state = {
-  decks: { qp1: null, qp2: null },
-  fingerprints: { qp1: '', qp2: '' },
-  legacyFingerprintMatched: { qp1: false, qp2: false },
+  decks: { quocphong1: null, quocphong2: null },
+  fingerprints: { quocphong1: '', quocphong2: '' },
+  legacyFingerprintMatched: { quocphong1: false, quocphong2: false },
   loading: true,
   error: null,
-  currentDeck: 'qp1',
+  currentDeck: 'quocphong1',
   mode: 'setup',
   practiceMode: 'practice',
   session: null,
@@ -137,7 +137,7 @@ async function loadAll() {
   state.error = null;
   showScreen('loading');
   try {
-    await Promise.all([loadDeck('qp1'), loadDeck('qp2')]);
+    await Promise.all([loadDeck('quocphong1'), loadDeck('quocphong2')]);
     state.loading = false;
     initUI();
   } catch (e) {
@@ -504,8 +504,8 @@ function openQuestionBank() {
 function refreshSetupUI() {
   const qs = currentQuestions();
   const total = qs.length;
-  $('count-qp1').textContent = `${state.decks.qp1?.length ?? '—'} câu`;
-  $('count-qp2').textContent = `${state.decks.qp2?.length ?? '—'} câu`;
+  $('count-quocphong1').textContent = `${state.decks.quocphong1?.length ?? '—'} câu`;
+  $('count-quocphong2').textContent = `${state.decks.quocphong2?.length ?? '—'} câu`;
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.deck === state.currentDeck);
@@ -1125,7 +1125,7 @@ function setPracticeMode(mode) {
       : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
   };
   persistSetupForm();
-  if (state.mode === 'setup' && state.decks.qp1) refreshSetupUI();
+  if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
 }
 
 function updateExamProgressHeader() {
@@ -1908,7 +1908,7 @@ function showSummary(summary, deckId, mode) {
 function restoreSessionIfAny() {
   const saved = getSession(state.currentDeck);
   if (!saved) return false;
-  if (!['qp1', 'qp2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
+  if (!['quocphong1', 'quocphong2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
     clearSession(state.currentDeck);
     return false;
   };
@@ -2029,7 +2029,7 @@ function initUI() {
     toggleHighlightSelection(selection.deckId, q.originalIndex, selection);
   });
   const active = getSettings();
-  state.currentDeck = active.deck === 'qp2' ? 'qp2' : 'qp1';
+  state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
   showScreen('setup');
