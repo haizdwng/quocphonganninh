@@ -23,6 +23,7 @@ import {
   saveQuestionHighlights,
   resetDeckHighlights
 } from './storage.js';
+import { initEnhance } from './enhance.js';
 import {
   fingerprintQuestions,
   normalizeQuestions,
@@ -761,7 +762,11 @@ function persistSetupForm() {
     startQuestion: form.startQuestion,
     endQuestion: form.endQuestion,
     timeLimit: form.timeLimit,
-    practiceMode: state.practiceMode
+    practiceMode: state.practiceMode,
+    autoCheck: $('chk-auto-check').checked,
+    autoAdvance: $('chk-auto-advance').checked,
+    soundEnabled: $('chk-sound').checked,
+    vibrationEnabled: $('chk-vibration').checked
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 };
@@ -775,6 +780,10 @@ function applySettingsToForm(settings) {
   $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
   $('chk-shuffle-a').checked = !!settings.shuffleA;
+  $('chk-auto-check').checked = settings.autoCheck === true;
+  $('chk-auto-advance').checked = settings.autoAdvance === true;
+  $('chk-sound').checked = settings.soundEnabled !== false;
+  $('chk-vibration').checked = settings.vibrationEnabled !== false;
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
 };
 
@@ -1072,10 +1081,10 @@ function renderQuestion() {
 
     if (item.userAnswer === displayIdx) btn.classList.add('selected');
     if (item.checked && item.status === 'correct' && displayIdx === item.userAnswer) {
-      btn.classList.add('correct');
+      btn.classList.add('correct', 'answer-bounce');
     };
     if (item.checked && item.status === 'wrong' && displayIdx === item.userAnswer) {
-      btn.classList.add('incorrect');
+      btn.classList.add('incorrect', 'answer-shake');
     };
     const wrongOptions = Array.isArray(item.wrongOptions) ? item.wrongOptions : [];
     if (wrongOptions.includes(origIdx)) {
@@ -1515,6 +1524,7 @@ function onSelectOption(displayIdx) {
   };
   persistSession();
   renderQuestion();
+  if (getSettings(s.deckId).autoCheck) onCheck();
 };
 
 const answerSounds = {
@@ -1528,6 +1538,7 @@ for (const audio of Object.values(answerSounds)) {
 }
 
 function playAnswerSound(isCorrect) {
+  if (getSettings(state.session?.deckId || state.currentDeck).soundEnabled === false) return;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
@@ -1549,8 +1560,16 @@ function onCheck() {
 
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
-  if (isAnswerCorrect(item, q)) {
+  const isCorrect = isAnswerCorrect(item, q);
+  const preferences = getSettings(s.deckId);
+  const vibrate = (pattern) => {
+    if (preferences.vibrationEnabled !== false && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof navigator.vibrate === 'function') {
+      try { navigator.vibrate(pattern); } catch {}
+    };
+  };
+  if (isCorrect) {
     playAnswerSound(true);
+    vibrate(18);
     const wasAlreadyCorrect = item.status === 'correct';
     const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
     item.status = 'correct';
@@ -1572,6 +1591,7 @@ function onCheck() {
     s.reviewingPast = false;
   } else {
     playAnswerSound(false);
+    vibrate([28, 45, 28]);
     item.status = 'wrong';
     const wrongOriginalIndex = item.optionOrder[item.userAnswer];
     if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
@@ -1587,6 +1607,11 @@ function onCheck() {
   };
   persistSession();
   renderQuestion();
+  if (isCorrect && preferences.autoAdvance === true && s.viewIndex < s.items.length - 1) {
+    setTimeout(() => {
+      if (state.session === s && currentItem() === item && item.status === 'correct' && s.viewIndex < s.items.length - 1) onNext();
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 350);
+  };
 
 };
 
@@ -2161,6 +2186,15 @@ function bindKeyboardShortcuts() {
       };
       return;
     };
+    if (/^[a-f]$/i.test(event.key)) {
+      const index = event.key.toUpperCase().charCodeAt(0) - 65;
+      const option = $('options').querySelectorAll('.option')[index];
+      if (option && !option.disabled) {
+        event.preventDefault();
+        option.click();
+      };
+      return;
+    };
     if (event.key === 'Enter') {
       event.preventDefault();
       if (!$('btn-next').disabled) $('btn-next').click();
@@ -2181,6 +2215,7 @@ function bindKeyboardShortcuts() {
 
 function bindEvents() {
   bindKeyboardShortcuts();
+  initEnhance({ onPrev, onNext });
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -2270,6 +2305,10 @@ function bindEvents() {
     $('chk-shuffle-a').dataset.userTouched = '1';
     persistSetupForm();
   });
+
+  for (const id of ['chk-auto-check', 'chk-auto-advance', 'chk-sound', 'chk-vibration']) {
+    $(id).addEventListener('change', persistSetupForm);
+  };
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode));
