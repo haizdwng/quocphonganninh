@@ -1519,3 +1519,26 @@ input[type='search']:focus {
   .exam-actions-row { gap: 6px; grid-template-columns: 1.1fr 1fr 0.8fr; }
   .exam-actions-row .btn { min-height: 44px; padding-inline: 6px; font-size: 0.78rem; }
 }
+
+
+.quiz-actions-card { display: grid; gap: 8px; }
+.quiz-actions-row { grid-template-columns: 0.8fr 2fr; gap: 8px; }
+.quiz-actions-row #btn-next { min-width: 0; }
+.quiz-pause-row,
+.quiz-quit-row,
+.exam-submit-row,
+.exam-pause-row,
+.exam-quit-row { width: 100%; }
+.quiz-pause-row .btn,
+.quiz-quit-row .btn,
+.exam-submit-row .btn,
+.exam-pause-row .btn,
+.exam-quit-row .btn { width: 100%; min-height: 44px; }
+.exam-actions-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+@media (max-width: 420px) {
+  .quiz-actions-row { grid-template-columns: 0.8fr 2fr; gap: 6px; }
+  .quiz-actions-row .btn { min-height: 44px; padding-inline: 8px; font-size: 0.84rem; }
+  .quiz-pause-row .btn,
+  .quiz-quit-row .btn,
+  .exam-actions-row .btn { min-height: 42px; font-size: 0.84rem; }
+}
