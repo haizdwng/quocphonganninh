@@ -2484,6 +2484,9 @@ body {
   gap: 7px;
   margin: 10px 0 12px;
 }
+.highlight-toolbar[hidden] {
+  display: none !important;
+}
 .highlight-toolbar .btn {
   min-height: 36px;
 }
