@@ -176,11 +176,15 @@ function showScreen(name) {
 
 function toast(msg, ms = 2800) {
   const el = $('toast');
+  if (!el) {
+    console.warn('Không tìm thấy phần tử #toast:', msg);
+    return;
+  }
   el.textContent = msg;
   el.hidden = false;
   clearTimeout(toast._t);
   toast._t = setTimeout(() => {
-    el.hidden = true;
+    if (el.isConnected) el.hidden = true;
   }, ms);
 };
 
@@ -628,14 +632,19 @@ function normalizeSearchText(value) {
 };
 
 function refreshSearchUI() {
-  const query = normalizeSearchText($('input-search').value.trim());
+  const searchInput = $('input-search');
+  const button = $('btn-search-practice');
+  const hint = $('search-hint');
+  if (!searchInput || !button || !hint) {
+    console.warn('Thiếu phần tử giao diện tìm kiếm; bỏ qua cập nhật tìm kiếm.');
+    return;
+  }
+  const query = normalizeSearchText(searchInput.value.trim());
   const form = readSetupForm();
   const pool = selectedQuestions(form);
   state.searchResults = query
     ? pool.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
     : [];
-  const button = $('btn-search-practice');
-  const hint = $('search-hint');
   button.disabled = state.searchResults.length === 0;
   button.textContent = state.searchResults.length
     ? `Ôn ${state.searchResults.length} câu tìm được`
