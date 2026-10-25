@@ -333,6 +333,15 @@ export function getQuestionHighlights(deckId, originalIndex) {
   return normalizeHighlightRanges(deck && deck[String(originalIndex)]);
 };
 
+export function resetDeckHighlights(deckId) {
+  const root = readRoot();
+  if (!root.highlights || typeof root.highlights !== 'object' || Array.isArray(root.highlights)) {
+    root.highlights = { quocphong1: {}, quocphong2: {} };
+  };
+  root.highlights[normalizeDeckId(deckId)] = {};
+  return writeRoot(root);
+};
+
 export function saveQuestionHighlights(deckId, originalIndex, ranges) {
   if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
   const root = readRoot();
