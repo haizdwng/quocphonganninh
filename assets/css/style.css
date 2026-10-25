@@ -2570,9 +2570,11 @@ body {
 }
 
 
-/* Allow selecting answer text to highlight it */
-.option,
-.option * {
-  -webkit-user-select: text;
-  user-select: text;
+/* Answer buttons normally disable text selection; override it on both the button and its text. */
+#screen-quiz .option,
+#screen-quiz .option *,
+#screen-quiz .option-text {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default;
 }
