@@ -1492,7 +1492,7 @@ input[type='search']:focus {
   transition: background 0.18s ease;
 }
 .session-history-details > summary:hover { background: var(--surface-2); }
-.session-history-details > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.session-history-details > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
 .session-history-details > summary::-webkit-details-marker { display: none; }
 .session-history-details > summary::after {
   content: '';
@@ -1519,9 +1519,9 @@ input[type='search']:focus {
   transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 .history-item.is-latest {
-  border-color: var(--accent);
-  background: linear-gradient(135deg, var(--surface-2), color-mix(in srgb, var(--accent) 10%, var(--surface-2)));
-  box-shadow: inset 3px 0 0 var(--accent);
+  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--surface-2), color-mix(in srgb, var(--primary) 10%, var(--surface-2)));
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 .history-item-info { min-width: 0; }
 .history-item-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -1532,10 +1532,10 @@ input[type='search']:focus {
   align-items: center;
   gap: 4px;
   padding: 3px 7px;
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
   border-radius: 999px;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   font-size: 0.7rem;
   font-weight: 750;
   line-height: 1.4;
@@ -1546,7 +1546,7 @@ input[type='search']:focus {
 .history-item-actions .btn { min-height: 38px; }
 @media (hover: hover) {
   .history-item:hover { border-color: var(--border-strong); }
-  .history-item.is-latest:hover { border-color: var(--accent); }
+  .history-item.is-latest:hover { border-color: var(--primary); }
 }
 @media (min-width: 560px) {
   .history-item { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }

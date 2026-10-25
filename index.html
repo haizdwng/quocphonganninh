@@ -199,14 +199,14 @@
             <label for='input-review-goto'>Đi đến câu số</label>
             <div class='row'>
               <input type='number' id='input-review-goto' min='1' inputmode='numeric'>
-              <button type='button' class='btn btn-secondary' id='btn-review-goto'>Đi đến</button>
+              <button type='button' class='btn btn-secondary' id='btn-review-goto' data-icon='arrow-right'>Đi đến</button>
             </div>
           </div>
           <div class='review-selection-actions'>
-            <button type='button' class='btn btn-ghost btn-block' id='btn-review-select-mode'>Tự chọn câu</button>
+            <button type='button' class='btn btn-ghost btn-block' id='btn-review-select-mode' data-icon='pencil'>Tự chọn câu</button>
             <div id='review-selection-tools' hidden>
               <p class='hint' id='review-selection-count' aria-live='polite'></p>
-              <button type='button' class='btn btn-primary btn-block' id='btn-review-start-selected' disabled>Bắt đầu với câu đã chọn</button>
+              <button type='button' class='btn btn-primary btn-block' id='btn-review-start-selected' data-icon='player-play' disabled>Bắt đầu với câu đã chọn</button>
             </div>
           </div>
         </div>
@@ -246,7 +246,7 @@
             <button type='button' class='btn btn-primary' id='btn-next' disabled data-icon='check'>Kiểm tra</button>
           </div>
           <div class='quiz-pause-row'>
-            <button type='button' class='btn btn-secondary' id='btn-quiz-pause'>Tạm dừng</button>
+            <button type='button' class='btn btn-secondary' id='btn-quiz-pause' data-icon='player-pause'>Tạm dừng</button>
           </div>
           <div class='quiz-quit-row'>
             <button type='button' class='btn btn-ghost' id='btn-quit' data-icon='x'>Thoát</button>
@@ -283,7 +283,7 @@
               <button type='button' class='btn btn-primary' id='btn-exam-submit' data-icon='check'>Nộp bài</button>
             </div>
             <div class='exam-pause-row'>
-              <button type='button' class='btn btn-secondary' id='btn-exam-pause'>Tạm dừng</button>
+              <button type='button' class='btn btn-secondary' id='btn-exam-pause' data-icon='player-pause'>Tạm dừng</button>
             </div>
             <div class='exam-quit-row'>
               <button type='button' class='btn btn-ghost' id='btn-exam-quit' data-icon='x'>Thoát</button>
