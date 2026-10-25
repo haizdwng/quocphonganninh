@@ -302,7 +302,9 @@ function createHighlightToolbar(questionIndex, bankMode = false) {
   button.dataset.icon = 'underline';
   button.textContent = 'Highlight';
   button.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
+  button.addEventListener('mousedown', (event) => event.preventDefault());
   button.addEventListener('click', () => {
+    captureHighlightSelection();
     const selection = state.lastTextSelection;
     const expectedDeck = bankMode ? state.currentDeck : state.session?.deckId;
     if (!selection || selection.questionIndex !== questionIndex || selection.deckId !== expectedDeck) {
@@ -1962,7 +1964,12 @@ function restoreSessionIfAny() {
 
 function initUI() {
   document.addEventListener('selectionchange', captureHighlightSelection);
+  document.addEventListener('pointerup', () => requestAnimationFrame(captureHighlightSelection), true);
+  document.addEventListener('mouseup', () => requestAnimationFrame(captureHighlightSelection), true);
+  document.addEventListener('touchend', () => requestAnimationFrame(captureHighlightSelection), true);
+  $('btn-highlight-toggle')?.addEventListener('mousedown', (event) => event.preventDefault());
   $('btn-highlight-toggle')?.addEventListener('click', () => {
+    captureHighlightSelection();
     const q = currentQ();
     const s = state.session;
     const selection = state.lastTextSelection;
