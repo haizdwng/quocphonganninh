@@ -253,7 +253,11 @@
           <div class='quiz-actions-row'>
             <button type='button' class='btn btn-ghost' id='btn-prev' disabled data-icon='chevron-left'>Trước</button>
             <button type='button' class='btn btn-primary' id='btn-next' disabled data-icon='check'>Kiểm tra</button>
+          </div>
+          <div class='quiz-pause-row'>
             <button type='button' class='btn btn-secondary' id='btn-quiz-pause'>Tạm dừng</button>
+          </div>
+          <div class='quiz-quit-row'>
             <button type='button' class='btn btn-ghost' id='btn-quit' data-icon='x'>Thoát</button>
           </div>
         </div>
@@ -284,9 +288,15 @@
 
         <div class='card exam-actions-card' id='exam-actions'>
           <div class='exam-actions-row'>
-            <button type='button' class='btn btn-primary' id='btn-exam-submit' data-icon='check'>Nộp bài</button>
-            <button type='button' class='btn btn-secondary' id='btn-exam-pause'>Tạm dừng</button>
-            <button type='button' class='btn btn-ghost' id='btn-exam-quit' data-icon='x'>Thoát</button>
+            <div class='exam-submit-row'>
+              <button type='button' class='btn btn-primary' id='btn-exam-submit' data-icon='check'>Nộp bài</button>
+            </div>
+            <div class='exam-pause-row'>
+              <button type='button' class='btn btn-secondary' id='btn-exam-pause'>Tạm dừng</button>
+            </div>
+            <div class='exam-quit-row'>
+              <button type='button' class='btn btn-ghost' id='btn-exam-quit' data-icon='x'>Thoát</button>
+            </div>
           </div>
         </div>
       </section>
