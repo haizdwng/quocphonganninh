@@ -28,3 +28,5 @@ jobs:
           node --check sw.js
       - name: Validate HTML references, offline assets, and question data
         run: node scripts/validate-project.mjs
+      - name: Test quiz and localStorage logic
+        run: node --experimental-default-type=module --test tests/*.test.mjs
