@@ -2013,6 +2013,9 @@ function initUI() {
   document.addEventListener('pointerup', captureAfterSelectionGesture, true);
   document.addEventListener('mouseup', captureAfterSelectionGesture, true);
   document.addEventListener('touchend', captureAfterSelectionGesture, true);
+  $('btn-highlight-toggle')?.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') event.preventDefault();
+  });
   $('btn-highlight-toggle')?.addEventListener('mousedown', (event) => event.preventDefault());
   $('btn-highlight-toggle')?.addEventListener('click', () => {
     captureHighlightSelection();
