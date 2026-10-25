@@ -20,7 +20,8 @@ import {
   importBackup,
   storageAvailable,
   getQuestionHighlights,
-  saveQuestionHighlights
+  saveQuestionHighlights,
+  resetDeckHighlights
 } from './storage.js';
 import {
   fingerprintQuestions,
@@ -111,6 +112,7 @@ async function loadDeck(id) {
       progress.bookmarks = [];
       progress.dataFingerprint = fp;
       if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+      if (!resetDeckHighlights(id)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
     };
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fp;
@@ -768,7 +770,7 @@ function applySettingsToForm(settings) {
   if (!settings) return;
   const total = currentQuestions().length || settings.endQuestion || 1;
   $('input-count').value = String(settings.count || 30);
-  $('input-time-limit').value = String(settings.timeLimit || 35);
+  $('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
   $('input-range-start').value = String(settings.startQuestion || 1);
   $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
@@ -1161,8 +1163,6 @@ function setPracticeMode(mode) {
   if (startBtn) {
     startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn';
   };
-  const searchWrap = $('search-field-wrap');
-  if (searchWrap) searchWrap.hidden = state.practiceMode === 'exam';
   const hint = $('hint-mode');
   if (hint) {
     hint.textContent = state.practiceMode === 'exam'
