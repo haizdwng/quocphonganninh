@@ -288,7 +288,7 @@ function normalizeHighlightRanges(value) {
   if (!Array.isArray(value)) return [];
   return value.filter((range) =>
     range && typeof range === 'object' &&
-    (range.target === 'question' || /^option:\\d+$/.test(range.target)) &&
+    (range.target === 'question' || /^option:\d+$/.test(range.target)) &&
     Number.isInteger(range.start) && range.start >= 0 &&
     Number.isInteger(range.end) && range.end > range.start
   ).map((range) => ({ target: range.target, start: range.start, end: range.end }));
