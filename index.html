@@ -138,12 +138,15 @@
           </div>
         </div>
 
-        <div class='card session-history-card' id='session-history-card' hidden>
-          <details class='session-history-details'>
-            <summary><span>10 phiên gần nhất</span><span class='hint'>Nhấn để xem lịch sử</span></summary>
-            <p class='hint'>Lịch sử được lưu riêng cho từng bộ đề trên thiết bị này.</p>
-            <div class='session-history-list' id='session-history-list'></div>
-          </details>
+        <div class='card resume-card' id='resume-card' hidden>
+          <div class='resume-body'>
+            <strong id='resume-title'>Có phiên đang dở</strong>
+            <p class='hint' id='resume-hint'>Bạn có thể tiếp tục hoặc bỏ phiên cũ.</p>
+          </div>
+          <div class='resume-actions'>
+            <button type='button' class='btn btn-primary' id='btn-resume-session' data-icon='arrow-right'>Tiếp tục</button>
+            <button type='button' class='btn btn-ghost' id='btn-discard-session' data-icon='x'>Bỏ phiên</button>
+          </div>
         </div>
 
         <div class='card setup-start-card' id='setup-actions'>

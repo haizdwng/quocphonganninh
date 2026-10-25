@@ -8,7 +8,6 @@ function emptyRoot() {
     activeDeck: 'quocphong1',
     decks: {},
     sessions: {},
-    sessionHistory: { quocphong1: [], quocphong2: [] },
     highlights: { quocphong1: {}, quocphong2: {} }
   };
 };
@@ -28,7 +27,6 @@ function readRoot() {
         (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))
       ) &&
       (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) &&
-      (!data.sessionHistory || (typeof data.sessionHistory === 'object' && !Array.isArray(data.sessionHistory))) &&
       (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights)));
 
     if (valid) return data;
@@ -226,45 +224,6 @@ export function clearSession(deckId) {
   return writeRoot(root);
 };
 
-export function getSessionHistory(deckId) {
-  const root = readRoot();
-  const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
-  const history = root.sessionHistory && typeof root.sessionHistory === 'object' && !Array.isArray(root.sessionHistory)
-    ? root.sessionHistory[id]
-    : [];
-  return Array.isArray(history)
-    ? history.filter((entry) => entry && typeof entry === 'object' && entry.deckId === id && typeof entry.id === 'string')
-      .sort((a, b) => (Number(b.updatedAt) || Number(b.startedAt) || 0) - (Number(a.updatedAt) || Number(a.startedAt) || 0))
-      .slice(0, 10)
-    : [];
-};
-
-export function saveSessionHistoryEntry(entry) {
-  if (!entry || !['quocphong1', 'quocphong2'].includes(entry.deckId) || typeof entry.id !== 'string' || !entry.id) return false;
-  const root = readRoot();
-  if (!root.sessionHistory || typeof root.sessionHistory !== 'object' || Array.isArray(root.sessionHistory)) {
-    root.sessionHistory = { quocphong1: [], quocphong2: [] };
-  };
-  const id = entry.deckId;
-  const list = (Array.isArray(root.sessionHistory[id]) ? root.sessionHistory[id] : [])
-    .filter((item) => item && typeof item === 'object' && typeof item.id === 'string' && item.id !== entry.id);
-  const normalized = { ...entry, updatedAt: Number(entry.updatedAt) || Date.now() };
-  list.push(normalized);
-  list.sort((a, b) => (Number(b.updatedAt) || Number(b.startedAt) || 0) - (Number(a.updatedAt) || Number(a.startedAt) || 0));
-  root.sessionHistory[id] = list.slice(0, 10);
-  return writeRoot(root);
-};
-
-export function deleteSessionHistoryEntry(deckId, entryId) {
-  if (typeof entryId !== 'string' || !entryId) return false;
-  const root = readRoot();
-  if (!root.sessionHistory || typeof root.sessionHistory !== 'object' || Array.isArray(root.sessionHistory)) return true;
-  const id = normalizeDeckId(deckId);
-  root.sessionHistory[id] = (Array.isArray(root.sessionHistory[id]) ? root.sessionHistory[id] : [])
-    .filter((entry) => entry?.id !== entryId);
-  return writeRoot(root);
-};
-
 export function resetDeckProgress(deckId) {
   const root = readRoot();
   if (!root.decks || typeof root.decks !== 'object' || Array.isArray(root.decks)) root.decks = {};
@@ -409,7 +368,6 @@ export function exportBackup() {
     settings: list.length ? list : [],
     activeDeck: root.activeDeck || 'quocphong1',
     decks: root.decks || {},
-    sessionHistory: root.sessionHistory || { quocphong1: [], quocphong2: [] },
     highlights: root.highlights || { quocphong1: {}, quocphong2: {} }
   }, null, 2);
 };
@@ -443,18 +401,7 @@ export function importBackup(raw) {
     activeDeck: normalizeDeckId(backup.activeDeck || settingsList[0]?.deck || 'quocphong1'),
     decks: {},
     sessions: {},
-    sessionHistory: { quocphong1: [], quocphong2: [] },
     highlights: { quocphong1: {}, quocphong2: {} }
-  };
-
-  if (backup.sessionHistory && typeof backup.sessionHistory === 'object' && !Array.isArray(backup.sessionHistory)) {
-    for (const id of ['quocphong1', 'quocphong2']) {
-      const list = Array.isArray(backup.sessionHistory[id]) ? backup.sessionHistory[id] : [];
-      normalized.sessionHistory[id] = list
-        .filter((entry) => entry && typeof entry === 'object' && entry.deckId === id && typeof entry.id === 'string')
-        .sort((a, b) => (Number(b.updatedAt) || Number(b.startedAt) || 0) - (Number(a.updatedAt) || Number(a.startedAt) || 0))
-        .slice(0, 10);
-    };
   };
 
   if (backup.highlights && typeof backup.highlights === 'object' && !Array.isArray(backup.highlights)) {

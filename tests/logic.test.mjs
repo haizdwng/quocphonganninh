@@ -163,79 +163,13 @@ test('sao lưu và khôi phục giữ tùy chọn cùng tiến độ', () => {
 });
 
 
-test('lịch sử 10 phiên được giới hạn và tách biệt theo từng bộ đề', () => {
-  for (let i = 1; i <= 12; i++) {
-    assert.equal(storage.saveSessionHistoryEntry({
-      id: 'q1-' + i,
-      deckId: 'quocphong1',
-      status: 'completed',
-      startedAt: i,
-      updatedAt: i,
-      indices: [i]
-    }), true);
-  };
-  assert.equal(storage.saveSessionHistoryEntry({
-    id: 'q2-only',
-    deckId: 'quocphong2',
-    status: 'paused',
-    startedAt: 20,
-    updatedAt: 20,
-    indices: [0]
-  }), true);
-  const history1 = storage.getSessionHistory('quocphong1');
-  assert.equal(history1.length, 10);
-  assert.equal(history1[0].id, 'q1-12');
-  assert.equal(history1.at(-1).id, 'q1-3');
-  assert.deepEqual(storage.getSessionHistory('quocphong2').map((entry) => entry.id), ['q2-only']);
-  assert.equal(storage.deleteSessionHistoryEntry('quocphong1', 'q1-12'), true);
-  assert.equal(storage.getSessionHistory('quocphong1').some((entry) => entry.id === 'q1-12'), false);
-});
-
-test('làm lại rồi tạm dừng cập nhật cùng một phiên, không tạo bản ghi trùng', () => {
-  const session = {
-    id: 'retry-session',
-    deckId: 'quocphong1',
-    status: 'completed',
-    startedAt: 100,
-    updatedAt: 100,
-    indices: [0, 1],
-    snapshot: { historyId: 'retry-session' }
-  };
-  assert.equal(storage.saveSessionHistoryEntry(session), true);
-  assert.equal(storage.saveSessionHistoryEntry({
-    ...session,
-    status: 'active',
-    updatedAt: 200
-  }), true);
-  assert.equal(storage.saveSessionHistoryEntry({
-    ...session,
-    status: 'paused',
-    updatedAt: 300,
-    snapshot: { historyId: 'retry-session', pausedAt: 300 }
-  }), true);
-  const history = storage.getSessionHistory('quocphong1');
-  assert.equal(history.filter((entry) => entry.id === 'retry-session').length, 1);
-  assert.equal(history.find((entry) => entry.id === 'retry-session').status, 'paused');
-});
-
-test('cả hai nút làm lại đều giữ ID lịch sử gốc', () => {
+test('màn hình thiết lập dùng thẻ phiên đang dở thay cho lịch sử 10 phiên', () => {
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const app = fs.readFileSync(new URL('../assets/js/app.js', import.meta.url), 'utf8');
-  assert.match(app, /function retryHistorySession\(entry\)[\s\S]*?historyId:\s*entry\.id/);
-  assert.match(app, /historyId:\s*previous\.historyId/);
-});
-
-test('sao lưu và khôi phục giữ lịch sử phiên gần nhất', () => {
-  storage.saveSessionHistoryEntry({
-    id: 'history-backup',
-    deckId: 'quocphong2',
-    status: 'completed',
-    startedAt: 123,
-    updatedAt: 123,
-    indices: [1, 2],
-    summary: { total: 2, score: '5', wrongList: [] }
-  });
-  const backup = storage.exportBackup();
-  localStorage.clear();
-  assert.equal(storage.importBackup(backup), true);
-  assert.equal(storage.getSessionHistory('quocphong2')[0].id, 'history-backup');
+  const css = fs.readFileSync(new URL('../assets/css/style.css', import.meta.url), 'utf8');
+  assert.match(html, /id='resume-card'/);
+  assert.match(html, /Có lượt ôn đang dở/);
+  assert.doesNotMatch(html, /session-history|10 phiên gần nhất/);
+  assert.match(app, /function refreshResumeCard\(\)/);
+  assert.doesNotMatch(css, /session-history|history-item/);
 });
