@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh:37';
+const CACHE_VERSION = 'quocphonganninh:38';
 const CACHE_PREFIX = 'quocphonganninh:';
 const ESSENTIAL = [
   './',
@@ -8,6 +8,7 @@ const ESSENTIAL = [
   './assets/fonts/InterVariable.woff2',
   './assets/css/style.css',
   './assets/js/app.js',
+  './assets/js/enhance.js',
   './assets/js/quiz.js',
   './assets/js/storage.js',
   './assets/sounds/correct.mp3',
