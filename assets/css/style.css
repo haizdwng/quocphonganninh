@@ -1525,3 +1525,77 @@ input[type='search']:focus {
   .quiz-quit-row .btn,
   .exam-actions-row .btn { min-height: 42px; font-size: 0.84rem; }
 }
+
+/* ---------- Fixed quiz and exam actions ---------- */
+#screen-quiz,
+#screen-exam { padding-bottom: 156px; }
+
+.quiz-actions-card,
+.exam-actions-card {
+  position: fixed;
+  left: 50%;
+  bottom: max(10px, var(--safe-b));
+  z-index: 80;
+  width: min(calc(100% - 28px), 900px);
+  margin: 0;
+  padding: 10px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: rgba(28, 28, 32, 0.94);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-lg);
+}
+
+.quiz-actions-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.quiz-actions-row {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+  gap: 8px;
+}
+
+.quiz-pause-row,
+.quiz-quit-row { min-width: 0; }
+
+.quiz-actions-card .btn,
+.exam-actions-card .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding-inline: 8px;
+  font-size: 0.86rem;
+}
+
+.exam-actions-row {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: 8px;
+}
+
+@media (max-width: 420px) {
+  #screen-quiz,
+  #screen-exam { padding-bottom: 150px; }
+
+  .quiz-actions-card,
+  .exam-actions-card {
+    width: calc(100% - 16px);
+    padding: 8px;
+    gap: 6px;
+    border-radius: 14px;
+  }
+
+  .quiz-actions-row,
+  .exam-actions-row { gap: 6px; }
+
+  .quiz-actions-card .btn,
+  .exam-actions-card .btn {
+    min-height: 42px;
+    padding-inline: 5px;
+    font-size: 0.78rem;
+  }
+}
