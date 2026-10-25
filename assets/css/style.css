@@ -304,14 +304,15 @@ input[type='search']:focus {
 .toggle > span::after {
   content: '';
   position: absolute;
-  left: 6px;
-  top: 3px;
-  width: 6px;
-  height: 10px;
-  border: solid var(--primary-contrast);
-  border-width: 0 2px 2px 0;
+  left: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: var(--primary-contrast);
+  -webkit-mask: center / contain no-repeat url('../icons/tabler/check.svg');
+  mask: center / contain no-repeat url('../icons/tabler/check.svg');
   opacity: 0;
-  transform: rotate(45deg) scale(0.7);
+  transform: translate(-50%, -50%) scale(0.7);
   transition: opacity 0.14s ease, transform 0.14s ease;
 }
 
@@ -323,7 +324,7 @@ input[type='search']:focus {
 
 .toggle:has(input:checked) > span::after {
   opacity: 1;
-  transform: rotate(45deg) scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .toggle:has(input:focus-visible) {
