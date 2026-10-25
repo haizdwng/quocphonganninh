@@ -2568,3 +2568,11 @@ body {
     gap: 6px;
   }
 }
+
+
+/* Allow selecting answer text to highlight it */
+.option,
+.option * {
+  -webkit-user-select: text;
+  user-select: text;
+}
