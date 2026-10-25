@@ -1684,13 +1684,28 @@ function pauseSession() {
   session.remainingMs = session.timeLimit > 0 && session.deadlineAt
     ? Math.max(0, session.deadlineAt - session.pausedAt)
     : null;
+  const historyEntry = makeHistoryEntry(session, 'paused');
+  if (!historyEntry || !saveSessionHistoryEntry(historyEntry)) {
+    session.pausedAt = null;
+    session.remainingMs = null;
+    toast('Không thể tạm dừng vì lịch sử không lưu được. Phiên vẫn đang chạy.');
+    return;
+  };
   clearInterval(state.timerInterval);
   state.timerInterval = null;
-  persistSession();
   const cleared = clearSession(session.deckId);
+  if (!cleared) {
+    session.pausedDurationMs = Math.max(0, Number(session.pausedDurationMs) || 0);
+    session.pausedAt = null;
+    session.remainingMs = null;
+    saveSession(session);
+    saveSessionHistoryEntry(makeHistoryEntry(session, 'active'));
+    startSessionTimer();
+    toast('Không thể tạm dừng an toàn vì bộ nhớ trình duyệt không ghi được.');
+    return;
+  };
   state.session = null;
   state.reviewMode = false;
-  if (!cleared) toast('Không thể xóa bản phiên đang chạy; hãy kiểm tra bộ nhớ trình duyệt.');
   showScreen('setup');
   refreshSetupUI();
   toast('Đã tạm dừng. Bạn có thể tiếp tục từ lịch sử phiên.');
