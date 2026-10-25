@@ -247,11 +247,9 @@ export function saveSessionHistoryEntry(entry) {
   };
   const id = entry.deckId;
   const list = (Array.isArray(root.sessionHistory[id]) ? root.sessionHistory[id] : [])
-    .filter((item) => item && typeof item === 'object' && typeof item.id === 'string');
+    .filter((item) => item && typeof item === 'object' && typeof item.id === 'string' && item.id !== entry.id);
   const normalized = { ...entry, updatedAt: Number(entry.updatedAt) || Date.now() };
-  const index = list.findIndex((item) => item && item.id === normalized.id);
-  if (index >= 0) list[index] = normalized;
-  else list.push(normalized);
+  list.push(normalized);
   list.sort((a, b) => (Number(b.updatedAt) || Number(b.startedAt) || 0) - (Number(a.updatedAt) || Number(a.startedAt) || 0));
   root.sessionHistory[id] = list.slice(0, 10);
   return writeRoot(root);
