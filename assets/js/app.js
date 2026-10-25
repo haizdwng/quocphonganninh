@@ -302,6 +302,9 @@ function createHighlightToolbar(questionIndex, bankMode = false) {
   button.dataset.icon = 'underline';
   button.textContent = 'Highlight';
   button.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
+  button.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') event.preventDefault();
+  });
   button.addEventListener('mousedown', (event) => event.preventDefault());
   button.addEventListener('click', () => {
     captureHighlightSelection();
@@ -319,25 +322,64 @@ function createHighlightToolbar(questionIndex, bankMode = false) {
 
 function captureHighlightSelection() {
   const selection = window.getSelection();
-  if (!selection || selection.isCollapsed || !selection.rangeCount) return;
-  const range = selection.getRangeAt(0);
-  const startElement = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-  const endElement = range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement;
-  const target = startElement?.closest?.('[data-highlight-target]');
-  if (!target || endElement?.closest?.('[data-highlight-target]') !== target) return;
-  const prefix = document.createRange();
-  prefix.selectNodeContents(target);
-  prefix.setEnd(range.startContainer, range.startOffset);
-  const start = prefix.toString().length;
-  const selectedText = range.toString();
-  if (!selectedText.trim()) return;
-  state.lastTextSelection = {
-    deckId: target.dataset.deckId || state.currentDeck,
-    questionIndex: Number(target.dataset.questionIndex),
-    target: target.dataset.highlightTarget,
-    start,
-    end: start + selectedText.length
+  if (!selection || !selection.rangeCount || selection.isCollapsed) return false;
+
+  let range;
+  try {
+    range = selection.getRangeAt(0);
+  } catch {
+    state.lastTextSelection = null;
+    return false;
+  }
+
+  const elementFor = (node) => {
+    if (!node) return null;
+    const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    return element?.closest?.('[data-highlight-target]') || null;
   };
+
+  const target = elementFor(range.startContainer);
+  const endTarget = elementFor(range.endContainer);
+  if (!target || target !== endTarget ||
+      !target.contains(range.startContainer) ||
+      !target.contains(range.endContainer)) {
+    state.lastTextSelection = null;
+    return false;
+  }
+
+  const getOffset = (container, offset) => {
+    const prefix = document.createRange();
+    prefix.selectNodeContents(target);
+    prefix.setEnd(container, offset);
+    return prefix.toString().length;
+  };
+
+  try {
+    const start = getOffset(range.startContainer, range.startOffset);
+    const end = getOffset(range.endContainer, range.endOffset);
+    const text = target.textContent || '';
+    const selectedText = range.toString();
+    const safeStart = Math.max(0, Math.min(start, text.length));
+    const safeEnd = Math.max(safeStart, Math.min(end, text.length));
+
+    if (!selectedText.trim() || safeEnd <= safeStart) {
+      state.lastTextSelection = null;
+      return false;
+    }
+
+    state.lastTextSelection = {
+      deckId: target.dataset.deckId || state.currentDeck,
+      questionIndex: Number(target.dataset.questionIndex),
+      target: target.dataset.highlightTarget,
+      start: safeStart,
+      end: safeEnd,
+      selectedText
+    };
+    return true;
+  } catch {
+    state.lastTextSelection = null;
+    return false;
+  }
 };
 
 function commitPendingHighlights(deckId, originalIndex) {
@@ -1964,9 +2006,13 @@ function restoreSessionIfAny() {
 
 function initUI() {
   document.addEventListener('selectionchange', captureHighlightSelection);
-  document.addEventListener('pointerup', () => requestAnimationFrame(captureHighlightSelection), true);
-  document.addEventListener('mouseup', () => requestAnimationFrame(captureHighlightSelection), true);
-  document.addEventListener('touchend', () => requestAnimationFrame(captureHighlightSelection), true);
+  const captureAfterSelectionGesture = () => {
+    captureHighlightSelection();
+    requestAnimationFrame(captureHighlightSelection);
+  };
+  document.addEventListener('pointerup', captureAfterSelectionGesture, true);
+  document.addEventListener('mouseup', captureAfterSelectionGesture, true);
+  document.addEventListener('touchend', captureAfterSelectionGesture, true);
   $('btn-highlight-toggle')?.addEventListener('mousedown', (event) => event.preventDefault());
   $('btn-highlight-toggle')?.addEventListener('click', () => {
     captureHighlightSelection();
