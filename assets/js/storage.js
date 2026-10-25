@@ -73,7 +73,11 @@ function normalizeSettingsEntry(raw, deckId) {
     timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0
       ? Math.min(1440, Number(settings.timeLimit))
       : 35,
-    practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice'
+    practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice',
+    autoCheck: settings.autoCheck === true,
+    autoAdvance: settings.autoAdvance === true,
+    soundEnabled: settings.soundEnabled !== false,
+    vibrationEnabled: settings.vibrationEnabled !== false
   };
 };
 
