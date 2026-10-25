@@ -2542,6 +2542,17 @@ body {
   flex: 0 0 auto;
   white-space: nowrap;
 }
+.highlight-toggle-btn {
+  border-radius: 12px !important;
+}
+.highlight-toolbar {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.review-q-card .highlight-toolbar {
+  margin: 10px 0 12px;
+}
 .question-tools-row .highlight-toolbar[hidden] {
   display: none;
 }
