@@ -2438,23 +2438,6 @@ function bindEvents() {
     });
   });
 
-  $('btn-resume-session')?.addEventListener('click', () => {
-    if (!restoreSessionIfAny()) toast('Không còn phiên để tiếp tục.');
-    else refreshSetupUI();
-  });
-  $('btn-discard-session')?.addEventListener('click', async () => {
-    const ok = await confirmModal('Bỏ phiên đang dở?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
-    if (!ok) return;
-    const saved = getSession(state.currentDeck);
-    if (saved) {
-      const closedEntry = makeHistoryEntry(saved, 'closed');
-      if (closedEntry) saveSessionHistoryEntry(closedEntry);
-    };
-    clearSession(state.currentDeck);
-    state.session = null;
-    state.reviewMode = false;
-      toast('Đã bỏ phiên cũ.');
-  });
 
   document.querySelectorAll('.filter-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
