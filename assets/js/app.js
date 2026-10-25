@@ -66,7 +66,6 @@ const state = {
   _lastSummaryCount: null,
   highlightEditMode: false,
   lastTextSelection: null,
-  pendingHighlights: {}
 };
 
 const $ = (id) => document.getElementById(id);
@@ -241,22 +240,12 @@ function currentQuestions() {
   return state.decks[state.currentDeck] || [];
 };
 
-function highlightKey(deckId, originalIndex) {
-  return `${deckId}:${originalIndex}`;
-};
-
-function getVisibleHighlights(deckId, originalIndex, includePending = false) {
-  const saved = getQuestionHighlights(deckId, originalIndex);
-  if (!includePending) return saved;
-  return [...saved, ...(state.pendingHighlights[highlightKey(deckId, originalIndex)] || [])];
-};
-
-function renderTextWithHighlights(element, text, deckId, originalIndex, target, includePending = false) {
+function renderTextWithHighlights(element, text, deckId, originalIndex, target) {
   element.replaceChildren();
   element.dataset.highlightTarget = target;
   element.dataset.questionIndex = String(originalIndex);
   element.dataset.deckId = deckId;
-  const ranges = getVisibleHighlights(deckId, originalIndex, includePending)
+  const ranges = getQuestionHighlights(deckId, originalIndex)
     .filter((range) => range.target === target && range.start < text.length && range.end > 0)
     .map((range) => ({ start: Math.max(0, range.start), end: Math.min(text.length, range.end) }))
     .sort((a, b) => a.start - b.start || a.end - b.end);
@@ -311,7 +300,6 @@ function toggleHighlightSelection(deckId, questionIndex, selection) {
     toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
     return false;
   };
-  delete state.pendingHighlights[highlightKey(deckId, questionIndex)];
   state.lastTextSelection = null;
   if (state.mode === 'review') renderQuestionBank();
   else renderQuestion();
@@ -406,15 +394,6 @@ function captureHighlightSelection() {
     state.lastTextSelection = null;
     return false;
   }
-};
-
-function commitPendingHighlights(deckId, originalIndex) {
-  const key = highlightKey(deckId, originalIndex);
-  const pending = state.pendingHighlights[key];
-  if (!pending?.length) return;
-  if (saveQuestionHighlights(deckId, originalIndex, [...getQuestionHighlights(deckId, originalIndex), ...pending])) {
-    delete state.pendingHighlights[key];
-  } else toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
 };
 
 function renderQuestionBank() {
@@ -583,7 +562,6 @@ function refreshSetupUI() {
   btnBookmarks.textContent = `Ôn câu đã đánh dấu (${rangeBookmarkCount})`;
 
   const rangeQuestions = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
-  const rangeRemaining = rangeQuestions.filter((question) => !completed.has(question.originalIndex)).length;
   refreshSearchUI();
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
@@ -1045,7 +1023,7 @@ function renderQuestion() {
   bookmarkButton.textContent = isBookmarked ? 'Đã đánh dấu' : 'Đánh dấu';
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
-  renderTextWithHighlights($('q-text'), q.question, s.deckId, q.originalIndex, 'question', true);
+  renderTextWithHighlights($('q-text'), q.question, s.deckId, q.originalIndex, 'question');
   const highlightToolbar = $('quiz-highlight-toolbar');
   if (highlightToolbar) highlightToolbar.hidden = s.examMode === true;
 
@@ -1085,7 +1063,7 @@ function renderQuestion() {
     key.textContent = labels[displayIdx] || String(displayIdx + 1);
     const text = document.createElement('span');
     text.className = 'option-text';
-    renderTextWithHighlights(text, q.options[origIdx], s.deckId, q.originalIndex, `option:${origIdx}`, true);
+    renderTextWithHighlights(text, q.options[origIdx], s.deckId, q.originalIndex, `option:${origIdx}`);
     btn.append(key, text);
 
     if (!btn.disabled) {
@@ -1958,7 +1936,6 @@ function showSummary(summary, deckId, mode) {
   btnPractice.textContent = `Luyện lại câu sai trong lượt này (${sessionWrong.length})`;
 
   const progress = getDeckProgress(deckId);
-  const totalQ = (state.decks[deckId] || []).length;
   const btnContinue = $('btn-sum-continue');
   const form = readSetupForm();
   const rangeEnd = form.endQuestion;
