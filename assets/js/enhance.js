@@ -1,6 +1,27 @@
 let touchStart = null;
 
+function syncFixedBarHeights() {
+  const targets = [
+    ['#screen-quiz .progress-wrap', '--quiz-top-h'],
+    ['#screen-exam .progress-wrap', '--exam-top-h']
+  ];
+  const root = document.documentElement;
+  for (const [selector, prop] of targets) {
+    const element = document.querySelector(selector);
+    if (!element) continue;
+    const update = () => {
+      const height = element.offsetHeight;
+      if (height > 0) root.style.setProperty(prop, `${height}px`);
+    };
+    update();
+    if ('ResizeObserver' in window) new ResizeObserver(update).observe(element);
+    else window.addEventListener('resize', update);
+  };
+};
+
 export function initEnhance({ onPrev, onNext }) {
+  syncFixedBarHeights();
+
   document.addEventListener('touchstart', (event) => {
     if (event.touches.length !== 1 || document.body.dataset.screen !== 'quiz') {
       touchStart = null;

@@ -13,26 +13,16 @@ export function fingerprintQuestions(questions) {
 };
 
 export function normalizeQuestions(raw) {
-  if (!Array.isArray(raw)) {
-    throw new Error('Dữ liệu bộ đề không phải mảng câu hỏi.');
-  };
+  if (!Array.isArray(raw)) throw new Error('Dữ liệu bộ đề không phải mảng câu hỏi.');
   const out = [];
   for (let i = 0; i < raw.length; i++) {
     const question = raw[i];
-    if (!question || typeof question.question !== 'string' || !question.question.trim()) {
-      throw new Error(`Câu ${i + 1} thiếu nội dung câu hỏi.`);
-    };
-    if (!Array.isArray(question.options) || question.options.length < 2) {
-      throw new Error(`Câu ${i + 1} phải có ít nhất hai đáp án.`);
-    };
-    if (question.options.some((option) => typeof option !== 'string' || !option.trim())) {
-      throw new Error(`Câu ${i + 1} có đáp án trống hoặc không hợp lệ.`);
-    };
+    if (!question || typeof question.question !== 'string' || !question.question.trim()) throw new Error(`Câu ${i + 1} thiếu nội dung câu hỏi.`);
+    if (!Array.isArray(question.options) || question.options.length < 2) throw new Error(`Câu ${i + 1} phải có ít nhất hai đáp án.`);
+    if (question.options.some((option) => typeof option !== 'string' || !option.trim())) throw new Error(`Câu ${i + 1} có đáp án trống hoặc không hợp lệ.`);
     const options = question.options.slice();
     const correct = question.correct;
-    if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) {
-      throw new Error(`Câu ${i + 1} có chỉ số đáp án đúng không hợp lệ.`);
-    };
+    if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) throw new Error(`Câu ${i + 1} có chỉ số đáp án đúng không hợp lệ.`);
     out.push({
       originalIndex: i,
       question: question.question,
@@ -41,9 +31,7 @@ export function normalizeQuestions(raw) {
       fixed: question.fixed === true
     });
   };
-  if (!out.length) {
-    throw new Error('Không có câu hỏi hợp lệ trong bộ đề.');
-  };
+  if (!out.length) throw new Error('Không có câu hỏi hợp lệ trong bộ đề.');
   return out;
 };
 
@@ -126,11 +114,8 @@ export function pickWrong(allQuestions, wrongIndices, count, shuffleQ) {
   let pool = allQuestions.filter((q) => set.has(q.originalIndex));
   if (shuffleQ) shuffleInPlace(pool);
   if (count > 0 && count < pool.length) {
-    if (!shuffleQ) {
-      pool = pool.slice(0, count);
-    } else {
-      pool = pool.slice(0, count);
-    };
+    if (!shuffleQ) pool = pool.slice(0, count);
+    else pool = pool.slice(0, count);
   };
   return pool;
 };

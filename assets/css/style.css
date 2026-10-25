@@ -453,6 +453,7 @@ input[type='search']:focus {
 [data-icon='chevron-left']::before { -webkit-mask-image: url('../icons/tabler/chevron-left.svg'); mask-image: url('../icons/tabler/chevron-left.svg'); }
 [data-icon='chevron-right']::before { -webkit-mask-image: url('../icons/tabler/chevron-right.svg'); mask-image: url('../icons/tabler/chevron-right.svg'); }
 [data-icon='player-play']::before { -webkit-mask-image: url('../icons/tabler/player-play.svg'); mask-image: url('../icons/tabler/player-play.svg'); }
+[data-icon='player-pause']::before { -webkit-mask-image: url('../icons/tabler/player-pause.svg'); mask-image: url('../icons/tabler/player-pause.svg'); }
 [data-icon='refresh']::before { -webkit-mask-image: url('../icons/tabler/refresh.svg'); mask-image: url('../icons/tabler/refresh.svg'); }
 [data-icon='download']::before { -webkit-mask-image: url('../icons/tabler/download.svg'); mask-image: url('../icons/tabler/download.svg'); }
 [data-icon='upload']::before { -webkit-mask-image: url('../icons/tabler/upload.svg'); mask-image: url('../icons/tabler/upload.svg'); }
@@ -649,12 +650,6 @@ input[type='search']:focus {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   box-shadow: var(--shadow);
-}
-
-.progress-wrap.is-fixed-top {
-  position: sticky;
-  top: max(8px, var(--safe-t));
-  z-index: 30;
 }
 
 .progress-meta {
@@ -941,12 +936,6 @@ input[type='search']:focus {
   gap: 10px;
   width: 100%;
 }
-
-.quiz-actions-row { grid-template-columns: 1fr 1.4fr; }
-.exam-actions-row { grid-template-columns: 1.4fr 1fr; }
-
-.quiz-actions-row .btn,
-.exam-actions-row .btn { width: 100%; }
 
 .exam-toolbar {
   display: flex;
@@ -1375,24 +1364,6 @@ input[type='search']:focus {
 
   .review-option { grid-template-columns: 26px minmax(0, 1fr); gap: 8px; }
   .review-correct-badge { grid-column: 2; justify-self: start; }
-
-  .quiz-actions-card,
-  .exam-actions-card {
-    position: sticky;
-    bottom: max(8px, var(--safe-b));
-    z-index: 25;
-    padding: 10px;
-    background: rgba(28, 28, 32, 0.92);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .quiz-actions-row .btn,
-  .exam-actions-row .btn,
-  .quiz-actions-card > #btn-quit { min-height: 46px; font-size: 0.9rem; }
-
-  .toast { bottom: max(84px, calc(var(--safe-b) + 76px)); }
 }
 
 @media (max-width: 420px) {
@@ -1440,37 +1411,10 @@ input[type='search']:focus {
 .option.answer-bounce { animation: answer-bounce 420ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .option.answer-shake { animation: answer-shake 300ms ease-in-out; }
 
-#screen-quiz { padding-bottom: 112px; }
-
-.quiz-actions-card {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: max(10px, var(--safe-b));
-  z-index: 80;
-  width: min(calc(100% - 28px), 900px);
-  margin: 0 auto;
-  padding: 10px;
-  transform: none;
-  display: block;
-  background: rgba(28, 28, 32, 0.94);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-lg);
-}
-
-.quiz-actions-row { grid-template-columns: 1fr 1.4fr 1fr; }
-.quiz-actions-row .btn { min-height: 46px; font-size: 0.92rem; }
 .experience-toggles { margin-top: 12px; }
 
 @media (min-width: 900px) {
   #app { width: min(100% - 48px, 920px); }
-}
-
-@media (max-width: 420px) {
-  .quiz-actions-card { width: calc(100% - 16px); padding: 8px; }
-  .quiz-actions-row { gap: 6px; grid-template-columns: 0.9fr 1.25fr 0.9fr; }
-  .quiz-actions-row .btn { min-height: 44px; padding-inline: 8px; font-size: 0.82rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1494,40 +1438,7 @@ input[type='search']:focus {
 .resume-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .resume-actions .btn { min-height: 42px; }
 
-.quiz-actions-row { grid-template-columns: 1fr 1.1fr 1.1fr 1fr; }
-.quiz-actions-row .btn { min-height: 46px; padding-inline: 8px; font-size: 0.88rem; }
-.exam-actions-row { grid-template-columns: 1.2fr 1fr 0.8fr; }
-@media (max-width: 420px) {
-  .quiz-actions-row { gap: 5px; grid-template-columns: 0.85fr 1fr 1fr 0.85fr; }
-  .quiz-actions-row .btn { min-height: 44px; padding-inline: 5px; font-size: 0.74rem; }
-  .exam-actions-row { gap: 6px; grid-template-columns: 1.1fr 1fr 0.8fr; }
-  .exam-actions-row .btn { min-height: 44px; padding-inline: 6px; font-size: 0.78rem; }
-}
-
-
-.quiz-actions-card { display: grid; gap: 8px; }
-.quiz-actions-row { grid-template-columns: 0.8fr 2fr; gap: 8px; }
-.quiz-actions-row #btn-next { min-width: 0; }
-.quiz-pause-row,
-.quiz-quit-row,
-.exam-submit-row,
-.exam-pause-row,
-.exam-quit-row { width: 100%; }
-.quiz-pause-row .btn,
-.quiz-quit-row .btn,
-.exam-submit-row .btn,
-.exam-pause-row .btn,
-.exam-quit-row .btn { width: 100%; min-height: 44px; }
-.exam-actions-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-@media (max-width: 420px) {
-  .quiz-actions-row { grid-template-columns: 0.8fr 2fr; gap: 6px; }
-  .quiz-actions-row .btn { min-height: 44px; padding-inline: 8px; font-size: 0.84rem; }
-  .quiz-pause-row .btn,
-  .quiz-quit-row .btn,
-  .exam-actions-row .btn { min-height: 42px; font-size: 0.84rem; }
-}
-
-/* ---------- Fixed quiz and exam actions ---------- */
+/* ---------- Thanh cố định: tiến độ (trên) + nút thao tác (dưới) ---------- */
 #screen-quiz.active,
 #screen-exam.active { animation: screen-fade-in 0.22s ease both; }
 
@@ -1536,15 +1447,44 @@ input[type='search']:focus {
   to { opacity: 1; }
 }
 
-#screen-quiz,
-#screen-exam { padding-bottom: 156px; }
+/* Chiều cao thanh trên được enhance.js đo và gán vào --quiz-top-h / --exam-top-h */
+#screen-quiz {
+  padding-top: calc(var(--quiz-top-h, 96px) + max(10px, var(--safe-t)) + 6px);
+  padding-bottom: 200px;
+}
 
+#screen-exam {
+  padding-top: calc(var(--exam-top-h, 240px) + max(10px, var(--safe-t)) + 6px);
+  padding-bottom: 200px;
+}
+
+.exam-q-card { scroll-margin-top: calc(var(--exam-top-h, 240px) + max(10px, var(--safe-t)) + 20px); }
+
+/* Thanh tiến độ phía trên: fixed, cùng chiều rộng và căn giữa như vùng nút phía dưới */
+.progress-wrap.is-fixed-top {
+  position: fixed;
+  top: max(10px, var(--safe-t));
+  left: 50%;
+  z-index: 80;
+  width: min(calc(100% - 28px), 900px);
+  margin: 0;
+  transform: translateX(-50%);
+  background: rgba(28, 28, 32, 0.94);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Vùng nút phía dưới: fixed, mỗi nút một hàng */
 .quiz-actions-card,
 .exam-actions-card {
   position: fixed;
   left: 50%;
   bottom: max(10px, var(--safe-b));
   z-index: 80;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   width: min(calc(100% - 28px), 900px);
   margin: 0;
   padding: 10px;
@@ -1557,20 +1497,26 @@ input[type='search']:focus {
   box-shadow: var(--shadow-lg);
 }
 
-.quiz-actions-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 8px;
-}
-
+/* Hàng 1 (ôn luyện): Trước + Kiểm tra / Câu tiếp */
 .quiz-actions-row {
-  grid-column: 1 / -1;
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
   gap: 8px;
 }
 
+/* Thi thử: Nộp bài / Tạm dừng / Thoát xếp dọc, mỗi nút một hàng */
+.exam-actions-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
 .quiz-pause-row,
-.quiz-quit-row { min-width: 0; }
+.quiz-quit-row,
+.exam-submit-row,
+.exam-pause-row,
+.exam-quit-row {
+  width: 100%;
+  min-width: 0;
+}
 
 .quiz-actions-card .btn,
 .exam-actions-card .btn {
@@ -1578,21 +1524,25 @@ input[type='search']:focus {
   min-width: 0;
   min-height: 44px;
   padding-inline: 8px;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
 }
 
-.exam-actions-row {
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr);
-  gap: 8px;
+/* Toast không bị che bởi vùng nút phía dưới */
+body[data-screen='quiz'] .toast,
+body[data-screen='exam'] .toast {
+  bottom: max(190px, calc(var(--safe-b) + 182px));
 }
 
 @media (max-width: 420px) {
   #screen-quiz,
-  #screen-exam { padding-bottom: 150px; }
+  #screen-exam { padding-bottom: 190px; }
+
+  .progress-wrap.is-fixed-top,
+  .quiz-actions-card,
+  .exam-actions-card { width: calc(100% - 16px); }
 
   .quiz-actions-card,
   .exam-actions-card {
-    width: calc(100% - 16px);
     padding: 8px;
     gap: 6px;
     border-radius: 14px;
@@ -1604,7 +1554,10 @@ input[type='search']:focus {
   .quiz-actions-card .btn,
   .exam-actions-card .btn {
     min-height: 42px;
-    padding-inline: 5px;
-    font-size: 0.78rem;
+    padding-inline: 6px;
+    font-size: 0.84rem;
   }
+
+  body[data-screen='quiz'] .toast,
+  body[data-screen='exam'] .toast { bottom: max(176px, calc(var(--safe-b) + 168px)); }
 }
