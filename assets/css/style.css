@@ -2573,8 +2573,19 @@ body {
 /* Answer buttons normally disable text selection; override it on both the button and its text. */
 #screen-quiz .option,
 #screen-quiz .option *,
-#screen-quiz .option-text {
+#screen-quiz .option-text,
+#screen-quiz .option-text * {
   -webkit-user-select: text !important;
   user-select: text !important;
   -webkit-touch-callout: default;
+  cursor: text;
+}
+#screen-quiz .option {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+#screen-quiz .option-key {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  cursor: default;
 }
