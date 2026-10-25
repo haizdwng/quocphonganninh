@@ -1,10 +1,11 @@
-const CACHE_VERSION = 'quocphonganninh:17';
+const CACHE_VERSION = 'quocphonganninh:18';
 const CACHE_PREFIX = 'quocphonganninh:';
 const ESSENTIAL = [
   './',
   './index.html',
   './sw.js',
   './manifest.webmanifest',
+  './fonts/InterVariable.woff2',
   './assets/css/style.css',
   './assets/js/app.js',
   './assets/js/quiz.js',
@@ -33,37 +34,10 @@ const ESSENTIAL = [
   './assets/icons/tabler/x.svg'
 ];
 
-const INTER_FONT_URL = 'https://raw.githubusercontent.com/rsms/inter/v4.1/docs/font-files/InterVariable.woff2';
-const INTER_FONT_CACHE_KEY = () => new URL('./assets/fonts/InterVariable.woff2', self.registration.scope).href;
-
 self.addEventListener('install', (event) => event.waitUntil((async () => {
   const cache = await caches.open(CACHE_VERSION);
   await cache.addAll(ESSENTIAL);
-  await cacheInterFont(cache);
 })()));
-
-async function fetchInterFont() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    return await fetch(INTER_FONT_URL, { mode: 'cors', signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  };
-};
-
-async function cacheInterFont(cache) {
-  try {
-    const response = await fetchInterFont();
-    if (response.ok && response.type !== 'opaque') {
-      const headers = new Headers(response.headers);
-      headers.set('Content-Type', 'font/woff2');
-      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-      const font = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-      await cache.put(INTER_FONT_CACHE_KEY(), font);
-    };
-  } catch {};
-};
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
@@ -79,12 +53,6 @@ self.addEventListener('fetch', (event) => {
   const scope = new URL(self.registration.scope);
   if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
 
-  const interFontUrl = new URL('./assets/fonts/InterVariable.woff2', self.registration.scope);
-  if (url.href === interFontUrl.href) {
-    event.respondWith(serveInterFont(request));
-    return;
-  };
-
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
   const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico|woff2)$/i.test(url.pathname);
@@ -94,30 +62,6 @@ self.addEventListener('fetch', (event) => {
   else event.respondWith(cacheFirst(request, event));
 });
 
-
-async function serveInterFont(request) {
-  const cache = await caches.open(CACHE_VERSION);
-  const cached = await cache.match(request);
-  if (cached) return cached;
-
-  try {
-    const response = await fetchInterFont();
-    if (!response.ok || response.type === 'opaque') {
-      return new Response('Không tải được font Inter.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-    };
-    const headers = new Headers(response.headers);
-    headers.set('Content-Type', 'font/woff2');
-    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    const font = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-    await cache.put(request, font.clone());
-    return font;
-  } catch {
-    return new Response('Phông chữ Inter chưa được tải. Hãy kết nối mạng rồi tải lại trang.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
-  };
-};
 
 async function cacheFirst(request, event) {
   const cache = await caches.open(CACHE_VERSION);
