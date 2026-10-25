@@ -252,70 +252,66 @@ function renderTextWithHighlights(element, text, deckId, originalIndex, target, 
   if (cursor < text.length) element.appendChild(document.createTextNode(text.slice(cursor)));
 };
 
+function toggleHighlightSelection(deckId, questionIndex, selection) {
+  const saved = getQuestionHighlights(deckId, questionIndex);
+  const selected = { target: selection.target, start: selection.start, end: selection.end };
+  const sameTarget = saved
+    .filter((range) => range.target === selected.target)
+    .map((range) => ({ start: range.start, end: range.end }))
+    .sort((a, b) => a.start - b.start);
+  let coveredUntil = selected.start;
+  for (const range of sameTarget) {
+    if (range.end <= coveredUntil) continue;
+    if (range.start > coveredUntil) break;
+    coveredUntil = Math.max(coveredUntil, range.end);
+    if (coveredUntil >= selected.end) break;
+  };
+  const fullyHighlighted = coveredUntil >= selected.end;
+  let updated;
+  if (fullyHighlighted) {
+    updated = [];
+    for (const range of saved) {
+      if (range.target !== selected.target || range.end <= selected.start || range.start >= selected.end) {
+        updated.push(range);
+        continue;
+      };
+      if (range.start < selected.start) updated.push({ ...range, end: selected.start });
+      if (range.end > selected.end) updated.push({ ...range, start: selected.end });
+    };
+  } else {
+    updated = [...saved, selected];
+  };
+  if (!saveQuestionHighlights(deckId, questionIndex, updated)) {
+    toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
+    return false;
+  };
+  delete state.pendingHighlights[highlightKey(deckId, questionIndex)];
+  state.lastTextSelection = null;
+  if (state.mode === 'review') renderQuestionBank();
+  else renderQuestion();
+  toast(fullyHighlighted ? 'Đã xóa highlight ở đoạn chọn.' : 'Đã highlight đoạn chọn.');
+  return true;
+};
+
 function createHighlightToolbar(questionIndex, bankMode = false) {
   const toolbar = document.createElement('div');
   toolbar.className = 'highlight-toolbar';
-  const edit = document.createElement('button');
-  edit.type = 'button';
-  edit.className = 'btn btn-ghost btn-sm';
-  edit.dataset.icon = 'pencil';
-  edit.textContent = 'Chỉnh highlight';
-  edit.setAttribute('aria-pressed', 'false');
-  const apply = document.createElement('button');
-  apply.type = 'button';
-  apply.className = 'btn btn-secondary btn-sm';
-  apply.dataset.icon = 'underline';
-  apply.textContent = 'Highlight đoạn chọn';
-  apply.hidden = true;
-  const clear = document.createElement('button');
-  clear.type = 'button';
-  clear.className = 'btn btn-ghost btn-sm';
-  clear.dataset.icon = 'x';
-  clear.textContent = 'Xóa highlight';
-  clear.hidden = true;
-  edit.addEventListener('click', () => {
-    const editing = !toolbar.classList.contains('is-editing');
-    toolbar.classList.toggle('is-editing', editing);
-    edit.setAttribute('aria-pressed', String(editing));
-    edit.textContent = editing ? 'Xong chỉnh sửa' : 'Chỉnh highlight';
-    apply.hidden = !editing;
-    clear.hidden = !editing;
-    if (bankMode) toolbar.closest('.review-q-card')?.classList.toggle('is-highlight-editing', editing);
-    else {
-      state.highlightEditMode = editing;
-      renderQuestion();
-    };
-  });
-  apply.addEventListener('click', () => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn btn-secondary btn-sm highlight-toggle-btn';
+  button.dataset.icon = 'underline';
+  button.textContent = 'Highlight';
+  button.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
+  button.addEventListener('click', () => {
     const selection = state.lastTextSelection;
-    if (!selection || selection.questionIndex !== questionIndex || selection.deckId !== state.currentDeck) {
-      toast('Hãy bôi đen một đoạn chữ trong câu hỏi hoặc đáp án trước.');
+    const expectedDeck = bankMode ? state.currentDeck : state.session?.deckId;
+    if (!selection || selection.questionIndex !== questionIndex || selection.deckId !== expectedDeck) {
+      toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
     };
-    const range = { target: selection.target, start: selection.start, end: selection.end };
-    const saved = getQuestionHighlights(state.currentDeck, questionIndex);
-    if (!saved.some((r) => r.target === range.target && r.start === range.start && r.end === range.end) &&
-        !saveQuestionHighlights(state.currentDeck, questionIndex, [...saved, range])) {
-      toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
-      return;
-    };
-    state.lastTextSelection = null;
-    if (bankMode) renderQuestionBank();
-    else renderQuestion();
-    toast('Đã lưu highlight.');
+    toggleHighlightSelection(selection.deckId, questionIndex, selection);
   });
-  clear.addEventListener('click', () => {
-    if (!saveQuestionHighlights(state.currentDeck, questionIndex, [])) {
-      toast('Không thể xóa highlight.');
-      return;
-    };
-    delete state.pendingHighlights[highlightKey(state.currentDeck, questionIndex)];
-    state.lastTextSelection = null;
-    if (bankMode) renderQuestionBank();
-    else renderQuestion();
-    toast('Đã xóa highlight của câu này.');
-  });
-  toolbar.append(edit, apply, clear);
+  toolbar.appendChild(button);
   return toolbar;
 };
 
@@ -971,14 +967,7 @@ function renderQuestion() {
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
   renderTextWithHighlights($('q-text'), q.question, s.deckId, q.originalIndex, 'question', true);
   const highlightToolbar = $('quiz-highlight-toolbar');
-  if (highlightToolbar) {
-    highlightToolbar.hidden = s.examMode === true;
-    $('btn-highlight-edit').setAttribute('aria-pressed', String(state.highlightEditMode));
-    $('btn-highlight-edit').textContent = state.highlightEditMode ? 'Xong chỉnh sửa' : 'Chỉnh highlight';
-    $('btn-highlight-apply').hidden = !state.highlightEditMode;
-    $('btn-highlight-clear').hidden = !state.highlightEditMode;
-    highlightToolbar.classList.toggle('is-editing', state.highlightEditMode);
-  };
+  if (highlightToolbar) highlightToolbar.hidden = s.examMode === true;
 
   const optsEl = $('options');
   optsEl.replaceChildren();
@@ -1961,40 +1950,15 @@ function restoreSessionIfAny() {
 
 function initUI() {
   document.addEventListener('selectionchange', captureHighlightSelection);
-  $('btn-highlight-edit')?.addEventListener('click', () => {
-    state.highlightEditMode = !state.highlightEditMode;
-    renderQuestion();
-  });
-  $('btn-highlight-apply')?.addEventListener('click', () => {
+  $('btn-highlight-toggle')?.addEventListener('click', () => {
     const q = currentQ();
     const s = state.session;
     const selection = state.lastTextSelection;
-    if (!q || !s || !selection || selection.questionIndex !== q.originalIndex || selection.deckId !== s.deckId) {
-      toast('Hãy bôi đen một đoạn chữ trong câu hỏi hoặc đáp án trước.');
+    if (!q || !s || s.examMode || !selection || selection.questionIndex !== q.originalIndex || selection.deckId !== s.deckId) {
+      toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
     };
-    const range = { target: selection.target, start: selection.start, end: selection.end };
-    const saved = getQuestionHighlights(s.deckId, q.originalIndex);
-    if (!saved.some((r) => r.target === range.target && r.start === range.start && r.end === range.end) &&
-        !saveQuestionHighlights(s.deckId, q.originalIndex, [...saved, range])) {
-      toast('Không thể lưu highlight.');
-      return;
-    };
-    state.lastTextSelection = null;
-    renderQuestion();
-    toast('Đã lưu highlight.');
-  });
-  $('btn-highlight-clear')?.addEventListener('click', () => {
-    const q = currentQ();
-    const s = state.session;
-    if (!q || !s || !saveQuestionHighlights(s.deckId, q.originalIndex, [])) {
-      toast('Không thể xóa highlight.');
-      return;
-    };
-    delete state.pendingHighlights[highlightKey(s.deckId, q.originalIndex)];
-    state.lastTextSelection = null;
-    renderQuestion();
-    toast('Đã xóa highlight của câu này.');
+    toggleHighlightSelection(selection.deckId, q.originalIndex, selection);
   });
   const active = getSettings();
   state.currentDeck = active.deck === 'qp2' ? 'qp2' : 'qp1';
