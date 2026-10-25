@@ -2045,7 +2045,7 @@ function renderSessionHistory() {
 
     const detail = document.createElement('p');
     detail.className = 'hint';
-    const date = new Date(Number(entry.startedAt) || Number(entry.updatedAt) || Date.now());
+    const date = new Date(Number(entry.updatedAt) || Number(entry.startedAt) || Date.now());
     const dateText = date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
     const statusText = entry.status === 'completed'
       ? 'Hoàn thành · Điểm ' + (entry.summary?.score ?? '—') + '/10 · ' + formatTime(entry.summary?.elapsedSeconds || 0)
