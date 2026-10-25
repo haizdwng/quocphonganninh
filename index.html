@@ -97,6 +97,30 @@
           </div>
         </div>
 
+        <div class='card experience-card'>
+          <h2>Trải nghiệm làm bài</h2>
+          <p class='hint'>Các tùy chọn này được lưu riêng cho từng bộ đề trên thiết bị.</p>
+          <div class='field toggles experience-toggles'>
+            <label class='toggle'>
+              <input type='checkbox' id='chk-auto-check'>
+              <span>Tự kiểm tra ngay khi chọn đáp án</span>
+            </label>
+            <label class='toggle'>
+              <input type='checkbox' id='chk-auto-advance'>
+              <span>Tự sang câu tiếp sau khi trả lời đúng</span>
+            </label>
+            <label class='toggle'>
+              <input type='checkbox' id='chk-sound' checked>
+              <span>Bật âm thanh phản hồi</span>
+            </label>
+            <label class='toggle'>
+              <input type='checkbox' id='chk-vibration' checked>
+              <span>Bật rung phản hồi</span>
+            </label>
+          </div>
+          <p class='hint'>Hai tùy chọn tự động mặc định tắt. Khi đến câu cuối, ứng dụng sẽ không tự kết thúc lượt làm bài.</p>
+        </div>
+
         <div class='card stats-card' id='deck-stats'>
           <h2>Tiến độ bộ đề</h2>
           <ul class='stat-list'>
@@ -234,8 +258,8 @@
           <div class='quiz-actions-row'>
             <button type='button' class='btn btn-ghost' id='btn-prev' disabled data-icon='chevron-left'>Trước</button>
             <button type='button' class='btn btn-primary' id='btn-next' disabled data-icon='check'>Kiểm tra</button>
+            <button type='button' class='btn btn-ghost' id='btn-quit' data-icon='x'>Thoát</button>
           </div>
-          <button type='button' class='btn btn-ghost btn-block' id='btn-quit' data-icon='x'>Thoát</button>
         </div>
       </section>
 
