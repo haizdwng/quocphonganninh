@@ -806,7 +806,7 @@ function startSessionFromPool(pool, meta) {
     pausedAt: null,
     pausedDurationMs: 0,
     remainingMs: null,
-    historyId: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 9),
+    historyId: meta.historyId || (String(Date.now()) + '-' + Math.random().toString(36).slice(2, 9)),
     timeExpired: false
   };
   if (meta.examMode || state.practiceMode === 'exam') {
@@ -2188,6 +2188,7 @@ function retryHistorySession(entry) {
     requestedCount: pool.length,
     examMode: !!entry.examMode,
     forceShuffleQ: entry.shuffleQ !== false,
+    historyId: String(Date.now()) + '-retry-' + Math.random().toString(36).slice(2, 9),
     alreadyShuffled: false
   });
 };
