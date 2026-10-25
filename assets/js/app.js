@@ -1009,7 +1009,19 @@ function renderQuestion() {
     btn.append(key, text);
 
     if (!btn.disabled) {
-      btn.addEventListener('click', () => onSelectOption(displayIdx));
+      btn.addEventListener('click', () => {
+        const selection = window.getSelection();
+        if (selection && !selection.isCollapsed && selection.toString().trim()) {
+          const range = selection.getRangeAt(0);
+          const startNode = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
+          const endNode = range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement;
+          if (btn.contains(startNode) && btn.contains(endNode)) {
+            captureHighlightSelection();
+            return;
+          };
+        };
+        onSelectOption(displayIdx);
+      });
     };
     optsEl.appendChild(btn);
   });
