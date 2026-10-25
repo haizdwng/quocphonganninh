@@ -149,6 +149,12 @@
           </div>
         </div>
 
+        <div class='card session-history-card' id='session-history-card' hidden>
+          <h2>10 phiên gần nhất</h2>
+          <p class='hint'>Lịch sử được lưu riêng cho từng bộ đề trên thiết bị này.</p>
+          <div class='session-history-list' id='session-history-list'></div>
+        </div>
+
         <div class='card setup-start-card' id='setup-actions'>
           <button type='button' class='btn btn-ghost btn-block' id='btn-view-bank' data-icon='book-2'>Xem toàn bộ câu hỏi & đáp án</button>
           <button type='button' class='btn btn-secondary btn-block' id='btn-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
@@ -247,6 +253,7 @@
           <div class='quiz-actions-row'>
             <button type='button' class='btn btn-ghost' id='btn-prev' disabled data-icon='chevron-left'>Trước</button>
             <button type='button' class='btn btn-primary' id='btn-next' disabled data-icon='check'>Kiểm tra</button>
+            <button type='button' class='btn btn-secondary' id='btn-quiz-pause'>Tạm dừng</button>
             <button type='button' class='btn btn-ghost' id='btn-quit' data-icon='x'>Thoát</button>
           </div>
         </div>
@@ -278,6 +285,7 @@
         <div class='card exam-actions-card' id='exam-actions'>
           <div class='exam-actions-row'>
             <button type='button' class='btn btn-primary' id='btn-exam-submit' data-icon='check'>Nộp bài</button>
+            <button type='button' class='btn btn-secondary' id='btn-exam-pause'>Tạm dừng</button>
             <button type='button' class='btn btn-ghost' id='btn-exam-quit' data-icon='x'>Thoát</button>
           </div>
         </div>
