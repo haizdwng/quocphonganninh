@@ -6,9 +6,6 @@ import {
   getSession,
   saveSession,
   clearSession,
-  getSessionHistory,
-  saveSessionHistoryEntry,
-  deleteSessionHistoryEntry,
   resetDeckProgress,
   markWrong,
   markPracticed,
@@ -589,9 +586,21 @@ function refreshSetupUI() {
   });
 
   syncReviewSettingsFromSetup();
-  renderSessionHistory();
+  refreshResumeCard();
 };
 
+function refreshResumeCard() {
+  const card = $('resume-card');
+  if (!card) return;
+  const saved = getSession(state.currentDeck);
+  if (!saved || !Array.isArray(saved.items) || !saved.items.length) { card.hidden = true; return; };
+  const answered = saved.items.filter((item) => item.userAnswer != null).length;
+  const isExam = !!saved.examMode || saved.mode === 'exam';
+  const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
+  card.hidden = false;
+  $('resume-title').textContent = isExam ? (saved.reviewMode ? 'Có bài thi đã chấm' : 'Có bài thi thử đang dở') : 'Có lượt ôn đang dở';
+  $('resume-hint').textContent = isExam ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · đã chấm' : ''}` : `${deckLabel} · câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
+};
 function normalizeSearchText(value) {
   return String(value || '')
     .normalize('NFD')
@@ -785,7 +794,6 @@ function startSessionFromPool(pool, meta) {
     pausedAt: null,
     pausedDurationMs: 0,
     remainingMs: null,
-    historyId: meta.historyId || (String(Date.now()) + '-' + Math.random().toString(36).slice(2, 9)),
     timeExpired: false
   };
   if (meta.examMode || state.practiceMode === 'exam') {
@@ -797,8 +805,6 @@ function startSessionFromPool(pool, meta) {
   state.examFilter = 'all';
   state.examSubmitting = false;
   if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
-  const historyEntry = makeHistoryEntry(session, 'active');
-  if (historyEntry && !saveSessionHistoryEntry(historyEntry)) toast('Không thể lưu lịch sử phiên. Bộ nhớ trình duyệt có thể đã đầy.');
   if (session.examMode) {
     showScreen('exam');
     renderExam();
@@ -1621,38 +1627,10 @@ function onPrev() {
   renderQuestion();
 };
 
-function makeHistoryEntry(session, status = 'active', summary = null) {
-  if (!session) return null;
-  const snapshot = { ...session, pool: undefined };
-  return {
-    id: session.historyId || String(session.startedAt || Date.now()) + '-' + session.deckId,
-    deckId: session.deckId,
-    status,
-    mode: session.mode || 'normal',
-    examMode: !!session.examMode,
-    startedAt: Number(session.startedAt) || Date.now(),
-    updatedAt: Date.now(),
-    rangeStart: Number.isInteger(session.rangeStart) ? session.rangeStart : 1,
-    rangeEnd: Number.isInteger(session.rangeEnd) ? session.rangeEnd : (state.decks[session.deckId] || []).length,
-    requestedCount: Number(session.requestedCount) || session.items?.length || 0,
-    timeLimit: Number(session.timeLimit) || 0,
-    shuffleQ: session.shuffleQ !== false,
-    shuffleA: session.shuffleA !== false,
-    indices: Array.isArray(session.pool) ? session.pool.map((question) => question.originalIndex) : [],
-    dataFingerprint: session.dataFingerprint || state.fingerprints[session.deckId] || '',
-    snapshot,
-    summary: summary || session.summary || null
-  };
-};
-
 function persistSession() {
   if (!state.session) return;
   if (!saveSession(state.session)) {
     toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
-  };
-  const entry = makeHistoryEntry(state.session, state.session.pausedAt ? 'paused' : 'active');
-  if (entry && !saveSessionHistoryEntry(entry)) {
-    toast('Không thể lưu lịch sử phiên. Bộ nhớ trình duyệt có thể đã đầy.');
   };
 };
 
@@ -1660,25 +1638,12 @@ function pauseSession() {
   const session = state.session;
   if (!session || session.reviewMode || session.finishedAt || session.pausedAt) return;
   session.pausedAt = Date.now();
-  session.remainingMs = session.timeLimit > 0 && session.deadlineAt
-    ? Math.max(0, session.deadlineAt - session.pausedAt)
-    : null;
-  const historyEntry = makeHistoryEntry(session, 'paused');
-  if (!historyEntry || !saveSessionHistoryEntry(historyEntry)) {
-    session.pausedAt = null;
-    session.remainingMs = null;
-    toast('Không thể tạm dừng vì lịch sử không lưu được. Phiên vẫn đang chạy.');
-    return;
-  };
+  session.remainingMs = session.timeLimit > 0 && session.deadlineAt ? Math.max(0, session.deadlineAt - session.pausedAt) : null;
   clearInterval(state.timerInterval);
   state.timerInterval = null;
-  const cleared = clearSession(session.deckId);
-  if (!cleared) {
-    session.pausedDurationMs = Math.max(0, Number(session.pausedDurationMs) || 0);
+  if (!saveSession(session)) {
     session.pausedAt = null;
     session.remainingMs = null;
-    saveSession(session);
-    saveSessionHistoryEntry(makeHistoryEntry(session, 'active'));
     startSessionTimer();
     toast('Không thể tạm dừng an toàn vì bộ nhớ trình duyệt không ghi được.');
     return;
@@ -1687,7 +1652,7 @@ function pauseSession() {
   state.reviewMode = false;
   showScreen('setup');
   refreshSetupUI();
-  toast('Đã tạm dừng. Bạn có thể tiếp tục từ lịch sử phiên.');
+  toast('Đã tạm dừng. Bạn có thể tiếp tục từ thẻ phiên đang dở.');
 };
 
 function formatTime(seconds) {
@@ -1896,17 +1861,12 @@ function finishSession() {
     rangeEnd: Number.isInteger(s.rangeEnd) ? s.rangeEnd : (state.decks[s.deckId] || []).length,
     requestedCount: s.items.length,
     timeLimit: Number.isInteger(s.timeLimit) ? s.timeLimit : 0,
-    historyId: s.historyId
   };
   state._lastSummaryWrongIndices = wrongInSession.map((entry) => entry.originalIndex);
   state._lastSummaryRangeStart = Number.isInteger(s.rangeStart) ? s.rangeStart : null;
   state._lastSummaryRangeEnd = Number.isInteger(s.rangeEnd) ? s.rangeEnd : null;
   state._lastSummaryCount = Number.isInteger(s.requestedCount) ? s.requestedCount : s.items.length;
 
-  const historyEntry = makeHistoryEntry(s, 'completed', s.summary);
-  if (historyEntry && !saveSessionHistoryEntry(historyEntry)) {
-    toast('Không thể lưu lịch sử phiên đã hoàn thành.');
-  };
   const sessionCleared = clearSession(s.deckId);
   state.session = null;
   if (!sessionCleared) toast('Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.');
@@ -2015,186 +1975,6 @@ function showSummary(summary, deckId, mode) {
   state._lastSummaryDeck = deckId;
 };
 
-function renderSessionHistory() {
-  const card = $('session-history-card');
-  const list = $('session-history-list');
-  if (!card || !list) return;
-  const history = getSessionHistory(state.currentDeck);
-  list.replaceChildren();
-  card.hidden = history.length === 0;
-  history.forEach((entry, index) => {
-    const item = document.createElement('article');
-    item.className = 'history-item' + (index === 0 ? ' is-latest' : '');
-    if (index === 0) item.setAttribute('aria-label', 'Phiên gần nhất');
-
-    const info = document.createElement('div');
-    info.className = 'history-item-info';
-    const heading = document.createElement('div');
-    heading.className = 'history-item-heading';
-    const title = document.createElement('strong');
-    title.className = 'history-item-title';
-    title.textContent = (entry.examMode ? 'Thi thử' : 'Ôn luyện') + ' · ' + (entry.indices?.length || entry.requestedCount || 0) + ' câu';
-    heading.appendChild(title);
-    if (index === 0) {
-      const badge = document.createElement('span');
-      badge.className = 'history-latest-badge';
-      badge.dataset.icon = 'clock';
-      badge.textContent = 'Gần nhất';
-      heading.appendChild(badge);
-    };
-
-    const detail = document.createElement('p');
-    detail.className = 'hint';
-    const date = new Date(Number(entry.updatedAt) || Number(entry.startedAt) || Date.now());
-    const dateText = date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
-    const statusText = entry.status === 'completed'
-      ? 'Hoàn thành · Điểm ' + (entry.summary?.score ?? '—') + '/10 · ' + formatTime(entry.summary?.elapsedSeconds || 0)
-      : entry.status === 'paused' ? 'Đã tạm dừng'
-        : entry.status === 'closed' ? 'Đã thoát'
-          : 'Đang làm';
-    const answered = entry.snapshot?.items?.filter((answer) => answer.userAnswer != null).length || 0;
-    detail.textContent = dateText + ' · ' + statusText + (entry.status !== 'completed' ? ' · ' + answered + '/' + (entry.indices?.length || 0) + ' câu đã chọn' : '');
-    info.append(heading, detail);
-
-    const actions = document.createElement('div');
-    actions.className = 'history-item-actions';
-    if (entry.status === 'active' || entry.status === 'paused') {
-      const resume = document.createElement('button');
-      resume.type = 'button';
-      resume.className = 'btn btn-primary btn-sm';
-      resume.dataset.icon = 'arrow-right';
-      resume.textContent = 'Tiếp tục';
-      resume.addEventListener('click', () => resumeHistorySession(entry.id));
-      actions.appendChild(resume);
-    } else if (entry.status === 'completed') {
-      const view = document.createElement('button');
-      view.type = 'button';
-      view.className = 'btn btn-secondary btn-sm';
-      view.dataset.icon = 'list-check';
-      view.textContent = 'Xem kết quả';
-      view.addEventListener('click', () => viewHistoryResult(entry));
-      actions.appendChild(view);
-    };
-    const retry = document.createElement('button');
-    retry.type = 'button';
-    retry.className = 'btn btn-ghost btn-sm';
-    retry.dataset.icon = 'rotate-clockwise';
-    retry.textContent = 'Làm lại';
-    retry.addEventListener('click', () => retryHistorySession(entry));
-    actions.appendChild(retry);
-
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'btn btn-ghost btn-sm';
-    remove.dataset.icon = 'trash';
-    remove.textContent = 'Xóa';
-    remove.setAttribute('aria-label', 'Xóa phiên khỏi lịch sử');
-    remove.addEventListener('click', async () => {
-      const ok = await confirmModal('Xóa phiên khỏi lịch sử?', 'Thao tác này chỉ xóa bản ghi lịch sử, không xóa tiến độ bộ đề.');
-      if (!ok) return;
-      if (!deleteSessionHistoryEntry(state.currentDeck, entry.id)) {
-        toast('Không thể xóa phiên khỏi lịch sử.');
-        return;
-      };
-      renderSessionHistory();
-    });
-    actions.appendChild(remove);
-    item.append(info, actions);
-    list.appendChild(item);
-  });
-};
-
-function resumeHistorySession(entryId) {
-  const entry = getSessionHistory(state.currentDeck).find((item) => item.id === entryId);
-  if (!entry || !entry.snapshot || !Array.isArray(entry.indices)) {
-    toast('Không tìm thấy dữ liệu để tiếp tục phiên này.');
-    return;
-  };
-  if (entry.dataFingerprint && entry.dataFingerprint !== state.fingerprints[entry.deckId]) {
-    toast('Bộ câu hỏi đã thay đổi; không thể khôi phục phiên cũ.');
-    return;
-  };
-  state.currentDeck = entry.deckId;
-  applySettingsToForm(getSettings(state.currentDeck));
-  const byIndex = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
-  const pool = entry.indices.map((index) => byIndex.get(index));
-  if (!pool.length || pool.some((question) => !question)) {
-    toast('Một số câu trong phiên không còn tồn tại trong bộ đề hiện tại.');
-    return;
-  };
-  const session = { ...entry.snapshot, pool, historyId: entry.id };
-  if (entry.status === 'paused' && session.pausedAt) {
-    const now = Date.now();
-    const pauseDuration = Math.max(0, now - session.pausedAt);
-    session.pausedDurationMs = (Number(session.pausedDurationMs) || 0) + pauseDuration;
-    if (session.timeLimit > 0) session.deadlineAt = now + Math.max(0, Number(session.remainingMs) || 0);
-    session.pausedAt = null;
-    session.remainingMs = null;
-  };
-  state.session = session;
-  if (!saveSession(session)) {
-    state.session = null;
-    toast('Không thể khôi phục phiên do bộ nhớ trình duyệt không ghi được.');
-    return;
-  };
-  if (!restoreSessionIfAny()) toast('Không thể khôi phục phiên này.');
-};
-
-function viewHistoryResult(entry) {
-  if (!entry?.summary || entry.status !== 'completed') return;
-  state.currentDeck = entry.deckId;
-  applySettingsToForm(getSettings(state.currentDeck));
-  const indices = Array.isArray(entry.indices) ? entry.indices : [];
-  state._lastSummarySession = {
-    deckId: entry.deckId,
-    mode: entry.examMode ? 'exam' : 'practice',
-    sourceMode: entry.mode || 'normal',
-    indices,
-    rangeStart: entry.rangeStart || 1,
-    rangeEnd: entry.rangeEnd || currentQuestions().length,
-    requestedCount: entry.requestedCount || indices.length,
-    timeLimit: entry.timeLimit || 0,
-    historyId: entry.id
-  };
-  state._lastSummaryDeck = entry.deckId;
-  state._lastSummaryWrongIndices = (entry.summary.wrongList || []).map((wrong) => wrong.originalIndex);
-  state._lastSummaryRangeStart = entry.rangeStart || 1;
-  state._lastSummaryRangeEnd = entry.rangeEnd || currentQuestions().length;
-  state._lastSummaryCount = entry.requestedCount || indices.length;
-  showSummary(entry.summary, entry.deckId, entry.examMode ? 'exam' : (entry.mode || 'normal'));
-};
-
-function retryHistorySession(entry) {
-  if (!entry || !Array.isArray(entry.indices)) return;
-  state.currentDeck = entry.deckId;
-  applySettingsToForm(getSettings(state.currentDeck));
-  const questions = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
-  const pool = entry.indices.map((index) => questions.get(index)).filter(Boolean);
-  if (!pool.length) {
-    toast('Không tìm thấy câu hỏi để làm lại phiên này.');
-    return;
-  };
-  $('input-range-start').value = String(entry.rangeStart || 1);
-  $('input-range-end').value = String(Math.max(entry.rangeStart || 1, entry.rangeEnd || currentQuestions().length));
-  $('input-count').value = String(pool.length);
-  $('input-time-limit').value = String(Number(entry.timeLimit) || 0);
-  $('chk-shuffle-q').checked = entry.shuffleQ !== false;
-  $('chk-shuffle-a').checked = entry.shuffleA !== false;
-  setPracticeMode(entry.examMode ? 'exam' : 'practice');
-  persistSetupForm();
-  startSessionFromPool(pool, {
-    mode: 'normal',
-    sequential: false,
-    rangeStart: entry.rangeStart || 1,
-    rangeEnd: entry.rangeEnd || currentQuestions().length,
-    requestedCount: pool.length,
-    examMode: !!entry.examMode,
-    forceShuffleQ: entry.shuffleQ !== false,
-    historyId: entry.id,
-    alreadyShuffled: false
-  });
-};
-
 function restoreSessionIfAny() {
   const saved = getSession(state.currentDeck);
   if (!saved) return false;
@@ -2251,11 +2031,18 @@ function restoreSessionIfAny() {
   saved.pausedAt = Number.isFinite(saved.pausedAt) ? saved.pausedAt : null;
   saved.pausedDurationMs = Math.max(0, Number(saved.pausedDurationMs) || 0);
   saved.remainingMs = Number.isFinite(saved.remainingMs) ? Math.max(0, saved.remainingMs) : null;
-  saved.historyId = typeof saved.historyId === 'string' ? saved.historyId : String(saved.startedAt || Date.now()) + '-' + saved.deckId;
   saved.startedAt = Number.isFinite(saved.startedAt) && saved.startedAt > 0 ? saved.startedAt : Date.now();
   saved.deadlineAt = Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0
     ? saved.deadlineAt
     : (saved.timeLimit > 0 ? saved.startedAt + saved.timeLimit * 60000 : null);
+  if (saved.pausedAt) {
+    const now = Date.now();
+    saved.pausedDurationMs += Math.max(0, now - saved.pausedAt);
+    if (saved.timeLimit > 0) saved.deadlineAt = now + Math.max(0, Number(saved.remainingMs) || 0);
+    saved.pausedAt = null;
+    saved.remainingMs = null;
+    if (!saveSession(saved)) { toast('Không thể lưu trạng thái tiếp tục phiên.'); return false; };
+  };
   saved.timeExpired = !!saved.timeExpired;
   saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
     ? saved.practiceInitialCount
@@ -2609,6 +2396,19 @@ function bindEvents() {
   $('btn-exam-submit')?.addEventListener('click', () => onExamSubmit());
   $('btn-exam-pause')?.addEventListener('click', () => pauseSession());
   $('btn-quiz-pause')?.addEventListener('click', () => pauseSession());
+  $('btn-resume-session')?.addEventListener('click', () => {
+    if (!restoreSessionIfAny()) toast('Không còn phiên để tiếp tục.');
+    else refreshSetupUI();
+  });
+  $('btn-discard-session')?.addEventListener('click', async () => {
+    const ok = await confirmModal('Bỏ phiên đang dở?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
+    if (!ok) return;
+    clearSession(state.currentDeck);
+    state.session = null;
+    state.reviewMode = false;
+    refreshResumeCard();
+    toast('Đã bỏ phiên cũ.');
+  });
   $('btn-exam-quit')?.addEventListener('click', async () => {
     const s = state.session;
     const reviewing = s?.reviewMode;
@@ -2622,8 +2422,6 @@ function bindEvents() {
     clearInterval(state.timerInterval);
     state.timerInterval = null;
     if (s) {
-      const closedEntry = makeHistoryEntry(s, 'closed');
-      if (closedEntry) saveSessionHistoryEntry(closedEntry);
     };
     clearSession(state.currentDeck);
     state.session = null;
@@ -2717,8 +2515,6 @@ function bindEvents() {
     state.timerInterval = null;
     const currentSession = state.session;
     if (currentSession) {
-      const closedEntry = makeHistoryEntry(currentSession, 'closed');
-      if (closedEntry) saveSessionHistoryEntry(closedEntry);
     };
     const cleared = clearSession(state.currentDeck);
     state.session = null;
@@ -2757,8 +2553,7 @@ function bindEvents() {
       requestedCount: pool.length,
       examMode: previous.mode === 'exam',
       forceShuffleQ: true,
-      historyId: previous.historyId,
-      alreadyShuffled: false
+        alreadyShuffled: false
     });
   });
 
