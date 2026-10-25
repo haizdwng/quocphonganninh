@@ -30,11 +30,11 @@
           <div class='deck-switch' role='group' aria-label='Bộ đề'>
             <button type='button' class='deck-btn' data-deck='quocphong1' id='btn-deck-quocphong1'>
               <span class='deck-name'>Quốc Phòng 1</span>
-              <span class='deck-count' id='count-quocphong1'>— câu</span>
+              <span class='deck-count' id='count-quocphong1'>479 câu</span>
             </button>
             <button type='button' class='deck-btn' data-deck='quocphong2' id='btn-deck-quocphong2'>
               <span class='deck-name'>Quốc Phòng 2</span>
-              <span class='deck-count' id='count-quocphong2'>— câu</span>
+              <span class='deck-count' id='count-quocphong2'>262 câu</span>
             </button>
           </div>
         </div>
@@ -45,15 +45,14 @@
             <button type='button' class='mode-btn is-active' data-mode='practice' id='btn-mode-practice'>
               <span class='mode-icon' data-icon='book-2' aria-hidden='true'></span>
               <span class='mode-name'>Ôn luyện</span>
-              <span class='mode-desc'>Từng câu · kiểm tra ngay</span>
+              <span class='mode-desc'>Từng câu</span>
             </button>
             <button type='button' class='mode-btn' data-mode='exam' id='btn-mode-exam'>
               <span class='mode-icon' data-icon='list-check' aria-hidden='true'></span>
               <span class='mode-name'>Thi thử</span>
-              <span class='mode-desc'>Tất cả câu · nộp một lần</span>
+              <span class='mode-desc'>Tất cả câu</span>
             </button>
           </div>
-          <p class='hint' id='hint-mode'>Ôn luyện: xem đáp án ngay sau mỗi câu. Thi thử: làm hết rồi nộp bài một lượt.</p>
         </div>
 
         <div class='card'>
@@ -70,7 +69,6 @@
                 <input type='number' id='input-range-end' min='1' value='479' inputmode='numeric'>
               </div>
             </div>
-            <p class='hint' id='hint-range'>Chọn phạm vi câu hỏi theo số thứ tự gốc.</p>
           </div>
           <div class='field'>
             <label for='input-count'>Số câu trong lượt</label>
@@ -78,12 +76,10 @@
               <input type='number' id='input-count' min='1' value='20' inputmode='numeric'>
               <button type='button' class='btn btn-ghost' id='btn-all' data-icon='list-check'>Toàn bộ vùng</button>
             </div>
-            <p class='hint' id='hint-count'>Số câu trong vùng đã chọn.</p>
           </div>
           <div class='field'>
             <label for='input-time-limit'>Thời gian làm bài</label>
             <input type='number' id='input-time-limit' min='0' max='1440' value='0' step='1' inputmode='numeric'>
-            <p class='hint'>0 là không giới hạn thời gian. Khi hết giờ, lượt làm bài sẽ tự động kết thúc.</p>
           </div>
           <div class='field toggles'>
             <label class='toggle'>
@@ -99,7 +95,6 @@
 
         <div class='card experience-card'>
           <h2>Trải nghiệm làm bài</h2>
-          <p class='hint'>Các tùy chọn này được lưu riêng cho từng bộ đề trên thiết bị.</p>
           <div class='field toggles experience-toggles'>
             <label class='toggle'>
               <input type='checkbox' id='chk-auto-check'>
@@ -111,14 +106,13 @@
             </label>
             <label class='toggle'>
               <input type='checkbox' id='chk-sound' checked>
-              <span>Bật âm thanh phản hồi</span>
+              <span>Bật âm thanh</span>
             </label>
             <label class='toggle'>
               <input type='checkbox' id='chk-vibration' checked>
-              <span>Bật rung phản hồi</span>
+              <span>Bật rung</span>
             </label>
           </div>
-          <p class='hint'>Hai tùy chọn tự động mặc định tắt. Khi đến câu cuối, ứng dụng sẽ không tự kết thúc lượt làm bài.</p>
         </div>
 
         <div class='card stats-card' id='deck-stats'>
@@ -157,19 +151,17 @@
 
         <div class='card setup-start-card' id='setup-actions'>
           <button type='button' class='btn btn-ghost btn-block' id='btn-view-bank' data-icon='book-2'>Xem toàn bộ câu hỏi & đáp án</button>
-          <button type='button' class='btn btn-primary btn-block' id='btn-start' data-icon='player-play'>Bắt đầu</button>
           <button type='button' class='btn btn-secondary btn-block' id='btn-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
+          <button type='button' class='btn btn-primary btn-block' id='btn-start' data-icon='player-play'>Bắt đầu</button>
         </div>
       </section>
 
       <section id='screen-review' class='screen' aria-label='Xem toàn bộ câu hỏi và đáp án' hidden>
         <div class='card review-header'>
           <button type='button' class='btn btn-ghost' id='btn-review-back' data-icon='arrow-left'>Quay lại thiết lập</button>
-          <h2 id='review-title'>Toàn bộ câu hỏi và đáp án</h2>
-          <p class='hint' id='review-description'>Đọc trước nội dung và đáp án đúng của bộ đề.</p>
-          <label for='input-review-search'>Tìm câu hỏi hoặc đáp án</label>
-          <input type='search' id='input-review-search' placeholder='Nhập từ khóa cần tìm…' autocomplete='off'>
-          <p class='hint' id='review-search-hint' aria-live='polite'>Tìm trong vùng câu hỏi đang chọn.</p>
+          <h2 id='review-title'>Ngân hàng câu hỏi</h2>
+          <label for='input-review-search'>Tìm nội dung câu hỏi hoặc đáp án</label>
+          <input type='search' id='input-review-search' autocomplete='off'>
           <button type='button' class='btn btn-secondary btn-block' id='btn-review-search-practice' disabled data-icon='search'>Ôn kết quả tìm kiếm</button>
           <div class='review-practice-settings'>
             <h3>Thiết lập lượt ôn kết quả tìm kiếm</h3>
@@ -177,24 +169,22 @@
               <button type='button' class='mode-btn is-active' data-mode='practice' id='review-btn-mode-practice'>
                 <span class='mode-icon' data-icon='book-2' aria-hidden='true'></span>
                 <span class='mode-name'>Ôn luyện</span>
-                <span class='mode-desc'>Từng câu · kiểm tra ngay</span>
+                <span class='mode-desc'>Từng câu</span>
               </button>
               <button type='button' class='mode-btn' data-mode='exam' id='review-btn-mode-exam'>
                 <span class='mode-icon' data-icon='list-check' aria-hidden='true'></span>
                 <span class='mode-name'>Thi thử</span>
-                <span class='mode-desc'>Làm hết rồi nộp</span>
+                <span class='mode-desc'>Tất cả câu</span>
               </button>
             </div>
-            <p class='hint' id='review-hint-mode'>Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.</p>
             <div class='review-practice-fields'>
               <div class='field'>
                 <label for='review-input-count'>Số câu trong lượt</label>
                 <input type='number' id='review-input-count' min='1' value='30' inputmode='numeric'>
               </div>
               <div class='field'>
-                <label for='review-input-time-limit'>Thời gian làm bài (phút)</label>
+                <label for='review-input-time-limit'>Thời gian làm bài</label>
                 <input type='number' id='review-input-time-limit' min='0' max='1440' value='35' inputmode='numeric'>
-                <p class='hint'>0 là không giới hạn thời gian.</p>
               </div>
             </div>
             <div class='field toggles'>
@@ -211,7 +201,7 @@
           <div class='review-navigation'>
             <label for='input-review-goto'>Đi đến câu số</label>
             <div class='row'>
-              <input type='number' id='input-review-goto' min='1' inputmode='numeric' placeholder='Ví dụ: 120'>
+              <input type='number' id='input-review-goto' min='1' inputmode='numeric'>
               <button type='button' class='btn btn-secondary' id='btn-review-goto'>Đi đến</button>
             </div>
           </div>
@@ -222,7 +212,6 @@
               <button type='button' class='btn btn-primary btn-block' id='btn-review-start-selected' disabled>Bắt đầu với câu đã chọn</button>
             </div>
           </div>
-          <p class='hint' id='review-count' aria-live='polite'></p>
         </div>
         <div class='review-list' id='review-list' aria-live='polite'></div>
       </section>
@@ -232,7 +221,7 @@
           <div class='progress-meta' aria-live='polite' aria-atomic='true'>
             <span id='progress-label'>Câu 1 / 20</span>
             <span id='progress-score'>Điểm 0 / 10</span>
-            <span id='progress-time' aria-live='polite'>Đã làm 00:00</span>
+            <span id='progress-time' aria-live='polite'>Thời gian 00:00</span>
           </div>
           <div class='progress-bar' role='progressbar' aria-valuemin='0' aria-valuemax='100' aria-valuenow='0'>
             <div class='progress-fill' id='progress-fill'></div>
@@ -320,14 +309,14 @@
           </ul>
         </div>
         <div class='card' id='wrong-list-card' hidden>
-          <h2>Câu đã từng trả lời sai</h2>
+          <h2>Câu đã trả lời sai</h2>
           <ul class='wrong-list' id='wrong-list'></ul>
         </div>
         <div class='actions-stack'>
           <button type='button' class='btn btn-primary btn-block' id='btn-sum-retry-session' hidden data-icon='rotate-clockwise'>Ôn lại lượt ôn này</button>
           <button type='button' class='btn btn-primary btn-block' id='btn-sum-practice' hidden data-icon='refresh'>Luyện lại câu sai</button>
           <button type='button' class='btn btn-primary btn-block' id='btn-sum-continue' hidden data-icon='arrow-right'>Tiếp tục tuần tự</button>
-          <button type='button' class='btn btn-secondary btn-block' id='btn-sum-random' data-icon='refresh'>Lấy ngẫu nhiên tiếp</button>
+          <button type='button' class='btn btn-secondary btn-block' id='btn-sum-random' data-icon='refresh'>Ôn ngẫu nhiên tiếp</button>
           <button type='button' class='btn btn-secondary btn-block' id='btn-sum-again' data-icon='book-2'>Thiết lập lượt ôn mới</button>
           <button type='button' class='btn btn-ghost btn-block' id='btn-sum-restart' data-icon='rotate-clockwise'>Làm lại từ đầu</button>
           <button type='button' class='btn btn-ghost btn-block' id='btn-sum-home' data-icon='arrow-left'>Về màn hình thiết lập</button>

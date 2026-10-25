@@ -443,12 +443,6 @@ function renderQuestionBank() {
   const list = $('review-list');
   const fragment = document.createDocumentFragment();
   $('review-title').textContent = DECKS[state.currentDeck].label;
-  $('review-description').textContent = `${questions.length} câu.`;
-  $('review-count').textContent = state.reviewSelectMode
-    ? `Hiển thị ${filtered.length} câu trong vùng đã chọn.`
-    : query
-      ? `Hiển thị ${filtered.length}/${questions.length} câu phù hợp.`
-      : `Hiển thị toàn bộ ${questions.length} câu.`;
 
   for (const question of filtered) {
     const card = document.createElement('article');
@@ -531,8 +525,8 @@ function openQuestionBank() {
 function refreshSetupUI() {
   const qs = currentQuestions();
   const total = qs.length;
-  $('count-quocphong1').textContent = `${state.decks.quocphong1?.length ?? '—'} câu`;
-  $('count-quocphong2').textContent = `${state.decks.quocphong2?.length ?? '—'} câu`;
+  $('count-quocphong1').textContent = `${state.decks.quocphong1?.length ?? '479'} câu`;
+  $('count-quocphong2').textContent = `${state.decks.quocphong2?.length ?? '262'} câu`;
 
   document.querySelectorAll('.deck-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.deck === state.currentDeck);
@@ -550,14 +544,12 @@ function refreshSetupUI() {
   end = Math.max(start, Math.min(end, Math.max(1, total)));
   startInput.value = String(start);
   endInput.value = String(end);
-  $('hint-range').textContent = `Phạm vi câu gốc ${start}–${end} trong ${total} câu.`;
 
   const rangeTotal = Math.max(0, end - start + 1);
   const input = $('input-count');
   input.max = String(Math.max(1, rangeTotal));
   if (Number(input.value) > rangeTotal) input.value = String(rangeTotal || 1);
   if (Number(input.value) < 1 || !Number.isFinite(Number(input.value))) input.value = '1';
-  $('hint-count').textContent = `Tối đa ${rangeTotal} câu trong vùng đã chọn.`;
 
   const progress = getDeckProgress(state.currentDeck);
   const completed = new Set(progress.completed);
@@ -650,8 +642,7 @@ function normalizeSearchText(value) {
 function refreshSearchUI() {
   const searchInput = $('input-review-search');
   const button = $('btn-review-search-practice');
-  const hint = $('review-search-hint');
-  if (!searchInput || !button || !hint) return;
+  if (!searchInput || !button) return;
   const query = normalizeSearchText(searchInput.value.trim());
   const form = readSetupForm();
   const pool = selectedQuestions(form);
@@ -662,11 +653,6 @@ function refreshSearchUI() {
   button.textContent = state.searchResults.length
     ? `Ôn ${Math.min(state.searchResults.length, form.count)} / ${state.searchResults.length} câu tìm được`
     : 'Ôn kết quả tìm kiếm';
-  hint.textContent = query
-    ? state.searchResults.length
-      ? `Tìm thấy ${state.searchResults.length} câu trong vùng ${form.startQuestion}–${form.endQuestion}; lượt này tối đa ${Math.min(form.count, state.searchResults.length)} câu.`
-      : `Không tìm thấy câu phù hợp trong vùng ${form.startQuestion}–${form.endQuestion}.`
-    : `Tìm trong vùng câu hỏi ${form.startQuestion}–${form.endQuestion} đã chọn.`;
 };
 
 function syncReviewSettingsFromSetup() {
@@ -676,12 +662,6 @@ function syncReviewSettingsFromSetup() {
   $('review-input-time-limit').value = $('input-time-limit').value;
   $('review-chk-shuffle-q').checked = $('chk-shuffle-q').checked;
   $('review-chk-shuffle-a').checked = $('chk-shuffle-a').checked;
-  const hint = $('review-hint-mode');
-  if (hint) {
-    hint.textContent = state.practiceMode === 'exam'
-      ? 'Thi thử: làm hết các câu tìm được rồi nộp bài một lần.'
-      : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
-  };
 };
 
 function startSearchResults() {
@@ -1171,18 +1151,6 @@ function setPracticeMode(mode) {
   const startBtn = $('btn-start');
   if (startBtn) {
     startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn';
-  };
-  const hint = $('hint-mode');
-  if (hint) {
-    hint.textContent = state.practiceMode === 'exam'
-      ? 'Thi thử: hiện tất cả câu đã chọn, chọn đáp án rồi nộp bài một lần. Không hiện đáp án đúng trước khi nộp.'
-      : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
-  };
-  const reviewHint = $('review-hint-mode');
-  if (reviewHint) {
-    reviewHint.textContent = state.practiceMode === 'exam'
-      ? 'Thi thử: làm hết các câu tìm được rồi nộp bài một lần.'
-      : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
   };
   persistSetupForm();
   if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
@@ -1775,8 +1743,8 @@ function updateTimerDisplay() {
     el.classList.remove('time-warning');
   } else {
     el.textContent = hasLimit
-      ? `Còn ${formatTime(remaining)} · Đã làm ${formatTime(elapsed)}`
-      : `Đã làm ${formatTime(elapsed)}`;
+      ? `Thời gian ${formatTime(remaining)}`
+      : `Thời gian ${formatTime(elapsed)}`;
     el.classList.toggle('time-warning', hasLimit && remaining <= 60);
   };
 };

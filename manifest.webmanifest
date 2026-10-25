@@ -1,7 +1,7 @@
 {
   "name": "Trắc nghiệm Quốc Phòng An Ninh",
   "short_name": "Quốc Phòng An Ninh",
-  "description": "Ôn thi Trắc nghiệm Quốc Phòng An Ninh, hỗ trợ ôn thi ngoại tuyến.",
+  "description": "Trắc nghiệm Quốc Phòng An Ninh",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
