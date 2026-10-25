@@ -818,6 +818,8 @@ function startSessionFromPool(pool, meta) {
   state.examFilter = 'all';
   state.examSubmitting = false;
   if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
+  const historyEntry = makeHistoryEntry(session, 'active');
+  if (historyEntry && !saveSessionHistoryEntry(historyEntry)) toast('Không thể lưu lịch sử phiên. Bộ nhớ trình duyệt có thể đã đầy.');
   if (session.examMode) {
     showScreen('exam');
     renderExam();
@@ -1167,6 +1169,8 @@ function updateExamProgressHeader() {
     nextEmpty.hidden = s.reviewMode || unanswered === 0;
     nextEmpty.textContent = unanswered ? `Còn ${unanswered} câu` : 'Đủ đáp án';
   };
+  const pauseBtn = $('btn-exam-pause');
+  if (pauseBtn) pauseBtn.hidden = !!s.reviewMode;
   const submitBtn = $('btn-exam-submit');
   if (submitBtn) {
     if (s.reviewMode) {
@@ -1775,7 +1779,9 @@ function updateTimerDisplay() {
   const remaining = hasLimit ? Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000)) : null;
   el.hidden = false;
   if (stopped) {
-    el.textContent = `Hoàn thành · ${formatTime(elapsed)}`;
+    el.textContent = s.pausedAt && !s.finishedAt && !s.reviewMode
+      ? `Tạm dừng · ${formatTime(elapsed)}`
+      : `Hoàn thành · ${formatTime(elapsed)}`;
     el.classList.remove('time-warning');
   } else {
     el.textContent = hasLimit
@@ -2091,6 +2097,7 @@ function resumeHistorySession(entryId) {
     return;
   };
   state.currentDeck = entry.deckId;
+  applySettingsToForm(getSettings(state.currentDeck));
   const byIndex = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
   const pool = entry.indices.map((index) => byIndex.get(index));
   if (!pool.length || pool.some((question) => !question)) {
@@ -2140,6 +2147,7 @@ function viewHistoryResult(entry) {
 function retryHistorySession(entry) {
   if (!entry || !Array.isArray(entry.indices)) return;
   state.currentDeck = entry.deckId;
+  applySettingsToForm(getSettings(state.currentDeck));
   const questions = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
   const pool = entry.indices.map((index) => questions.get(index)).filter(Boolean);
   if (!pool.length) {
