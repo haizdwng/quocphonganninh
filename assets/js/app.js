@@ -136,23 +136,34 @@ async function loadAll() {
   state.loading = true;
   state.error = null;
   showScreen('loading');
+  let stage = 'tải dữ liệu';
   try {
     await Promise.all([loadDeck('quocphong1'), loadDeck('quocphong2')]);
     state.loading = false;
+    stage = 'khởi tạo giao diện';
     initUI();
   } catch (e) {
     state.loading = false;
-    state.error = e.message || String(e);
+    state.error = e?.message || String(e);
+    console.error(`Lỗi khi ${stage}:`, e);
     showScreen('error');
-    const errorMessage = $('error-message');
-    const details = state.error + '\n\nNếu bạn đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.';
-    if (errorMessage) {
-      errorMessage.textContent = details;
-    } else {
-      console.error('Không tìm thấy #error-message; lỗi khởi tạo ban đầu:', e);
-      window.alert(details);
+    let errorMessage = $('error-message');
+    if (!errorMessage) {
+      const screen = $('screen-error');
+      if (screen) {
+        errorMessage = document.createElement('pre');
+        errorMessage.id = 'error-message';
+        errorMessage.className = 'error-message';
+        screen.append(errorMessage);
+      }
     }
-    console.error('Lỗi khi khởi tạo ứng dụng:', e);
+    const isDataError = stage === 'tải dữ liệu';
+    const details = [
+      isDataError ? state.error : `Không thể khởi tạo giao diện: ${state.error}`,
+      isDataError ? 'Nếu đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.' : 'Hãy tải lại trang. Nếu lỗi vẫn còn, mở Console để xem chi tiết.'
+    ].join('\n\n');
+    if (errorMessage) errorMessage.textContent = details;
+    else window.alert(details);
   };
 };
 
