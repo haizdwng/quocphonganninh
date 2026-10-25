@@ -6,6 +6,9 @@ import {
   getSession,
   saveSession,
   clearSession,
+  getSessionHistory,
+  saveSessionHistoryEntry,
+  deleteSessionHistoryEntry,
   resetDeckProgress,
   markWrong,
   markPracticed,
@@ -587,6 +590,7 @@ function refreshSetupUI() {
 
   syncReviewSettingsFromSetup();
   refreshResumeCard();
+  renderSessionHistory();
 };
 
 function refreshResumeCard() {
@@ -799,6 +803,10 @@ function startSessionFromPool(pool, meta) {
     timeLimit: form.timeLimit,
     startedAt: Date.now(),
     deadlineAt: form.timeLimit > 0 ? Date.now() + form.timeLimit * 60000 : null,
+    pausedAt: null,
+    pausedDurationMs: 0,
+    remainingMs: null,
+    historyId: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 9),
     timeExpired: false
   };
   if (meta.examMode || state.practiceMode === 'exam') {
@@ -1630,10 +1638,58 @@ function onPrev() {
   renderQuestion();
 };
 
+function makeHistoryEntry(session, status = 'active', summary = null) {
+  if (!session) return null;
+  const snapshot = { ...session, pool: undefined };
+  return {
+    id: session.historyId || String(session.startedAt || Date.now()) + '-' + session.deckId,
+    deckId: session.deckId,
+    status,
+    mode: session.mode || 'normal',
+    examMode: !!session.examMode,
+    startedAt: Number(session.startedAt) || Date.now(),
+    updatedAt: Date.now(),
+    rangeStart: Number.isInteger(session.rangeStart) ? session.rangeStart : 1,
+    rangeEnd: Number.isInteger(session.rangeEnd) ? session.rangeEnd : (state.decks[session.deckId] || []).length,
+    requestedCount: Number(session.requestedCount) || session.items?.length || 0,
+    timeLimit: Number(session.timeLimit) || 0,
+    shuffleQ: session.shuffleQ !== false,
+    shuffleA: session.shuffleA !== false,
+    indices: Array.isArray(session.pool) ? session.pool.map((question) => question.originalIndex) : [],
+    dataFingerprint: session.dataFingerprint || state.fingerprints[session.deckId] || '',
+    snapshot,
+    summary: summary || session.summary || null
+  };
+};
+
 function persistSession() {
-  if (state.session && !saveSession(state.session)) {
+  if (!state.session) return;
+  if (!saveSession(state.session)) {
     toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
   };
+  const entry = makeHistoryEntry(state.session, state.session.pausedAt ? 'paused' : 'active');
+  if (entry && !saveSessionHistoryEntry(entry)) {
+    toast('Không thể lưu lịch sử phiên. Bộ nhớ trình duyệt có thể đã đầy.');
+  };
+};
+
+function pauseSession() {
+  const session = state.session;
+  if (!session || session.reviewMode || session.finishedAt || session.pausedAt) return;
+  session.pausedAt = Date.now();
+  session.remainingMs = session.timeLimit > 0 && session.deadlineAt
+    ? Math.max(0, session.deadlineAt - session.pausedAt)
+    : null;
+  clearInterval(state.timerInterval);
+  state.timerInterval = null;
+  persistSession();
+  const cleared = clearSession(session.deckId);
+  state.session = null;
+  state.reviewMode = false;
+  if (!cleared) toast('Không thể xóa bản phiên đang chạy; hãy kiểm tra bộ nhớ trình duyệt.');
+  showScreen('setup');
+  refreshSetupUI();
+  toast('Đã tạm dừng. Bạn có thể tiếp tục từ lịch sử phiên.');
 };
 
 function formatTime(seconds) {
@@ -1699,8 +1755,10 @@ function getElapsedSeconds(session = state.session) {
   const startedAt = Number(session.startedAt) || Date.now();
   let end = Date.now();
   if (session.finishedAt) end = Number(session.finishedAt);
+  else if (session.pausedAt) end = Number(session.pausedAt);
   else if (session.timeExpired && session.deadlineAt) end = Number(session.deadlineAt);
-  return Math.max(0, Math.floor((end - startedAt) / 1000));
+  const pausedDuration = Math.max(0, Number(session.pausedDurationMs) || 0);
+  return Math.max(0, Math.floor((end - startedAt - pausedDuration) / 1000));
 };
 
 function updateTimerDisplay() {
@@ -1712,7 +1770,7 @@ function updateTimerDisplay() {
     return;
   };
   const elapsed = getElapsedSeconds(s);
-  const stopped = !!s.finishedAt || !!s.reviewMode;
+  const stopped = !!s.finishedAt || !!s.reviewMode || !!s.pausedAt;
   const hasLimit = Number(s.timeLimit) > 0 && Number(s.deadlineAt) > 0 && !stopped;
   const remaining = hasLimit ? Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000)) : null;
   el.hidden = false;
@@ -1734,7 +1792,7 @@ function startSessionTimer() {
     updateTimerDisplay();
     return;
   };
-  if (state.session.finishedAt || state.session.reviewMode) {
+  if (state.session.finishedAt || state.session.reviewMode || state.session.pausedAt) {
     updateTimerDisplay();
     return;
   };
@@ -1745,7 +1803,7 @@ function startSessionTimer() {
       state.timerInterval = null;
       return;
     };
-    if (session.finishedAt || session.reviewMode) {
+    if (session.finishedAt || session.reviewMode || session.pausedAt) {
       stopSessionTimer(false);
       return;
     };
@@ -1844,6 +1902,10 @@ function finishSession() {
   state._lastSummaryRangeEnd = Number.isInteger(s.rangeEnd) ? s.rangeEnd : null;
   state._lastSummaryCount = Number.isInteger(s.requestedCount) ? s.requestedCount : s.items.length;
 
+  const historyEntry = makeHistoryEntry(s, 'completed', s.summary);
+  if (historyEntry && !saveSessionHistoryEntry(historyEntry)) {
+    toast('Không thể lưu lịch sử phiên đã hoàn thành.');
+  };
   const sessionCleared = clearSession(s.deckId);
   state.session = null;
   if (!sessionCleared) toast('Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.');
@@ -1952,6 +2014,158 @@ function showSummary(summary, deckId, mode) {
   state._lastSummaryDeck = deckId;
 };
 
+function renderSessionHistory() {
+  const card = $('session-history-card');
+  const list = $('session-history-list');
+  if (!card || !list) return;
+  const history = getSessionHistory(state.currentDeck);
+  list.replaceChildren();
+  card.hidden = history.length === 0;
+  for (const entry of history) {
+    const item = document.createElement('article');
+    item.className = 'history-item';
+    const info = document.createElement('div');
+    info.className = 'history-item-info';
+    const title = document.createElement('strong');
+    title.textContent = (entry.examMode ? 'Thi thử' : 'Ôn luyện') + ' · ' + (entry.indices?.length || entry.requestedCount || 0) + ' câu';
+    const detail = document.createElement('p');
+    detail.className = 'hint';
+    const date = new Date(Number(entry.startedAt) || Number(entry.updatedAt) || Date.now());
+    const dateText = date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+    const statusText = entry.status === 'completed'
+      ? 'Hoàn thành · Điểm ' + (entry.summary?.score ?? '—') + '/10 · ' + formatTime(entry.summary?.elapsedSeconds || 0)
+      : entry.status === 'paused' ? 'Đã tạm dừng' : 'Đang làm';
+    const answered = entry.snapshot?.items?.filter((answer) => answer.userAnswer != null).length || 0;
+    detail.textContent = dateText + ' · ' + statusText + (entry.status !== 'completed' ? ' · ' + answered + '/' + (entry.indices?.length || 0) + ' câu đã chọn' : '');
+    info.append(title, detail);
+    const actions = document.createElement('div');
+    actions.className = 'history-item-actions';
+    if (entry.status !== 'completed') {
+      const resume = document.createElement('button');
+      resume.type = 'button';
+      resume.className = 'btn btn-primary btn-sm';
+      resume.textContent = 'Tiếp tục';
+      resume.addEventListener('click', () => resumeHistorySession(entry.id));
+      actions.appendChild(resume);
+    } else {
+      const view = document.createElement('button');
+      view.type = 'button';
+      view.className = 'btn btn-secondary btn-sm';
+      view.textContent = 'Xem kết quả';
+      view.addEventListener('click', () => viewHistoryResult(entry));
+      actions.appendChild(view);
+    };
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'btn btn-ghost btn-sm';
+    retry.textContent = 'Làm lại';
+    retry.addEventListener('click', () => retryHistorySession(entry));
+    actions.appendChild(retry);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'btn btn-ghost btn-sm';
+    remove.textContent = 'Xóa';
+    remove.addEventListener('click', async () => {
+      const ok = await confirmModal('Xóa phiên khỏi lịch sử?', 'Thao tác này chỉ xóa bản ghi lịch sử, không xóa tiến độ bộ đề.');
+      if (!ok) return;
+      if (!deleteSessionHistoryEntry(state.currentDeck, entry.id)) {
+        toast('Không thể xóa phiên khỏi lịch sử.');
+        return;
+      };
+      renderSessionHistory();
+    });
+    actions.appendChild(remove);
+    item.append(info, actions);
+    list.appendChild(item);
+  };
+};
+
+function resumeHistorySession(entryId) {
+  const entry = getSessionHistory(state.currentDeck).find((item) => item.id === entryId);
+  if (!entry || !entry.snapshot || !Array.isArray(entry.indices)) {
+    toast('Không tìm thấy dữ liệu để tiếp tục phiên này.');
+    return;
+  };
+  if (entry.dataFingerprint && entry.dataFingerprint !== state.fingerprints[entry.deckId]) {
+    toast('Bộ câu hỏi đã thay đổi; không thể khôi phục phiên cũ.');
+    return;
+  };
+  state.currentDeck = entry.deckId;
+  const byIndex = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
+  const pool = entry.indices.map((index) => byIndex.get(index));
+  if (!pool.length || pool.some((question) => !question)) {
+    toast('Một số câu trong phiên không còn tồn tại trong bộ đề hiện tại.');
+    return;
+  };
+  const session = { ...entry.snapshot, pool, historyId: entry.id };
+  if (entry.status === 'paused' && session.pausedAt) {
+    const now = Date.now();
+    const pauseDuration = Math.max(0, now - session.pausedAt);
+    session.pausedDurationMs = (Number(session.pausedDurationMs) || 0) + pauseDuration;
+    if (session.timeLimit > 0) session.deadlineAt = now + Math.max(0, Number(session.remainingMs) || 0);
+    session.pausedAt = null;
+    session.remainingMs = null;
+  };
+  state.session = session;
+  if (!saveSession(session)) {
+    state.session = null;
+    toast('Không thể khôi phục phiên do bộ nhớ trình duyệt không ghi được.');
+    return;
+  };
+  if (!restoreSessionIfAny()) toast('Không thể khôi phục phiên này.');
+};
+
+function viewHistoryResult(entry) {
+  if (!entry?.summary || entry.status !== 'completed') return;
+  state.currentDeck = entry.deckId;
+  const indices = Array.isArray(entry.indices) ? entry.indices : [];
+  state._lastSummarySession = {
+    deckId: entry.deckId,
+    mode: entry.examMode ? 'exam' : 'practice',
+    sourceMode: entry.mode || 'normal',
+    indices,
+    rangeStart: entry.rangeStart || 1,
+    rangeEnd: entry.rangeEnd || currentQuestions().length,
+    requestedCount: entry.requestedCount || indices.length,
+    timeLimit: entry.timeLimit || 0
+  };
+  state._lastSummaryDeck = entry.deckId;
+  state._lastSummaryWrongIndices = (entry.summary.wrongList || []).map((wrong) => wrong.originalIndex);
+  state._lastSummaryRangeStart = entry.rangeStart || 1;
+  state._lastSummaryRangeEnd = entry.rangeEnd || currentQuestions().length;
+  state._lastSummaryCount = entry.requestedCount || indices.length;
+  showSummary(entry.summary, entry.deckId, entry.mode || 'normal');
+};
+
+function retryHistorySession(entry) {
+  if (!entry || !Array.isArray(entry.indices)) return;
+  state.currentDeck = entry.deckId;
+  const questions = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
+  const pool = entry.indices.map((index) => questions.get(index)).filter(Boolean);
+  if (!pool.length) {
+    toast('Không tìm thấy câu hỏi để làm lại phiên này.');
+    return;
+  };
+  $('input-range-start').value = String(entry.rangeStart || 1);
+  $('input-range-end').value = String(Math.max(entry.rangeStart || 1, entry.rangeEnd || currentQuestions().length));
+  $('input-count').value = String(pool.length);
+  $('input-time-limit').value = String(Number(entry.timeLimit) || 0);
+  $('chk-shuffle-q').checked = entry.shuffleQ !== false;
+  $('chk-shuffle-a').checked = entry.shuffleA !== false;
+  setPracticeMode(entry.examMode ? 'exam' : 'practice');
+  persistSetupForm();
+  startSessionFromPool(pool, {
+    mode: 'normal',
+    sequential: false,
+    rangeStart: entry.rangeStart || 1,
+    rangeEnd: entry.rangeEnd || currentQuestions().length,
+    requestedCount: pool.length,
+    examMode: !!entry.examMode,
+    forceShuffleQ: entry.shuffleQ !== false,
+    alreadyShuffled: false
+  });
+};
+
 function restoreSessionIfAny() {
   const saved = getSession(state.currentDeck);
   if (!saved) return false;
@@ -2005,6 +2219,10 @@ function restoreSessionIfAny() {
     return false;
   };
   saved.timeLimit = Number.isInteger(saved.timeLimit) && saved.timeLimit > 0 ? Math.min(1440, saved.timeLimit) : 0;
+  saved.pausedAt = Number.isFinite(saved.pausedAt) ? saved.pausedAt : null;
+  saved.pausedDurationMs = Math.max(0, Number(saved.pausedDurationMs) || 0);
+  saved.remainingMs = Number.isFinite(saved.remainingMs) ? Math.max(0, saved.remainingMs) : null;
+  saved.historyId = typeof saved.historyId === 'string' ? saved.historyId : String(saved.startedAt || Date.now()) + '-' + saved.deckId;
   saved.startedAt = Number.isFinite(saved.startedAt) && saved.startedAt > 0 ? saved.startedAt : Date.now();
   saved.deadlineAt = Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0
     ? saved.deadlineAt
@@ -2373,6 +2591,8 @@ function bindEvents() {
   }
 
   $('btn-exam-submit')?.addEventListener('click', () => onExamSubmit());
+  $('btn-exam-pause')?.addEventListener('click', () => pauseSession());
+  $('btn-quiz-pause')?.addEventListener('click', () => pauseSession());
   $('btn-exam-quit')?.addEventListener('click', async () => {
     const s = state.session;
     const reviewing = s?.reviewMode;
