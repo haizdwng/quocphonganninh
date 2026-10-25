@@ -1,11 +1,11 @@
-const CACHE_VERSION = 'quocphonganninh:18';
+const CACHE_VERSION = 'quocphonganninh:19';
 const CACHE_PREFIX = 'quocphonganninh:';
 const ESSENTIAL = [
   './',
   './index.html',
   './sw.js',
   './manifest.webmanifest',
-  './fonts/InterVariable.woff2',
+  './assets/fonts/InterVariable.woff2',
   './assets/css/style.css',
   './assets/js/app.js',
   './assets/js/quiz.js',
