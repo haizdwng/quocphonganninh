@@ -160,3 +160,48 @@ test('sao lưu và khôi phục giữ tùy chọn cùng tiến độ', () => {
   assert.deepEqual(storage.getDeckProgress('quocphong1').completed, [0, 3]);
   assert.deepEqual(storage.getBookmarkedIndices('quocphong1'), [2]);
 });
+
+
+test('lịch sử 10 phiên được giới hạn và tách biệt theo từng bộ đề', () => {
+  for (let i = 1; i <= 12; i++) {
+    assert.equal(storage.saveSessionHistoryEntry({
+      id: 'q1-' + i,
+      deckId: 'quocphong1',
+      status: 'completed',
+      startedAt: i,
+      updatedAt: i,
+      indices: [i]
+    }), true);
+  };
+  assert.equal(storage.saveSessionHistoryEntry({
+    id: 'q2-only',
+    deckId: 'quocphong2',
+    status: 'paused',
+    startedAt: 20,
+    updatedAt: 20,
+    indices: [0]
+  }), true);
+  const history1 = storage.getSessionHistory('quocphong1');
+  assert.equal(history1.length, 10);
+  assert.equal(history1[0].id, 'q1-12');
+  assert.equal(history1.at(-1).id, 'q1-3');
+  assert.deepEqual(storage.getSessionHistory('quocphong2').map((entry) => entry.id), ['q2-only']);
+  assert.equal(storage.deleteSessionHistoryEntry('quocphong1', 'q1-12'), true);
+  assert.equal(storage.getSessionHistory('quocphong1').some((entry) => entry.id === 'q1-12'), false);
+});
+
+test('sao lưu và khôi phục giữ lịch sử phiên gần nhất', () => {
+  storage.saveSessionHistoryEntry({
+    id: 'history-backup',
+    deckId: 'quocphong2',
+    status: 'completed',
+    startedAt: 123,
+    updatedAt: 123,
+    indices: [1, 2],
+    summary: { total: 2, score: '5', wrongList: [] }
+  });
+  const backup = storage.exportBackup();
+  localStorage.clear();
+  assert.equal(storage.importBackup(backup), true);
+  assert.equal(storage.getSessionHistory('quocphong2')[0].id, 'history-backup');
+});
