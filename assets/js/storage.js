@@ -246,7 +246,8 @@ export function saveSessionHistoryEntry(entry) {
     root.sessionHistory = { quocphong1: [], quocphong2: [] };
   };
   const id = entry.deckId;
-  const list = Array.isArray(root.sessionHistory[id]) ? root.sessionHistory[id] : [];
+  const list = (Array.isArray(root.sessionHistory[id]) ? root.sessionHistory[id] : [])
+    .filter((item) => item && typeof item === 'object' && typeof item.id === 'string');
   const normalized = { ...entry, updatedAt: Number(entry.updatedAt) || Date.now() };
   const index = list.findIndex((item) => item && item.id === normalized.id);
   if (index >= 0) list[index] = normalized;
