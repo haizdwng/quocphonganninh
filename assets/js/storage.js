@@ -1,19 +1,51 @@
 const NS = 'quocphonganninh';
+const STORAGE_VERSION = 2;
+
+function emptyRoot() {
+  return {
+    version: STORAGE_VERSION,
+    settings: [],
+    activeDeck: 'quocphong1',
+    decks: {},
+    sessions: {},
+    highlights: { quocphong1: {}, quocphong2: {} }
+  };
+};
 
 function readRoot() {
   try {
     const raw = localStorage.getItem(NS);
-    if (!raw) return {};
+    if (!raw) return emptyRoot();
+
     const data = JSON.parse(raw);
-    return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+    const valid = data && typeof data === 'object' && !Array.isArray(data) &&
+      data.version === STORAGE_VERSION &&
+      Array.isArray(data.settings) &&
+      data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) &&
+      ['quocphong1', 'quocphong2'].every((id) =>
+        !Object.prototype.hasOwnProperty.call(data.decks, id) ||
+        (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))
+      ) &&
+      (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) &&
+      (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights)));
+
+    if (valid) return data;
+
+    localStorage.removeItem(NS);
+    return emptyRoot();
   } catch {
-    return {};
+    try {
+      localStorage.removeItem(NS);
+    } catch {}
+    return emptyRoot();
   };
 };
 
 function writeRoot(data) {
   try {
-    localStorage.setItem(NS, JSON.stringify(data));
+    const root = data && typeof data === 'object' && !Array.isArray(data) ? data : emptyRoot();
+    root.version = STORAGE_VERSION;
+    localStorage.setItem(NS, JSON.stringify(root));
     return true;
   } catch {
     return false;
