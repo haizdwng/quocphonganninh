@@ -2040,20 +2040,22 @@ function renderSessionHistory() {
     const dateText = date.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
     const statusText = entry.status === 'completed'
       ? 'Hoàn thành · Điểm ' + (entry.summary?.score ?? '—') + '/10 · ' + formatTime(entry.summary?.elapsedSeconds || 0)
-      : entry.status === 'paused' ? 'Đã tạm dừng' : 'Đang làm';
+      : entry.status === 'paused' ? 'Đã tạm dừng'
+        : entry.status === 'closed' ? 'Đã thoát'
+          : 'Đang làm';
     const answered = entry.snapshot?.items?.filter((answer) => answer.userAnswer != null).length || 0;
     detail.textContent = dateText + ' · ' + statusText + (entry.status !== 'completed' ? ' · ' + answered + '/' + (entry.indices?.length || 0) + ' câu đã chọn' : '');
     info.append(title, detail);
     const actions = document.createElement('div');
     actions.className = 'history-item-actions';
-    if (entry.status !== 'completed') {
+    if (entry.status === 'active' || entry.status === 'paused') {
       const resume = document.createElement('button');
       resume.type = 'button';
       resume.className = 'btn btn-primary btn-sm';
       resume.textContent = 'Tiếp tục';
       resume.addEventListener('click', () => resumeHistorySession(entry.id));
       actions.appendChild(resume);
-    } else {
+    } else if (entry.status === 'completed') {
       const view = document.createElement('button');
       view.type = 'button';
       view.className = 'btn btn-secondary btn-sm';
@@ -2141,7 +2143,7 @@ function viewHistoryResult(entry) {
   state._lastSummaryRangeStart = entry.rangeStart || 1;
   state._lastSummaryRangeEnd = entry.rangeEnd || currentQuestions().length;
   state._lastSummaryCount = entry.requestedCount || indices.length;
-  showSummary(entry.summary, entry.deckId, entry.mode || 'normal');
+  showSummary(entry.summary, entry.deckId, entry.examMode ? 'exam' : (entry.mode || 'normal'));
 };
 
 function retryHistorySession(entry) {
@@ -2424,6 +2426,11 @@ function bindEvents() {
   $('btn-discard-session')?.addEventListener('click', async () => {
     const ok = await confirmModal('Bỏ phiên đang dở?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
     if (!ok) return;
+    const saved = getSession(state.currentDeck);
+    if (saved) {
+      const closedEntry = makeHistoryEntry(saved, 'closed');
+      if (closedEntry) saveSessionHistoryEntry(closedEntry);
+    };
     clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
@@ -2613,6 +2620,10 @@ function bindEvents() {
     if (!ok) return;
     clearInterval(state.timerInterval);
     state.timerInterval = null;
+    if (s) {
+      const closedEntry = makeHistoryEntry(s, 'closed');
+      if (closedEntry) saveSessionHistoryEntry(closedEntry);
+    };
     clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
@@ -2703,6 +2714,11 @@ function bindEvents() {
     if (!ok) return;
     clearInterval(state.timerInterval);
     state.timerInterval = null;
+    const currentSession = state.session;
+    if (currentSession) {
+      const closedEntry = makeHistoryEntry(currentSession, 'closed');
+      if (closedEntry) saveSessionHistoryEntry(closedEntry);
+    };
     const cleared = clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
