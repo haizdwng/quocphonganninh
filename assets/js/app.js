@@ -2142,6 +2142,7 @@ function resumeHistorySession(entryId) {
 function viewHistoryResult(entry) {
   if (!entry?.summary || entry.status !== 'completed') return;
   state.currentDeck = entry.deckId;
+  applySettingsToForm(getSettings(state.currentDeck));
   const indices = Array.isArray(entry.indices) ? entry.indices : [];
   state._lastSummarySession = {
     deckId: entry.deckId,
