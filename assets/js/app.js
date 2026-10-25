@@ -1494,20 +1494,21 @@ function onSelectOption(displayIdx) {
 };
 
 const answerSounds = {
-  correct: null,
-  incorrect: null
+  correct: new Audio(dataUrl('assets/sounds/correct.mp3')),
+  incorrect: new Audio(dataUrl('assets/sounds/incorrect.mp3'))
 };
 
+for (const audio of Object.values(answerSounds)) {
+  audio.preload = 'auto';
+  audio.load();
+}
+
 function playAnswerSound(isCorrect) {
-  const key = isCorrect ? 'correct' : 'incorrect';
-  const path = dataUrl(`assets/sounds/${key}.mp3`);
+  const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
-    if (!answerSounds[key]) {
-      answerSounds[key] = new Audio(path);
-      answerSounds[key].preload = 'auto';
-    }
-    answerSounds[key].currentTime = 0;
-    const playback = answerSounds[key].play();
+    audio.pause();
+    audio.currentTime = 0;
+    const playback = audio.play();
     if (playback && typeof playback.catch === 'function') playback.catch(() => {});
   } catch (error) {
     console.warn('Không thể phát âm thanh đáp án:', error);
