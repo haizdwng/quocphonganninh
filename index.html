@@ -85,12 +85,6 @@
             <input type='number' id='input-time-limit' min='0' max='1440' value='0' step='1' inputmode='numeric'>
             <p class='hint'>0 là không giới hạn thời gian. Khi hết giờ, lượt làm bài sẽ tự động kết thúc.</p>
           </div>
-          <div class='field search-field' id='search-field-wrap'>
-            <label for='input-search'>Tìm câu hỏi hoặc đáp án</label>
-            <input type='search' id='input-search' placeholder='Nhập từ khóa cần tìm…' autocomplete='off' enterkeyhint='search'>
-            <p class='hint' id='search-hint' aria-live='polite'>Tìm trong vùng câu hỏi đang chọn.</p>
-            <button type='button' class='btn btn-secondary btn-block' id='btn-search-practice' disabled data-icon='search'>Ôn kết quả tìm kiếm</button>
-          </div>
           <div class='field toggles'>
             <label class='toggle'>
               <input type='checkbox' id='chk-shuffle-q' checked>
@@ -151,6 +145,45 @@
           <p class='hint' id='review-description'>Đọc trước nội dung và đáp án đúng của bộ đề.</p>
           <label for='input-review-search'>Tìm câu hỏi hoặc đáp án</label>
           <input type='search' id='input-review-search' placeholder='Nhập từ khóa cần tìm…' autocomplete='off'>
+          <p class='hint' id='review-search-hint' aria-live='polite'>Tìm trong vùng câu hỏi đang chọn.</p>
+          <button type='button' class='btn btn-secondary btn-block' id='btn-review-search-practice' disabled data-icon='search'>Ôn kết quả tìm kiếm</button>
+          <div class='review-practice-settings'>
+            <h3>Thiết lập lượt ôn kết quả tìm kiếm</h3>
+            <div class='mode-switch' role='group' aria-label='Chế độ làm bài khi ôn kết quả tìm kiếm'>
+              <button type='button' class='mode-btn is-active' data-mode='practice' id='review-btn-mode-practice'>
+                <span class='mode-icon' data-icon='book-2' aria-hidden='true'></span>
+                <span class='mode-name'>Ôn luyện</span>
+                <span class='mode-desc'>Từng câu · kiểm tra ngay</span>
+              </button>
+              <button type='button' class='mode-btn' data-mode='exam' id='review-btn-mode-exam'>
+                <span class='mode-icon' data-icon='list-check' aria-hidden='true'></span>
+                <span class='mode-name'>Thi thử</span>
+                <span class='mode-desc'>Làm hết rồi nộp</span>
+              </button>
+            </div>
+            <p class='hint' id='review-hint-mode'>Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.</p>
+            <div class='review-practice-fields'>
+              <div class='field'>
+                <label for='review-input-count'>Số câu trong lượt</label>
+                <input type='number' id='review-input-count' min='1' value='30' inputmode='numeric'>
+              </div>
+              <div class='field'>
+                <label for='review-input-time-limit'>Thời gian làm bài (phút)</label>
+                <input type='number' id='review-input-time-limit' min='0' max='1440' value='35' inputmode='numeric'>
+                <p class='hint'>0 là không giới hạn thời gian.</p>
+              </div>
+            </div>
+            <div class='field toggles'>
+              <label class='toggle'>
+                <input type='checkbox' id='review-chk-shuffle-q' checked>
+                <span>Đảo thứ tự câu hỏi</span>
+              </label>
+              <label class='toggle'>
+                <input type='checkbox' id='review-chk-shuffle-a' checked>
+                <span>Đảo thứ tự đáp án</span>
+              </label>
+            </div>
+          </div>
           <div class='review-navigation'>
             <label for='input-review-goto'>Đi đến câu số</label>
             <div class='row'>
