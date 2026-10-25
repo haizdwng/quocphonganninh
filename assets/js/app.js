@@ -702,7 +702,7 @@ function startSearchResults() {
   startSessionFromPool(pool, {
     mode: 'search',
     sequential: false,
-    forceShuffleQ: false,
+    forceShuffleQ: form.shuffleQ,
     alreadyShuffled: true,
     requestedCount: pool.length,
     examMode: state.practiceMode === 'exam'
