@@ -1916,7 +1916,8 @@ function finishSession() {
     rangeStart: Number.isInteger(s.rangeStart) ? s.rangeStart : 1,
     rangeEnd: Number.isInteger(s.rangeEnd) ? s.rangeEnd : (state.decks[s.deckId] || []).length,
     requestedCount: s.items.length,
-    timeLimit: Number.isInteger(s.timeLimit) ? s.timeLimit : 0
+    timeLimit: Number.isInteger(s.timeLimit) ? s.timeLimit : 0,
+    historyId: s.historyId
   };
   state._lastSummaryWrongIndices = wrongInSession.map((entry) => entry.originalIndex);
   state._lastSummaryRangeStart = Number.isInteger(s.rangeStart) ? s.rangeStart : null;
@@ -2152,7 +2153,8 @@ function viewHistoryResult(entry) {
     rangeStart: entry.rangeStart || 1,
     rangeEnd: entry.rangeEnd || currentQuestions().length,
     requestedCount: entry.requestedCount || indices.length,
-    timeLimit: entry.timeLimit || 0
+    timeLimit: entry.timeLimit || 0,
+    historyId: entry.id
   };
   state._lastSummaryDeck = entry.deckId;
   state._lastSummaryWrongIndices = (entry.summary.wrongList || []).map((wrong) => wrong.originalIndex);
@@ -2188,7 +2190,7 @@ function retryHistorySession(entry) {
     requestedCount: pool.length,
     examMode: !!entry.examMode,
     forceShuffleQ: entry.shuffleQ !== false,
-    historyId: String(Date.now()) + '-retry-' + Math.random().toString(36).slice(2, 9),
+    historyId: entry.id,
     alreadyShuffled: false
   });
 };
@@ -2773,6 +2775,7 @@ function bindEvents() {
       requestedCount: pool.length,
       examMode: previous.mode === 'exam',
       forceShuffleQ: true,
+      historyId: previous.historyId,
       alreadyShuffled: false
     });
   });
