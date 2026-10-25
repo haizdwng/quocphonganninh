@@ -520,6 +520,7 @@ function openQuestionBank() {
   $('input-review-search').value = '';
   $('input-review-goto').value = '';
   renderQuestionBank();
+  refreshSearchUI();
   showScreen('review');
 };
 
@@ -611,6 +612,7 @@ function refreshSetupUI() {
     btn.disabled = n > rangeTotal;
   });
 
+  syncReviewSettingsFromSetup();
   refreshResumeCard();
 };
 
@@ -643,13 +645,10 @@ function normalizeSearchText(value) {
 };
 
 function refreshSearchUI() {
-  const searchInput = $('input-search');
-  const button = $('btn-search-practice');
-  const hint = $('search-hint');
-  if (!searchInput || !button || !hint) {
-    console.warn('Thiếu phần tử giao diện tìm kiếm; bỏ qua cập nhật tìm kiếm.');
-    return;
-  }
+  const searchInput = $('input-review-search');
+  const button = $('btn-review-search-practice');
+  const hint = $('review-search-hint');
+  if (!searchInput || !button || !hint) return;
   const query = normalizeSearchText(searchInput.value.trim());
   const form = readSetupForm();
   const pool = selectedQuestions(form);
@@ -658,19 +657,34 @@ function refreshSearchUI() {
     : [];
   button.disabled = state.searchResults.length === 0;
   button.textContent = state.searchResults.length
-    ? `Ôn ${state.searchResults.length} câu tìm được`
+    ? `Ôn ${Math.min(state.searchResults.length, form.count)} / ${state.searchResults.length} câu tìm được`
     : 'Ôn kết quả tìm kiếm';
   hint.textContent = query
     ? state.searchResults.length
-      ? `Tìm thấy ${state.searchResults.length} câu trong vùng ${form.startQuestion}–${form.endQuestion}.`
+      ? `Tìm thấy ${state.searchResults.length} câu trong vùng ${form.startQuestion}–${form.endQuestion}; lượt này tối đa ${Math.min(form.count, state.searchResults.length)} câu.`
       : `Không tìm thấy câu phù hợp trong vùng ${form.startQuestion}–${form.endQuestion}.`
-    : '';
+    : `Tìm trong vùng câu hỏi ${form.startQuestion}–${form.endQuestion} đã chọn.`;
+};
+
+function syncReviewSettingsFromSetup() {
+  if (!$('review-input-count')) return;
+  $('review-input-count').value = $('input-count').value;
+  $('review-input-count').max = $('input-count').max || '1';
+  $('review-input-time-limit').value = $('input-time-limit').value;
+  $('review-chk-shuffle-q').checked = $('chk-shuffle-q').checked;
+  $('review-chk-shuffle-a').checked = $('chk-shuffle-a').checked;
+  const hint = $('review-hint-mode');
+  if (hint) {
+    hint.textContent = state.practiceMode === 'exam'
+      ? 'Thi thử: làm hết các câu tìm được rồi nộp bài một lần.'
+      : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
+  };
 };
 
 function startSearchResults() {
   const form = readSetupForm();
   refreshSearchUI();
-  const pool = state.searchResults.slice();
+  let pool = state.searchResults.slice();
   if (!pool.length) {
     toast('Không có kết quả tìm kiếm để ôn.');
     return;
@@ -681,12 +695,14 @@ function startSearchResults() {
       [pool[i], pool[j]] = [pool[j], pool[i]];
     };
   };
+  pool = pool.slice(0, form.count);
   persistSetupForm();
   startSessionFromPool(pool, {
     mode: 'search',
     sequential: false,
-    forceShuffleQ: form.shuffleQ,
-    alreadyShuffled: true
+    forceShuffleQ: false,
+    alreadyShuffled: true,
+    examMode: state.practiceMode === 'exam'
   });
 };
 
@@ -1150,6 +1166,12 @@ function setPracticeMode(mode) {
   if (hint) {
     hint.textContent = state.practiceMode === 'exam'
       ? 'Thi thử: hiện tất cả câu đã chọn, chọn đáp án rồi nộp bài một lần. Không hiện đáp án đúng trước khi nộp.'
+      : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
+  };
+  const reviewHint = $('review-hint-mode');
+  if (reviewHint) {
+    reviewHint.textContent = state.practiceMode === 'exam'
+      ? 'Thi thử: làm hết các câu tìm được rồi nộp bài một lần.'
       : 'Ôn luyện: làm từng câu, kiểm tra đáp án ngay sau mỗi câu.';
   };
   persistSetupForm();
@@ -2258,6 +2280,7 @@ function bindEvents() {
   $('input-review-search').addEventListener('input', () => {
     state.reviewSearch = $('input-review-search').value;
     renderQuestionBank();
+    refreshSearchUI();
   });
   $('btn-review-select-mode').addEventListener('click', () => {
     state.reviewSelectMode = !state.reviewSelectMode;
@@ -2340,11 +2363,28 @@ function bindEvents() {
     setPracticeMode('practice');
     startPracticeBookmarks();
   });
-  $('btn-search-practice').addEventListener('click', () => {
-    setPracticeMode('practice');
-    startSearchResults();
-  });
-  $('input-search').addEventListener('input', () => refreshSearchUI());
+  $('btn-review-search-practice').addEventListener('click', () => startSearchResults());
+
+  for (const [reviewId, setupId] of [
+    ['review-input-count', 'input-count'],
+    ['review-input-time-limit', 'input-time-limit'],
+    ['review-chk-shuffle-q', 'chk-shuffle-q'],
+    ['review-chk-shuffle-a', 'chk-shuffle-a']
+  ]) {
+    $(reviewId).addEventListener('change', () => {
+      const reviewInput = $(reviewId);
+      const setupInput = $(setupId);
+      if (reviewInput.type === 'checkbox') setupInput.checked = reviewInput.checked;
+      else setupInput.value = reviewInput.value;
+      if (setupId === 'input-time-limit') {
+        const value = Number.parseInt(setupInput.value, 10);
+        setupInput.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
+      };
+      persistSetupForm();
+      refreshSetupUI();
+      renderQuestionBank();
+    });
+  }
 
   $('btn-exam-submit')?.addEventListener('click', () => onExamSubmit());
   $('btn-exam-quit')?.addEventListener('click', async () => {
