@@ -80,6 +80,39 @@ test('tùy chọn Quốc phòng 1 và Quốc phòng 2 được lưu tách biệt
   assert.equal(storage.getSettings('quocphong2').shuffleA, false);
 });
 
+test('tùy chọn trải nghiệm được lưu riêng theo bộ đề và mặc định an toàn', () => {
+  const defaults = storage.getSettings('quocphong1');
+  assert.equal(defaults.autoCheck, false);
+  assert.equal(defaults.autoAdvance, false);
+  assert.equal(defaults.soundEnabled, true);
+  assert.equal(defaults.vibrationEnabled, true);
+
+  storage.saveSettings({
+    deck: 'quocphong1',
+    count: 30,
+    autoCheck: true,
+    autoAdvance: false,
+    soundEnabled: false,
+    vibrationEnabled: true
+  });
+  storage.saveSettings({
+    deck: 'quocphong2',
+    count: 30,
+    autoCheck: false,
+    autoAdvance: true,
+    soundEnabled: true,
+    vibrationEnabled: false
+  });
+  assert.equal(storage.getSettings('quocphong1').autoCheck, true);
+  assert.equal(storage.getSettings('quocphong1').autoAdvance, false);
+  assert.equal(storage.getSettings('quocphong1').soundEnabled, false);
+  assert.equal(storage.getSettings('quocphong1').vibrationEnabled, true);
+  assert.equal(storage.getSettings('quocphong2').autoCheck, false);
+  assert.equal(storage.getSettings('quocphong2').autoAdvance, true);
+  assert.equal(storage.getSettings('quocphong2').soundEnabled, true);
+  assert.equal(storage.getSettings('quocphong2').vibrationEnabled, false);
+});
+
 test('tiến độ, dấu trang và phiên làm bài được tách theo từng bộ đề', () => {
   assert.ok(storage.saveDeckProgress('quocphong1', {
     sequentialCursor: 2,
