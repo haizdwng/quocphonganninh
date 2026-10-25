@@ -589,28 +589,7 @@ function refreshSetupUI() {
   });
 
   syncReviewSettingsFromSetup();
-  refreshResumeCard();
   renderSessionHistory();
-};
-
-function refreshResumeCard() {
-  const card = $('resume-card');
-  if (!card) return;
-  const saved = getSession(state.currentDeck);
-  if (!saved || !Array.isArray(saved.items) || !saved.items.length) {
-    card.hidden = true;
-    return;
-  };
-  const answered = saved.items.filter((it) => it.userAnswer != null).length;
-  const isExam = !!saved.examMode || saved.mode === 'exam';
-  const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
-  card.hidden = false;
-  $('resume-title').textContent = isExam
-    ? (saved.reviewMode ? 'Có bài thi đã chấm' : 'Có bài thi thử đang dở')
-    : 'Có lượt ôn đang dở';
-  $('resume-hint').textContent = isExam
-    ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · đã chấm' : ''}`
-    : `${deckLabel} · câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
 };
 
 function normalizeSearchText(value) {
@@ -2043,13 +2022,27 @@ function renderSessionHistory() {
   const history = getSessionHistory(state.currentDeck);
   list.replaceChildren();
   card.hidden = history.length === 0;
-  for (const entry of history) {
+  history.forEach((entry, index) => {
     const item = document.createElement('article');
-    item.className = 'history-item';
+    item.className = 'history-item' + (index === 0 ? ' is-latest' : '');
+    if (index === 0) item.setAttribute('aria-label', 'Phiên gần nhất');
+
     const info = document.createElement('div');
     info.className = 'history-item-info';
+    const heading = document.createElement('div');
+    heading.className = 'history-item-heading';
     const title = document.createElement('strong');
+    title.className = 'history-item-title';
     title.textContent = (entry.examMode ? 'Thi thử' : 'Ôn luyện') + ' · ' + (entry.indices?.length || entry.requestedCount || 0) + ' câu';
+    heading.appendChild(title);
+    if (index === 0) {
+      const badge = document.createElement('span');
+      badge.className = 'history-latest-badge';
+      badge.dataset.icon = 'clock';
+      badge.textContent = 'Gần nhất';
+      heading.appendChild(badge);
+    };
+
     const detail = document.createElement('p');
     detail.className = 'hint';
     const date = new Date(Number(entry.startedAt) || Number(entry.updatedAt) || Date.now());
@@ -2061,13 +2054,15 @@ function renderSessionHistory() {
           : 'Đang làm';
     const answered = entry.snapshot?.items?.filter((answer) => answer.userAnswer != null).length || 0;
     detail.textContent = dateText + ' · ' + statusText + (entry.status !== 'completed' ? ' · ' + answered + '/' + (entry.indices?.length || 0) + ' câu đã chọn' : '');
-    info.append(title, detail);
+    info.append(heading, detail);
+
     const actions = document.createElement('div');
     actions.className = 'history-item-actions';
     if (entry.status === 'active' || entry.status === 'paused') {
       const resume = document.createElement('button');
       resume.type = 'button';
       resume.className = 'btn btn-primary btn-sm';
+      resume.dataset.icon = 'arrow-right';
       resume.textContent = 'Tiếp tục';
       resume.addEventListener('click', () => resumeHistorySession(entry.id));
       actions.appendChild(resume);
@@ -2075,6 +2070,7 @@ function renderSessionHistory() {
       const view = document.createElement('button');
       view.type = 'button';
       view.className = 'btn btn-secondary btn-sm';
+      view.dataset.icon = 'list-check';
       view.textContent = 'Xem kết quả';
       view.addEventListener('click', () => viewHistoryResult(entry));
       actions.appendChild(view);
@@ -2082,13 +2078,17 @@ function renderSessionHistory() {
     const retry = document.createElement('button');
     retry.type = 'button';
     retry.className = 'btn btn-ghost btn-sm';
+    retry.dataset.icon = 'rotate-clockwise';
     retry.textContent = 'Làm lại';
     retry.addEventListener('click', () => retryHistorySession(entry));
     actions.appendChild(retry);
+
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'btn btn-ghost btn-sm';
+    remove.dataset.icon = 'trash';
     remove.textContent = 'Xóa';
+    remove.setAttribute('aria-label', 'Xóa phiên khỏi lịch sử');
     remove.addEventListener('click', async () => {
       const ok = await confirmModal('Xóa phiên khỏi lịch sử?', 'Thao tác này chỉ xóa bản ghi lịch sử, không xóa tiến độ bộ đề.');
       if (!ok) return;
@@ -2101,7 +2101,7 @@ function renderSessionHistory() {
     actions.appendChild(remove);
     item.append(info, actions);
     list.appendChild(item);
-  };
+  });
 };
 
 function resumeHistorySession(entryId) {
@@ -2453,8 +2453,7 @@ function bindEvents() {
     clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
-    refreshResumeCard();
-    toast('Đã bỏ phiên cũ.');
+      toast('Đã bỏ phiên cũ.');
   });
 
   document.querySelectorAll('.filter-chip').forEach((chip) => {
