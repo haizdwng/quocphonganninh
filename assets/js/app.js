@@ -1967,6 +1967,7 @@ function showSummary(summary, deckId, mode) {
   const progress = getDeckProgress(deckId);
   const totalQ = (state.decks[deckId] || []).length;
   const btnContinue = $('btn-sum-continue');
+  const form = readSetupForm();
   const rangeEnd = form.endQuestion;
   const nextIndex = Math.max(progress.sequentialCursor, form.startQuestion - 1);
   const canSeq = summary.sequential && nextIndex < rangeEnd;
@@ -2115,7 +2116,7 @@ function initUI() {
 function applyTheme() {
   document.documentElement.dataset.theme = 'dark';
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = '#07111f';
+  if (themeColor) themeColor.content = '#111113';
 };
 
 function initTheme() {
