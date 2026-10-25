@@ -1492,6 +1492,26 @@ input[type='search']:focus {
   .option.answer-shake { animation: none !important; }
 }
 
+.session-history-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.session-history-details > summary::-webkit-details-marker { display: none; }
+.session-history-details > summary::after {
+  content: '+';
+  flex: 0 0 auto;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.session-history-details[open] > summary::after { content: '−'; }
+.session-history-details > summary .hint { margin: 0; font-size: 0.8rem; font-weight: 400; }
+.session-history-details > p.hint { margin: 12px 0 0; }
 .session-history-list { display: grid; gap: 10px; margin-top: 14px; }
 .history-item {
   display: grid;
