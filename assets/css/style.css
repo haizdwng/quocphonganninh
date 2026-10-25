@@ -2155,6 +2155,7 @@ body[data-screen="exam"] #app {
 }
 
 #screen-setup > .resume-card {
+  order: 10.5;
   grid-column: 1 / -1;
 }
 
