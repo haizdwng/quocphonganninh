@@ -1563,7 +1563,7 @@ function onCheck() {
   const isCorrect = isAnswerCorrect(item, q);
   const preferences = getSettings(s.deckId);
   const vibrate = (pattern) => {
-    if (preferences.vibrationEnabled !== false && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof navigator.vibrate === 'function') {
+    if (preferences.vibrationEnabled !== false && typeof navigator.vibrate === 'function') {
       try { navigator.vibrate(pattern); } catch {}
     };
   };
