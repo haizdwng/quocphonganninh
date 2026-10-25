@@ -702,6 +702,7 @@ function startSearchResults() {
     sequential: false,
     forceShuffleQ: false,
     alreadyShuffled: true,
+    requestedCount: pool.length,
     examMode: state.practiceMode === 'exam'
   });
 };
@@ -1176,6 +1177,7 @@ function setPracticeMode(mode) {
   };
   persistSetupForm();
   if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
+  else if (state.mode === 'review' && state.decks[state.currentDeck]) renderQuestionBank();
 }
 
 function updateExamProgressHeader() {
@@ -2382,7 +2384,6 @@ function bindEvents() {
       };
       persistSetupForm();
       refreshSetupUI();
-      renderQuestionBank();
     });
   }
 
