@@ -144,7 +144,15 @@ async function loadAll() {
     state.loading = false;
     state.error = e.message || String(e);
     showScreen('error');
-    $('error-message').textContent = state.error + '\n\nNếu bạn đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.';
+    const errorMessage = $('error-message');
+    const details = state.error + '\n\nNếu bạn đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.';
+    if (errorMessage) {
+      errorMessage.textContent = details;
+    } else {
+      console.error('Không tìm thấy #error-message; lỗi khởi tạo ban đầu:', e);
+      window.alert(details);
+    }
+    console.error('Lỗi khi khởi tạo ứng dụng:', e);
   };
 };
 
@@ -1465,6 +1473,27 @@ function onSelectOption(displayIdx) {
   renderQuestion();
 };
 
+const answerSounds = {
+  correct: null,
+  incorrect: null
+};
+
+function playAnswerSound(isCorrect) {
+  const key = isCorrect ? 'correct' : 'incorrect';
+  const path = dataUrl(`assets/sounds/${key}.mp3`);
+  try {
+    if (!answerSounds[key]) {
+      answerSounds[key] = new Audio(path);
+      answerSounds[key].preload = 'auto';
+    }
+    answerSounds[key].currentTime = 0;
+    const playback = answerSounds[key].play();
+    if (playback && typeof playback.catch === 'function') playback.catch(() => {});
+  } catch (error) {
+    console.warn('Không thể phát âm thanh đáp án:', error);
+  }
+}
+
 function onCheck() {
   if (enforceSessionDeadline()) return;
   const s = state.session;
@@ -1476,6 +1505,7 @@ function onCheck() {
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
   if (isAnswerCorrect(item, q)) {
+    playAnswerSound(true);
     const wasAlreadyCorrect = item.status === 'correct';
     const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
     item.status = 'correct';
@@ -1496,6 +1526,7 @@ function onCheck() {
     if (s.viewIndex >= s.maxReached) s.maxReached = s.viewIndex;
     s.reviewingPast = false;
   } else {
+    playAnswerSound(false);
     item.status = 'wrong';
     const wrongOriginalIndex = item.optionOrder[item.userAnswer];
     if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
