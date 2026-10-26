@@ -159,9 +159,16 @@ export function getBankSettings() {
 
 export function saveBankSettings(settings) {
   const root = readRoot();
-  const deck = normalizeDeckId(settings?.deck || root.activeDeck);
-  root.bankSettings = { deck };
-  return saveSettings({ ...getSettings(deck), ...settings, deck });
+  const activeDeck = normalizeDeckId(root.activeDeck);
+  const bankDeck = normalizeDeckId(settings?.deck || activeDeck);
+  root.bankSettings = { deck: bankDeck };
+  if (!saveSettings({ ...getSettings(bankDeck), ...settings, deck: bankDeck })) {
+    return false;
+  }
+  const updatedRoot = readRoot();
+  updatedRoot.activeDeck = activeDeck;
+  updatedRoot.bankSettings = { deck: bankDeck };
+  return writeRoot(updatedRoot);
 }
 
 export function getDeckProgress(deckId) {
