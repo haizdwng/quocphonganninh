@@ -147,32 +147,33 @@ export function saveSettings(settings) {
 
 export function getBankSettings() {
   const root = readRoot();
-  const bankDeck =
+  const rawSettings =
     root.bankSettings &&
     typeof root.bankSettings === "object" &&
     !Array.isArray(root.bankSettings)
-      ? root.bankSettings.deck
-      : root.activeDeck;
+      ? root.bankSettings
+      : {};
+  const deck = normalizeDeckId(rawSettings.deck || root.activeDeck);
+  const settings = normalizeSettingsEntry(rawSettings, deck);
+  const count = Number(rawSettings.count);
   return {
-    ...getSettings(bankDeck),
-    deck: normalizeDeckId(bankDeck || root.activeDeck || "quocphong1"),
+    ...settings,
+    count: Number.isInteger(count) && count >= 0 ? count : 0,
+    deck,
   };
 }
 
 export function saveBankSettings(settings) {
   const root = readRoot();
-  const activeDeck = normalizeDeckId(root.activeDeck);
-  const bankDeck = normalizeDeckId(settings?.deck || activeDeck);
-  root.bankSettings = { deck: bankDeck };
-  if (
-    !saveSettings({ ...getSettings(bankDeck), ...settings, deck: bankDeck })
-  ) {
-    return false;
-  }
-  const updatedRoot = readRoot();
-  updatedRoot.activeDeck = activeDeck;
-  updatedRoot.bankSettings = { deck: bankDeck };
-  return writeRoot(updatedRoot);
+  const deck = normalizeDeckId(settings?.deck || root.bankSettings?.deck || root.activeDeck);
+  const normalizedSettings = normalizeSettingsEntry(settings, deck);
+  const count = Number(settings?.count);
+  root.bankSettings = {
+    ...normalizedSettings,
+    count: Number.isInteger(count) && count >= 0 ? count : 0,
+    deck,
+  };
+  return writeRoot(root);
 }
 
 export function getDeckProgress(deckId) {
@@ -623,6 +624,7 @@ export function exportBackup() {
         list.find((entry) => entry.deck === root.activeDeck) ||
         list[0] ||
         null,
+      bankSettings: root.bankSettings || null,
       bankDeck: root.bankSettings?.deck || root.activeDeck || "quocphong1",
       activeDeck: root.activeDeck || "quocphong1",
       decks: root.decks || {},
@@ -686,9 +688,20 @@ export function importBackup(raw) {
     })),
     sharedSettings: importedSharedSettings,
     activeDeck,
-    bankSettings: {
-      deck: normalizeDeckId(backup.bankDeck || activeDeck),
-    },
+    bankSettings: (() => {
+      const rawBankSettings =
+        backup.bankSettings && typeof backup.bankSettings === "object"
+          ? backup.bankSettings
+          : { deck: backup.bankDeck || activeDeck };
+      const bankDeck = normalizeDeckId(rawBankSettings.deck || backup.bankDeck || activeDeck);
+      const normalizedBankSettings = normalizeSettingsEntry(rawBankSettings, bankDeck);
+      const bankCount = Number(rawBankSettings.count);
+      return {
+        ...normalizedBankSettings,
+        count: Number.isInteger(bankCount) && bankCount >= 0 ? bankCount : 0,
+        deck: bankDeck,
+      };
+    })(),
     decks: {},
     sessions: {},
     highlights: { quocphong1: {}, quocphong2: {} },
