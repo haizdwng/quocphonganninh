@@ -30,7 +30,6 @@ jobs:
             "index.html" \
             "assets/css/**/*.css" \
             "assets/js/**/*.js" \
-            "assets/icons/**/*.svg" \
             "data/**/*.json" \
             "manifest.webmanifest" \
             "sw.js" \
