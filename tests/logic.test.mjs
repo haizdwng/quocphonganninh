@@ -158,6 +158,7 @@ test('question bank settings use the same shared settings', () => {
   assert.equal(storage.getSettings('quocphong1').count, 18);
   assert.equal(storage.getSettings('quocphong2').timeLimit, 0);
   assert.equal(storage.getBankSettings().deck, 'quocphong2');
+  assert.equal(storage.getSettings().deck, 'quocphong1');
 });
 
 test('tiến độ, dấu trang và phiên làm bài được tách theo từng bộ đề', () => {
