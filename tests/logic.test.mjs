@@ -82,7 +82,7 @@ test('luyện câu sai giữ thứ tự gốc khi không bật đảo câu', () 
   );
 });
 
-test('tùy chọn Quốc phòng 1 và Quốc phòng 2 được lưu tách biệt, giữ timeLimit = 0', () => {
+test('quiz settings are shared between both decks', () => {
   assert.equal(
     storage.saveSettings({
       deck: 'quocphong1',
@@ -93,6 +93,10 @@ test('tùy chọn Quốc phòng 1 và Quốc phòng 2 được lưu tách biệt
     }),
     true
   );
+  assert.equal(storage.getSettings('quocphong2').count, 25);
+  assert.equal(storage.getSettings('quocphong2').timeLimit, 0);
+  assert.equal(storage.getSettings('quocphong2').shuffleQ, false);
+
   assert.equal(
     storage.saveSettings({
       deck: 'quocphong2',
@@ -103,15 +107,12 @@ test('tùy chọn Quốc phòng 1 và Quốc phòng 2 được lưu tách biệt
     }),
     true
   );
-  assert.equal(storage.getSettings('quocphong1').count, 25);
-  assert.equal(storage.getSettings('quocphong1').timeLimit, 0);
-  assert.equal(storage.getSettings('quocphong1').shuffleQ, false);
-  assert.equal(storage.getSettings('quocphong2').count, 40);
-  assert.equal(storage.getSettings('quocphong2').timeLimit, 35);
-  assert.equal(storage.getSettings('quocphong2').shuffleA, false);
+  assert.equal(storage.getSettings('quocphong1').count, 40);
+  assert.equal(storage.getSettings('quocphong1').timeLimit, 35);
+  assert.equal(storage.getSettings('quocphong1').shuffleA, false);
 });
 
-test('tùy chọn trải nghiệm được lưu riêng theo bộ đề và mặc định an toàn', () => {
+test('experience settings are shared between both decks', () => {
   const defaults = storage.getSettings('quocphong1');
   assert.equal(defaults.autoCheck, false);
   assert.equal(defaults.autoAdvance, false);
@@ -120,28 +121,43 @@ test('tùy chọn trải nghiệm được lưu riêng theo bộ đề và mặc
 
   storage.saveSettings({
     deck: 'quocphong1',
-    count: 30,
     autoCheck: true,
     autoAdvance: false,
     soundEnabled: false,
     vibrationEnabled: true
   });
+  assert.equal(storage.getSettings('quocphong2').autoCheck, true);
+  assert.equal(storage.getSettings('quocphong2').autoAdvance, false);
+  assert.equal(storage.getSettings('quocphong2').soundEnabled, false);
+  assert.equal(storage.getSettings('quocphong2').vibrationEnabled, true);
+});
+
+test('question bank settings use the same shared settings', () => {
   storage.saveSettings({
-    deck: 'quocphong2',
-    count: 30,
-    autoCheck: false,
-    autoAdvance: true,
-    soundEnabled: true,
-    vibrationEnabled: false
+    deck: 'quocphong1',
+    count: 24,
+    timeLimit: 12,
+    practiceMode: 'exam',
+    shuffleQ: false,
+    autoCheck: true
   });
-  assert.equal(storage.getSettings('quocphong1').autoCheck, true);
-  assert.equal(storage.getSettings('quocphong1').autoAdvance, false);
-  assert.equal(storage.getSettings('quocphong1').soundEnabled, false);
-  assert.equal(storage.getSettings('quocphong1').vibrationEnabled, true);
-  assert.equal(storage.getSettings('quocphong2').autoCheck, false);
-  assert.equal(storage.getSettings('quocphong2').autoAdvance, true);
-  assert.equal(storage.getSettings('quocphong2').soundEnabled, true);
-  assert.equal(storage.getSettings('quocphong2').vibrationEnabled, false);
+  const bankSettings = storage.getBankSettings();
+  assert.equal(bankSettings.count, 24);
+  assert.equal(bankSettings.timeLimit, 12);
+  assert.equal(bankSettings.practiceMode, 'exam');
+  assert.equal(bankSettings.shuffleQ, false);
+  assert.equal(bankSettings.autoCheck, true);
+
+  storage.saveBankSettings({
+    deck: 'quocphong2',
+    count: 18,
+    timeLimit: 0,
+    practiceMode: 'practice',
+    shuffleQ: true
+  });
+  assert.equal(storage.getSettings('quocphong1').count, 18);
+  assert.equal(storage.getSettings('quocphong2').timeLimit, 0);
+  assert.equal(storage.getBankSettings().deck, 'quocphong2');
 });
 
 test('tiến độ, dấu trang và phiên làm bài được tách theo từng bộ đề', () => {
