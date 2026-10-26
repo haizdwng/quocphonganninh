@@ -413,12 +413,9 @@ function renderQuestionBank() {
     : inRange);
   const selectedCount = [...state.reviewSelectedIndices].filter((index) => index >= form.startQuestion - 1 && index < form.endQuestion).length;
   $('btn-review-select-mode').textContent = state.reviewSelectMode ? 'Thoát chọn câu' : 'Tự chọn câu';
-  $('review-selection-tools').hidden = !state.reviewSelectMode;
+  $('btn-review-start-selected').hidden = !state.reviewSelectMode;
   $('btn-review-start-selected').textContent = `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${selectedCount} câu đã chọn`;
   $('btn-review-start-selected').disabled = selectedCount === 0;
-  $('review-selection-count').textContent = state.reviewSelectMode
-    ? `Đã chọn ${selectedCount} câu · Phạm vi câu gốc ${form.startQuestion}–${form.endQuestion}.`
-    : '';
   const list = $('review-list');
   const fragment = document.createDocumentFragment();
   $('review-title').textContent = DECKS[state.currentDeck].label;
@@ -444,11 +441,12 @@ function renderQuestionBank() {
         const count = [...state.reviewSelectedIndices].filter((index) =>
           index >= currentForm.startQuestion - 1 && index < currentForm.endQuestion
         ).length;
-        $('review-selection-count').textContent = `Đã chọn ${count} câu · Phạm vi câu gốc ${currentForm.startQuestion}–${currentForm.endQuestion}.`;
         $('btn-review-start-selected').textContent = `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${count} câu đã chọn`;
         $('btn-review-start-selected').disabled = count === 0;
       });
-      selectLabel.append(checkbox, document.createTextNode('Chọn câu này'));
+      const span = document.createElement('span');
+      span.textContent = 'Chọn câu này';
+      selectLabel.append(checkbox, span);
       card.appendChild(selectLabel);
     };
     const prompt = document.createElement('p');
@@ -548,18 +546,18 @@ function refreshSetupUI() {
   const btnWrong = $('btn-practice-wrong');
   const rangeWrongCount = getRangeWrongIndices(state.currentDeck, start, end).length;
   btnWrong.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
-  btnWrong.textContent = `Luyện câu sai trong vùng (${rangeWrongCount})`;
+  btnWrong.textContent = `Ôn ${rangeWrongCount} câu sai trong vùng`;
 
   const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < total).length;
   const btnAllWrong = $('btn-practice-all-wrong');
   btnAllWrong.disabled = state.practiceMode === 'exam' || allWrongCount === 0;
-  btnAllWrong.textContent = `Luyện toàn bộ câu sai (${allWrongCount})`;
+  btnAllWrong.textContent = `Ôn ${allWrongCount} câu sai của bộ đề`;
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
   const rangeBookmarkCount = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex)).length;
   const btnBookmarks = $('btn-practice-bookmarks');
   btnBookmarks.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
-  btnBookmarks.textContent = `Ôn câu đã đánh dấu (${rangeBookmarkCount})`;
+  btnBookmarks.textContent = `Ôn ${rangeBookmarkCount} câu đã đánh dấu`;
 
   const rangeQuestions = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
   refreshSearchUI();
@@ -576,7 +574,7 @@ function refreshSetupUI() {
   if (canContinue) {
     const left = end - nextIndex;
     const n = Math.min(Number(input.value) || 20, left);
-    btnContinue.textContent = `Tiếp tục tuần tự (${n} câu từ vị trí ${nextIndex + 1})`;
+    btnContinue.textContent = `Tiếp tục tuần tự ${n} câu từ câu ${nextIndex + 1}`;
   };
 
   document.querySelectorAll('.preset-btn').forEach((btn) => {
@@ -598,8 +596,8 @@ function refreshResumeCard() {
   const isExam = !!saved.examMode || saved.mode === 'exam';
   const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
   card.hidden = false;
-  $('resume-title').textContent = isExam ? (saved.reviewMode ? 'Có bài thi đã chấm' : 'Có bài thi thử đang dở') : 'Có lượt ôn đang dở';
-  $('resume-hint').textContent = isExam ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · đã chấm' : ''}` : `${deckLabel} · câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
+  $('resume-title').textContent = isExam ? (saved.reviewMode ? 'Có lượt thi đã chấm' : 'Có lượt thi thử đang dở') : 'Có lượt ôn đang dở';
+  $('resume-hint').textContent = isExam ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · Đã chấm' : ''}` : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
 };
 function normalizeSearchText(value) {
   return String(value || '')
@@ -671,7 +669,7 @@ function startPracticeBookmarks() {
     return;
   };
   const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
-  if (practiceSaveFailed) toast('Không thể lưu thống kê luyện lại vào trình duyệt.');
+  if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
     mode: 'practice-bookmarks',
     sequential: false,
@@ -945,7 +943,7 @@ function startPracticeWrong(options = {}) {
       : getRangeWrongIndices(state.currentDeck, form.startQuestion, form.endQuestion);
   const wrongs = [...new Set(sourceIndices)].filter((index) => rangeIndices.has(index));
   if (!wrongs.length) {
-    toast(allDeck ? 'Bộ đề này chưa có câu sai để luyện.' : 'Trong vùng câu hỏi đã chọn không có câu sai để luyện.');
+    toast(allDeck ? 'Bộ đề này chưa có câu sai để ôn.' : 'Trong vùng câu hỏi đã chọn không có câu sai để ôn.');
     return;
   };
   const pool = pickWrong(qs, wrongs, allDeck ? wrongs.length : form.count, form.shuffleQ);
@@ -954,7 +952,7 @@ function startPracticeWrong(options = {}) {
     return;
   };
   const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
-  if (practiceSaveFailed) toast('Không thể lưu thống kê luyện lại vào trình duyệt.');
+  if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
     mode: 'practice-wrong',
     sequential: false,
@@ -995,9 +993,7 @@ function renderQuestion() {
 
   const viewingHistory = s.viewIndex < s.maxReached;
 
-  $('progress-label').textContent = s.mode === 'practice-wrong'
-    ? `Câu ${s.viewIndex + 1} / ${s.items.length} · Còn ${s.items.filter((entry) => entry.status !== 'correct').length} câu cần đúng`
-    : `Câu ${s.viewIndex + 1} / ${s.items.length}`;
+  $('progress-label').textContent = `Câu ${s.viewIndex + 1} / ${s.items.length}`;
   const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
   $('progress-score').textContent = `Điểm ${formatScore(s.firstTryCorrect || 0, progressTotal)} / 10`;
   updateTimerDisplay();
@@ -1007,11 +1003,11 @@ function renderQuestion() {
 
   $('q-badge').textContent =
     s.mode === 'practice-wrong'
-      ? `Luyện câu sai · Gốc #${q.originalIndex + 1}`
+      ? `Ôn câu sai · Gốc #${q.originalIndex + 1}`
       : s.mode === 'practice-bookmarks'
-        ? `Câu đã đánh dấu · Gốc #${q.originalIndex + 1}`
+        ? `Ôn câu đã đánh dấu · Gốc #${q.originalIndex + 1}`
         : s.mode === 'search'
-          ? `Kết quả tìm kiếm · Gốc #${q.originalIndex + 1}`
+          ? `Ôn kết quả tìm kiếm · Gốc #${q.originalIndex + 1}`
           : `Câu hỏi · Gốc #${q.originalIndex + 1}`;
   const bookmarkButton = $('btn-bookmark');
   const isBookmarked = getBookmarkedIndices(s.deckId).includes(q.originalIndex);
@@ -1137,7 +1133,7 @@ function updateExamProgressHeader() {
   const unanswered = s.items.length - answered;
   $('exam-progress-label').textContent = s.reviewMode
     ? `Kết quả · ${s.firstTryCorrect || 0}/${s.items.length} đúng`
-    : `Đã chọn ${answered} / ${s.items.length}${unanswered ? ` · còn ${unanswered}` : ''}`;
+    : `Đã chọn ${answered} / ${s.items.length}`;
   const pct = s.items.length ? Math.round((answered / s.items.length) * 100) : 0;
   const fill = $('exam-progress-fill');
   if (fill) {
@@ -1163,7 +1159,7 @@ function updateExamProgressHeader() {
       submitBtn.dataset.icon = 'list-check';
       submitBtn.disabled = false;
     } else {
-      submitBtn.textContent = `Nộp bài (${answered}/${s.items.length})`;
+      submitBtn.textContent = 'Nộp bài';
       submitBtn.dataset.icon = 'check';
       submitBtn.disabled = !!state.examSubmitting;
     };
@@ -1444,7 +1440,7 @@ function enforceSessionDeadline() {
     stopSessionTimer(true);
     persistSession();
     renderExam();
-    toast('Hết giờ — đã tự động nộp bài.');
+    toast('Hết giời.');
     return true;
   };
   finishSession();
@@ -1603,7 +1599,7 @@ function onNext() {
       s.reviewingPast = false;
       persistSession();
       renderQuestion();
-      toast(`Còn ${s.items.length} câu chưa trả lời đúng. Tiếp tục luyện các câu này.`, 3500);
+      toast(`Còn ${s.items.length} câu chưa trả lời đúng. Tiếp tục ôn các câu này.`, 3500);
       return;
     };
     finishSession();
@@ -1877,7 +1873,7 @@ function showSummary(summary, deckId, mode) {
   showScreen('summary');
   $('summary-title').textContent =
     mode === 'practice-wrong'
-      ? 'Kết thúc luyện câu sai'
+      ? 'Kết thúc ôn câu sai'
       : mode === 'practice-bookmarks'
         ? 'Hoàn thành ôn câu đã đánh dấu'
         : mode === 'search'
@@ -1923,12 +1919,12 @@ function showSummary(summary, deckId, mode) {
   const progressAfterSession = getDeckProgress(deckId);
   const completedAfterSession = new Set(progressAfterSession.completed).size;
   $('summary-note').textContent = summary.timeExpired
-    ? 'Đã hết giờ. Bài làm được tự động kết thúc; câu chưa trả lời đúng không được tính điểm.'
+    ? 'Đã hết giờ. Bài làm được tự động kết thúc.'
     : completedAfterSession >= totalQuestions
       ? `Bạn đã hoàn thành toàn bộ bộ đề ${DECKS[deckId].label}.`
       : summary.wrongQuestions === 0
         ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.'
-        : 'Bạn có thể luyện lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
+        : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
 
   const listCard = $('wrong-list-card');
   const list = $('wrong-list');
@@ -1956,7 +1952,7 @@ function showSummary(summary, deckId, mode) {
   const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.originalIndex))];
   state._lastSummaryWrongIndices = sessionWrong;
   btnPractice.hidden = sessionWrong.length === 0;
-  btnPractice.textContent = `Luyện lại câu sai trong lượt này (${sessionWrong.length})`;
+  btnPractice.textContent = `Ôn lại ${sessionWrong.length} câu sai trong lượt này`;
 
   const progress = getDeckProgress(deckId);
   const btnContinue = $('btn-sum-continue');
