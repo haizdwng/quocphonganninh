@@ -183,3 +183,8 @@ export function isAnswerCorrect(item, question) {
 export function displayedCorrectIndex(item, question) {
   return item.optionOrder.indexOf(question.correct);
 }
+
+export function getEndQuestionForDeckSwitch(previousEnd, previousTotal, nextTotal) {
+  if (previousEnd >= previousTotal) return nextTotal;
+  return Math.min(Math.max(1, previousEnd), nextTotal);
+}
