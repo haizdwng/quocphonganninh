@@ -165,7 +165,9 @@ export function getBankSettings() {
 
 export function saveBankSettings(settings) {
   const root = readRoot();
-  const deck = normalizeDeckId(settings?.deck || root.bankSettings?.deck || root.activeDeck);
+  const deck = normalizeDeckId(
+    settings?.deck || root.bankSettings?.deck || root.activeDeck,
+  );
   const normalizedSettings = normalizeSettingsEntry(settings, deck);
   const count = Number(settings?.count);
   root.bankSettings = {
@@ -693,8 +695,13 @@ export function importBackup(raw) {
         backup.bankSettings && typeof backup.bankSettings === "object"
           ? backup.bankSettings
           : { deck: backup.bankDeck || activeDeck };
-      const bankDeck = normalizeDeckId(rawBankSettings.deck || backup.bankDeck || activeDeck);
-      const normalizedBankSettings = normalizeSettingsEntry(rawBankSettings, bankDeck);
+      const bankDeck = normalizeDeckId(
+        rawBankSettings.deck || backup.bankDeck || activeDeck,
+      );
+      const normalizedBankSettings = normalizeSettingsEntry(
+        rawBankSettings,
+        bankDeck,
+      );
       const bankCount = Number(rawBankSettings.count);
       return {
         ...normalizedBankSettings,
