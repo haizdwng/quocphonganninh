@@ -877,6 +877,7 @@ function renderQuestionBank() {
     );
   }
   const selectedCount = state.reviewSelectedIndices.size;
+  syncBankCountInput();
   const startSelectedButton = $("btn-review-start-selected");
   if (startSelectedButton) {
     startSelectedButton.textContent = `${state.bankPracticeMode === "exam" ? "Thi" : "Ôn"} ${selectedCount} câu đã chọn`;
@@ -1107,7 +1108,6 @@ function syncBankCountInput() {
 }
 
 function readBankForm() {
-  const total = Math.max(1, bankQuestions().length);
   const selectedCount = state.reviewSelectedIndices.size;
   let count = Number.parseInt($("review-input-count")?.value, 10);
   if (selectedCount === 0) count = 0;
@@ -1137,7 +1137,6 @@ function readBankForm() {
 function applyBankSettingsToForm(settings) {
   if (!settings || !$("review-input-count")) return;
   const selectedCount = state.reviewSelectedIndices.size;
-  const total = bankQuestions().length || settings.endQuestion || 1;
   const savedCount = Number(settings.count);
   $("review-input-count").value = String(
     selectedCount === 0
@@ -3497,6 +3496,7 @@ function bindEvents() {
     const element = $(reviewId);
     if (!element) continue;
     const persist = () => {
+      if (reviewId === "review-input-count") syncBankCountInput();
       if (reviewId === "review-input-time-limit") {
         const value = Number.parseInt(element.value, 10);
         element.value = String(
