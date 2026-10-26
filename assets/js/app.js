@@ -60,6 +60,7 @@ const state = {
   currentDeck: "quocphong1",
   bankDeck: "quocphong1",
   bankPracticeMode: "practice",
+  setupDeckBeforeBank: "quocphong1",
   mode: "setup",
   practiceMode: "practice",
   session: null,
@@ -631,6 +632,7 @@ function createReviewBankCard() {
     if (checkbox.checked) state.reviewSelectedIndices.add(qIndex);
     else state.reviewSelectedIndices.delete(qIndex);
     const count = state.reviewSelectedIndices.size;
+    syncBankCountInput();
     $("btn-review-start-selected").textContent =
       `${state.bankPracticeMode === "exam" ? "Thi" : "Ôn"} ${count} câu đã chọn`;
     $("btn-review-start-selected").disabled = count === 0;
@@ -1092,17 +1094,29 @@ function refreshResumeCard() {
     : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
 }
 
+function syncBankCountInput() {
+  const input = $("review-input-count");
+  if (!input) return;
+  const selectedCount = state.reviewSelectedIndices.size;
+  const value = Number.parseInt(input.value, 10);
+  input.min = selectedCount === 0 ? "0" : "1";
+  input.max = String(selectedCount);
+  if (selectedCount === 0) input.value = "0";
+  else if (!Number.isInteger(value) || value < 1) input.value = "1";
+  else if (value > selectedCount) input.value = String(selectedCount);
+}
+
 function readBankForm() {
   const total = Math.max(1, bankQuestions().length);
-  const sharedSettings = getSettings(state.bankDeck);
+  const selectedCount = state.reviewSelectedIndices.size;
   let count = Number.parseInt($("review-input-count")?.value, 10);
-  if (!Number.isFinite(count) || count < 1) count = 1;
-  if (count > total) count = total;
+  if (selectedCount === 0) count = 0;
+  else if (!Number.isInteger(count) || count < 1) count = 1;
+  if (count > selectedCount) count = selectedCount;
   let timeLimit = Number.parseInt($("review-input-time-limit")?.value, 10);
   if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
   timeLimit = Math.min(1440, timeLimit);
   return {
-    ...sharedSettings,
     deck: state.bankDeck === "quocphong2" ? "quocphong2" : "quocphong1",
     count,
     timeLimit,
@@ -1122,12 +1136,19 @@ function readBankForm() {
 
 function applyBankSettingsToForm(settings) {
   if (!settings || !$("review-input-count")) return;
-  const total = Math.max(
-    1,
-    bankQuestions().length || settings.endQuestion || 1,
+  const selectedCount = state.reviewSelectedIndices.size;
+  const total = bankQuestions().length || settings.endQuestion || 1;
+  const savedCount = Number(settings.count);
+  $("review-input-count").value = String(
+    selectedCount === 0
+      ? 0
+      : Math.min(
+          selectedCount,
+          Number.isInteger(savedCount) && savedCount >= 1 ? savedCount : 1,
+        ),
   );
-  $("review-input-count").value = String(settings.count || 30);
-  $("review-input-count").max = String(total);
+  $("review-input-count").min = selectedCount === 0 ? "0" : "1";
+  $("review-input-count").max = String(selectedCount);
   $("review-input-time-limit").value = String(
     Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0
       ? Math.min(1440, settings.timeLimit)
@@ -1143,13 +1164,6 @@ function applyBankSettingsToForm(settings) {
   }
   state.bankPracticeMode =
     settings.practiceMode === "exam" ? "exam" : "practice";
-  state.practiceMode = state.bankPracticeMode;
-  document.querySelectorAll("#screen-setup .mode-btn").forEach((button) => {
-    button.classList.toggle(
-      "is-active",
-      button.dataset.mode === state.practiceMode,
-    );
-  });
   document.querySelectorAll("#screen-review .mode-btn").forEach((btn) => {
     btn.classList.toggle(
       "is-active",
@@ -1173,13 +1187,6 @@ function persistBankForm() {
 
 function setBankPracticeMode(mode) {
   state.bankPracticeMode = mode === "exam" ? "exam" : "practice";
-  state.practiceMode = state.bankPracticeMode;
-  document.querySelectorAll("#screen-setup .mode-btn").forEach((button) => {
-    button.classList.toggle(
-      "is-active",
-      button.dataset.mode === state.practiceMode,
-    );
-  });
   document.querySelectorAll("#screen-review .mode-btn").forEach((btn) => {
     btn.classList.toggle(
       "is-active",
@@ -1200,8 +1207,7 @@ function setBankDeck(deckId) {
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
   const settings = getBankSettings();
-  // giữ practiceMode/count đã lưu toàn cục ngân hàng nhưng gắn deck mới
-  applyBankSettingsToForm({ ...settings, deck: id });
+  applyBankSettingsToForm({ ...settings, deck: id, count: 0 });
   persistBankForm();
   renderQuestionBank();
   if ($("bank-count-quocphong1")) {
@@ -3270,9 +3276,14 @@ function bindEvents() {
   document.querySelectorAll(".deck-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (state.currentDeck === btn.dataset.deck) return;
+      const previousTotal = currentQuestions().length;
+      const previousEnd = Number.parseInt($("input-range-end").value, 10);
+      const endWasMaximum = previousEnd >= previousTotal;
       persistSetupForm();
       state.currentDeck = btn.dataset.deck;
-      applySettingsToForm(getSettings(state.currentDeck));
+      const settings = getSettings(state.currentDeck);
+      if (endWasMaximum) settings.endQuestion = currentQuestions().length;
+      applySettingsToForm(settings);
       refreshSetupUI();
       persistSetupForm();
     });
@@ -3388,12 +3399,6 @@ function bindEvents() {
   }
 
   $("btn-review-back").addEventListener("click", () => {
-    // Sync the deck selected in the question bank back to the setup screen
-    // so the chosen bộ đề remains selected after returning.
-    if (state.bankDeck && state.bankDeck !== state.currentDeck) {
-      state.currentDeck = state.bankDeck;
-      persistSetupForm();
-    }
     applySettingsToForm(getSettings(state.currentDeck));
     showScreen("setup");
     refreshSetupUI();
@@ -3419,7 +3424,8 @@ function bindEvents() {
     pool = pool.slice(0, take);
     const selectedIndices = pool.map((question) => question.originalIndex);
     state.reviewSelectedIndices.clear();
-    // Use bank deck and options; do not touch setup settings
+    // Keep setup selection independent from the question bank.
+    state.setupDeckBeforeBank = state.currentDeck;
     state.currentDeck = state.bankDeck;
     startSessionFromPool(pool, {
       mode: "normal",
@@ -3477,7 +3483,7 @@ function bindEvents() {
     startPracticeBookmarks();
   });
 
-  // Question bank preferences share the main setup settings.
+  // Question bank preferences are stored separately from setup settings.
   for (const reviewId of [
     "review-input-count",
     "review-input-time-limit",
