@@ -3292,6 +3292,7 @@ function bindEvents() {
   }
 
   $("btn-review-back").addEventListener("click", () => {
+    applySettingsToForm(getSettings(state.currentDeck));
     showScreen("setup");
     refreshSetupUI();
   });
