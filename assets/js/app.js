@@ -1635,7 +1635,7 @@ function currentQ() {
   const s = state.session;
   const item = currentItem();
   if (!s || !item) return null;
-  return s.pool[item.poolIdx];
+  return s.pool[item.poolIndex];
 }
 
 function renderQuestion() {
@@ -1921,7 +1921,7 @@ function renderExam() {
   updateExamProgressHeader();
 
   s.items.forEach((item, idx) => {
-    const q = s.pool[item.poolIdx];
+    const q = s.pool[item.poolIndex];
     const card = document.createElement("article");
     card.className = "exam-q-card";
     card.id = `exam-q-${idx}`;
@@ -2077,7 +2077,7 @@ async function onExamSubmit() {
     let wrongAttempts = 0;
     const completedIdx = [];
     for (const item of s.items) {
-      const q = s.pool[item.poolIdx];
+      const q = s.pool[item.poolIndex];
       if (item.userAnswer == null) {
         item.status = "wrong";
         item.checked = true;
@@ -2141,7 +2141,7 @@ function enforceSessionDeadline() {
     let wrongAttempts = 0;
     const completedIdx = [];
     for (const item of session.items) {
-      const q = session.pool[item.poolIdx];
+      const q = session.pool[item.poolIndex];
       item.checked = true;
       if (item.userAnswer != null && isAnswerCorrect(item, q)) {
         item.status = "correct";
@@ -2583,7 +2583,7 @@ function finishSession() {
   if (s.mode !== "practice-wrong") {
     const completedIdx = s.items
       .filter((it) => it.status === "correct")
-      .map((it) => s.pool[it.poolIdx].originalIndex);
+      .map((it) => s.pool[it.poolIndex].originalIndex);
     const progressSaved = addCompleted(
       s.deckId,
       completedIdx,
@@ -2614,12 +2614,12 @@ function finishSession() {
   } else {
     for (const it of s.items) {
       if (it.wrongCount > 0) {
-        const oi = s.pool[it.poolIdx].originalIndex;
+        const oi = s.pool[it.poolIndex].originalIndex;
         if (!seen.has(oi)) {
           seen.add(oi);
           wrongInSession.push({
             originalIndex: oi,
-            question: s.pool[it.poolIdx].question,
+            question: s.pool[it.poolIndex].question,
             wrongCount: it.wrongCount,
           });
         }
@@ -2824,6 +2824,16 @@ function restoreSessionIfAny() {
     clearSession(state.currentDeck);
     return false;
   }
+  saved.items = saved.items.map((item) => {
+    if (!item || typeof item !== "object") return item;
+    const { poolIdx: legacyPoolIndex, ...sessionItem } = item;
+    return {
+      ...sessionItem,
+      poolIndex: Number.isInteger(item.poolIndex)
+        ? item.poolIndex
+        : legacyPoolIndex,
+    };
+  });
   if (!state.decks[saved.deckId]) {
     clearSession(state.currentDeck);
     return false;
@@ -2871,12 +2881,12 @@ function restoreSessionIfAny() {
       if (
         !item ||
         typeof item !== "object" ||
-        !Number.isInteger(item.poolIdx) ||
-        item.poolIdx < 0 ||
-        item.poolIdx >= saved.pool.length
+        !Number.isInteger(item.poolIndex) ||
+        item.poolIndex < 0 ||
+        item.poolIndex >= saved.pool.length
       )
         return false;
-      const question = saved.pool[item.poolIdx];
+      const question = saved.pool[item.poolIndex];
       return (
         Array.isArray(item.optionOrder) &&
         item.optionOrder.length === question.options.length &&
