@@ -81,7 +81,7 @@ export function createSessionItems(pool, { shuffleQuestions, shuffleAnswers }) {
   return indices.map((poolIndex) => {
     const question = pool[poolIndex];
     return {
-      poolIdx: poolIndex,
+      poolIndex: poolIndex,
       originalIndex: question.originalIndex,
       optionOrder: buildOptionOrder(
         question.options.length,
