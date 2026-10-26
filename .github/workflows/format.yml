@@ -39,7 +39,7 @@ jobs:
 
       - name: Find unused JavaScript variables and imports
         run: |
-          npx --yes eslint@9 --no-config-lookup --rule "no-unused-vars:error" --rule 'id-length:["error",{"min":3,"exceptions":["i","j","k","e","x","y","z","id","ok","$"],"properties":"never"}]' assets/js/*.js tests/*.mjs scripts/*.mjs sw.js
+          npx --yes eslint@9 --no-config-lookup --rule "no-unused-vars:error" --rule 'id-length:["error",{"min":3,"exceptions":["i","j","k","e","x","y","z","id","ok","n","$"],"properties":"never"}]' assets/js/*.js tests/*.mjs scripts/*.mjs sw.js
 
       - name: Validate formatted project
         run: |
