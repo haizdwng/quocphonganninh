@@ -5,6 +5,7 @@ function emptyRoot() {
   return {
     version: STORAGE_VERSION,
     settings: [],
+    sharedSettings: null,
     activeDeck: "quocphong1",
     bankSettings: null,
     decks: {},
@@ -118,46 +119,49 @@ function readSettingsList(root) {
 
 export function getSettings(deckId) {
   const root = readRoot();
-  const list = readSettingsList(root);
-  const id = normalizeDeckId(deckId || root.activeDeck || "quocphong1");
-  const found = list.find((entry) => entry.deck === id);
-  if (found) return { ...found };
-  return normalizeSettingsEntry({}, id);
+  const settingsList = readSettingsList(root);
+  const activeDeck = normalizeDeckId(deckId || root.activeDeck || "quocphong1");
+  const sharedSettings =
+    root.sharedSettings && typeof root.sharedSettings === "object"
+      ? root.sharedSettings
+      : settingsList.find((entry) => entry.deck === activeDeck) ||
+        settingsList[0] ||
+        {};
+  return normalizeSettingsEntry(sharedSettings, activeDeck);
 }
 
 export function saveSettings(settings) {
   const root = readRoot();
-  const entry = normalizeSettingsEntry(settings, settings?.deck);
-  const list = readSettingsList(root);
-  const index = list.findIndex((item) => item.deck === entry.deck);
-  if (index >= 0) list[index] = entry;
-  else list.push(entry);
-  for (const deck of ["quocphong1", "quocphong2"]) {
-    if (!list.some((item) => item.deck === deck)) {
-      list.push(normalizeSettingsEntry(deck === entry.deck ? entry : {}, deck));
-    }
-  }
-  root.settings = list;
-  root.activeDeck = entry.deck;
+  const activeDeck = normalizeDeckId(settings?.deck || root.activeDeck);
+  const sharedSettings = normalizeSettingsEntry(settings, activeDeck);
+  root.sharedSettings = sharedSettings;
+  root.settings = ["quocphong1", "quocphong2"].map((deck) => ({
+    ...sharedSettings,
+    deck,
+  }));
+  root.activeDeck = activeDeck;
   return writeRoot(root);
 }
 
 export function getBankSettings() {
   const root = readRoot();
-  const raw =
+  const bankDeck =
     root.bankSettings &&
     typeof root.bankSettings === "object" &&
     !Array.isArray(root.bankSettings)
-      ? root.bankSettings
-      : null;
-  const deckId = normalizeDeckId(raw?.deck || root.activeDeck || "quocphong1");
-  return normalizeSettingsEntry(raw || {}, deckId);
+      ? root.bankSettings.deck
+      : root.activeDeck;
+  return {
+    ...getSettings(bankDeck),
+    deck: normalizeDeckId(bankDeck || root.activeDeck || "quocphong1"),
+  };
 }
 
 export function saveBankSettings(settings) {
   const root = readRoot();
-  root.bankSettings = normalizeSettingsEntry(settings, settings?.deck);
-  return writeRoot(root);
+  const deck = normalizeDeckId(settings?.deck || root.activeDeck);
+  root.bankSettings = { deck };
+  return saveSettings({ ...getSettings(deck), ...settings, deck });
 }
 
 export function getDeckProgress(deckId) {
@@ -597,6 +601,12 @@ export function exportBackup() {
       version: 1,
       exportedAt: new Date().toISOString(),
       settings: list.length ? list : [],
+      sharedSettings:
+        root.sharedSettings ||
+        list.find((entry) => entry.deck === root.activeDeck) ||
+        list[0] ||
+        null,
+      bankDeck: root.bankSettings?.deck || root.activeDeck || "quocphong1",
       activeDeck: root.activeDeck || "quocphong1",
       decks: root.decks || {},
       highlights: root.highlights || { quocphong1: {}, quocphong2: {} },
@@ -641,11 +651,27 @@ export function importBackup(raw) {
       settingsList.push(normalizeSettingsEntry({}, deck));
     }
   }
+  const activeDeck = normalizeDeckId(
+    backup.activeDeck || settingsList[0]?.deck || "quocphong1",
+  );
+  const importedSharedSettings = normalizeSettingsEntry(
+    backup.sharedSettings && typeof backup.sharedSettings === "object"
+      ? backup.sharedSettings
+      : settingsList.find((entry) => entry.deck === activeDeck) ||
+          settingsList[0] ||
+          {},
+    activeDeck,
+  );
   const normalized = {
-    settings: settingsList,
-    activeDeck: normalizeDeckId(
-      backup.activeDeck || settingsList[0]?.deck || "quocphong1",
-    ),
+    settings: ["quocphong1", "quocphong2"].map((deck) => ({
+      ...importedSharedSettings,
+      deck,
+    })),
+    sharedSettings: importedSharedSettings,
+    activeDeck,
+    bankSettings: {
+      deck: normalizeDeckId(backup.bankDeck || activeDeck),
+    },
     decks: {},
     sessions: {},
     highlights: { quocphong1: {}, quocphong2: {} },
