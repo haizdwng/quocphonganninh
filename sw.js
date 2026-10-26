@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quocphonganninh:54';
+const CACHE_VERSION = 'quocphonganninh:55';
 const CACHE_PREFIX = 'quocphonganninh:';
 const ESSENTIAL = [
   './',
@@ -16,7 +16,6 @@ const ESSENTIAL = [
   './data/quocphong1.json',
   './data/quocphong2.json',
   './assets/icons/icon.svg',
-  './assets/icons/tabler/search.svg',
   './assets/icons/tabler/bookmark.svg',
   './assets/icons/tabler/check.svg',
   './assets/icons/tabler/chevron-left.svg',
@@ -57,7 +56,9 @@ self.addEventListener('activate', (event) =>
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION).map((key) => caches.delete(key))
+          keys
+            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION)
+            .map((key) => caches.delete(key))
         )
       )
       .then(() => self.clients.claim())
@@ -72,7 +73,8 @@ self.addEventListener('fetch', (event) => {
   const scope = new URL(self.registration.scope);
   if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
 
-  const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+  const isHTML =
+    request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
   const isEssentialAsset = /\.(css|js|json|webmanifest|svg|png|ico|woff2)$/i.test(url.pathname);
   if (!isHTML && !isEssentialAsset) return;
@@ -100,16 +102,20 @@ async function cacheFirst(request, event) {
     if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch {
-    return new Response('Chưa có tài nguyên này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải ứng dụng và bộ đề.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
+    return new Response(
+      'Chưa có tài nguyên này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải ứng dụng và bộ đề.',
+      {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      }
+    );
   }
 }
 
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
-  const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+  const isHTML =
+    request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
 
   try {
     const response = await fetch(request);
