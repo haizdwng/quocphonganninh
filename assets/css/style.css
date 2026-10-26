@@ -1349,13 +1349,6 @@ input[type="search"]:focus {
   line-height: 1.55;
 }
 
-.wrong-list .idx {
-  flex: 0 0 auto;
-  font-weight: 800;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
 .review-header {
   display: flex;
   flex-direction: column;
