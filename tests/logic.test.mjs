@@ -54,6 +54,14 @@ test("normalizeQuestions kiểm tra dữ liệu và giữ trường fixed", () =
   );
 });
 
+test("khi đổi bộ đề, vùng đến câu theo max hoặc giữ số câu đã chọn", () => {
+  assert.equal(quiz.getEndQuestionForDeckSwitch(479, 479, 262), 262);
+  assert.equal(quiz.getEndQuestionForDeckSwitch(262, 262, 479), 479);
+  assert.equal(quiz.getEndQuestionForDeckSwitch(173, 479, 262), 173);
+  assert.equal(quiz.getEndQuestionForDeckSwitch(173, 262, 479), 173);
+  assert.equal(quiz.getEndQuestionForDeckSwitch(400, 479, 262), 262);
+});
+
 test("câu fixed không bị đảo đáp án kể cả khi bật shuffle", () => {
   assert.deepEqual(quiz.buildOptionOrder(4, true, true), [0, 1, 2, 3]);
 });
