@@ -517,7 +517,7 @@ function rebuildReviewVirtualMetrics(virtualScrollState) {
   if (virtualScrollState.heights.length !== n) {
     virtualScrollState.heights = Array.from(
       { length: n },
-      (_, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
+      (unusedItem, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
     );
   }
   virtualScrollState.positions = new Array(n);
@@ -886,7 +886,7 @@ function renderQuestionBank() {
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.filtered = filtered;
   virtualScrollState.heights = filtered.map(
-    (_, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
+    (unusedItem, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
   );
   if (virtualScrollState.heights.length > filtered.length) virtualScrollState.heights.length = filtered.length;
 
