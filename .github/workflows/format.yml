@@ -37,6 +37,10 @@ jobs:
             "scripts/**/*.mjs" \
             ".github/workflows/*.yml"
 
+      - name: Find unused JavaScript variables and imports
+        run: |
+          npx --yes eslint@9 --no-config-lookup --rule "no-unused-vars:error" assets/js/*.js tests/*.mjs scripts/*.mjs sw.js
+
       - name: Validate formatted project
         run: |
           node --check assets/js/app.js
