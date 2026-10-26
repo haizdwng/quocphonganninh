@@ -779,16 +779,10 @@ function syncReviewVirtualWindow() {
     if (!card) continue;
     assigned.set(i, card);
     const question = virtualScrollState.filtered[i];
-    if (
-      Number(card.dataset.listIndex) !== i ||
-      Number(card.dataset.originalIndex) !== question.originalIndex
-    ) {
-      bindReviewBankCard(card, question, i);
-    } else {
-      card._vs.checkbox.checked = state.reviewSelectedIndices.has(
-        question.originalIndex,
-      );
-    }
+    // Always re-bind so highlights (and other content) stay in sync after
+    // toggleHighlightSelection / renderQuestionBank. The previous optimization
+    // only updated the checkbox and left stale highlight spans in the DOM.
+    bindReviewBankCard(card, question, i);
     card.hidden = false;
     card.style.transform = `translateY(${virtualScrollState.positions[i] || 0}px)`;
   }
@@ -3394,6 +3388,12 @@ function bindEvents() {
   }
 
   $("btn-review-back").addEventListener("click", () => {
+    // Sync the deck selected in the question bank back to the setup screen
+    // so the chosen bộ đề remains selected after returning.
+    if (state.bankDeck && state.bankDeck !== state.currentDeck) {
+      state.currentDeck = state.bankDeck;
+      persistSetupForm();
+    }
     applySettingsToForm(getSettings(state.currentDeck));
     showScreen("setup");
     refreshSetupUI();
