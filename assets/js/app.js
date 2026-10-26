@@ -91,37 +91,37 @@ function dataUrl(rel) {
 async function loadDeck(id) {
   const meta = DECKS[id];
   const url = dataUrl(meta.file);
-  let res;
+  let response;
   try {
-    res = await fetch(url, { cache: "no-cache" });
+    response = await fetch(url, { cache: "no-cache" });
   } catch {
     throw new Error(
       `Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`,
     );
   }
-  if (!res.ok)
+  if (!response.ok)
     throw new Error(
-      `Không tải được ${meta.label} (${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`,
+      `Không tải được ${meta.label} (${response.status}). Hãy kiểm tra vị trí tệp dữ liệu.`,
     );
   let raw;
   try {
-    raw = await res.json();
+    raw = await response.json();
   } catch {
     throw new Error(`Tệp dữ liệu ${meta.file} không hợp lệ.`);
   }
   const questions = normalizeQuestions(raw);
-  const fp = fingerprintQuestions(questions);
+  const fingerprint = fingerprintQuestions(questions);
   state.decks[id] = questions;
-  state.fingerprints[id] = fp;
+  state.fingerprints[id] = fingerprint;
   const progress = getDeckProgress(id);
   const first = questions[0]?.question?.trim().slice(0, 40) || "";
   const last =
     questions[questions.length - 1]?.question?.trim().slice(0, 40) || "";
   const legacyFingerprint = `${questions.length}|${first}|${last}`;
-  if (progress.dataFingerprint && progress.dataFingerprint !== fp) {
+  if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
     if (progress.dataFingerprint === legacyFingerprint) {
       state.legacyFingerprintMatched[id] = true;
-      progress.dataFingerprint = fp;
+      progress.dataFingerprint = fingerprint;
       if (!saveDeckProgress(id, progress))
         toast("Không thể cập nhật phiên bản tiến độ trong trình duyệt.");
     } else {
@@ -131,7 +131,7 @@ async function loadDeck(id) {
       progress.wrongRangeMap = {};
       progress.practiceMap = {};
       progress.bookmarks = [];
-      progress.dataFingerprint = fp;
+      progress.dataFingerprint = fingerprint;
       if (!saveDeckProgress(id, progress))
         toast(
           "Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.",
@@ -142,7 +142,7 @@ async function loadDeck(id) {
         );
     }
   } else if (!progress.dataFingerprint) {
-    progress.dataFingerprint = fp;
+    progress.dataFingerprint = fingerprint;
     if (!saveDeckProgress(id, progress))
       toast("Không thể lưu dấu vân tay bộ đề vào trình duyệt.");
   }
@@ -217,9 +217,9 @@ async function loadAll() {
 }
 
 function showScreen(name) {
-  for (const el of document.querySelectorAll(".screen")) {
-    el.classList.remove("active");
-    el.hidden = true;
+  for (const element of document.querySelectorAll(".screen")) {
+    element.classList.remove("active");
+    element.hidden = true;
   }
   const screen = $(`screen-${name}`);
   if (screen) {
@@ -702,14 +702,14 @@ function ensureReviewVirtualPool(vs, list) {
 function measureReviewVirtualVisible(vs) {
   for (const card of vs.pool) {
     if (card.hidden) continue;
-    const idx = Number(card.dataset.listIndex);
-    if (!Number.isInteger(idx) || idx < 0 || idx >= vs.filtered.length)
+    const index = Number(card.dataset.listIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= vs.filtered.length)
       continue;
     const h = card.offsetHeight;
     // +12px khoảng cách giữa các card (thay cho grid gap)
     const withGap = h + 12;
-    if (h > 0 && Math.abs((vs.heights[idx] || 0) - withGap) > 2) {
-      vs.heights[idx] = withGap;
+    if (h > 0 && Math.abs((vs.heights[index] || 0) - withGap) > 2) {
+      vs.heights[index] = withGap;
     }
   }
   rebuildReviewVirtualMetrics(vs);
@@ -744,15 +744,15 @@ function syncReviewVirtualWindow() {
   const assigned = new Map(); // listIndex -> card
   const free = [];
   for (const card of vs.pool) {
-    const idx = Number(card.dataset.listIndex);
+    const index = Number(card.dataset.listIndex);
     if (
       !card.hidden &&
-      Number.isInteger(idx) &&
-      idx >= start &&
-      idx <= end &&
-      !assigned.has(idx)
+      Number.isInteger(index) &&
+      index >= start &&
+      index <= end &&
+      !assigned.has(index)
     ) {
-      assigned.set(idx, card);
+      assigned.set(index, card);
     } else {
       free.push(card);
     }
@@ -797,9 +797,9 @@ function syncReviewVirtualWindow() {
     if (Math.abs(before - vs.totalHeight) > 4) {
       for (const card of vs.pool) {
         if (card.hidden) continue;
-        const idx = Number(card.dataset.listIndex);
-        if (!Number.isInteger(idx)) continue;
-        card.style.transform = `translateY(${vs.positions[idx] || 0}px)`;
+        const index = Number(card.dataset.listIndex);
+        if (!Number.isInteger(index)) continue;
+        card.style.transform = `translateY(${vs.positions[index] || 0}px)`;
       }
     }
   });
@@ -824,15 +824,15 @@ function ensureReviewVirtualScrollBinding() {
 
 function scrollReviewToQuestionNumber(questionNumber) {
   const vs = getReviewVirtualState();
-  const idx = vs.filtered.findIndex(
+  const index = vs.filtered.findIndex(
     (q) => q.originalIndex + 1 === questionNumber,
   );
-  if (idx < 0) return false;
+  if (index < 0) return false;
   const list = $("review-list");
   if (!list) return false;
   rebuildReviewVirtualMetrics(vs);
   const listTop = list.getBoundingClientRect().top + window.scrollY;
-  const y = listTop + (vs.positions[idx] || 0) - 12;
+  const y = listTop + (vs.positions[index] || 0) - 12;
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -843,8 +843,8 @@ function scrollReviewToQuestionNumber(questionNumber) {
   requestAnimationFrame(() => {
     syncReviewVirtualWindow();
     requestAnimationFrame(() => {
-      const el = document.getElementById(`review-question-${questionNumber}`);
-      el?.classList.add("review-q-highlight");
+      const element = document.getElementById(`review-question-${questionNumber}`);
+      element?.classList.add("review-q-highlight");
     });
   });
   return true;
@@ -944,8 +944,8 @@ function openQuestionBank() {
 }
 
 function refreshSetupUI() {
-  const qs = currentQuestions();
-  const total = qs.length;
+  const questions = currentQuestions();
+  const total = questions.length;
   $("count-quocphong1").textContent =
     `${state.decks.quocphong1?.length ?? "479"} câu`;
   $("count-quocphong2").textContent =
@@ -977,7 +977,7 @@ function refreshSetupUI() {
 
   const progress = getDeckProgress(state.currentDeck);
   const completed = new Set(progress.completed);
-  const remaining = qs.filter((q) => !completed.has(q.originalIndex)).length;
+  const remaining = questions.filter((q) => !completed.has(q.originalIndex)).length;
   const wrongs = getWrongIndices(state.currentDeck);
   $("stat-completed").textContent = String(completed.size);
   $("stat-remaining").textContent = String(remaining);
@@ -1012,7 +1012,7 @@ function refreshSetupUI() {
   btnAllWrong.textContent = `Ôn ${allWrongCount} câu sai của bộ đề`;
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
-  const rangeBookmarkCount = qs.filter(
+  const rangeBookmarkCount = questions.filter(
     (question) =>
       question.originalIndex >= start - 1 &&
       question.originalIndex < end &&
@@ -1023,7 +1023,7 @@ function refreshSetupUI() {
     state.practiceMode === "exam" || rangeBookmarkCount === 0;
   btnBookmarks.textContent = `Ôn ${rangeBookmarkCount} câu đã đánh dấu`;
 
-  const rangeQuestions = qs.filter(
+  const rangeQuestions = questions.filter(
     (question) =>
       question.originalIndex >= start - 1 && question.originalIndex < end,
   );
@@ -1198,9 +1198,9 @@ function setBankDeck(deckId) {
 function startPracticeBookmarks() {
   const form = readSetupForm();
   persistSetupForm();
-  const qs = selectedQuestions(form);
+  const questions = selectedQuestions(form);
   const bookmarked = getBookmarkedIndices(state.currentDeck);
-  const pool = pickWrong(qs, bookmarked, form.count, form.shuffleQuestions);
+  const pool = pickWrong(questions, bookmarked, form.count, form.shuffleQuestions);
   if (!pool.length) {
     toast("Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.");
     return;
@@ -1412,8 +1412,8 @@ function startNormal(opts = {}) {
     return;
   }
   const form = readSetupForm();
-  const qs = selectedQuestions(form);
-  if (!qs.length) {
+  const questions = selectedQuestions(form);
+  if (!questions.length) {
     toast("Vùng câu hỏi đã chọn không có câu hợp lệ.");
     return;
   }
@@ -1424,10 +1424,10 @@ function startNormal(opts = {}) {
   const rangeEnd = form.endQuestion;
 
   if (opts.restart) {
-    const { items, nextCursor } = pickSequential(qs, 0, form.count, new Set());
+    const { items, nextCursor } = pickSequential(questions, 0, form.count, new Set());
     const globalNextCursor =
       nextCursor > 0
-        ? qs[Math.min(nextCursor, qs.length) - 1].originalIndex + 1
+        ? questions[Math.min(nextCursor, questions.length) - 1].originalIndex + 1
         : rangeStart;
     startSessionFromPool(items, {
       mode: "normal",
@@ -1442,7 +1442,7 @@ function startNormal(opts = {}) {
 
   if (opts.sequential) {
     const nextQuestion = findNextUncompletedQuestion(
-      qs,
+      questions,
       Math.max(progress.sequentialCursor, rangeStart),
       completedSet,
     );
@@ -1451,7 +1451,7 @@ function startNormal(opts = {}) {
       return;
     }
     const cursor = nextQuestion.originalIndex;
-    const scanQuestions = qs.filter(
+    const scanQuestions = questions.filter(
       (question) => question.originalIndex >= cursor,
     );
     const { items, nextCursor, actualCount } = pickSequential(
@@ -1483,10 +1483,10 @@ function startNormal(opts = {}) {
   }
 
   if (form.shuffleQuestions) {
-    const remainingCount = qs.filter(
+    const remainingCount = questions.filter(
       (question) => !completedSet.has(question.originalIndex),
     ).length;
-    const pool = pickRandom(qs, form.count, true, completedSet);
+    const pool = pickRandom(questions, form.count, true, completedSet);
     if (!pool.length) {
       toast("Không lấy được câu hỏi trong vùng đã chọn.");
       return;
@@ -1510,12 +1510,12 @@ function startNormal(opts = {}) {
   }
 
   const nextQuestion = findNextUncompletedQuestion(
-    qs,
+    questions,
     Math.max(progress.sequentialCursor, rangeStart),
     completedSet,
   );
   const cursor = nextQuestion?.originalIndex ?? rangeEnd;
-  const scanQuestions = qs.filter(
+  const scanQuestions = questions.filter(
     (question) => question.originalIndex >= cursor,
   );
   const { items, nextCursor, actualCount } = pickSequential(
@@ -1525,7 +1525,7 @@ function startNormal(opts = {}) {
     completedSet,
   );
   if (!items.length) {
-    const pool = pickRandom(qs, form.count, false, completedSet);
+    const pool = pickRandom(questions, form.count, false, completedSet);
     startSessionFromPool(pool, {
       mode: "normal",
       sequential: false,
@@ -1557,8 +1557,8 @@ function startPracticeWrong(options = {}) {
   const form = readSetupForm();
   persistSetupForm();
   const allDeck = options.allDeck === true;
-  const qs = allDeck ? currentQuestions() : selectedQuestions(form);
-  const rangeIndices = new Set(qs.map((question) => question.originalIndex));
+  const questions = allDeck ? currentQuestions() : selectedQuestions(form);
+  const rangeIndices = new Set(questions.map((question) => question.originalIndex));
   const sourceIndices = Array.isArray(options.indices)
     ? options.indices
     : allDeck
@@ -1580,7 +1580,7 @@ function startPracticeWrong(options = {}) {
     return;
   }
   const pool = pickWrong(
-    qs,
+    questions,
     wrongs,
     allDeck ? wrongs.length : form.count,
     form.shuffleQuestions,
@@ -1603,7 +1603,7 @@ function startPracticeWrong(options = {}) {
     forceShuffleQuestions: form.shuffleQuestions,
     alreadyShuffled: true,
     ...(allDeck
-      ? { rangeStart: 1, rangeEnd: qs.length, requestedCount: pool.length }
+      ? { rangeStart: 1, rangeEnd: questions.length, requestedCount: pool.length }
       : {}),
   });
 }
@@ -1876,8 +1876,8 @@ function applyExamFilter() {
   const s = state.session;
   if (!s?.examMode) return;
   const filter = state.examFilter || "all";
-  s.items.forEach((item, idx) => {
-    const card = $(`exam-q-${idx}`);
+  s.items.forEach((item, index) => {
+    const card = $(`exam-q-${index}`);
     if (!card) return;
     let show = true;
     if (filter === "unanswered") show = item.userAnswer == null;
@@ -1887,8 +1887,8 @@ function applyExamFilter() {
   });
 }
 
-function scrollToExamQuestion(idx) {
-  const card = $(`exam-q-${idx}`);
+function scrollToExamQuestion(index) {
+  const card = $(`exam-q-${index}`);
   if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -1920,11 +1920,11 @@ function renderExam() {
   const labels = ["A", "B", "C", "D", "E", "F"];
   updateExamProgressHeader();
 
-  s.items.forEach((item, idx) => {
+  s.items.forEach((item, index) => {
     const q = s.pool[item.poolIndex];
     const card = document.createElement("article");
     card.className = "exam-q-card";
-    card.id = `exam-q-${idx}`;
+    card.id = `exam-q-${index}`;
     if (item.userAnswer != null) card.classList.add("is-answered");
     if (s.reviewMode) {
       if (item.status === "correct") card.classList.add("is-correct");
@@ -1935,7 +1935,7 @@ function renderExam() {
     head.className = "exam-q-head";
     const num = document.createElement("span");
     num.className = "exam-q-num";
-    num.textContent = `Câu ${idx + 1} · Gốc #${q.originalIndex + 1}`;
+    num.textContent = `Câu ${index + 1} · Gốc #${q.originalIndex + 1}`;
     head.appendChild(num);
     if (s.reviewMode) {
       const badge = document.createElement("span");
@@ -1958,13 +1958,13 @@ function renderExam() {
     const opts = document.createElement("div");
     opts.className = "exam-options options";
     opts.setAttribute("role", "group");
-    opts.setAttribute("aria-label", `Đáp án câu ${idx + 1}`);
+    opts.setAttribute("aria-label", `Đáp án câu ${index + 1}`);
 
     item.optionOrder.forEach((origIdx, displayIdx) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "option";
-      btn.dataset.q = String(idx);
+      btn.dataset.q = String(index);
       btn.dataset.display = String(displayIdx);
       btn.setAttribute("aria-pressed", String(item.userAnswer === displayIdx));
       if (item.userAnswer === displayIdx) btn.classList.add("selected");
@@ -1983,7 +1983,7 @@ function renderExam() {
       body.textContent = q.options[origIdx];
       btn.append(label, body);
       if (!s.reviewMode) {
-        btn.addEventListener("click", () => onExamSelect(idx, displayIdx));
+        btn.addEventListener("click", () => onExamSelect(index, displayIdx));
       }
       opts.appendChild(btn);
     });
@@ -1993,15 +1993,15 @@ function renderExam() {
     const dot = document.createElement("button");
     dot.type = "button";
     dot.className = "exam-nav-dot";
-    dot.textContent = String(idx + 1);
-    dot.title = `Câu ${idx + 1}`;
-    dot.dataset.idx = String(idx);
+    dot.textContent = String(index + 1);
+    dot.title = `Câu ${index + 1}`;
+    dot.dataset.index = String(index);
     if (item.userAnswer != null) dot.classList.add("is-answered");
     if (s.reviewMode) {
       if (item.status === "correct") dot.classList.add("is-correct");
       else if (item.status === "wrong") dot.classList.add("is-wrong");
     }
-    dot.addEventListener("click", () => scrollToExamQuestion(idx));
+    dot.addEventListener("click", () => scrollToExamQuestion(index));
     nav.appendChild(dot);
   });
 
@@ -2025,7 +2025,7 @@ function patchExamQuestion(qIdx) {
     btn.classList.toggle("selected", selected);
     btn.setAttribute("aria-pressed", String(selected));
   });
-  const dot = $("exam-nav")?.querySelector(`.exam-nav-dot[data-idx="${qIdx}"]`);
+  const dot = $("exam-nav")?.querySelector(`.exam-nav-dot[data-index="${qIdx}"]`);
   if (dot) dot.classList.toggle("is-answered", item.userAnswer != null);
   updateExamProgressHeader();
   applyExamFilter();
@@ -2504,10 +2504,10 @@ function getElapsedSeconds(session = state.session) {
 
 function updateTimerDisplay() {
   const s = state.session;
-  const el = s?.examMode ? $("exam-progress-time") : $("progress-time");
-  if (!el) return;
+  const element = s?.examMode ? $("exam-progress-time") : $("progress-time");
+  if (!element) return;
   if (!s) {
-    el.hidden = true;
+    element.hidden = true;
     return;
   }
   const elapsed = getElapsedSeconds(s);
@@ -2517,18 +2517,18 @@ function updateTimerDisplay() {
   const remaining = hasLimit
     ? Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000))
     : null;
-  el.hidden = false;
+  element.hidden = false;
   if (stopped) {
-    el.textContent =
+    element.textContent =
       s.pausedAt && !s.finishedAt && !s.reviewMode
         ? `Tạm dừng · ${formatTime(elapsed)}`
         : `Hoàn thành · ${formatTime(elapsed)}`;
-    el.classList.remove("time-warning");
+    element.classList.remove("time-warning");
   } else {
-    el.textContent = hasLimit
+    element.textContent = hasLimit
       ? `Thời gian ${formatTime(remaining)}`
       : `Thời gian ${formatTime(elapsed)}`;
-    el.classList.toggle("time-warning", hasLimit && remaining <= 60);
+    element.classList.toggle("time-warning", hasLimit && remaining <= 60);
   }
 }
 
@@ -2772,10 +2772,10 @@ function showSummary(summary, deckId, mode) {
     listCard.hidden = false;
     for (const w of summary.wrongList) {
       const li = document.createElement("li");
-      const idx = document.createElement("span");
-      idx.className = "idx";
-      idx.textContent = `#${w.originalIndex + 1}`;
-      li.append(idx, document.createTextNode(w.question));
+      const index = document.createElement("span");
+      index.className = "index";
+      index.textContent = `#${w.originalIndex + 1}`;
+      li.append(index, document.createTextNode(w.question));
       list.appendChild(li);
     }
   } else {
@@ -2838,7 +2838,7 @@ function restoreSessionIfAny() {
     clearSession(state.currentDeck);
     return false;
   }
-  const fp = state.fingerprints[saved.deckId];
+  const fingerprint = state.fingerprints[saved.deckId];
   const legacyCompatible =
     !saved.dataFingerprint && state.legacyFingerprintMatched[saved.deckId];
   const validPool =
@@ -2917,15 +2917,15 @@ function restoreSessionIfAny() {
         item.wrongCount >= 0
       );
     });
-  if (!validSession || (saved.dataFingerprint !== fp && !legacyCompatible)) {
+  if (!validSession || (saved.dataFingerprint !== fingerprint && !legacyCompatible)) {
     clearSession(state.currentDeck);
     return false;
   }
-  if (legacyCompatible) saved.dataFingerprint = fp;
+  if (legacyCompatible) saved.dataFingerprint = fingerprint;
   const progress = getDeckProgress(saved.deckId);
   if (
     progress.dataFingerprint &&
-    progress.dataFingerprint !== fp &&
+    progress.dataFingerprint !== fingerprint &&
     !legacyCompatible
   ) {
     clearSession(state.currentDeck);
@@ -3382,12 +3382,12 @@ function bindEvents() {
     "review-chk-sound",
     "review-chk-vibration",
   ]) {
-    const el = $(reviewId);
-    if (!el) continue;
+    const element = $(reviewId);
+    if (!element) continue;
     const persist = () => {
       if (reviewId === "review-input-time-limit") {
-        const value = Number.parseInt(el.value, 10);
-        el.value = String(
+        const value = Number.parseInt(element.value, 10);
+        element.value = String(
           Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0,
         );
       }
@@ -3401,8 +3401,8 @@ function bindEvents() {
         }
       }
     };
-    el.addEventListener("change", persist);
-    if (el.type !== "checkbox") el.addEventListener("input", persist);
+    element.addEventListener("change", persist);
+    if (element.type !== "checkbox") element.addEventListener("input", persist);
   }
 
   $("btn-exam-submit")?.addEventListener("click", () => onExamSubmit());
