@@ -36,6 +36,7 @@ import {
   pickWrong,
   isAnswerCorrect,
   displayedCorrectIndex,
+  getEndQuestionForDeckSwitch,
 } from "./quiz.js";
 
 const DECKS = {
@@ -3284,9 +3285,11 @@ function bindEvents() {
       state.currentDeck = btn.dataset.deck;
       const settings = getSettings(state.currentDeck);
       const currentTotal = currentQuestions().length;
-      settings.endQuestion = endWasMaximum
-        ? currentTotal
-        : Math.min(settings.endQuestion || previousEnd, currentTotal);
+      settings.endQuestion = getEndQuestionForDeckSwitch(
+        previousEnd,
+        previousTotal,
+        currentTotal,
+      );
       applySettingsToForm(settings);
       refreshSetupUI();
       persistSetupForm();
