@@ -36,7 +36,8 @@
   --touch: 48px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
-  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
 }
 
 *,
@@ -470,10 +471,6 @@ input[type='search']:focus {
   mask: center / contain no-repeat;
 }
 
-[data-icon='search']::before {
-  -webkit-mask-image: url('../icons/tabler/search.svg');
-  mask-image: url('../icons/tabler/search.svg');
-}
 [data-icon='bookmark']::before {
   -webkit-mask-image: url('../icons/tabler/bookmark.svg');
   mask-image: url('../icons/tabler/bookmark.svg');
@@ -1405,6 +1402,28 @@ input[type='search']:focus {
   gap: 12px;
 }
 
+.review-list.review-list-virtual {
+  display: block;
+  position: relative;
+  gap: 0;
+}
+
+.review-vs-phantom {
+  width: 100%;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.review-list.review-list-virtual .review-vs-item {
+  margin: 0;
+  /* spacing simulated via estimated height; small gap via box */
+}
+
+.review-list.review-list-virtual .review-q-card {
+  box-sizing: border-box;
+  width: 100%;
+}
+
 .review-q-card {
   min-width: 0;
   padding: 18px;
@@ -2059,4 +2078,71 @@ body[data-screen='exam'] .toast {
   body[data-screen='exam'] .toast {
     bottom: max(176px, calc(var(--safe-b) + 168px));
   }
+}
+
+.review-experience-settings {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.review-experience-settings h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.btn-scroll-top {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(24px, calc(var(--safe-b, 0px) + 20px));
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: rgba(36, 36, 41, 0.92);
+  color: var(--text, #f4f4f5);
+  box-shadow: var(--shadow-lg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.btn-scroll-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+}
+
+.btn-scroll-top:hover {
+  background: var(--surface-2, rgba(48, 48, 54, 0.96));
+}
+
+.btn-scroll-top:focus-visible {
+  outline: 2px solid var(--accent, #7c9cff);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-scroll-top {
+    transition: none;
+  }
+}
+
+.review-deck-switch {
+  margin: 0.75rem 0 1rem;
 }
