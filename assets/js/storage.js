@@ -79,8 +79,10 @@ function normalizeSettingsEntry(raw, deckId) {
   return {
     deck: normalizeDeckId(deckId || settings.deck),
     count: Number.isInteger(count) && count > 0 ? count : 30,
-    shuffleQuestions: settings.shuffleQuestions !== false && settings.shuffleQ !== false,
-    shuffleAnswers: settings.shuffleAnswers !== false && settings.shuffleA !== false,
+    shuffleQuestions:
+      settings.shuffleQuestions !== false && settings.shuffleQ !== false,
+    shuffleAnswers:
+      settings.shuffleAnswers !== false && settings.shuffleA !== false,
     startQuestion:
       Number.isInteger(Number(settings.startQuestion)) &&
       Number(settings.startQuestion) > 0

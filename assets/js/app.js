@@ -1241,7 +1241,14 @@ function readSetupForm() {
   $("input-time-limit").value = String(timeLimit);
   const shuffleQuestions = $("chk-shuffle-q").checked;
   const shuffleAnswers = $("chk-shuffle-a").checked;
-  return { count, shuffleQuestions, shuffleAnswers, startQuestion, endQuestion, timeLimit };
+  return {
+    count,
+    shuffleQuestions,
+    shuffleAnswers,
+    startQuestion,
+    endQuestion,
+    timeLimit,
+  };
 }
 
 function persistSetupForm() {
@@ -1312,15 +1319,22 @@ function startSessionFromPool(pool, meta) {
     ? {
         ...readBankForm(),
         shuffleAnswers:
-          meta.shuffleAnswers != null ? meta.shuffleAnswers : readBankForm().shuffleAnswers,
+          meta.shuffleAnswers != null
+            ? meta.shuffleAnswers
+            : readBankForm().shuffleAnswers,
         timeLimit:
           meta.timeLimit != null ? meta.timeLimit : readBankForm().timeLimit,
       }
     : readSetupForm();
-  const shuffleAnswers = meta.shuffleAnswers != null ? meta.shuffleAnswers : form.shuffleAnswers;
+  const shuffleAnswers =
+    meta.shuffleAnswers != null ? meta.shuffleAnswers : form.shuffleAnswers;
   const shuffleQuestions =
-    meta.forceShuffleQuestions != null ? meta.forceShuffleQuestions : form.shuffleQuestions;
-  const shouldShuffleQuestions = meta.alreadyShuffled ? false : !!shuffleQuestions;
+    meta.forceShuffleQuestions != null
+      ? meta.forceShuffleQuestions
+      : form.shuffleQuestions;
+  const shouldShuffleQuestions = meta.alreadyShuffled
+    ? false
+    : !!shuffleQuestions;
   const timeLimit = meta.timeLimit != null ? meta.timeLimit : form.timeLimit;
   const items = createSessionItems(pool, {
     shuffleQuestions: shouldShuffleQuestions,
