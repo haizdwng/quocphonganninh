@@ -1111,6 +1111,7 @@ function refreshResumeCard() {
 
 function readBankForm() {
   const total = Math.max(1, bankQuestions().length);
+  const sharedSettings = getSettings(state.bankDeck);
   let count = Number.parseInt($("review-input-count")?.value, 10);
   if (!Number.isFinite(count) || count < 1) count = 1;
   if (count > total) count = total;
@@ -1118,6 +1119,7 @@ function readBankForm() {
   if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
   timeLimit = Math.min(1440, timeLimit);
   return {
+    ...sharedSettings,
     deck: state.bankDeck === "quocphong2" ? "quocphong2" : "quocphong1",
     count,
     timeLimit,
@@ -1132,8 +1134,6 @@ function readBankForm() {
     vibrationEnabled: $("review-chk-vibration")
       ? !!$("review-chk-vibration").checked
       : true,
-    startQuestion: 1,
-    endQuestion: total,
   };
 }
 
@@ -1160,6 +1160,10 @@ function applyBankSettingsToForm(settings) {
   }
   state.bankPracticeMode =
     settings.practiceMode === "exam" ? "exam" : "practice";
+  state.practiceMode = state.bankPracticeMode;
+  document.querySelectorAll("#screen-setup .mode-btn").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.mode === state.practiceMode);
+  });
   document.querySelectorAll("#screen-review .mode-btn").forEach((btn) => {
     btn.classList.toggle(
       "is-active",
@@ -1183,6 +1187,10 @@ function persistBankForm() {
 
 function setBankPracticeMode(mode) {
   state.bankPracticeMode = mode === "exam" ? "exam" : "practice";
+  state.practiceMode = state.bankPracticeMode;
+  document.querySelectorAll("#screen-setup .mode-btn").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.mode === state.practiceMode);
+  });
   document.querySelectorAll("#screen-review .mode-btn").forEach((btn) => {
     btn.classList.toggle(
       "is-active",
