@@ -437,7 +437,9 @@ export function addCompleted(deckId, indices, fingerprint) {
   for (const index of indices) {
     if (Number.isInteger(index) && index >= 0) completed.add(index);
   }
-  progress.completed = [...completed].sort((leftValue, rightValue) => leftValue - rightValue);
+  progress.completed = [...completed].sort(
+    (leftValue, rightValue) => leftValue - rightValue,
+  );
   if (fingerprint) progress.dataFingerprint = fingerprint;
   return saveDeckProgress(deckId, progress) ? progress : null;
 }
@@ -517,7 +519,9 @@ export function addWrongIndicesForRange(
     if (Number.isInteger(index) && index >= start - 1 && index < end)
       existing.add(index);
   }
-  progress.wrongRangeMap[key] = [...existing].sort((leftValue, rightValue) => leftValue - rightValue);
+  progress.wrongRangeMap[key] = [...existing].sort(
+    (leftValue, rightValue) => leftValue - rightValue,
+  );
   return saveDeckProgress(deckId, progress);
 }
 
@@ -531,7 +535,9 @@ export function toggleBookmark(deckId, originalIndex) {
   const bookmarks = new Set(progress.bookmarks);
   if (bookmarks.has(originalIndex)) bookmarks.delete(originalIndex);
   else bookmarks.add(originalIndex);
-  progress.bookmarks = [...bookmarks].sort((leftValue, rightValue) => leftValue - rightValue);
+  progress.bookmarks = [...bookmarks].sort(
+    (leftValue, rightValue) => leftValue - rightValue,
+  );
   return saveDeckProgress(deckId, progress)
     ? bookmarks.has(originalIndex)
     : null;

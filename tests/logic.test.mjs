@@ -23,13 +23,16 @@ const storage = await import("../assets/js/storage.js");
 
 beforeEach(() => localStorage.clear());
 
-const questions = Array.from({ length: 5 }, (unusedQuestion, originalIndex) => ({
-  originalIndex,
-  question: `Câu ${originalIndex + 1}`,
-  options: ["A", "B", "C", "D"],
-  correct: 2,
-  fixed: originalIndex === 0,
-}));
+const questions = Array.from(
+  { length: 5 },
+  (unusedQuestion, originalIndex) => ({
+    originalIndex,
+    question: `Câu ${originalIndex + 1}`,
+    options: ["A", "B", "C", "D"],
+    correct: 2,
+    fixed: originalIndex === 0,
+  }),
+);
 
 test("normalizeQuestions kiểm tra dữ liệu và giữ trường fixed", () => {
   const normalized = quiz.normalizeQuestions([

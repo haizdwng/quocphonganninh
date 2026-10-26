@@ -70,7 +70,10 @@ function shuffleInPlace(array) {
 }
 
 export function buildOptionOrder(optionCount, shuffleAnswers, fixed = false) {
-  const order = Array.from({ length: optionCount }, (unusedQuestion, index) => index);
+  const order = Array.from(
+    { length: optionCount },
+    (unusedQuestion, index) => index,
+  );
   if (shuffleAnswers && !fixed) shuffleInPlace(order);
   return order;
 }
