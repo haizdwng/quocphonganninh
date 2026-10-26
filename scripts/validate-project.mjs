@@ -1,15 +1,15 @@
-import fs from "node:fs";
+import fileSystem from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
 const errors = [];
-const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
-const exists = (file) => fs.existsSync(path.join(root, file));
+const read = (file) => fileSystem.readFileSync(path.join(root, file), "utf8");
+const exists = (file) => fileSystem.existsSync(path.join(root, file));
 const fail = (message) => errors.push(message);
 
 const html = read("index.html");
 const app = read("assets/js/app.js");
-const sw = read("sw.js");
+const serviceWorkerSource = read("sw.js");
 
 const ids = [...html.matchAll(/\bid=['"]([^'"]+)['"]/g)].map(
   (match) => match[1],
@@ -27,7 +27,7 @@ for (const match of app.matchAll(/\$\(['"]([^'"]+)['"]\)/g)) {
     );
 }
 
-for (const match of sw.matchAll(/['"](\.\/[^'"]+)['"]/g)) {
+for (const match of serviceWorkerSource.matchAll(/['"](\.\/[^'"]+)['"]/g)) {
   const asset = match[1];
   if (asset === "./") continue;
   const file = asset.slice(2);
