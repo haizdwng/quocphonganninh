@@ -2,8 +2,8 @@ let touchStart = null;
 
 function syncFixedBarHeights() {
   const targets = [
-    ['#screen-quiz .progress-wrap', '--quiz-top-h'],
-    ['#screen-exam .progress-wrap', '--exam-top-h']
+    ["#screen-quiz .progress-wrap", "--quiz-top-h"],
+    ["#screen-exam .progress-wrap", "--exam-top-h"],
   ];
   const root = document.documentElement;
   for (const [selector, property] of targets) {
@@ -14,8 +14,8 @@ function syncFixedBarHeights() {
       if (height > 0) root.style.setProperty(property, `${height}px`);
     };
     update();
-    if ('ResizeObserver' in window) new ResizeObserver(update).observe(element);
-    else window.addEventListener('resize', update);
+    if ("ResizeObserver" in window) new ResizeObserver(update).observe(element);
+    else window.addEventListener("resize", update);
   }
 }
 
@@ -23,16 +23,21 @@ export function initEnhance({ onPrev, onNext }) {
   syncFixedBarHeights();
 
   document.addEventListener(
-    'touchstart',
+    "touchstart",
     (event) => {
-      if (event.touches.length !== 1 || document.body.dataset.screen !== 'quiz') {
+      if (
+        event.touches.length !== 1 ||
+        document.body.dataset.screen !== "quiz"
+      ) {
         touchStart = null;
         return;
       }
       const target = event.target instanceof Element ? event.target : null;
       if (
         !target ||
-        target.closest('button:not(.option), input, textarea, select, a, .highlight-toolbar')
+        target.closest(
+          "button:not(.option), input, textarea, select, a, .highlight-toolbar",
+        )
       ) {
         touchStart = null;
         return;
@@ -41,18 +46,18 @@ export function initEnhance({ onPrev, onNext }) {
       touchStart = {
         x: touch.clientX,
         y: touch.clientY,
-        time: Date.now()
+        time: Date.now(),
       };
     },
-    { passive: true }
+    { passive: true },
   );
 
   document.addEventListener(
-    'touchend',
+    "touchend",
     (event) => {
       if (
         !touchStart ||
-        document.body.dataset.screen !== 'quiz' ||
+        document.body.dataset.screen !== "quiz" ||
         event.changedTouches.length !== 1
       ) {
         touchStart = null;
@@ -64,7 +69,8 @@ export function initEnhance({ onPrev, onNext }) {
       const deltaX = touch.clientX - start.x;
       const deltaY = touch.clientY - start.y;
       const selection = window.getSelection();
-      if (selection && !selection.isCollapsed && selection.toString().trim()) return;
+      if (selection && !selection.isCollapsed && selection.toString().trim())
+        return;
       if (
         Date.now() - start.time > 800 ||
         Math.abs(deltaX) < 65 ||
@@ -75,14 +81,14 @@ export function initEnhance({ onPrev, onNext }) {
       if (deltaX < 0) onNext();
       else onPrev();
     },
-    { passive: false }
+    { passive: false },
   );
 
   document.addEventListener(
-    'touchcancel',
+    "touchcancel",
     () => {
       touchStart = null;
     },
-    { passive: true }
+    { passive: true },
   );
 }
