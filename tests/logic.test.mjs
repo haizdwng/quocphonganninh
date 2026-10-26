@@ -144,7 +144,7 @@ test("experience settings are shared between both decks", () => {
   assert.equal(storage.getSettings("quocphong2").vibrationEnabled, true);
 });
 
-test("question bank settings use the same shared settings", () => {
+test("question bank settings are independent from setup settings", () => {
   storage.saveSettings({
     deck: "quocphong1",
     count: 24,
@@ -153,12 +153,9 @@ test("question bank settings use the same shared settings", () => {
     shuffleQuestions: false,
     autoCheck: true,
   });
-  const bankSettings = storage.getBankSettings();
-  assert.equal(bankSettings.count, 24);
-  assert.equal(bankSettings.timeLimit, 12);
-  assert.equal(bankSettings.practiceMode, "exam");
-  assert.equal(bankSettings.shuffleQuestions, false);
-  assert.equal(bankSettings.autoCheck, true);
+  assert.equal(storage.getBankSettings().count, 0);
+  assert.equal(storage.getBankSettings().practiceMode, "practice");
+  assert.equal(storage.getBankSettings().autoCheck, false);
 
   storage.saveBankSettings({
     deck: "quocphong2",
@@ -166,10 +163,16 @@ test("question bank settings use the same shared settings", () => {
     timeLimit: 0,
     practiceMode: "practice",
     shuffleQuestions: true,
+    autoCheck: false,
   });
-  assert.equal(storage.getSettings("quocphong1").count, 18);
-  assert.equal(storage.getSettings("quocphong2").timeLimit, 0);
+  assert.equal(storage.getSettings("quocphong1").count, 24);
+  assert.equal(storage.getSettings("quocphong2").timeLimit, 12);
+  assert.equal(storage.getSettings("quocphong1").practiceMode, "exam");
+  assert.equal(storage.getSettings("quocphong1").autoCheck, true);
+  assert.equal(storage.getBankSettings().count, 18);
   assert.equal(storage.getBankSettings().deck, "quocphong2");
+  assert.equal(storage.getBankSettings().timeLimit, 0);
+  assert.equal(storage.getBankSettings().autoCheck, false);
   assert.equal(storage.getSettings().deck, "quocphong1");
 });
 
