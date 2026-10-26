@@ -341,7 +341,7 @@ function renderTextWithHighlights(
       start: Math.max(0, range.start),
       end: Math.min(text.length, range.end),
     }))
-    .sort((a, b) => a.start - b.start || a.end - b.end);
+    .sort((leftRange, rightRange) => leftRange.start - rightRange.start || leftRange.end - rightRange.end);
   const merged = [];
   for (const range of ranges) {
     const last = merged[merged.length - 1];
@@ -375,7 +375,7 @@ function toggleHighlightSelection(deckId, questionIndex, selection) {
   const sameTarget = saved
     .filter((range) => range.target === selected.target)
     .map((range) => ({ start: range.start, end: range.end }))
-    .sort((a, b) => a.start - b.start);
+    .sort((leftRange, rightRange) => leftRange.start - rightRange.start);
   let coveredUntil = selected.start;
   for (const range of sameTarget) {
     if (range.end <= coveredUntil) continue;
@@ -512,35 +512,35 @@ function getReviewVirtualState() {
   return state.reviewVirtual;
 }
 
-function rebuildReviewVirtualMetrics(vs) {
-  const n = vs.filtered.length;
-  if (vs.heights.length !== n) {
-    vs.heights = Array.from(
+function rebuildReviewVirtualMetrics(virtualScrollState) {
+  const n = virtualScrollState.filtered.length;
+  if (virtualScrollState.heights.length !== n) {
+    virtualScrollState.heights = Array.from(
       { length: n },
-      (_, i) => vs.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
+      (_, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
     );
   }
-  vs.positions = new Array(n);
+  virtualScrollState.positions = new Array(n);
   let y = 0;
   for (let i = 0; i < n; i++) {
-    vs.positions[i] = y;
-    y += vs.heights[i];
+    virtualScrollState.positions[i] = y;
+    y += virtualScrollState.heights[i];
   }
-  vs.totalHeight = y;
-  if (vs.phantom) vs.phantom.style.height = `${Math.max(y, 0)}px`;
+  virtualScrollState.totalHeight = y;
+  if (virtualScrollState.phantom) virtualScrollState.phantom.style.height = `${Math.max(y, 0)}px`;
 }
 
-function findReviewVirtualIndex(vs, offsetY) {
-  const pos = vs.positions;
+function findReviewVirtualIndex(virtualScrollState, offsetY) {
+  const pos = virtualScrollState.positions;
   if (!pos.length) return 0;
-  let lo = 0;
-  let hi = pos.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1;
-    if (pos[mid] <= offsetY) lo = mid;
-    else hi = mid - 1;
+  let lowerBound = 0;
+  let upperBound = pos.length - 1;
+  while (lowerBound < upperBound) {
+    const mid = (lowerBound + upperBound + 1) >> 1;
+    if (pos[mid] <= offsetY) lowerBound = mid;
+    else upperBound = mid - 1;
   }
-  return lo;
+  return lowerBound;
 }
 
 function createReviewBankCard() {
@@ -690,52 +690,52 @@ function bindReviewBankCard(card, question, listIndex) {
   });
 }
 
-function ensureReviewVirtualPool(vs, list) {
-  while (vs.pool.length < REVIEW_VIRTUAL_POOL_SIZE) {
+function ensureReviewVirtualPool(virtualScrollState, list) {
+  while (virtualScrollState.pool.length < REVIEW_VIRTUAL_POOL_SIZE) {
     const card = createReviewBankCard();
     card.hidden = true;
     list.appendChild(card);
-    vs.pool.push(card);
+    virtualScrollState.pool.push(card);
   }
 }
 
-function measureReviewVirtualVisible(vs) {
-  for (const card of vs.pool) {
+function measureReviewVirtualVisible(virtualScrollState) {
+  for (const card of virtualScrollState.pool) {
     if (card.hidden) continue;
     const index = Number(card.dataset.listIndex);
-    if (!Number.isInteger(index) || index < 0 || index >= vs.filtered.length)
+    if (!Number.isInteger(index) || index < 0 || index >= virtualScrollState.filtered.length)
       continue;
-    const h = card.offsetHeight;
+    const height = card.offsetHeight;
     // +12px khoảng cách giữa các card (thay cho grid gap)
-    const withGap = h + 12;
-    if (h > 0 && Math.abs((vs.heights[index] || 0) - withGap) > 2) {
-      vs.heights[index] = withGap;
+    const withGap = height + 12;
+    if (height > 0 && Math.abs((virtualScrollState.heights[index] || 0) - withGap) > 2) {
+      virtualScrollState.heights[index] = withGap;
     }
   }
-  rebuildReviewVirtualMetrics(vs);
+  rebuildReviewVirtualMetrics(virtualScrollState);
 }
 
 function syncReviewVirtualWindow() {
   if (state.mode !== "review") return;
   const list = $("review-list");
-  const vs = getReviewVirtualState();
-  if (!list || !vs.filtered.length) return;
+  const virtualScrollState = getReviewVirtualState();
+  if (!list || !virtualScrollState.filtered.length) return;
 
   const listTop = list.getBoundingClientRect().top + window.scrollY;
   const viewTop = Math.max(0, window.scrollY - listTop);
   const viewBottom = viewTop + window.innerHeight;
 
-  let start = findReviewVirtualIndex(vs, viewTop);
+  let start = findReviewVirtualIndex(virtualScrollState, viewTop);
   start = Math.max(0, start - REVIEW_VIRTUAL_OVERSCAN);
-  let end = findReviewVirtualIndex(vs, viewBottom);
-  end = Math.min(vs.filtered.length - 1, end + REVIEW_VIRTUAL_OVERSCAN);
+  let end = findReviewVirtualIndex(virtualScrollState, viewBottom);
+  end = Math.min(virtualScrollState.filtered.length - 1, end + REVIEW_VIRTUAL_OVERSCAN);
 
   const needed = end - start + 1;
-  while (vs.pool.length < needed) {
+  while (virtualScrollState.pool.length < needed) {
     const card = createReviewBankCard();
     card.hidden = true;
     list.appendChild(card);
-    vs.pool.push(card);
+    virtualScrollState.pool.push(card);
   }
 
   const neededIndices = [];
@@ -743,7 +743,7 @@ function syncReviewVirtualWindow() {
 
   const assigned = new Map(); // listIndex -> card
   const free = [];
-  for (const card of vs.pool) {
+  for (const card of virtualScrollState.pool) {
     const index = Number(card.dataset.listIndex);
     if (
       !card.hidden &&
@@ -763,7 +763,7 @@ function syncReviewVirtualWindow() {
     if (!card) card = free.pop();
     if (!card) continue;
     assigned.set(i, card);
-    const question = vs.filtered[i];
+    const question = virtualScrollState.filtered[i];
     if (
       Number(card.dataset.listIndex) !== i ||
       Number(card.dataset.originalIndex) !== question.originalIndex
@@ -775,64 +775,64 @@ function syncReviewVirtualWindow() {
       );
     }
     card.hidden = false;
-    card.style.transform = `translateY(${vs.positions[i] || 0}px)`;
+    card.style.transform = `translateY(${virtualScrollState.positions[i] || 0}px)`;
   }
 
   const used = new Set(assigned.values());
-  for (const card of vs.pool) {
+  for (const card of virtualScrollState.pool) {
     if (!used.has(card)) {
       card.hidden = true;
       card.dataset.listIndex = "";
       card.dataset.originalIndex = "";
     }
   }
-  vs.rangeStart = start;
-  vs.rangeEnd = end;
+  virtualScrollState.rangeStart = start;
+  virtualScrollState.rangeEnd = end;
 
-  if (vs.measureRaf) cancelAnimationFrame(vs.measureRaf);
-  vs.measureRaf = requestAnimationFrame(() => {
-    vs.measureRaf = 0;
-    const before = vs.totalHeight;
-    measureReviewVirtualVisible(vs);
-    if (Math.abs(before - vs.totalHeight) > 4) {
-      for (const card of vs.pool) {
+  if (virtualScrollState.measureRaf) cancelAnimationFrame(virtualScrollState.measureRaf);
+  virtualScrollState.measureRaf = requestAnimationFrame(() => {
+    virtualScrollState.measureRaf = 0;
+    const before = virtualScrollState.totalHeight;
+    measureReviewVirtualVisible(virtualScrollState);
+    if (Math.abs(before - virtualScrollState.totalHeight) > 4) {
+      for (const card of virtualScrollState.pool) {
         if (card.hidden) continue;
         const index = Number(card.dataset.listIndex);
         if (!Number.isInteger(index)) continue;
-        card.style.transform = `translateY(${vs.positions[index] || 0}px)`;
+        card.style.transform = `translateY(${virtualScrollState.positions[index] || 0}px)`;
       }
     }
   });
 }
 
 function onReviewVirtualScroll() {
-  const vs = getReviewVirtualState();
-  if (vs.scrollRaf) return;
-  vs.scrollRaf = requestAnimationFrame(() => {
-    vs.scrollRaf = 0;
+  const virtualScrollState = getReviewVirtualState();
+  if (virtualScrollState.scrollRaf) return;
+  virtualScrollState.scrollRaf = requestAnimationFrame(() => {
+    virtualScrollState.scrollRaf = 0;
     syncReviewVirtualWindow();
   });
 }
 
 function ensureReviewVirtualScrollBinding() {
-  const vs = getReviewVirtualState();
-  if (vs.scrollBound) return;
+  const virtualScrollState = getReviewVirtualState();
+  if (virtualScrollState.scrollBound) return;
   window.addEventListener("scroll", onReviewVirtualScroll, { passive: true });
   window.addEventListener("resize", onReviewVirtualScroll, { passive: true });
-  vs.scrollBound = true;
+  virtualScrollState.scrollBound = true;
 }
 
 function scrollReviewToQuestionNumber(questionNumber) {
-  const vs = getReviewVirtualState();
-  const index = vs.filtered.findIndex(
-    (q) => q.originalIndex + 1 === questionNumber,
+  const virtualScrollState = getReviewVirtualState();
+  const index = virtualScrollState.filtered.findIndex(
+    (question) => question.originalIndex + 1 === questionNumber,
   );
   if (index < 0) return false;
   const list = $("review-list");
   if (!list) return false;
-  rebuildReviewVirtualMetrics(vs);
+  rebuildReviewVirtualMetrics(virtualScrollState);
   const listTop = list.getBoundingClientRect().top + window.scrollY;
-  const y = listTop + (vs.positions[index] || 0) - 12;
+  const y = listTop + (virtualScrollState.positions[index] || 0) - 12;
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -883,32 +883,32 @@ function renderQuestionBank() {
   }
 
   const list = $("review-list");
-  const vs = getReviewVirtualState();
-  vs.filtered = filtered;
-  vs.heights = filtered.map(
-    (_, i) => vs.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
+  const virtualScrollState = getReviewVirtualState();
+  virtualScrollState.filtered = filtered;
+  virtualScrollState.heights = filtered.map(
+    (_, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT,
   );
-  if (vs.heights.length > filtered.length) vs.heights.length = filtered.length;
+  if (virtualScrollState.heights.length > filtered.length) virtualScrollState.heights.length = filtered.length;
 
   list.classList.add("review-list-virtual");
   // Keep pool nodes; rebuild shell
-  const keep = new Set(vs.pool);
-  if (vs.phantom) keep.add(vs.phantom);
+  const keep = new Set(virtualScrollState.pool);
+  if (virtualScrollState.phantom) keep.add(virtualScrollState.phantom);
   for (const child of [...list.children]) {
     if (!keep.has(child)) child.remove();
   }
-  if (!vs.phantom) {
-    vs.phantom = document.createElement("div");
-    vs.phantom.className = "review-vs-phantom";
-    vs.phantom.setAttribute("aria-hidden", "true");
+  if (!virtualScrollState.phantom) {
+    virtualScrollState.phantom = document.createElement("div");
+    virtualScrollState.phantom.className = "review-vs-phantom";
+    virtualScrollState.phantom.setAttribute("aria-hidden", "true");
   }
-  if (!vs.phantom.parentNode) list.insertBefore(vs.phantom, list.firstChild);
-  ensureReviewVirtualPool(vs, list);
-  rebuildReviewVirtualMetrics(vs);
+  if (!virtualScrollState.phantom.parentNode) list.insertBefore(virtualScrollState.phantom, list.firstChild);
+  ensureReviewVirtualPool(virtualScrollState, list);
+  rebuildReviewVirtualMetrics(virtualScrollState);
 
   if (!filtered.length) {
-    for (const card of vs.pool) card.hidden = true;
-    vs.phantom.style.height = "0px";
+    for (const card of virtualScrollState.pool) card.hidden = true;
+    virtualScrollState.phantom.style.height = "0px";
     let empty = list.querySelector(".review-empty");
     if (!empty) {
       empty = document.createElement("p");
@@ -928,11 +928,11 @@ function renderQuestionBank() {
 
 function openQuestionBank() {
   state.reviewSelectedIndices.clear();
-  const vs = getReviewVirtualState();
-  vs.heights = [];
-  vs.positions = [];
-  vs.rangeStart = 0;
-  vs.rangeEnd = -1;
+  const virtualScrollState = getReviewVirtualState();
+  virtualScrollState.heights = [];
+  virtualScrollState.positions = [];
+  virtualScrollState.rangeStart = 0;
+  virtualScrollState.rangeEnd = -1;
   if ($("input-review-goto")) $("input-review-goto").value = "";
   const bank = getBankSettings();
   state.bankDeck = bank.deck === "quocphong2" ? "quocphong2" : "quocphong1";
@@ -980,7 +980,7 @@ function refreshSetupUI() {
   const progress = getDeckProgress(state.currentDeck);
   const completed = new Set(progress.completed);
   const remaining = questions.filter(
-    (q) => !completed.has(q.originalIndex),
+    (question) => !completed.has(question.originalIndex),
   ).length;
   const wrongs = getWrongIndices(state.currentDeck);
   $("stat-completed").textContent = String(completed.size);
@@ -1183,9 +1183,9 @@ function setBankDeck(deckId) {
   persistBankForm();
   state.bankDeck = id;
   state.reviewSelectedIndices.clear();
-  const vs = getReviewVirtualState();
-  vs.heights = [];
-  vs.positions = [];
+  const virtualScrollState = getReviewVirtualState();
+  virtualScrollState.heights = [];
+  virtualScrollState.positions = [];
   const settings = getBankSettings();
   // giữ practiceMode/count đã lưu toàn cục ngân hàng nhưng gắn deck mới
   applyBankSettingsToForm({ ...settings, deck: id });
@@ -1307,9 +1307,9 @@ function applySettingsToForm(settings) {
 function stopSessionTimer(freeze = true) {
   clearInterval(state.timerInterval);
   state.timerInterval = null;
-  const s = state.session;
-  if (freeze && s && !s.finishedAt) {
-    s.finishedAt = Date.now();
+  const session = state.session;
+  if (freeze && session && !session.finishedAt) {
+    session.finishedAt = Date.now();
     persistSession();
   }
   updateTimerDisplay();
@@ -1362,11 +1362,11 @@ function startSessionFromPool(pool, meta) {
     shuffleQuestions,
     shuffleAnswers,
     fromBank,
-    pool: pool.map((q) => ({
-      originalIndex: q.originalIndex,
-      question: q.question,
-      options: q.options.slice(),
-      correct: q.correct,
+    pool: pool.map((question) => ({
+      originalIndex: question.originalIndex,
+      question: question.question,
+      options: question.options.slice(),
+      correct: question.correct,
     })),
     items,
     viewIndex: 0,
@@ -1647,64 +1647,64 @@ function recordWrongAnswer(session, originalIndex) {
 }
 
 function currentItem() {
-  const s = state.session;
-  if (!s) return null;
-  return s.items[s.viewIndex];
+  const session = state.session;
+  if (!session) return null;
+  return session.items[session.viewIndex];
 }
 
 function currentQ() {
-  const s = state.session;
+  const session = state.session;
   const item = currentItem();
-  if (!s || !item) return null;
-  return s.pool[item.poolIndex];
+  if (!session || !item) return null;
+  return session.pool[item.poolIndex];
 }
 
 function renderQuestion() {
-  const s = state.session;
-  if (!s) return;
+  const session = state.session;
+  if (!session) return;
   const item = currentItem();
-  const q = currentQ();
-  if (!item || !q) return;
+  const question = currentQ();
+  if (!item || !question) return;
 
-  const viewingHistory = s.viewIndex < s.maxReached;
+  const viewingHistory = session.viewIndex < session.maxReached;
 
   $("progress-label").textContent =
-    `Câu ${s.viewIndex + 1} / ${s.items.length}`;
+    `Câu ${session.viewIndex + 1} / ${session.items.length}`;
   const progressTotal =
-    s.mode === "practice-wrong"
-      ? s.practiceInitialCount || s.items.length
-      : s.items.length;
+    session.mode === "practice-wrong"
+      ? session.practiceInitialCount || session.items.length
+      : session.items.length;
   $("progress-score").textContent =
-    `Điểm ${formatScore(s.firstTryCorrect || 0, progressTotal)} / 10`;
+    `Điểm ${formatScore(session.firstTryCorrect || 0, progressTotal)} / 10`;
   updateTimerDisplay();
   const pct = progressTotal
-    ? Math.round((s.completedInSession / progressTotal) * 100)
+    ? Math.round((session.completedInSession / progressTotal) * 100)
     : 0;
   $("progress-fill").style.width = `${pct}%`;
   $("progress-fill").parentElement.setAttribute("aria-valuenow", String(pct));
 
   $("q-badge").textContent =
-    s.mode === "practice-wrong"
-      ? `Ôn câu sai · Gốc #${q.originalIndex + 1}`
-      : s.mode === "practice-bookmarks"
-        ? `Ôn câu đã đánh dấu · Gốc #${q.originalIndex + 1}`
-        : s.mode === "search"
-          ? `Ôn kết quả tìm kiếm · Gốc #${q.originalIndex + 1}`
-          : `Câu hỏi · Gốc #${q.originalIndex + 1}`;
+    session.mode === "practice-wrong"
+      ? `Ôn câu sai · Gốc #${question.originalIndex + 1}`
+      : session.mode === "practice-bookmarks"
+        ? `Ôn câu đã đánh dấu · Gốc #${question.originalIndex + 1}`
+        : session.mode === "search"
+          ? `Ôn kết quả tìm kiếm · Gốc #${question.originalIndex + 1}`
+          : `Câu hỏi · Gốc #${question.originalIndex + 1}`;
   const bookmarkButton = $("btn-bookmark");
-  const isBookmarked = getBookmarkedIndices(s.deckId).includes(q.originalIndex);
+  const isBookmarked = getBookmarkedIndices(session.deckId).includes(question.originalIndex);
   bookmarkButton.textContent = isBookmarked ? "Đã đánh dấu" : "Đánh dấu";
   bookmarkButton.classList.toggle("is-bookmarked", isBookmarked);
   bookmarkButton.setAttribute("aria-pressed", String(isBookmarked));
   renderTextWithHighlights(
     $("q-text"),
-    q.question,
-    s.deckId,
-    q.originalIndex,
+    question.question,
+    session.deckId,
+    question.originalIndex,
     "question",
   );
   const highlightToolbar = $("quiz-highlight-toolbar");
-  if (highlightToolbar) highlightToolbar.hidden = s.examMode === true;
+  if (highlightToolbar) highlightToolbar.hidden = session.examMode === true;
 
   const optsEl = $("options");
   optsEl.replaceChildren();
@@ -1741,7 +1741,7 @@ function renderQuestion() {
     if (item.status === "correct") {
       btn.classList.add("locked");
       btn.disabled = true;
-      if (displayIdx === displayedCorrectIndex(item, q))
+      if (displayIdx === displayedCorrectIndex(item, question))
         btn.classList.add("correct");
     } else if (viewingHistory) {
       btn.disabled = true;
@@ -1755,9 +1755,9 @@ function renderQuestion() {
     text.className = "option-text";
     renderTextWithHighlights(
       text,
-      q.options[origIdx],
-      s.deckId,
-      q.originalIndex,
+      question.options[origIdx],
+      session.deckId,
+      question.originalIndex,
       `option:${origIdx}`,
     );
     btn.append(key, text);
@@ -1804,20 +1804,20 @@ function renderQuestion() {
     feedback.textContent = "";
   }
 
-  $("btn-prev").disabled = s.viewIndex <= 0;
+  $("btn-prev").disabled = session.viewIndex <= 0;
   const nextButton = $("btn-next");
   if (viewingHistory) {
     nextButton.textContent = "Câu tiếp";
     nextButton.dataset.icon = "chevron-right";
-    nextButton.disabled = s.viewIndex >= s.maxReached;
+    nextButton.disabled = session.viewIndex >= session.maxReached;
   } else if (item.status === "correct") {
-    const isLastQuestion = s.viewIndex === s.items.length - 1;
-    const shouldFinish = isLastQuestion && s.mode !== "practice-wrong";
+    const isLastQuestion = session.viewIndex === session.items.length - 1;
+    const shouldFinish = isLastQuestion && session.mode !== "practice-wrong";
     nextButton.textContent = shouldFinish ? "Kết thúc" : "Câu tiếp";
     nextButton.dataset.icon = shouldFinish ? "check" : "chevron-right";
     nextButton.disabled = false;
   } else if (
-    s.mode === "practice-wrong" &&
+    session.mode === "practice-wrong" &&
     item.status === "wrong" &&
     item.checked
   ) {
@@ -1846,15 +1846,15 @@ function setPracticeMode(mode) {
 }
 
 function updateExamProgressHeader() {
-  const s = state.session;
-  if (!s || !s.examMode) return;
-  const answered = s.items.filter((it) => it.userAnswer != null).length;
-  const unanswered = s.items.length - answered;
-  $("exam-progress-label").textContent = s.reviewMode
-    ? `Kết quả · ${s.firstTryCorrect || 0}/${s.items.length} đúng`
-    : `Đã chọn ${answered} / ${s.items.length}`;
-  const pct = s.items.length
-    ? Math.round((answered / s.items.length) * 100)
+  const session = state.session;
+  if (!session || !session.examMode) return;
+  const answered = session.items.filter((item) => item.userAnswer != null).length;
+  const unanswered = session.items.length - answered;
+  $("exam-progress-label").textContent = session.reviewMode
+    ? `Kết quả · ${session.firstTryCorrect || 0}/${session.items.length} đúng`
+    : `Đã chọn ${answered} / ${session.items.length}`;
+  const pct = session.items.length
+    ? Math.round((answered / session.items.length) * 100)
     : 0;
   const fill = $("exam-progress-fill");
   if (fill) {
@@ -1864,18 +1864,18 @@ function updateExamProgressHeader() {
   updateTimerDisplay();
   const filterWrong = $("exam-filter-wrong");
   const filterCorrect = $("exam-filter-correct");
-  if (filterWrong) filterWrong.hidden = !s.reviewMode;
-  if (filterCorrect) filterCorrect.hidden = !s.reviewMode;
+  if (filterWrong) filterWrong.hidden = !session.reviewMode;
+  if (filterCorrect) filterCorrect.hidden = !session.reviewMode;
   const nextEmpty = $("btn-exam-next-empty");
   if (nextEmpty) {
-    nextEmpty.hidden = s.reviewMode || unanswered === 0;
+    nextEmpty.hidden = session.reviewMode || unanswered === 0;
     nextEmpty.textContent = unanswered ? `Còn ${unanswered} câu` : "Đủ đáp án";
   }
   const pauseBtn = $("btn-exam-pause");
-  if (pauseBtn) pauseBtn.hidden = !!s.reviewMode;
+  if (pauseBtn) pauseBtn.hidden = !!session.reviewMode;
   const submitBtn = $("btn-exam-submit");
   if (submitBtn) {
-    if (s.reviewMode) {
+    if (session.reviewMode) {
       submitBtn.textContent = "Xem tổng kết";
       submitBtn.dataset.icon = "list-check";
       submitBtn.disabled = false;
@@ -1894,10 +1894,10 @@ function updateExamProgressHeader() {
 }
 
 function applyExamFilter() {
-  const s = state.session;
-  if (!s?.examMode) return;
+  const session = state.session;
+  if (!session?.examMode) return;
   const filter = state.examFilter || "all";
-  s.items.forEach((item, index) => {
+  session.items.forEach((item, index) => {
     const card = $(`exam-q-${index}`);
     if (!card) return;
     let show = true;
@@ -1914,11 +1914,11 @@ function scrollToExamQuestion(index) {
 }
 
 function jumpToNextUnanswered(fromIdx = -1) {
-  const s = state.session;
-  if (!s?.examMode || s.reviewMode) return;
+  const session = state.session;
+  if (!session?.examMode || session.reviewMode) return;
   const start = fromIdx + 1;
-  let found = s.items.findIndex((it, i) => i >= start && it.userAnswer == null);
-  if (found < 0) found = s.items.findIndex((it) => it.userAnswer == null);
+  let found = session.items.findIndex((item, i) => i >= start && item.userAnswer == null);
+  if (found < 0) found = session.items.findIndex((item) => item.userAnswer == null);
   if (found >= 0) {
     state.examFilter = "all";
     applyExamFilter();
@@ -1930,8 +1930,8 @@ function jumpToNextUnanswered(fromIdx = -1) {
 }
 
 function renderExam() {
-  const s = state.session;
-  if (!s || !s.examMode) return;
+  const session = state.session;
+  if (!session || !session.examMode) return;
   const list = $("exam-list");
   const nav = $("exam-nav");
   if (!list || !nav) return;
@@ -1941,13 +1941,13 @@ function renderExam() {
   const labels = ["A", "B", "C", "D", "E", "F"];
   updateExamProgressHeader();
 
-  s.items.forEach((item, index) => {
-    const q = s.pool[item.poolIndex];
+  session.items.forEach((item, index) => {
+    const question = session.pool[item.poolIndex];
     const card = document.createElement("article");
     card.className = "exam-q-card";
     card.id = `exam-q-${index}`;
     if (item.userAnswer != null) card.classList.add("is-answered");
-    if (s.reviewMode) {
+    if (session.reviewMode) {
       if (item.status === "correct") card.classList.add("is-correct");
       else if (item.status === "wrong") card.classList.add("is-wrong");
     }
@@ -1956,9 +1956,9 @@ function renderExam() {
     head.className = "exam-q-head";
     const num = document.createElement("span");
     num.className = "exam-q-num";
-    num.textContent = `Câu ${index + 1} · Gốc #${q.originalIndex + 1}`;
+    num.textContent = `Câu ${index + 1} · Gốc #${question.originalIndex + 1}`;
     head.appendChild(num);
-    if (s.reviewMode) {
+    if (session.reviewMode) {
       const badge = document.createElement("span");
       badge.className = `exam-status-badge ${item.status === "correct" ? "ok" : "bad"}`;
       badge.textContent =
@@ -1973,7 +1973,7 @@ function renderExam() {
 
     const text = document.createElement("h3");
     text.className = "exam-q-text";
-    text.textContent = q.question;
+    text.textContent = question.question;
     card.appendChild(text);
 
     const opts = document.createElement("div");
@@ -1989,9 +1989,9 @@ function renderExam() {
       btn.dataset.display = String(displayIdx);
       btn.setAttribute("aria-pressed", String(item.userAnswer === displayIdx));
       if (item.userAnswer === displayIdx) btn.classList.add("selected");
-      if (s.reviewMode) {
+      if (session.reviewMode) {
         btn.disabled = true;
-        const correctDisplay = item.optionOrder.indexOf(q.correct);
+        const correctDisplay = item.optionOrder.indexOf(question.correct);
         if (displayIdx === correctDisplay) btn.classList.add("correct");
         if (item.userAnswer === displayIdx && item.status === "wrong")
           btn.classList.add("incorrect");
@@ -2001,9 +2001,9 @@ function renderExam() {
       label.textContent = labels[displayIdx] || String(displayIdx + 1);
       const body = document.createElement("span");
       body.className = "option-text";
-      body.textContent = q.options[origIdx];
+      body.textContent = question.options[origIdx];
       btn.append(label, body);
-      if (!s.reviewMode) {
+      if (!session.reviewMode) {
         btn.addEventListener("click", () => onExamSelect(index, displayIdx));
       }
       opts.appendChild(btn);
@@ -2018,7 +2018,7 @@ function renderExam() {
     dot.title = `Câu ${index + 1}`;
     dot.dataset.index = String(index);
     if (item.userAnswer != null) dot.classList.add("is-answered");
-    if (s.reviewMode) {
+    if (session.reviewMode) {
       if (item.status === "correct") dot.classList.add("is-correct");
       else if (item.status === "wrong") dot.classList.add("is-wrong");
     }
@@ -2031,9 +2031,9 @@ function renderExam() {
 }
 
 function patchExamQuestion(qIdx) {
-  const s = state.session;
-  if (!s?.examMode) return;
-  const item = s.items[qIdx];
+  const session = state.session;
+  if (!session?.examMode) return;
+  const item = session.items[qIdx];
   const card = $(`exam-q-${qIdx}`);
   if (!item || !card) {
     renderExam();
@@ -2056,9 +2056,9 @@ function patchExamQuestion(qIdx) {
 
 function onExamSelect(qIdx, displayIdx) {
   if (enforceSessionDeadline()) return;
-  const s = state.session;
-  if (!s || s.reviewMode || !s.examMode || state.examSubmitting) return;
-  const item = s.items[qIdx];
+  const session = state.session;
+  if (!session || session.reviewMode || !session.examMode || state.examSubmitting) return;
+  const item = session.items[qIdx];
   if (!item) return;
   item.userAnswer = displayIdx;
   item.checked = false;
@@ -2070,13 +2070,13 @@ function onExamSelect(qIdx, displayIdx) {
 async function onExamSubmit() {
   if (state.examSubmitting) return;
   if (enforceSessionDeadline()) return;
-  const s = state.session;
-  if (!s || !s.examMode) return;
-  if (s.reviewMode) {
+  const session = state.session;
+  if (!session || !session.examMode) return;
+  if (session.reviewMode) {
     finishSession();
     return;
   }
-  const unanswered = s.items.filter((it) => it.userAnswer == null).length;
+  const unanswered = session.items.filter((item) => item.userAnswer == null).length;
   if (unanswered > 0) {
     const ok = await confirmModal(
       "Còn câu chưa chọn",
@@ -2086,35 +2086,35 @@ async function onExamSubmit() {
   } else {
     const ok = await confirmModal(
       "Nộp bài thi?",
-      `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`,
+      `Bạn đã chọn đủ ${session.items.length} câu. Nộp bài để xem kết quả?`,
     );
     if (!ok) return;
   }
 
   // The deadline may expire while the confirmation dialog is open.
-  if (enforceSessionDeadline() || state.session !== s || s.reviewMode) return;
+  if (enforceSessionDeadline() || state.session !== session || session.reviewMode) return;
   state.examSubmitting = true;
   updateExamProgressHeader();
   try {
     let firstTry = 0;
     let wrongAttempts = 0;
     const completedIdx = [];
-    for (const item of s.items) {
-      const q = s.pool[item.poolIndex];
+    for (const item of session.items) {
+      const question = session.pool[item.poolIndex];
       if (item.userAnswer == null) {
         item.status = "wrong";
         item.checked = true;
         item.wrongCount = 1;
         wrongAttempts += 1;
-        recordWrongAnswer(s, q.originalIndex);
+        recordWrongAnswer(session, question.originalIndex);
         continue;
       }
-      const correct = isAnswerCorrect(item, q);
+      const correct = isAnswerCorrect(item, question);
       item.checked = true;
       if (correct) {
         item.status = "correct";
         firstTry += 1;
-        completedIdx.push(q.originalIndex);
+        completedIdx.push(question.originalIndex);
       } else {
         item.status = "wrong";
         item.wrongCount = 1;
@@ -2123,22 +2123,22 @@ async function onExamSubmit() {
         if (!item.wrongOptions) item.wrongOptions = [];
         if (!item.wrongOptions.includes(wrongOriginalIndex))
           item.wrongOptions.push(wrongOriginalIndex);
-        recordWrongAnswer(s, q.originalIndex);
+        recordWrongAnswer(session, question.originalIndex);
       }
     }
     if (completedIdx.length)
-      addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
-    s.firstTryCorrect = firstTry;
-    s.totalWrongAttempts = wrongAttempts;
-    s.completedInSession = s.items.length;
-    s.reviewMode = true;
+      addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
+    session.firstTryCorrect = firstTry;
+    session.totalWrongAttempts = wrongAttempts;
+    session.completedInSession = session.items.length;
+    session.reviewMode = true;
     state.reviewMode = true;
     state.examFilter = "all";
     stopSessionTimer(true);
     persistSession();
     renderExam();
     toast(
-      `Đã chấm bài: ${firstTry}/${s.items.length} đúng · Điểm ${formatScore(firstTry, s.items.length)}/10`,
+      `Đã chấm bài: ${firstTry}/${session.items.length} đúng · Điểm ${formatScore(firstTry, session.items.length)}/10`,
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   } finally {
@@ -2164,17 +2164,17 @@ function enforceSessionDeadline() {
     let wrongAttempts = 0;
     const completedIdx = [];
     for (const item of session.items) {
-      const q = session.pool[item.poolIndex];
+      const question = session.pool[item.poolIndex];
       item.checked = true;
-      if (item.userAnswer != null && isAnswerCorrect(item, q)) {
+      if (item.userAnswer != null && isAnswerCorrect(item, question)) {
         item.status = "correct";
         firstTry += 1;
-        completedIdx.push(q.originalIndex);
+        completedIdx.push(question.originalIndex);
       } else {
         item.status = "wrong";
         item.wrongCount = Math.max(1, item.wrongCount || 0);
         wrongAttempts += 1;
-        recordWrongAnswer(session, q.originalIndex);
+        recordWrongAnswer(session, question.originalIndex);
       }
     }
     if (completedIdx.length)
@@ -2199,13 +2199,13 @@ function enforceSessionDeadline() {
 
 function onSelectOption(displayIdx) {
   if (enforceSessionDeadline()) return;
-  const s = state.session;
+  const session = state.session;
   const item = currentItem();
-  if (!s || !item) return;
-  if (item.status === "correct" || s.viewIndex < s.maxReached) return;
-  const q = currentQ();
+  if (!session || !item) return;
+  if (item.status === "correct" || session.viewIndex < session.maxReached) return;
+  const question = currentQ();
   if (
-    !q ||
+    !question ||
     (Array.isArray(item.wrongOptions) &&
       item.wrongOptions.includes(item.optionOrder[displayIdx]))
   )
@@ -2218,7 +2218,7 @@ function onSelectOption(displayIdx) {
   }
   persistSession();
   renderQuestion();
-  if (sessionPreferences(s.deckId).autoCheck) onCheck();
+  if (sessionPreferences(session.deckId).autoCheck) onCheck();
 }
 
 const answerSounds = {
@@ -2251,17 +2251,17 @@ function playAnswerSound(isCorrect) {
 
 function onCheck() {
   if (enforceSessionDeadline()) return;
-  const s = state.session;
+  const session = state.session;
   const item = currentItem();
-  const q = currentQ();
-  if (!s || !item || !q || item.userAnswer == null) return;
-  if (item.status === "correct" || item.checked || s.viewIndex < s.maxReached)
+  const question = currentQ();
+  if (!session || !item || !question || item.userAnswer == null) return;
+  if (item.status === "correct" || item.checked || session.viewIndex < session.maxReached)
     return;
 
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
-  const isCorrect = isAnswerCorrect(item, q);
-  const preferences = sessionPreferences(s.deckId);
+  const isCorrect = isAnswerCorrect(item, question);
+  const preferences = sessionPreferences(session.deckId);
   const vibrate = (pattern) => {
     if (
       preferences.vibrationEnabled !== false &&
@@ -2279,22 +2279,22 @@ function onCheck() {
     const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
     item.status = "correct";
     if (!wasAlreadyCorrect) {
-      if (s.mode === "practice-wrong") {
-        if (!Array.isArray(s.practiceCompletedIndices))
-          s.practiceCompletedIndices = [];
-        const originalIndex = q.originalIndex;
-        if (!s.practiceCompletedIndices.includes(originalIndex)) {
-          s.practiceCompletedIndices.push(originalIndex);
-          s.completedInSession = s.practiceCompletedIndices.length;
-          if (firstTime) s.firstTryCorrect += 1;
+      if (session.mode === "practice-wrong") {
+        if (!Array.isArray(session.practiceCompletedIndices))
+          session.practiceCompletedIndices = [];
+        const originalIndex = question.originalIndex;
+        if (!session.practiceCompletedIndices.includes(originalIndex)) {
+          session.practiceCompletedIndices.push(originalIndex);
+          session.completedInSession = session.practiceCompletedIndices.length;
+          if (firstTime) session.firstTryCorrect += 1;
         }
       } else {
-        s.completedInSession += 1;
-        if (firstTime) s.firstTryCorrect += 1;
+        session.completedInSession += 1;
+        if (firstTime) session.firstTryCorrect += 1;
       }
     }
-    if (s.viewIndex >= s.maxReached) s.maxReached = s.viewIndex;
-    s.reviewingPast = false;
+    if (session.viewIndex >= session.maxReached) session.maxReached = session.viewIndex;
+    session.reviewingPast = false;
   } else {
     playAnswerSound(false);
     vibrate([28, 45, 28]);
@@ -2303,36 +2303,36 @@ function onCheck() {
     if (!item.wrongOptions.includes(wrongOriginalIndex))
       item.wrongOptions.push(wrongOriginalIndex);
     item.wrongCount += 1;
-    s.totalWrongAttempts += 1;
-    if (s.mode === "practice-wrong") {
-      if (!Array.isArray(s.practiceWrongHistory)) s.practiceWrongHistory = [];
-      const history = s.practiceWrongHistory.find(
-        (entry) => entry.originalIndex === q.originalIndex,
+    session.totalWrongAttempts += 1;
+    if (session.mode === "practice-wrong") {
+      if (!Array.isArray(session.practiceWrongHistory)) session.practiceWrongHistory = [];
+      const history = session.practiceWrongHistory.find(
+        (entry) => entry.originalIndex === question.originalIndex,
       );
       if (history) history.wrongCount += 1;
       else
-        s.practiceWrongHistory.push({
-          originalIndex: q.originalIndex,
-          question: q.question,
+        session.practiceWrongHistory.push({
+          originalIndex: question.originalIndex,
+          question: question.question,
           wrongCount: 1,
         });
     }
-    recordWrongAnswer(s, q.originalIndex);
+    recordWrongAnswer(session, question.originalIndex);
   }
   persistSession();
   renderQuestion();
   if (
     isCorrect &&
     preferences.autoAdvance === true &&
-    s.viewIndex < s.items.length - 1
+    session.viewIndex < session.items.length - 1
   ) {
     setTimeout(
       () => {
         if (
-          state.session === s &&
+          state.session === session &&
           currentItem() === item &&
           item.status === "correct" &&
-          s.viewIndex < s.items.length - 1
+          session.viewIndex < session.items.length - 1
         )
           onNext();
       },
@@ -2343,23 +2343,23 @@ function onCheck() {
 
 function onNext() {
   if (enforceSessionDeadline()) return;
-  const s = state.session;
-  if (!s) return;
+  const session = state.session;
+  if (!session) return;
   const item = currentItem();
   if (!item) return;
 
   if (
-    s.viewIndex >= s.maxReached &&
+    session.viewIndex >= session.maxReached &&
     item.status !== "correct" &&
-    !(s.mode === "practice-wrong" && item.status === "wrong" && item.checked)
+    !(session.mode === "practice-wrong" && item.status === "wrong" && item.checked)
   ) {
     onCheck();
     return;
   }
 
-  if (s.viewIndex < s.maxReached) {
-    s.viewIndex += 1;
-    s.reviewingPast = s.viewIndex < s.maxReached;
+  if (session.viewIndex < session.maxReached) {
+    session.viewIndex += 1;
+    session.reviewingPast = session.viewIndex < session.maxReached;
     persistSession();
     renderQuestion();
     return;
@@ -2367,33 +2367,33 @@ function onNext() {
 
   if (
     item.status !== "correct" &&
-    !(s.mode === "practice-wrong" && item.status === "wrong")
+    !(session.mode === "practice-wrong" && item.status === "wrong")
   ) {
     toast("Hãy kiểm tra câu trả lời trước khi sang câu tiếp.");
     return;
   }
 
-  if (s.viewIndex >= s.items.length - 1) {
-    if (s.mode === "practice-wrong") {
-      const unresolved = s.items.filter((entry) => entry.status !== "correct");
+  if (session.viewIndex >= session.items.length - 1) {
+    if (session.mode === "practice-wrong") {
+      const unresolved = session.items.filter((entry) => entry.status !== "correct");
       if (!unresolved.length) {
         finishSession();
         return;
       }
-      s.items = unresolved.map((entry) => ({
+      session.items = unresolved.map((entry) => ({
         ...entry,
         optionOrder: entry.optionOrder.slice(),
         userAnswer: null,
         status: "pending",
         checked: false,
       }));
-      s.viewIndex = 0;
-      s.maxReached = 0;
-      s.reviewingPast = false;
+      session.viewIndex = 0;
+      session.maxReached = 0;
+      session.reviewingPast = false;
       persistSession();
       renderQuestion();
       toast(
-        `Còn ${s.items.length} câu chưa trả lời đúng. Tiếp tục ôn các câu này.`,
+        `Còn ${session.items.length} câu chưa trả lời đúng. Tiếp tục ôn các câu này.`,
         3500,
       );
       return;
@@ -2402,19 +2402,19 @@ function onNext() {
     return;
   }
 
-  s.viewIndex += 1;
-  if (s.viewIndex > s.maxReached) s.maxReached = s.viewIndex;
-  s.reviewingPast = false;
+  session.viewIndex += 1;
+  if (session.viewIndex > session.maxReached) session.maxReached = session.viewIndex;
+  session.reviewingPast = false;
   persistSession();
   renderQuestion();
 }
 
 function onPrev() {
   if (enforceSessionDeadline()) return;
-  const s = state.session;
-  if (!s || s.viewIndex <= 0) return;
-  s.viewIndex -= 1;
-  s.reviewingPast = true;
+  const session = state.session;
+  if (!session || session.viewIndex <= 0) return;
+  session.viewIndex -= 1;
+  session.reviewingPast = true;
   persistSession();
   renderQuestion();
 }
@@ -2484,8 +2484,8 @@ function animateScore(target, displayStr, circumference) {
   ringFg.style.transition = `stroke-dashoffset ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`;
 
   function frame(now) {
-    const t = Math.min(1, (now - start) / duration);
-    const eased = 1 - Math.pow(1 - t, 3);
+    const progressRatio = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - progressRatio, 3);
     const current = target * eased;
 
     const shown = Math.round(current * 10) / 10;
@@ -2496,7 +2496,7 @@ function animateScore(target, displayStr, circumference) {
     const pct = Math.max(0, Math.min(1, current / 10));
     ringFg.style.strokeDashoffset = `${circumference * (1 - pct)}`;
 
-    if (t < 1) {
+    if (progressRatio < 1) {
       requestAnimationFrame(frame);
     } else {
       scoreBig.textContent = displayStr;
@@ -2526,24 +2526,24 @@ function getElapsedSeconds(session = state.session) {
 }
 
 function updateTimerDisplay() {
-  const s = state.session;
-  const element = s?.examMode ? $("exam-progress-time") : $("progress-time");
+  const session = state.session;
+  const element = session?.examMode ? $("exam-progress-time") : $("progress-time");
   if (!element) return;
-  if (!s) {
+  if (!session) {
     element.hidden = true;
     return;
   }
-  const elapsed = getElapsedSeconds(s);
-  const stopped = !!s.finishedAt || !!s.reviewMode || !!s.pausedAt;
+  const elapsed = getElapsedSeconds(session);
+  const stopped = !!session.finishedAt || !!session.reviewMode || !!session.pausedAt;
   const hasLimit =
-    Number(s.timeLimit) > 0 && Number(s.deadlineAt) > 0 && !stopped;
+    Number(session.timeLimit) > 0 && Number(session.deadlineAt) > 0 && !stopped;
   const remaining = hasLimit
-    ? Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000))
+    ? Math.max(0, Math.ceil((session.deadlineAt - Date.now()) / 1000))
     : null;
   element.hidden = false;
   if (stopped) {
     element.textContent =
-      s.pausedAt && !s.finishedAt && !s.reviewMode
+      session.pausedAt && !session.finishedAt && !session.reviewMode
         ? `Tạm dừng · ${formatTime(elapsed)}`
         : `Hoàn thành · ${formatTime(elapsed)}`;
     element.classList.remove("time-warning");
@@ -2599,27 +2599,27 @@ function startSessionTimer() {
 }
 
 function finishSession() {
-  const s = state.session;
-  if (!s) return;
+  const session = state.session;
+  if (!session) return;
   stopSessionTimer(true);
 
-  if (s.mode !== "practice-wrong") {
-    const completedIdx = s.items
-      .filter((it) => it.status === "correct")
-      .map((it) => s.pool[it.poolIndex].originalIndex);
+  if (session.mode !== "practice-wrong") {
+    const completedIdx = session.items
+      .filter((item) => item.status === "correct")
+      .map((item) => session.pool[item.poolIndex].originalIndex);
     const progressSaved = addCompleted(
-      s.deckId,
+      session.deckId,
       completedIdx,
-      state.fingerprints[s.deckId],
+      state.fingerprints[session.deckId],
     );
     if (!progressSaved) {
       toast(
         "Không thể lưu tiến độ hoàn thành. Hãy kiểm tra dung lượng bộ nhớ trình duyệt.",
       );
     } else if (
-      s.sequential &&
-      s.nextCursor != null &&
-      !setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId])
+      session.sequential &&
+      session.nextCursor != null &&
+      !setSequentialCursor(session.deckId, session.nextCursor, state.fingerprints[session.deckId])
     ) {
       toast("Không thể lưu vị trí tuần tự của bộ đề.");
     }
@@ -2627,23 +2627,23 @@ function finishSession() {
 
   const wrongInSession = [];
   const seen = new Set();
-  if (s.mode === "practice-wrong" && Array.isArray(s.practiceWrongHistory)) {
-    for (const entry of s.practiceWrongHistory) {
+  if (session.mode === "practice-wrong" && Array.isArray(session.practiceWrongHistory)) {
+    for (const entry of session.practiceWrongHistory) {
       if (!seen.has(entry.originalIndex)) {
         seen.add(entry.originalIndex);
         wrongInSession.push({ ...entry });
       }
     }
   } else {
-    for (const it of s.items) {
-      if (it.wrongCount > 0) {
-        const oi = s.pool[it.poolIndex].originalIndex;
-        if (!seen.has(oi)) {
-          seen.add(oi);
+    for (const item of session.items) {
+      if (item.wrongCount > 0) {
+        const originalIndex = session.pool[item.poolIndex].originalIndex;
+        if (!seen.has(originalIndex)) {
+          seen.add(originalIndex);
           wrongInSession.push({
-            originalIndex: oi,
-            question: s.pool[it.poolIndex].question,
-            wrongCount: it.wrongCount,
+            originalIndex: originalIndex,
+            question: session.pool[item.poolIndex].question,
+            wrongCount: item.wrongCount,
           });
         }
       }
@@ -2651,48 +2651,48 @@ function finishSession() {
   }
 
   const scoreTotal =
-    s.mode === "practice-wrong"
-      ? s.practiceInitialCount || s.items.length
-      : s.items.length;
-  s.summary = {
+    session.mode === "practice-wrong"
+      ? session.practiceInitialCount || session.items.length
+      : session.items.length;
+  session.summary = {
     total: scoreTotal,
-    score: formatScore(s.firstTryCorrect || 0, scoreTotal),
-    elapsedSeconds: getElapsedSeconds(s),
-    timeExpired: !!s.timeExpired,
-    correct: s.firstTryCorrect || 0,
+    score: formatScore(session.firstTryCorrect || 0, scoreTotal),
+    elapsedSeconds: getElapsedSeconds(session),
+    timeExpired: !!session.timeExpired,
+    correct: session.firstTryCorrect || 0,
     wrongQuestions: wrongInSession.length,
-    wrongAttempts: s.totalWrongAttempts,
+    wrongAttempts: session.totalWrongAttempts,
     practiceQuestions:
-      s.mode === "practice-wrong"
-        ? s.practiceInitialCount || s.items.length
+      session.mode === "practice-wrong"
+        ? session.practiceInitialCount || session.items.length
         : 0,
     firstTryRate: (
-      s.mode === "practice-wrong" ? s.practiceInitialCount : s.items.length
+      session.mode === "practice-wrong" ? session.practiceInitialCount : session.items.length
     )
       ? Math.round(
-          (s.firstTryCorrect /
-            (s.mode === "practice-wrong"
-              ? s.practiceInitialCount
-              : s.items.length)) *
+          (session.firstTryCorrect /
+            (session.mode === "practice-wrong"
+              ? session.practiceInitialCount
+              : session.items.length)) *
             100,
         )
       : 0,
     wrongList: wrongInSession,
-    sequential: s.sequential,
-    nextCursor: s.nextCursor,
-    mode: s.mode,
+    sequential: session.sequential,
+    nextCursor: session.nextCursor,
+    mode: session.mode,
   };
 
   if (
-    Number.isInteger(s.rangeStart) &&
-    Number.isInteger(s.rangeEnd) &&
+    Number.isInteger(session.rangeStart) &&
+    Number.isInteger(session.rangeEnd) &&
     wrongInSession.length
   ) {
     if (
       !addWrongIndicesForRange(
-        s.deckId,
-        s.rangeStart,
-        s.rangeEnd,
+        session.deckId,
+        session.rangeStart,
+        session.rangeEnd,
         wrongInSession.map((entry) => entry.originalIndex),
       )
     ) {
@@ -2700,35 +2700,35 @@ function finishSession() {
     }
   }
   state._lastSummarySession = {
-    deckId: s.deckId,
-    mode: s.examMode || s.mode === "exam" ? "exam" : "practice",
-    sourceMode: s.mode,
-    indices: [...new Set(s.pool.map((question) => question.originalIndex))],
-    rangeStart: Number.isInteger(s.rangeStart) ? s.rangeStart : 1,
-    rangeEnd: Number.isInteger(s.rangeEnd)
-      ? s.rangeEnd
-      : (state.decks[s.deckId] || []).length,
-    requestedCount: s.items.length,
-    timeLimit: Number.isInteger(s.timeLimit) ? s.timeLimit : 0,
+    deckId: session.deckId,
+    mode: session.examMode || session.mode === "exam" ? "exam" : "practice",
+    sourceMode: session.mode,
+    indices: [...new Set(session.pool.map((question) => question.originalIndex))],
+    rangeStart: Number.isInteger(session.rangeStart) ? session.rangeStart : 1,
+    rangeEnd: Number.isInteger(session.rangeEnd)
+      ? session.rangeEnd
+      : (state.decks[session.deckId] || []).length,
+    requestedCount: session.items.length,
+    timeLimit: Number.isInteger(session.timeLimit) ? session.timeLimit : 0,
   };
   state._lastSummaryWrongIndices = wrongInSession.map(
     (entry) => entry.originalIndex,
   );
-  state._lastSummaryRangeStart = Number.isInteger(s.rangeStart)
-    ? s.rangeStart
+  state._lastSummaryRangeStart = Number.isInteger(session.rangeStart)
+    ? session.rangeStart
     : null;
-  state._lastSummaryRangeEnd = Number.isInteger(s.rangeEnd) ? s.rangeEnd : null;
-  state._lastSummaryCount = Number.isInteger(s.requestedCount)
-    ? s.requestedCount
-    : s.items.length;
+  state._lastSummaryRangeEnd = Number.isInteger(session.rangeEnd) ? session.rangeEnd : null;
+  state._lastSummaryCount = Number.isInteger(session.requestedCount)
+    ? session.requestedCount
+    : session.items.length;
 
-  const sessionCleared = clearSession(s.deckId);
+  const sessionCleared = clearSession(session.deckId);
   state.session = null;
   if (!sessionCleared)
     toast(
       "Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.",
     );
-  showSummary(s.summary, s.deckId, s.mode);
+  showSummary(session.summary, session.deckId, session.mode);
 }
 
 function showSummary(summary, deckId, mode) {
@@ -2793,13 +2793,13 @@ function showSummary(summary, deckId, mode) {
   list.replaceChildren();
   if (summary.wrongList.length) {
     listCard.hidden = false;
-    for (const w of summary.wrongList) {
-      const li = document.createElement("li");
+    for (const wrongQuestion of summary.wrongList) {
+      const listItemElement = document.createElement("li");
       const index = document.createElement("span");
       index.className = "index";
-      index.textContent = `#${w.originalIndex + 1}`;
-      li.append(index, document.createTextNode(w.question));
-      list.appendChild(li);
+      index.textContent = `#${wrongQuestion.originalIndex + 1}`;
+      listItemElement.append(index, document.createTextNode(wrongQuestion.question));
+      list.appendChild(listItemElement);
     }
   } else {
     listCard.hidden = true;
@@ -3078,21 +3078,21 @@ function initUI() {
   );
   $("btn-highlight-toggle")?.addEventListener("click", () => {
     captureHighlightSelection();
-    const q = currentQ();
-    const s = state.session;
+    const question = currentQ();
+    const session = state.session;
     const selection = state.lastTextSelection;
     if (
-      !q ||
-      !s ||
-      s.examMode ||
+      !question ||
+      !session ||
+      session.examMode ||
       !selection ||
-      selection.questionIndex !== q.originalIndex ||
-      selection.deckId !== s.deckId
+      selection.questionIndex !== question.originalIndex ||
+      selection.deckId !== session.deckId
     ) {
       toast("Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.");
       return;
     }
-    toggleHighlightSelection(selection.deckId, q.originalIndex, selection);
+    toggleHighlightSelection(selection.deckId, question.originalIndex, selection);
   });
   const active = getSettings();
   state.currentDeck =
@@ -3451,8 +3451,8 @@ function bindEvents() {
     toast("Đã bỏ phiên cũ.");
   });
   $("btn-exam-quit")?.addEventListener("click", async () => {
-    const s = state.session;
-    const reviewing = s?.reviewMode;
+    const session = state.session;
+    const reviewing = session?.reviewMode;
     const ok = await confirmModal(
       reviewing ? "Thoát kết quả thi?" : "Thoát bài thi?",
       reviewing
@@ -3470,10 +3470,10 @@ function bindEvents() {
   });
 
   $("btn-bookmark").addEventListener("click", () => {
-    const q = currentQ();
-    const s = state.session;
-    if (!q || !s) return;
-    const result = toggleBookmark(s.deckId, q.originalIndex);
+    const question = currentQ();
+    const session = state.session;
+    if (!question || !session) return;
+    const result = toggleBookmark(session.deckId, question.originalIndex);
     if (result == null) {
       toast(
         "Không thể lưu dấu trang. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.",
@@ -3707,12 +3707,12 @@ function registerSW() {
       if (reg.waiting && navigator.serviceWorker.controller)
         $("update-banner").hidden = false;
       reg.addEventListener("updatefound", () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener("statechange", () => {
-          if (nw.state === "installed" && navigator.serviceWorker.controller) {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
             $("update-banner").hidden = false;
-          } else if (nw.state === "redundant") {
+          } else if (newWorker.state === "redundant") {
             toast(
               "Không thể cài bản ngoại tuyến mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.",
             );
