@@ -38,16 +38,31 @@ const ESSENTIAL = [
   './assets/icons/tabler/x.svg'
 ];
 
-self.addEventListener('install', (event) => event.waitUntil((async () => {
-  const cache = await caches.open(CACHE_VERSION);
-  await cache.addAll(ESSENTIAL);
-})()));
+self.addEventListener('install', (event) =>
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_VERSION);
+      await cache.addAll(ESSENTIAL);
+    })()
+  )
+);
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
+self.addEventListener('activate', (event) =>
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION).map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
+  )
+);
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
@@ -66,16 +81,19 @@ self.addEventListener('fetch', (event) => {
   else event.respondWith(cacheFirst(request, event));
 });
 
-
 async function cacheFirst(request, event) {
   const cache = await caches.open(CACHE_VERSION);
   const cached = await cache.match(request, { ignoreSearch: true });
   if (cached) {
-    event.waitUntil(fetch(request).then((response) => {
-      if (response.ok) return cache.put(request, response.clone());
-    }).catch(() => {}));
+    event.waitUntil(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) return cache.put(request, response.clone());
+        })
+        .catch(() => {})
+    );
     return cached;
-  };
+  }
 
   try {
     const response = await fetch(request);
@@ -86,8 +104,8 @@ async function cacheFirst(request, event) {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     });
-  };
-};
+  }
+}
 
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
@@ -98,13 +116,13 @@ async function networkFirst(request) {
     if (response.ok) {
       await cache.put(request, response.clone());
       return response;
-    };
+    }
     const cached = await cache.match(request, { ignoreSearch: true });
     if (cached) return cached;
     if (isHTML) {
       const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
       if (fallback) return fallback;
-    };
+    }
     return response;
   } catch {
     const cached = await cache.match(request, { ignoreSearch: true });
@@ -112,10 +130,15 @@ async function networkFirst(request) {
     if (isHTML) {
       const fallback = await cache.match(new URL('index.html', self.registration.scope).href);
       if (fallback) return fallback;
-    };
-    return new Response(isHTML ? 'Cần kết nối mạng ít nhất một lần để tải trang và hai bộ đề.' : 'Chưa có dữ liệu này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải bộ đề.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
-  };
-};
+    }
+    return new Response(
+      isHTML
+        ? 'Cần kết nối mạng ít nhất một lần để tải trang và hai bộ đề.'
+        : 'Chưa có dữ liệu này trong bộ nhớ ngoại tuyến. Hãy kết nối mạng để tải bộ đề.',
+      {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      }
+    );
+  }
+}

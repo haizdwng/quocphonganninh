@@ -4,10 +4,18 @@ import fs from 'node:fs';
 
 const values = new Map();
 globalThis.localStorage = {
-  getItem(key) { return values.has(key) ? values.get(key) : null; },
-  setItem(key, value) { values.set(key, String(value)); },
-  removeItem(key) { values.delete(key); },
-  clear() { values.clear(); }
+  getItem(key) {
+    return values.has(key) ? values.get(key) : null;
+  },
+  setItem(key, value) {
+    values.set(key, String(value));
+  },
+  removeItem(key) {
+    values.delete(key);
+  },
+  clear() {
+    values.clear();
+  }
 };
 
 const quiz = await import('../assets/js/quiz.js');
@@ -24,12 +32,14 @@ const questions = Array.from({ length: 5 }, (_, originalIndex) => ({
 }));
 
 test('normalizeQuestions kiểm tra dữ liệu và giữ trường fixed', () => {
-  const normalized = quiz.normalizeQuestions([{
-    question: 'Câu mẫu',
-    options: ['A', 'B', 'C', 'D'],
-    correct: 2,
-    fixed: true
-  }]);
+  const normalized = quiz.normalizeQuestions([
+    {
+      question: 'Câu mẫu',
+      options: ['A', 'B', 'C', 'D'],
+      correct: 2,
+      fixed: true
+    }
+  ]);
   assert.equal(normalized[0].fixed, true);
   assert.throws(() => quiz.normalizeQuestions([{ question: 'Sai', options: ['A'], correct: 0 }]));
   assert.throws(() => quiz.normalizeQuestions([{ question: 'Sai', options: ['A', 'B'], correct: 2 }]));
@@ -48,7 +58,10 @@ test('chấm đáp án theo vị trí gốc khi thứ tự hiển thị đã đ�
 
 test('lấy câu tuần tự bỏ qua câu đã hoàn thành và không vượt quá số lượng', () => {
   const result = quiz.pickSequential(questions, 0, 3, new Set([1, 2]));
-  assert.deepEqual(result.items.map((question) => question.originalIndex), [0, 3, 4]);
+  assert.deepEqual(
+    result.items.map((question) => question.originalIndex),
+    [0, 3, 4]
+  );
   assert.equal(result.nextCursor, 5);
   assert.equal(result.exhausted, true);
 });
@@ -63,16 +76,33 @@ test('lấy câu ngẫu nhiên ưu tiên câu chưa hoàn thành và không lặ
 
 test('luyện câu sai giữ thứ tự gốc khi không bật đảo câu', () => {
   const result = quiz.pickWrong(questions, [4, 1, 3], 2, false);
-  assert.deepEqual(result.map((question) => question.originalIndex), [1, 3]);
+  assert.deepEqual(
+    result.map((question) => question.originalIndex),
+    [1, 3]
+  );
 });
 
 test('tùy chọn Quốc phòng 1 và Quốc phòng 2 được lưu tách biệt, giữ timeLimit = 0', () => {
-  assert.equal(storage.saveSettings({
-    deck: 'quocphong1', count: 25, timeLimit: 0, shuffleQ: false, shuffleA: true
-  }), true);
-  assert.equal(storage.saveSettings({
-    deck: 'quocphong2', count: 40, timeLimit: 35, shuffleQ: true, shuffleA: false
-  }), true);
+  assert.equal(
+    storage.saveSettings({
+      deck: 'quocphong1',
+      count: 25,
+      timeLimit: 0,
+      shuffleQ: false,
+      shuffleA: true
+    }),
+    true
+  );
+  assert.equal(
+    storage.saveSettings({
+      deck: 'quocphong2',
+      count: 40,
+      timeLimit: 35,
+      shuffleQ: true,
+      shuffleA: false
+    }),
+    true
+  );
   assert.equal(storage.getSettings('quocphong1').count, 25);
   assert.equal(storage.getSettings('quocphong1').timeLimit, 0);
   assert.equal(storage.getSettings('quocphong1').shuffleQ, false);
@@ -115,15 +145,17 @@ test('tùy chọn trải nghiệm được lưu riêng theo bộ đề và mặc
 });
 
 test('tiến độ, dấu trang và phiên làm bài được tách theo từng bộ đề', () => {
-  assert.ok(storage.saveDeckProgress('quocphong1', {
-    sequentialCursor: 2,
-    completed: [0, 1],
-    wrongMap: { 2: 1 },
-    wrongRangeMap: {},
-    practiceMap: {},
-    bookmarks: [],
-    dataFingerprint: 'fp-1'
-  }));
+  assert.ok(
+    storage.saveDeckProgress('quocphong1', {
+      sequentialCursor: 2,
+      completed: [0, 1],
+      wrongMap: { 2: 1 },
+      wrongRangeMap: {},
+      practiceMap: {},
+      bookmarks: [],
+      dataFingerprint: 'fp-1'
+    })
+  );
   assert.equal(storage.getDeckProgress('quocphong2').completed.length, 0);
   assert.equal(storage.toggleBookmark('quocphong1', 3), true);
   assert.deepEqual(storage.getBookmarkedIndices('quocphong1'), [3]);
@@ -162,12 +194,11 @@ test('sao lưu và khôi phục giữ tùy chọn cùng tiến độ', () => {
   assert.deepEqual(storage.getBookmarkedIndices('quocphong1'), [2]);
 });
 
-
 test('màn hình thiết lập dùng thẻ phiên đang dở thay cho lịch sử 10 phiên', () => {
   const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const app = fs.readFileSync(new URL('../assets/js/app.js', import.meta.url), 'utf8');
   const css = fs.readFileSync(new URL('../assets/css/style.css', import.meta.url), 'utf8');
-  assert.match(html, /id='resume-card'/);
+  assert.match(html, /id=["']resume-card["']/);
   assert.match(app, /Có lượt ôn đang dở/);
   assert.doesNotMatch(html, /session-history|10 phiên gần nhất/);
   assert.match(app, /function refreshResumeCard\(\)/);

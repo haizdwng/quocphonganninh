@@ -65,14 +65,14 @@ const state = {
   _lastSummaryRangeEnd: null,
   _lastSummaryCount: null,
   highlightEditMode: false,
-  lastTextSelection: null,
+  lastTextSelection: null
 };
 
 const $ = (id) => document.getElementById(id);
 
 function dataUrl(rel) {
   return new URL(rel, document.baseURI).href;
-};
+}
 
 async function loadDeck(id) {
   const meta = DECKS[id];
@@ -81,15 +81,17 @@ async function loadDeck(id) {
   try {
     res = await fetch(url, { cache: 'no-cache' });
   } catch {
-    throw new Error(`Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`);
-  };
+    throw new Error(
+      `Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`
+    );
+  }
   if (!res.ok) throw new Error(`Không tải được ${meta.label} (${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
   let raw;
   try {
     raw = await res.json();
   } catch {
     throw new Error(`Tệp dữ liệu ${meta.file} không hợp lệ.`);
-  };
+  }
   const questions = normalizeQuestions(raw);
   const fp = fingerprintQuestions(questions);
   state.decks[id] = questions;
@@ -113,26 +115,32 @@ async function loadDeck(id) {
       progress.dataFingerprint = fp;
       if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       if (!resetDeckHighlights(id)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
-    };
+    }
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fp;
     if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
-  };
+  }
 
   const progressBeforeSanitize = JSON.stringify(progress);
   const isValidIndex = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
   progress.completed = progress.completed.filter(isValidIndex);
   progress.bookmarks = progress.bookmarks.filter(isValidIndex);
   progress.sequentialCursor = Math.min(progress.sequentialCursor, questions.length);
-  progress.wrongMap = Object.fromEntries(Object.entries(progress.wrongMap)
-    .filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
-  progress.practiceMap = Object.fromEntries(Object.entries(progress.practiceMap)
-    .filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
+  progress.wrongMap = Object.fromEntries(
+    Object.entries(progress.wrongMap).filter(
+      ([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0
+    )
+  );
+  progress.practiceMap = Object.fromEntries(
+    Object.entries(progress.practiceMap).filter(
+      ([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0
+    )
+  );
   if (JSON.stringify(progress) !== progressBeforeSanitize && !saveDeckProgress(id, progress)) {
     toast('Không thể làm sạch tiến độ cũ trong trình duyệt.');
-  };
+  }
   return questions;
-};
+}
 
 async function loadAll() {
   state.loading = true;
@@ -162,30 +170,32 @@ async function loadAll() {
     const isDataError = stage === 'tải dữ liệu';
     const details = [
       isDataError ? state.error : `Không thể khởi tạo giao diện: ${state.error}`,
-      isDataError ? 'Nếu đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.' : 'Hãy tải lại trang. Nếu lỗi vẫn còn, mở Console để xem chi tiết.'
+      isDataError
+        ? 'Nếu đang ngoại tuyến lần đầu, hãy kết nối mạng để tải bộ đề.'
+        : 'Hãy tải lại trang. Nếu lỗi vẫn còn, mở Console để xem chi tiết.'
     ].join('\n\n');
     if (errorMessage) errorMessage.textContent = details;
     else window.alert(details);
-  };
-};
+  }
+}
 
 function showScreen(name) {
   for (const el of document.querySelectorAll('.screen')) {
     el.classList.remove('active');
     el.hidden = true;
-  };
+  }
   const screen = $(`screen-${name}`);
   if (screen) {
     screen.hidden = false;
     screen.classList.add('active');
-  };
+  }
   state.mode = name;
   document.body.dataset.screen = name;
   if (screen) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
-  };
-};
+  }
+}
 
 function toast(msg, ms = 2800) {
   const el = $('toast');
@@ -199,7 +209,7 @@ function toast(msg, ms = 2800) {
   toast._t = setTimeout(() => {
     if (el.isConnected) el.hidden = true;
   }, ms);
-};
+}
 
 function confirmModal(title, body) {
   return new Promise((resolve) => {
@@ -221,7 +231,7 @@ function confirmModal(title, body) {
       if (event.key === 'Escape') {
         event.preventDefault();
         cleanupWithFocus(false);
-      };
+      }
     };
     const originalCleanup = cleanup;
     const cleanupWithFocus = (val) => {
@@ -234,11 +244,11 @@ function confirmModal(title, body) {
     document.addEventListener('keydown', onKeydown);
     ok.focus();
   });
-};
+}
 
 function currentQuestions() {
   return state.decks[state.currentDeck] || [];
-};
+}
 
 function renderTextWithHighlights(element, text, deckId, originalIndex, target) {
   element.replaceChildren();
@@ -254,7 +264,7 @@ function renderTextWithHighlights(element, text, deckId, originalIndex, target) 
     const last = merged[merged.length - 1];
     if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
     else merged.push({ ...range });
-  };
+  }
   let cursor = 0;
   for (const range of merged) {
     if (range.start > cursor) element.appendChild(document.createTextNode(text.slice(cursor, range.start)));
@@ -263,9 +273,9 @@ function renderTextWithHighlights(element, text, deckId, originalIndex, target) 
     mark.textContent = text.slice(range.start, range.end);
     element.appendChild(mark);
     cursor = range.end;
-  };
+  }
   if (cursor < text.length) element.appendChild(document.createTextNode(text.slice(cursor)));
-};
+}
 
 function toggleHighlightSelection(deckId, questionIndex, selection) {
   const saved = getQuestionHighlights(deckId, questionIndex);
@@ -280,7 +290,7 @@ function toggleHighlightSelection(deckId, questionIndex, selection) {
     if (range.start > coveredUntil) break;
     coveredUntil = Math.max(coveredUntil, range.end);
     if (coveredUntil >= selected.end) break;
-  };
+  }
   const fullyHighlighted = coveredUntil >= selected.end;
   let updated;
   if (fullyHighlighted) {
@@ -289,23 +299,23 @@ function toggleHighlightSelection(deckId, questionIndex, selection) {
       if (range.target !== selected.target || range.end <= selected.start || range.start >= selected.end) {
         updated.push(range);
         continue;
-      };
+      }
       if (range.start < selected.start) updated.push({ ...range, end: selected.start });
       if (range.end > selected.end) updated.push({ ...range, start: selected.end });
-    };
+    }
   } else {
     updated = [...saved, selected];
-  };
+  }
   if (!saveQuestionHighlights(deckId, questionIndex, updated)) {
     toast('Không thể lưu highlight. Bộ nhớ trình duyệt có thể đã đầy.');
     return false;
-  };
+  }
   state.lastTextSelection = null;
   if (state.mode === 'review') renderQuestionBank();
   else renderQuestion();
   toast(fullyHighlighted ? 'Đã xóa highlight ở đoạn chọn.' : 'Đã highlight đoạn chọn.');
   return true;
-};
+}
 
 function createHighlightToolbar(questionIndex, bankMode = false) {
   const toolbar = document.createElement('div');
@@ -327,12 +337,12 @@ function createHighlightToolbar(questionIndex, bankMode = false) {
     if (!selection || selection.questionIndex !== questionIndex || selection.deckId !== expectedDeck) {
       toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
-    };
+    }
     toggleHighlightSelection(selection.deckId, questionIndex, selection);
   });
   toolbar.appendChild(button);
   return toolbar;
-};
+}
 
 function captureHighlightSelection() {
   const selection = window.getSelection();
@@ -354,9 +364,12 @@ function captureHighlightSelection() {
 
   const target = elementFor(range.startContainer);
   const endTarget = elementFor(range.endContainer);
-  if (!target || target !== endTarget ||
-      !target.contains(range.startContainer) ||
-      !target.contains(range.endContainer)) {
+  if (
+    !target ||
+    target !== endTarget ||
+    !target.contains(range.startContainer) ||
+    !target.contains(range.endContainer)
+  ) {
     state.lastTextSelection = null;
     return false;
   }
@@ -394,7 +407,7 @@ function captureHighlightSelection() {
     state.lastTextSelection = null;
     return false;
   }
-};
+}
 
 function renderQuestionBank() {
   const questions = currentQuestions();
@@ -406,15 +419,22 @@ function renderQuestionBank() {
   gotoInput.setAttribute('aria-label', `Đi đến câu số từ 1 đến ${questions.length}`);
   const query = normalizeSearchText(state.reviewSearch.trim());
   const inRange = state.reviewSelectMode
-    ? questions.filter((question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion)
+    ? questions.filter(
+        (question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion
+      )
     : questions;
-  const filtered = (query
-    ? inRange.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
-    : inRange);
-  const selectedCount = [...state.reviewSelectedIndices].filter((index) => index >= form.startQuestion - 1 && index < form.endQuestion).length;
+  const filtered = query
+    ? inRange.filter((question) =>
+        normalizeSearchText([question.question, ...question.options].join(' ')).includes(query)
+      )
+    : inRange;
+  const selectedCount = [...state.reviewSelectedIndices].filter(
+    (index) => index >= form.startQuestion - 1 && index < form.endQuestion
+  ).length;
   $('btn-review-select-mode').textContent = state.reviewSelectMode ? 'Thoát chọn câu' : 'Tự chọn câu';
   $('btn-review-start-selected').hidden = !state.reviewSelectMode;
-  $('btn-review-start-selected').textContent = `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${selectedCount} câu đã chọn`;
+  $('btn-review-start-selected').textContent =
+    `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${selectedCount} câu đã chọn`;
   $('btn-review-start-selected').disabled = selectedCount === 0;
   const list = $('review-list');
   const fragment = document.createDocumentFragment();
@@ -438,17 +458,18 @@ function renderQuestionBank() {
         if (checkbox.checked) state.reviewSelectedIndices.add(question.originalIndex);
         else state.reviewSelectedIndices.delete(question.originalIndex);
         const currentForm = readSetupForm();
-        const count = [...state.reviewSelectedIndices].filter((index) =>
-          index >= currentForm.startQuestion - 1 && index < currentForm.endQuestion
+        const count = [...state.reviewSelectedIndices].filter(
+          (index) => index >= currentForm.startQuestion - 1 && index < currentForm.endQuestion
         ).length;
-        $('btn-review-start-selected').textContent = `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${count} câu đã chọn`;
+        $('btn-review-start-selected').textContent =
+          `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${count} câu đã chọn`;
         $('btn-review-start-selected').disabled = count === 0;
       });
       const span = document.createElement('span');
       span.textContent = 'Chọn câu này';
       selectLabel.append(checkbox, span);
       card.appendChild(selectLabel);
-    };
+    }
     const prompt = document.createElement('p');
     prompt.className = 'review-q-text';
     renderTextWithHighlights(prompt, question.question, state.currentDeck, question.originalIndex, 'question');
@@ -472,20 +493,20 @@ function renderQuestionBank() {
         badge.className = 'review-correct-badge';
         badge.textContent = 'Đáp án đúng';
         item.appendChild(badge);
-      };
+      }
       options.appendChild(item);
     });
     card.append(heading, prompt, highlightToolbar, options);
     fragment.appendChild(card);
-  };
+  }
   list.replaceChildren(fragment);
   if (!filtered.length) {
     const empty = document.createElement('p');
     empty.className = 'card review-empty';
     empty.textContent = 'Không tìm thấy câu hỏi hoặc đáp án phù hợp.';
     list.appendChild(empty);
-  };
-};
+  }
+}
 
 function openQuestionBank() {
   state.reviewSelectedIndices.clear();
@@ -496,8 +517,7 @@ function openQuestionBank() {
   renderQuestionBank();
   refreshSearchUI();
   showScreen('review');
-};
-
+}
 
 function refreshSetupUI() {
   const qs = currentQuestions();
@@ -535,13 +555,15 @@ function refreshSetupUI() {
   $('stat-completed').textContent = String(completed.size);
   $('stat-remaining').textContent = String(remaining);
   $('stat-wrong').textContent = String(wrongs.length);
-  $('stat-practice').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
+  $('stat-practice').textContent = String(
+    Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0)
+  );
   $('stat-bookmarked').textContent = String(progress.bookmarks.length);
   if (progress.sequentialCursor >= total) {
     $('stat-cursor').textContent = 'Đã hết (làm lại từ đầu)';
   } else {
     $('stat-cursor').textContent = String(progress.sequentialCursor + 1);
-  };
+  }
 
   const btnWrong = $('btn-practice-wrong');
   const rangeWrongCount = getRangeWrongIndices(state.currentDeck, start, end).length;
@@ -554,7 +576,10 @@ function refreshSetupUI() {
   btnAllWrong.textContent = `Ôn ${allWrongCount} câu sai của bộ đề`;
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
-  const rangeBookmarkCount = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex)).length;
+  const rangeBookmarkCount = qs.filter(
+    (question) =>
+      question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex)
+  ).length;
   const btnBookmarks = $('btn-practice-bookmarks');
   btnBookmarks.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
   btnBookmarks.textContent = `Ôn ${rangeBookmarkCount} câu đã đánh dấu`;
@@ -575,7 +600,7 @@ function refreshSetupUI() {
     const left = end - nextIndex;
     const n = Math.min(Number(input.value) || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự ${n} câu từ câu ${nextIndex + 1}`;
-  };
+  }
 
   document.querySelectorAll('.preset-btn').forEach((btn) => {
     const n = Number(btn.dataset.count);
@@ -585,27 +610,36 @@ function refreshSetupUI() {
 
   syncReviewSettingsFromSetup();
   refreshResumeCard();
-};
+}
 
 function refreshResumeCard() {
   const card = $('resume-card');
   if (!card) return;
   const saved = getSession(state.currentDeck);
-  if (!saved || !Array.isArray(saved.items) || !saved.items.length) { card.hidden = true; return; };
+  if (!saved || !Array.isArray(saved.items) || !saved.items.length) {
+    card.hidden = true;
+    return;
+  }
   const answered = saved.items.filter((item) => item.userAnswer != null).length;
   const isExam = !!saved.examMode || saved.mode === 'exam';
   const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
   card.hidden = false;
-  $('resume-title').textContent = isExam ? (saved.reviewMode ? 'Có lượt thi đã chấm' : 'Có lượt thi thử đang dở') : 'Có lượt ôn đang dở';
-  $('resume-hint').textContent = isExam ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · Đã chấm' : ''}` : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
-};
+  $('resume-title').textContent = isExam
+    ? saved.reviewMode
+      ? 'Có lượt thi đã chấm'
+      : 'Có lượt thi thử đang dở'
+    : 'Có lượt ôn đang dở';
+  $('resume-hint').textContent = isExam
+    ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · Đã chấm' : ''}`
+    : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
+}
 function normalizeSearchText(value) {
   return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[đĐ]/g, (letter) => letter === 'Đ' ? 'D' : 'd')
+    .replace(/[đĐ]/g, (letter) => (letter === 'Đ' ? 'D' : 'd'))
     .toLocaleLowerCase('vi');
-};
+}
 
 function refreshSearchUI() {
   const searchInput = $('input-review-search');
@@ -621,7 +655,7 @@ function refreshSearchUI() {
   button.textContent = state.searchResults.length
     ? `Ôn ${Math.min(state.searchResults.length, form.count)} / ${state.searchResults.length} câu tìm được`
     : 'Ôn kết quả tìm kiếm';
-};
+}
 
 function syncReviewSettingsFromSetup() {
   if (!$('review-input-count')) return;
@@ -630,7 +664,7 @@ function syncReviewSettingsFromSetup() {
   $('review-input-time-limit').value = $('input-time-limit').value;
   $('review-chk-shuffle-q').checked = $('chk-shuffle-q').checked;
   $('review-chk-shuffle-a').checked = $('chk-shuffle-a').checked;
-};
+}
 
 function startSearchResults() {
   const form = readSetupForm();
@@ -639,13 +673,13 @@ function startSearchResults() {
   if (!pool.length) {
     toast('Không có kết quả tìm kiếm để ôn.');
     return;
-  };
+  }
   if (form.shuffleQ) {
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
-    };
-  };
+    }
+  }
   pool = pool.slice(0, form.count);
   persistSetupForm();
   startSessionFromPool(pool, {
@@ -656,7 +690,7 @@ function startSearchResults() {
     requestedCount: pool.length,
     examMode: state.practiceMode === 'exam'
   });
-};
+}
 
 function startPracticeBookmarks() {
   const form = readSetupForm();
@@ -667,7 +701,7 @@ function startPracticeBookmarks() {
   if (!pool.length) {
     toast('Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.');
     return;
-  };
+  }
   const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
   if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
@@ -676,7 +710,7 @@ function startPracticeBookmarks() {
     forceShuffleQ: form.shuffleQ,
     alreadyShuffled: true
   });
-};
+}
 
 function readSetupForm() {
   const total = currentQuestions().length;
@@ -698,7 +732,7 @@ function readSetupForm() {
   const shuffleQ = $('chk-shuffle-q').checked;
   const shuffleA = $('chk-shuffle-a').checked;
   return { count, shuffleQ, shuffleA, startQuestion, endQuestion, timeLimit };
-};
+}
 
 function persistSetupForm() {
   const form = readSetupForm();
@@ -717,13 +751,15 @@ function persistSetupForm() {
     vibrationEnabled: $('chk-vibration').checked
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
-};
+}
 
 function applySettingsToForm(settings) {
   if (!settings) return;
   const total = currentQuestions().length || settings.endQuestion || 1;
   $('input-count').value = String(settings.count || 30);
-  $('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
+  $('input-time-limit').value = String(
+    Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35
+  );
   $('input-range-start').value = String(settings.startQuestion || 1);
   $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
@@ -733,7 +769,7 @@ function applySettingsToForm(settings) {
   $('chk-sound').checked = settings.soundEnabled !== false;
   $('chk-vibration').checked = settings.vibrationEnabled !== false;
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
-};
+}
 
 function stopSessionTimer(freeze = true) {
   clearInterval(state.timerInterval);
@@ -742,16 +778,15 @@ function stopSessionTimer(freeze = true) {
   if (freeze && s && !s.finishedAt) {
     s.finishedAt = Date.now();
     persistSession();
-  };
+  }
   updateTimerDisplay();
-};
+}
 
 function selectedQuestions(form = readSetupForm()) {
-  return currentQuestions().filter((question) =>
-    question.originalIndex >= form.startQuestion - 1 &&
-    question.originalIndex < form.endQuestion
+  return currentQuestions().filter(
+    (question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion
   );
-};
+}
 function startSessionFromPool(pool, meta) {
   const form = readSetupForm();
   const shuffleA = form.shuffleA;
@@ -797,7 +832,7 @@ function startSessionFromPool(pool, meta) {
   if (meta.examMode || state.practiceMode === 'exam') {
     session.examMode = true;
     session.mode = session.mode === 'normal' ? 'exam' : session.mode;
-  };
+  }
   state.session = session;
   state.reviewMode = false;
   state.examFilter = 'all';
@@ -809,22 +844,22 @@ function startSessionFromPool(pool, meta) {
   } else {
     showScreen('quiz');
     renderQuestion();
-  };
+  }
   startSessionTimer();
-};
+}
 
 function startNormal(opts = {}) {
   const allQuestions = currentQuestions();
   if (!allQuestions.length) {
     toast('Bộ đề trống.');
     return;
-  };
+  }
   const form = readSetupForm();
   const qs = selectedQuestions(form);
   if (!qs.length) {
     toast('Vùng câu hỏi đã chọn không có câu hợp lệ.');
     return;
-  };
+  }
   persistSetupForm();
   const progress = getDeckProgress(state.currentDeck);
   const completedSet = new Set(progress.completed);
@@ -843,29 +878,24 @@ function startNormal(opts = {}) {
       alreadyShuffled: true
     });
     return;
-  };
+  }
 
   if (opts.sequential) {
-    const nextQuestion = findNextUncompletedQuestion(
-      qs,
-      Math.max(progress.sequentialCursor, rangeStart),
-      completedSet
-    );
+    const nextQuestion = findNextUncompletedQuestion(qs, Math.max(progress.sequentialCursor, rangeStart), completedSet);
     if (!nextQuestion) {
       toast('Đã hoàn thành toàn bộ câu trong vùng đã chọn.');
       return;
-    };
+    }
     const cursor = nextQuestion.originalIndex;
     const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
     const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
     if (!items.length) {
       toast('Không còn câu tuần tự trong vùng đã chọn.');
       return;
-    };
+    }
     if (actualCount < form.count) toast(`Chỉ còn ${actualCount} câu theo thứ tự trong vùng đã chọn.`);
-    const globalNextCursor = nextCursor > 0
-      ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
-      : cursor;
+    const globalNextCursor =
+      nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1 : cursor;
     startSessionFromPool(items, {
       mode: 'normal',
       sequential: true,
@@ -875,7 +905,7 @@ function startNormal(opts = {}) {
       alreadyShuffled: true
     });
     return;
-  };
+  }
 
   if (form.shuffleQ) {
     const remainingCount = qs.filter((question) => !completedSet.has(question.originalIndex)).length;
@@ -883,12 +913,14 @@ function startNormal(opts = {}) {
     if (!pool.length) {
       toast('Không lấy được câu hỏi trong vùng đã chọn.');
       return;
-    };
+    }
     if (remainingCount === 0) {
       toast('Bạn đã hoàn thành các câu trong vùng này; lượt này lấy ngẫu nhiên trong vùng đã chọn.');
     } else if (remainingCount < form.count) {
-      toast(`Chỉ còn ${remainingCount} câu chưa hoàn thành trong vùng; đã bổ sung câu đã làm để đủ ${pool.length} câu.`);
-    };
+      toast(
+        `Chỉ còn ${remainingCount} câu chưa hoàn thành trong vùng; đã bổ sung câu đã làm để đủ ${pool.length} câu.`
+      );
+    }
     startSessionFromPool(pool, {
       mode: 'normal',
       sequential: false,
@@ -896,13 +928,9 @@ function startNormal(opts = {}) {
       alreadyShuffled: true
     });
     return;
-  };
+  }
 
-  const nextQuestion = findNextUncompletedQuestion(
-    qs,
-    Math.max(progress.sequentialCursor, rangeStart),
-    completedSet
-  );
+  const nextQuestion = findNextUncompletedQuestion(qs, Math.max(progress.sequentialCursor, rangeStart), completedSet);
   const cursor = nextQuestion?.originalIndex ?? rangeEnd;
   const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
   const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
@@ -916,11 +944,10 @@ function startNormal(opts = {}) {
     });
     toast('Đã hết chuỗi tuần tự trong vùng, chuyển sang ngẫu nhiên trong vùng đã chọn.');
     return;
-  };
+  }
   if (actualCount < form.count) toast(`Lượt này có ${actualCount} câu trong vùng đã chọn.`);
-  const globalNextCursor = nextCursor > 0
-    ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
-    : cursor;
+  const globalNextCursor =
+    nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1 : cursor;
   startSessionFromPool(items, {
     mode: 'normal',
     sequential: true,
@@ -929,7 +956,7 @@ function startNormal(opts = {}) {
     forceShuffleQ: false,
     alreadyShuffled: true
   });
-};
+}
 function startPracticeWrong(options = {}) {
   const form = readSetupForm();
   persistSetupForm();
@@ -945,12 +972,12 @@ function startPracticeWrong(options = {}) {
   if (!wrongs.length) {
     toast(allDeck ? 'Bộ đề này chưa có câu sai để ôn.' : 'Trong vùng câu hỏi đã chọn không có câu sai để ôn.');
     return;
-  };
+  }
   const pool = pickWrong(qs, wrongs, allDeck ? wrongs.length : form.count, form.shuffleQ);
   if (!pool.length) {
     toast('Không tìm thấy câu sai hợp lệ trong bộ đề đã chọn. Hãy tải lại bộ đề.');
     return;
-  };
+  }
   const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
   if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
@@ -960,29 +987,32 @@ function startPracticeWrong(options = {}) {
     alreadyShuffled: true,
     ...(allDeck ? { rangeStart: 1, rangeEnd: qs.length, requestedCount: pool.length } : {})
   });
-};
+}
 function recordWrongAnswer(session, originalIndex) {
   if (markWrong(session.deckId, originalIndex) === null) {
     toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
-  };
-  if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) &&
-      !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [originalIndex])) {
+  }
+  if (
+    Number.isInteger(session.rangeStart) &&
+    Number.isInteger(session.rangeEnd) &&
+    !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [originalIndex])
+  ) {
     toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
-  };
-};
+  }
+}
 
 function currentItem() {
   const s = state.session;
   if (!s) return null;
   return s.items[s.viewIndex];
-};
+}
 
 function currentQ() {
   const s = state.session;
   const item = currentItem();
   if (!s || !item) return null;
   return s.pool[item.poolIdx];
-};
+}
 
 function renderQuestion() {
   const s = state.session;
@@ -994,7 +1024,7 @@ function renderQuestion() {
   const viewingHistory = s.viewIndex < s.maxReached;
 
   $('progress-label').textContent = `Câu ${s.viewIndex + 1} / ${s.items.length}`;
-  const progressTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
+  const progressTotal = s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : s.items.length;
   $('progress-score').textContent = `Điểm ${formatScore(s.firstTryCorrect || 0, progressTotal)} / 10`;
   updateTimerDisplay();
   const pct = progressTotal ? Math.round((s.completedInSession / progressTotal) * 100) : 0;
@@ -1031,15 +1061,15 @@ function renderQuestion() {
     if (item.userAnswer === displayIdx) btn.classList.add('selected');
     if (item.checked && item.status === 'correct' && displayIdx === item.userAnswer) {
       btn.classList.add('correct', 'answer-bounce');
-    };
+    }
     if (item.checked && item.status === 'wrong' && displayIdx === item.userAnswer) {
       btn.classList.add('incorrect', 'answer-shake');
-    };
+    }
     const wrongOptions = Array.isArray(item.wrongOptions) ? item.wrongOptions : [];
     if (wrongOptions.includes(origIdx)) {
       btn.classList.add('incorrect', 'locked');
       btn.disabled = true;
-    };
+    }
     if (item.status === 'correct') {
       btn.classList.add('locked');
       btn.disabled = true;
@@ -1047,7 +1077,7 @@ function renderQuestion() {
     } else if (viewingHistory) {
       btn.disabled = true;
       btn.classList.add('locked');
-    };
+    }
 
     const key = document.createElement('span');
     key.className = 'option-key';
@@ -1062,16 +1092,20 @@ function renderQuestion() {
         const selection = window.getSelection();
         if (selection && !selection.isCollapsed && selection.toString().trim()) {
           const range = selection.getRangeAt(0);
-          const startNode = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-          const endNode = range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement;
+          const startNode =
+            range.startContainer.nodeType === Node.ELEMENT_NODE
+              ? range.startContainer
+              : range.startContainer.parentElement;
+          const endNode =
+            range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement;
           if (btn.contains(startNode) && btn.contains(endNode)) {
             captureHighlightSelection();
             return;
-          };
-        };
+          }
+        }
         onSelectOption(displayIdx);
       });
-    };
+    }
     optsEl.appendChild(btn);
   });
 
@@ -1087,7 +1121,7 @@ function renderQuestion() {
   } else {
     feedback.hidden = true;
     feedback.textContent = '';
-  };
+  }
 
   $('btn-prev').disabled = s.viewIndex <= 0;
   const nextButton = $('btn-next');
@@ -1109,8 +1143,8 @@ function renderQuestion() {
     nextButton.textContent = 'Kiểm tra';
     nextButton.dataset.icon = 'check';
     nextButton.disabled = item.userAnswer == null || item.checked;
-  };
-};
+  }
+}
 
 function setPracticeMode(mode) {
   state.practiceMode = mode === 'exam' ? 'exam' : 'practice';
@@ -1120,7 +1154,7 @@ function setPracticeMode(mode) {
   const startBtn = $('btn-start');
   if (startBtn) {
     startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn';
-  };
+  }
   persistSetupForm();
   if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
   else if (state.mode === 'review' && state.decks[state.currentDeck]) renderQuestionBank();
@@ -1139,7 +1173,7 @@ function updateExamProgressHeader() {
   if (fill) {
     fill.style.width = `${pct}%`;
     fill.parentElement?.setAttribute('aria-valuenow', String(pct));
-  };
+  }
   updateTimerDisplay();
   const filterWrong = $('exam-filter-wrong');
   const filterCorrect = $('exam-filter-correct');
@@ -1149,7 +1183,7 @@ function updateExamProgressHeader() {
   if (nextEmpty) {
     nextEmpty.hidden = s.reviewMode || unanswered === 0;
     nextEmpty.textContent = unanswered ? `Còn ${unanswered} câu` : 'Đủ đáp án';
-  };
+  }
   const pauseBtn = $('btn-exam-pause');
   if (pauseBtn) pauseBtn.hidden = !!s.reviewMode;
   const submitBtn = $('btn-exam-submit');
@@ -1162,12 +1196,12 @@ function updateExamProgressHeader() {
       submitBtn.textContent = 'Nộp bài';
       submitBtn.dataset.icon = 'check';
       submitBtn.disabled = !!state.examSubmitting;
-    };
-  };
+    }
+  }
   document.querySelectorAll('.filter-chip').forEach((chip) => {
     chip.classList.toggle('is-active', chip.dataset.filter === state.examFilter);
   });
-};
+}
 
 function applyExamFilter() {
   const s = state.session;
@@ -1182,12 +1216,12 @@ function applyExamFilter() {
     else if (filter === 'correct') show = item.status === 'correct';
     card.hidden = !show;
   });
-};
+}
 
 function scrollToExamQuestion(idx) {
   const card = $(`exam-q-${idx}`);
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-};
+}
 
 function jumpToNextUnanswered(fromIdx = -1) {
   const s = state.session;
@@ -1202,8 +1236,8 @@ function jumpToNextUnanswered(fromIdx = -1) {
     scrollToExamQuestion(found);
   } else {
     toast('Bạn đã chọn đủ đáp án.');
-  };
-};
+  }
+}
 
 function renderExam() {
   const s = state.session;
@@ -1226,7 +1260,7 @@ function renderExam() {
     if (s.reviewMode) {
       if (item.status === 'correct') card.classList.add('is-correct');
       else if (item.status === 'wrong') card.classList.add('is-wrong');
-    };
+    }
 
     const head = document.createElement('div');
     head.className = 'exam-q-head';
@@ -1237,9 +1271,9 @@ function renderExam() {
     if (s.reviewMode) {
       const badge = document.createElement('span');
       badge.className = `exam-status-badge ${item.status === 'correct' ? 'ok' : 'bad'}`;
-      badge.textContent = item.status === 'correct' ? 'Đúng' : (item.userAnswer == null ? 'Bỏ trống' : 'Sai');
+      badge.textContent = item.status === 'correct' ? 'Đúng' : item.userAnswer == null ? 'Bỏ trống' : 'Sai';
       head.appendChild(badge);
-    };
+    }
     card.appendChild(head);
 
     const text = document.createElement('h3');
@@ -1265,7 +1299,7 @@ function renderExam() {
         const correctDisplay = item.optionOrder.indexOf(q.correct);
         if (displayIdx === correctDisplay) btn.classList.add('correct');
         if (item.userAnswer === displayIdx && item.status === 'wrong') btn.classList.add('incorrect');
-      };
+      }
       const label = document.createElement('span');
       label.className = 'option-key';
       label.textContent = labels[displayIdx] || String(displayIdx + 1);
@@ -1275,7 +1309,7 @@ function renderExam() {
       btn.append(label, body);
       if (!s.reviewMode) {
         btn.addEventListener('click', () => onExamSelect(idx, displayIdx));
-      };
+      }
       opts.appendChild(btn);
     });
     card.appendChild(opts);
@@ -1291,14 +1325,14 @@ function renderExam() {
     if (s.reviewMode) {
       if (item.status === 'correct') dot.classList.add('is-correct');
       else if (item.status === 'wrong') dot.classList.add('is-wrong');
-    };
+    }
     dot.addEventListener('click', () => scrollToExamQuestion(idx));
     nav.appendChild(dot);
   });
 
   applyExamFilter();
   requestAnimationFrame(() => window.scrollTo(0, scrollY));
-};
+}
 
 function patchExamQuestion(qIdx) {
   const s = state.session;
@@ -1308,7 +1342,7 @@ function patchExamQuestion(qIdx) {
   if (!item || !card) {
     renderExam();
     return;
-  };
+  }
   card.classList.toggle('is-answered', item.userAnswer != null);
   card.querySelectorAll('.option').forEach((btn) => {
     const displayIdx = Number(btn.dataset.display);
@@ -1320,7 +1354,7 @@ function patchExamQuestion(qIdx) {
   if (dot) dot.classList.toggle('is-answered', item.userAnswer != null);
   updateExamProgressHeader();
   applyExamFilter();
-};
+}
 
 function onExamSelect(qIdx, displayIdx) {
   if (enforceSessionDeadline()) return;
@@ -1333,7 +1367,7 @@ function onExamSelect(qIdx, displayIdx) {
   item.status = 'pending';
   persistSession();
   patchExamQuestion(qIdx);
-};
+}
 
 async function onExamSubmit() {
   if (state.examSubmitting) return;
@@ -1343,18 +1377,15 @@ async function onExamSubmit() {
   if (s.reviewMode) {
     finishSession();
     return;
-  };
+  }
   const unanswered = s.items.filter((it) => it.userAnswer == null).length;
   if (unanswered > 0) {
-    const ok = await confirmModal(
-      'Còn câu chưa chọn',
-      `Bạn còn ${unanswered} câu chưa chọn đáp án. Vẫn nộp bài?`
-    );
+    const ok = await confirmModal('Còn câu chưa chọn', `Bạn còn ${unanswered} câu chưa chọn đáp án. Vẫn nộp bài?`);
     if (!ok) return;
   } else {
     const ok = await confirmModal('Nộp bài thi?', `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`);
     if (!ok) return;
-  };
+  }
 
   // The deadline may expire while the confirmation dialog is open.
   if (enforceSessionDeadline() || state.session !== s || s.reviewMode) return;
@@ -1373,7 +1404,7 @@ async function onExamSubmit() {
         wrongAttempts += 1;
         recordWrongAnswer(s, q.originalIndex);
         continue;
-      };
+      }
       const correct = isAnswerCorrect(item, q);
       item.checked = true;
       if (correct) {
@@ -1388,8 +1419,8 @@ async function onExamSubmit() {
         if (!item.wrongOptions) item.wrongOptions = [];
         if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
         recordWrongAnswer(s, q.originalIndex);
-      };
-    };
+      }
+    }
     if (completedIdx.length) addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
     s.firstTryCorrect = firstTry;
     s.totalWrongAttempts = wrongAttempts;
@@ -1405,8 +1436,8 @@ async function onExamSubmit() {
   } finally {
     state.examSubmitting = false;
     updateExamProgressHeader();
-  };
-};
+  }
+}
 
 function enforceSessionDeadline() {
   const session = state.session;
@@ -1430,8 +1461,8 @@ function enforceSessionDeadline() {
         item.wrongCount = Math.max(1, item.wrongCount || 0);
         wrongAttempts += 1;
         recordWrongAnswer(session, q.originalIndex);
-      };
-    };
+      }
+    }
     if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
     session.firstTryCorrect = firstTry;
     session.totalWrongAttempts = wrongAttempts;
@@ -1442,10 +1473,10 @@ function enforceSessionDeadline() {
     renderExam();
     toast('Hết giời.');
     return true;
-  };
+  }
   finishSession();
   return true;
-};
+}
 
 function onSelectOption(displayIdx) {
   if (enforceSessionDeadline()) return;
@@ -1460,11 +1491,11 @@ function onSelectOption(displayIdx) {
   if (item.status === 'wrong') {
     item.checked = false;
     item.status = 'pending';
-  };
+  }
   persistSession();
   renderQuestion();
   if (getSettings(s.deckId).autoCheck) onCheck();
-};
+}
 
 const answerSounds = {
   correct: new Audio(dataUrl('assets/sounds/correct.mp3')),
@@ -1503,8 +1534,10 @@ function onCheck() {
   const preferences = getSettings(s.deckId);
   const vibrate = (pattern) => {
     if (preferences.vibrationEnabled !== false && typeof navigator.vibrate === 'function') {
-      try { navigator.vibrate(pattern); } catch {}
-    };
+      try {
+        navigator.vibrate(pattern);
+      } catch {}
+    }
   };
   if (isCorrect) {
     playAnswerSound(true);
@@ -1520,12 +1553,12 @@ function onCheck() {
           s.practiceCompletedIndices.push(originalIndex);
           s.completedInSession = s.practiceCompletedIndices.length;
           if (firstTime) s.firstTryCorrect += 1;
-        };
+        }
       } else {
         s.completedInSession += 1;
         if (firstTime) s.firstTryCorrect += 1;
-      };
-    };
+      }
+    }
     if (s.viewIndex >= s.maxReached) s.maxReached = s.viewIndex;
     s.reviewingPast = false;
   } else {
@@ -1541,18 +1574,26 @@ function onCheck() {
       const history = s.practiceWrongHistory.find((entry) => entry.originalIndex === q.originalIndex);
       if (history) history.wrongCount += 1;
       else s.practiceWrongHistory.push({ originalIndex: q.originalIndex, question: q.question, wrongCount: 1 });
-    };
+    }
     recordWrongAnswer(s, q.originalIndex);
-  };
+  }
   persistSession();
   renderQuestion();
   if (isCorrect && preferences.autoAdvance === true && s.viewIndex < s.items.length - 1) {
-    setTimeout(() => {
-      if (state.session === s && currentItem() === item && item.status === 'correct' && s.viewIndex < s.items.length - 1) onNext();
-    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 350);
-  };
-
-};
+    setTimeout(
+      () => {
+        if (
+          state.session === s &&
+          currentItem() === item &&
+          item.status === 'correct' &&
+          s.viewIndex < s.items.length - 1
+        )
+          onNext();
+      },
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 350
+    );
+  }
+}
 
 function onNext() {
   if (enforceSessionDeadline()) return;
@@ -1561,11 +1602,14 @@ function onNext() {
   const item = currentItem();
   if (!item) return;
 
-  if (s.viewIndex >= s.maxReached && item.status !== 'correct' &&
-      !(s.mode === 'practice-wrong' && item.status === 'wrong' && item.checked)) {
+  if (
+    s.viewIndex >= s.maxReached &&
+    item.status !== 'correct' &&
+    !(s.mode === 'practice-wrong' && item.status === 'wrong' && item.checked)
+  ) {
     onCheck();
     return;
-  };
+  }
 
   if (s.viewIndex < s.maxReached) {
     s.viewIndex += 1;
@@ -1573,12 +1617,12 @@ function onNext() {
     persistSession();
     renderQuestion();
     return;
-  };
+  }
 
   if (item.status !== 'correct' && !(s.mode === 'practice-wrong' && item.status === 'wrong')) {
     toast('Hãy kiểm tra câu trả lời trước khi sang câu tiếp.');
     return;
-  };
+  }
 
   if (s.viewIndex >= s.items.length - 1) {
     if (s.mode === 'practice-wrong') {
@@ -1586,7 +1630,7 @@ function onNext() {
       if (!unresolved.length) {
         finishSession();
         return;
-      };
+      }
       s.items = unresolved.map((entry) => ({
         ...entry,
         optionOrder: entry.optionOrder.slice(),
@@ -1601,17 +1645,17 @@ function onNext() {
       renderQuestion();
       toast(`Còn ${s.items.length} câu chưa trả lời đúng. Tiếp tục ôn các câu này.`, 3500);
       return;
-    };
+    }
     finishSession();
     return;
-  };
+  }
 
   s.viewIndex += 1;
   if (s.viewIndex > s.maxReached) s.maxReached = s.viewIndex;
   s.reviewingPast = false;
   persistSession();
   renderQuestion();
-};
+}
 
 function onPrev() {
   if (enforceSessionDeadline()) return;
@@ -1621,20 +1665,21 @@ function onPrev() {
   s.reviewingPast = true;
   persistSession();
   renderQuestion();
-};
+}
 
 function persistSession() {
   if (!state.session) return;
   if (!saveSession(state.session)) {
     toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
-  };
-};
+  }
+}
 
 function pauseSession() {
   const session = state.session;
   if (!session || session.reviewMode || session.finishedAt || session.pausedAt) return;
   session.pausedAt = Date.now();
-  session.remainingMs = session.timeLimit > 0 && session.deadlineAt ? Math.max(0, session.deadlineAt - session.pausedAt) : null;
+  session.remainingMs =
+    session.timeLimit > 0 && session.deadlineAt ? Math.max(0, session.deadlineAt - session.pausedAt) : null;
   clearInterval(state.timerInterval);
   state.timerInterval = null;
   if (!saveSession(session)) {
@@ -1643,26 +1688,26 @@ function pauseSession() {
     startSessionTimer();
     toast('Không thể tạm dừng an toàn vì bộ nhớ trình duyệt không ghi được.');
     return;
-  };
+  }
   state.session = null;
   state.reviewMode = false;
   showScreen('setup');
   refreshSetupUI();
   toast('Đã tạm dừng. Bạn có thể tiếp tục từ thẻ phiên đang dở.');
-};
+}
 
 function formatTime(seconds) {
   const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
   const minutes = Math.floor(safeSeconds / 60);
   const remainder = safeSeconds % 60;
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
-};
+}
 
 function formatScore(correct, total) {
   if (!(total > 0)) return '0';
   const score = Math.round((Math.max(0, correct) / total) * 100) / 10;
   return score.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
-};
+}
 
 function animateScore(target, displayStr, circumference) {
   const scoreBig = $('sum-score-big');
@@ -1703,11 +1748,11 @@ function animateScore(target, displayStr, circumference) {
       setTimeout(() => {
         scoreBig.style.transform = 'scale(1)';
       }, 220);
-    };
-  };
+    }
+  }
 
   requestAnimationFrame(frame);
-};
+}
 
 function getElapsedSeconds(session = state.session) {
   if (!session) return 0;
@@ -1718,7 +1763,7 @@ function getElapsedSeconds(session = state.session) {
   else if (session.timeExpired && session.deadlineAt) end = Number(session.deadlineAt);
   const pausedDuration = Math.max(0, Number(session.pausedDurationMs) || 0);
   return Math.max(0, Math.floor((end - startedAt - pausedDuration) / 1000));
-};
+}
 
 function updateTimerDisplay() {
   const s = state.session;
@@ -1727,24 +1772,23 @@ function updateTimerDisplay() {
   if (!s) {
     el.hidden = true;
     return;
-  };
+  }
   const elapsed = getElapsedSeconds(s);
   const stopped = !!s.finishedAt || !!s.reviewMode || !!s.pausedAt;
   const hasLimit = Number(s.timeLimit) > 0 && Number(s.deadlineAt) > 0 && !stopped;
   const remaining = hasLimit ? Math.max(0, Math.ceil((s.deadlineAt - Date.now()) / 1000)) : null;
   el.hidden = false;
   if (stopped) {
-    el.textContent = s.pausedAt && !s.finishedAt && !s.reviewMode
-      ? `Tạm dừng · ${formatTime(elapsed)}`
-      : `Hoàn thành · ${formatTime(elapsed)}`;
+    el.textContent =
+      s.pausedAt && !s.finishedAt && !s.reviewMode
+        ? `Tạm dừng · ${formatTime(elapsed)}`
+        : `Hoàn thành · ${formatTime(elapsed)}`;
     el.classList.remove('time-warning');
   } else {
-    el.textContent = hasLimit
-      ? `Thời gian ${formatTime(remaining)}`
-      : `Thời gian ${formatTime(elapsed)}`;
+    el.textContent = hasLimit ? `Thời gian ${formatTime(remaining)}` : `Thời gian ${formatTime(elapsed)}`;
     el.classList.toggle('time-warning', hasLimit && remaining <= 60);
-  };
-};
+  }
+}
 
 function startSessionTimer() {
   clearInterval(state.timerInterval);
@@ -1752,34 +1796,34 @@ function startSessionTimer() {
   if (!state.session) {
     updateTimerDisplay();
     return;
-  };
+  }
   if (state.session.finishedAt || state.session.reviewMode || state.session.pausedAt) {
     updateTimerDisplay();
     return;
-  };
+  }
   const tick = () => {
     const session = state.session;
     if (!session) {
       clearInterval(state.timerInterval);
       state.timerInterval = null;
       return;
-    };
+    }
     if (session.finishedAt || session.reviewMode || session.pausedAt) {
       stopSessionTimer(false);
       return;
-    };
+    }
     updateTimerDisplay();
     if (session.timeLimit > 0 && session.deadlineAt && Date.now() >= session.deadlineAt) {
       clearInterval(state.timerInterval);
       state.timerInterval = null;
       enforceSessionDeadline();
-    };
+    }
   };
   tick();
   if (state.session && !state.session.finishedAt && !state.session.reviewMode) {
     state.timerInterval = setInterval(tick, 1000);
-  };
-};
+  }
+}
 
 function finishSession() {
   const s = state.session;
@@ -1787,17 +1831,18 @@ function finishSession() {
   stopSessionTimer(true);
 
   if (s.mode !== 'practice-wrong') {
-    const completedIdx = s.items
-      .filter((it) => it.status === 'correct')
-      .map((it) => s.pool[it.poolIdx].originalIndex);
+    const completedIdx = s.items.filter((it) => it.status === 'correct').map((it) => s.pool[it.poolIdx].originalIndex);
     const progressSaved = addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
     if (!progressSaved) {
       toast('Không thể lưu tiến độ hoàn thành. Hãy kiểm tra dung lượng bộ nhớ trình duyệt.');
-    } else if (s.sequential && s.nextCursor != null &&
-      !setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId])) {
+    } else if (
+      s.sequential &&
+      s.nextCursor != null &&
+      !setSequentialCursor(s.deckId, s.nextCursor, state.fingerprints[s.deckId])
+    ) {
       toast('Không thể lưu vị trí tuần tự của bộ đề.');
-    };
-  };
+    }
+  }
 
   const wrongInSession = [];
   const seen = new Set();
@@ -1806,8 +1851,8 @@ function finishSession() {
       if (!seen.has(entry.originalIndex)) {
         seen.add(entry.originalIndex);
         wrongInSession.push({ ...entry });
-      };
-    };
+      }
+    }
   } else {
     for (const it of s.items) {
       if (it.wrongCount > 0) {
@@ -1819,12 +1864,12 @@ function finishSession() {
             question: s.pool[it.poolIdx].question,
             wrongCount: it.wrongCount
           });
-        };
-      };
-    };
-  };
+        }
+      }
+    }
+  }
 
-  const scoreTotal = s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : s.items.length;
+  const scoreTotal = s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : s.items.length;
   s.summary = {
     total: scoreTotal,
     score: formatScore(s.firstTryCorrect || 0, scoreTotal),
@@ -1833,7 +1878,7 @@ function finishSession() {
     correct: s.firstTryCorrect || 0,
     wrongQuestions: wrongInSession.length,
     wrongAttempts: s.totalWrongAttempts,
-    practiceQuestions: s.mode === 'practice-wrong' ? (s.practiceInitialCount || s.items.length) : 0,
+    practiceQuestions: s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : 0,
     firstTryRate: (s.mode === 'practice-wrong' ? s.practiceInitialCount : s.items.length)
       ? Math.round((s.firstTryCorrect / (s.mode === 'practice-wrong' ? s.practiceInitialCount : s.items.length)) * 100)
       : 0,
@@ -1844,10 +1889,17 @@ function finishSession() {
   };
 
   if (Number.isInteger(s.rangeStart) && Number.isInteger(s.rangeEnd) && wrongInSession.length) {
-    if (!addWrongIndicesForRange(s.deckId, s.rangeStart, s.rangeEnd, wrongInSession.map((entry) => entry.originalIndex))) {
+    if (
+      !addWrongIndicesForRange(
+        s.deckId,
+        s.rangeStart,
+        s.rangeEnd,
+        wrongInSession.map((entry) => entry.originalIndex)
+      )
+    ) {
       toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
-    };
-  };
+    }
+  }
   state._lastSummarySession = {
     deckId: s.deckId,
     mode: s.examMode || s.mode === 'exam' ? 'exam' : 'practice',
@@ -1856,7 +1908,7 @@ function finishSession() {
     rangeStart: Number.isInteger(s.rangeStart) ? s.rangeStart : 1,
     rangeEnd: Number.isInteger(s.rangeEnd) ? s.rangeEnd : (state.decks[s.deckId] || []).length,
     requestedCount: s.items.length,
-    timeLimit: Number.isInteger(s.timeLimit) ? s.timeLimit : 0,
+    timeLimit: Number.isInteger(s.timeLimit) ? s.timeLimit : 0
   };
   state._lastSummaryWrongIndices = wrongInSession.map((entry) => entry.originalIndex);
   state._lastSummaryRangeStart = Number.isInteger(s.rangeStart) ? s.rangeStart : null;
@@ -1867,7 +1919,7 @@ function finishSession() {
   state.session = null;
   if (!sessionCleared) toast('Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.');
   showSummary(s.summary, s.deckId, s.mode);
-};
+}
 
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
@@ -1896,12 +1948,12 @@ function showSummary(summary, deckId, mode) {
     ringFg.style.strokeDashoffset = `${circumference}`;
     ringFg.style.transition = 'none';
     ringFg.style.stroke = 'var(--primary)';
-  };
+  }
   if (scoreBig) {
     scoreBig.textContent = '0';
     scoreBig.style.transform = 'scale(1)';
     scoreBig.style.color = 'var(--primary)';
-  };
+  }
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -1938,10 +1990,10 @@ function showSummary(summary, deckId, mode) {
       idx.textContent = `#${w.originalIndex + 1}`;
       li.append(idx, document.createTextNode(w.question));
       list.appendChild(li);
-    };
+    }
   } else {
     listCard.hidden = true;
-  };
+  }
 
   state.currentDeck = deckId;
   const retryButton = $('btn-sum-retry-session');
@@ -1966,95 +2018,152 @@ function showSummary(summary, deckId, mode) {
     const settings = getSettings(deckId);
     const n = Math.min(settings.count || 20, left);
     btnContinue.textContent = `Tiếp tục tuần tự (${n} câu trong vùng)`;
-  };
+  }
 
   state._lastSummaryDeck = deckId;
-};
+}
 
 function restoreSessionIfAny() {
   const saved = getSession(state.currentDeck);
   if (!saved) return false;
-  if (!['quocphong1', 'quocphong2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
+  if (
+    !['quocphong1', 'quocphong2'].includes(saved.deckId) ||
+    !Array.isArray(saved.items) ||
+    !Array.isArray(saved.pool)
+  ) {
     clearSession(state.currentDeck);
     return false;
-  };
+  }
   if (!state.decks[saved.deckId]) {
     clearSession(state.currentDeck);
     return false;
-  };
+  }
   const fp = state.fingerprints[saved.deckId];
   const legacyCompatible = !saved.dataFingerprint && state.legacyFingerprintMatched[saved.deckId];
-  const validPool = saved.pool.length > 0 && saved.pool.every((question) =>
-    question && Number.isInteger(question.originalIndex) && question.originalIndex >= 0 &&
-    typeof question.question === 'string' && Array.isArray(question.options) && question.options.length >= 2 &&
-    Number.isInteger(question.correct) && question.correct >= 0 && question.correct < question.options.length
-  );
+  const validPool =
+    saved.pool.length > 0 &&
+    saved.pool.every(
+      (question) =>
+        question &&
+        Number.isInteger(question.originalIndex) &&
+        question.originalIndex >= 0 &&
+        typeof question.question === 'string' &&
+        Array.isArray(question.options) &&
+        question.options.length >= 2 &&
+        Number.isInteger(question.correct) &&
+        question.correct >= 0 &&
+        question.correct < question.options.length
+    );
   const poolMatchesCurrentData = saved.pool.every((question) => {
     const current = state.decks[saved.deckId][question.originalIndex];
-    return current && current.question === question.question &&
+    return (
+      current &&
+      current.question === question.question &&
       current.correct === question.correct &&
-      JSON.stringify(current.options) === JSON.stringify(question.options);
+      JSON.stringify(current.options) === JSON.stringify(question.options)
+    );
   });
   const legacyPoolCompatible = !legacyCompatible || poolMatchesCurrentData;
-  const validSession = validPool && poolMatchesCurrentData && legacyPoolCompatible && saved.items.length > 0 &&
-    Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length &&
-    Number.isInteger(saved.maxReached) && saved.maxReached >= 0 && saved.maxReached < saved.items.length &&
+  const validSession =
+    validPool &&
+    poolMatchesCurrentData &&
+    legacyPoolCompatible &&
+    saved.items.length > 0 &&
+    Number.isInteger(saved.viewIndex) &&
+    saved.viewIndex >= 0 &&
+    saved.viewIndex < saved.items.length &&
+    Number.isInteger(saved.maxReached) &&
+    saved.maxReached >= 0 &&
+    saved.maxReached < saved.items.length &&
     saved.viewIndex <= saved.maxReached &&
     saved.items.every((item, index) => {
-      if (!item || typeof item !== 'object' || !Number.isInteger(item.poolIdx) ||
-          item.poolIdx < 0 || item.poolIdx >= saved.pool.length) return false;
+      if (
+        !item ||
+        typeof item !== 'object' ||
+        !Number.isInteger(item.poolIdx) ||
+        item.poolIdx < 0 ||
+        item.poolIdx >= saved.pool.length
+      )
+        return false;
       const question = saved.pool[item.poolIdx];
-      return Array.isArray(item.optionOrder) && item.optionOrder.length === question.options.length &&
-        (item.wrongOptions == null || (Array.isArray(item.wrongOptions) && item.wrongOptions.every((value) => Number.isInteger(value) && value >= 0 && value < question.options.length))) &&
+      return (
+        Array.isArray(item.optionOrder) &&
+        item.optionOrder.length === question.options.length &&
+        (item.wrongOptions == null ||
+          (Array.isArray(item.wrongOptions) &&
+            item.wrongOptions.every(
+              (value) => Number.isInteger(value) && value >= 0 && value < question.options.length
+            ))) &&
         new Set(item.optionOrder).size === question.options.length &&
         item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) &&
         ['pending', 'wrong', 'correct'].includes(item.status) &&
         (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') &&
-        (item.userAnswer == null || (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) &&
-        Number.isInteger(item.wrongCount) && item.wrongCount >= 0;
+        (item.userAnswer == null ||
+          (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) &&
+        Number.isInteger(item.wrongCount) &&
+        item.wrongCount >= 0
+      );
     });
   if (!validSession || (saved.dataFingerprint !== fp && !legacyCompatible)) {
     clearSession(state.currentDeck);
     return false;
-  };
+  }
   if (legacyCompatible) saved.dataFingerprint = fp;
   const progress = getDeckProgress(saved.deckId);
   if (progress.dataFingerprint && progress.dataFingerprint !== fp && !legacyCompatible) {
     clearSession(state.currentDeck);
     return false;
-  };
+  }
   saved.timeLimit = Number.isInteger(saved.timeLimit) && saved.timeLimit > 0 ? Math.min(1440, saved.timeLimit) : 0;
   saved.pausedAt = Number.isFinite(saved.pausedAt) ? saved.pausedAt : null;
   saved.pausedDurationMs = Math.max(0, Number(saved.pausedDurationMs) || 0);
   saved.remainingMs = Number.isFinite(saved.remainingMs) ? Math.max(0, saved.remainingMs) : null;
   saved.startedAt = Number.isFinite(saved.startedAt) && saved.startedAt > 0 ? saved.startedAt : Date.now();
-  saved.deadlineAt = Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0
-    ? saved.deadlineAt
-    : (saved.timeLimit > 0 ? saved.startedAt + saved.timeLimit * 60000 : null);
+  saved.deadlineAt =
+    Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0
+      ? saved.deadlineAt
+      : saved.timeLimit > 0
+        ? saved.startedAt + saved.timeLimit * 60000
+        : null;
   if (saved.pausedAt) {
     const now = Date.now();
     saved.pausedDurationMs += Math.max(0, now - saved.pausedAt);
     if (saved.timeLimit > 0) saved.deadlineAt = now + Math.max(0, Number(saved.remainingMs) || 0);
     saved.pausedAt = null;
     saved.remainingMs = null;
-    if (!saveSession(saved)) { toast('Không thể lưu trạng thái tiếp tục phiên.'); return false; };
-  };
+    if (!saveSession(saved)) {
+      toast('Không thể lưu trạng thái tiếp tục phiên.');
+      return false;
+    }
+  }
   saved.timeExpired = !!saved.timeExpired;
-  saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
-    ? saved.practiceInitialCount
-    : (saved.mode === 'practice-wrong' ? saved.items.length : 0);
+  saved.practiceInitialCount =
+    Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0
+      ? saved.practiceInitialCount
+      : saved.mode === 'practice-wrong'
+        ? saved.items.length
+        : 0;
   saved.practiceCompletedIndices = Array.isArray(saved.practiceCompletedIndices)
     ? [...new Set(saved.practiceCompletedIndices.filter((index) => Number.isInteger(index) && index >= 0))]
     : [];
   saved.practiceWrongHistory = Array.isArray(saved.practiceWrongHistory)
-    ? saved.practiceWrongHistory.filter((entry) => entry && Number.isInteger(entry.originalIndex) && entry.originalIndex >= 0 && typeof entry.question === 'string' && Number.isInteger(entry.wrongCount) && entry.wrongCount > 0)
+    ? saved.practiceWrongHistory.filter(
+        (entry) =>
+          entry &&
+          Number.isInteger(entry.originalIndex) &&
+          entry.originalIndex >= 0 &&
+          typeof entry.question === 'string' &&
+          Number.isInteger(entry.wrongCount) &&
+          entry.wrongCount > 0
+      )
     : [];
   for (const item of saved.items) {
     if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
-  };
-  saved.completedInSession = saved.mode === 'practice-wrong'
-    ? saved.practiceCompletedIndices.length
-    : saved.items.filter((item) => item.status === 'correct').length;
+  }
+  saved.completedInSession =
+    saved.mode === 'practice-wrong'
+      ? saved.practiceCompletedIndices.length
+      : saved.items.filter((item) => item.status === 'correct').length;
   saved.totalWrongAttempts = Math.max(
     Number.isInteger(saved.totalWrongAttempts) ? saved.totalWrongAttempts : 0,
     saved.items.reduce((sum, item) => sum + Math.max(0, Number(item.wrongCount) || 0), 0)
@@ -2075,11 +2184,11 @@ function restoreSessionIfAny() {
   } else {
     showScreen('quiz');
     renderQuestion();
-  };
+  }
   startSessionTimer();
   toast(saved.examMode ? 'Đã khôi phục bài thi thử đang làm.' : 'Đã khôi phục lượt ôn đang làm.');
   return true;
-};
+}
 
 function initUI() {
   document.addEventListener('selectionchange', captureHighlightSelection);
@@ -2099,10 +2208,17 @@ function initUI() {
     const q = currentQ();
     const s = state.session;
     const selection = state.lastTextSelection;
-    if (!q || !s || s.examMode || !selection || selection.questionIndex !== q.originalIndex || selection.deckId !== s.deckId) {
+    if (
+      !q ||
+      !s ||
+      s.examMode ||
+      !selection ||
+      selection.questionIndex !== q.originalIndex ||
+      selection.deckId !== s.deckId
+    ) {
       toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
-    };
+    }
     toggleHighlightSelection(selection.deckId, q.originalIndex, selection);
   });
   const active = getSettings();
@@ -2111,17 +2227,17 @@ function initUI() {
   applySettingsToForm(settings);
   showScreen('setup');
   refreshSetupUI();
-};
+}
 
 function applyTheme() {
   document.documentElement.dataset.theme = 'dark';
   const themeColor = document.querySelector('meta[name="theme-color"]');
   if (themeColor) themeColor.content = '#111113';
-};
+}
 
 function initTheme() {
   applyTheme();
-};
+}
 
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (event) => {
@@ -2138,18 +2254,18 @@ function bindKeyboardShortcuts() {
         event.preventDefault();
         $('btn-exam-quit')?.click();
         return;
-      };
+      }
       if ((event.key === 'Enter' || event.key === 's') && !state.session?.reviewMode) {
         event.preventDefault();
         $('btn-exam-submit')?.click();
         return;
-      };
+      }
       if (event.key === 'n' || event.key === 'N') {
         event.preventDefault();
         jumpToNextUnanswered();
-      };
+      }
       return;
-    };
+    }
 
     if (!quizActive) return;
 
@@ -2158,23 +2274,23 @@ function bindKeyboardShortcuts() {
       if (option && !option.disabled) {
         event.preventDefault();
         option.click();
-      };
+      }
       return;
-    };
+    }
     if (/^[a-f]$/i.test(event.key)) {
       const index = event.key.toUpperCase().charCodeAt(0) - 65;
       const option = $('options').querySelectorAll('.option')[index];
       if (option && !option.disabled) {
         event.preventDefault();
         option.click();
-      };
+      }
       return;
-    };
+    }
     if (event.key === 'Enter') {
       event.preventDefault();
       if (!$('btn-next').disabled) $('btn-next').click();
       return;
-    };
+    }
     if (event.key === 'ArrowLeft' && !$('btn-prev').disabled) {
       event.preventDefault();
       $('btn-prev').click();
@@ -2184,9 +2300,9 @@ function bindKeyboardShortcuts() {
     } else if (event.key === 'Escape') {
       event.preventDefault();
       $('btn-quit').click();
-    };
+    }
   });
-};
+}
 
 function bindEvents() {
   bindKeyboardShortcuts();
@@ -2220,7 +2336,6 @@ function bindEvents() {
       refreshSetupUI();
     });
   });
-
 
   document.querySelectorAll('.filter-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
@@ -2256,7 +2371,7 @@ function bindEvents() {
       refreshSetupUI();
       persistSetupForm();
     });
-  };
+  }
 
   $('chk-shuffle-q').addEventListener('change', () => {
     persistSetupForm();
@@ -2270,7 +2385,7 @@ function bindEvents() {
 
   for (const id of ['chk-auto-check', 'chk-auto-advance', 'chk-sound', 'chk-vibration']) {
     $(id).addEventListener('change', persistSetupForm);
-  };
+  }
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode));
@@ -2292,15 +2407,16 @@ function bindEvents() {
   });
   $('btn-review-start-selected').addEventListener('click', () => {
     const form = readSetupForm();
-    const selected = currentQuestions().filter((question) =>
-      state.reviewSelectedIndices.has(question.originalIndex) &&
-      question.originalIndex >= form.startQuestion - 1 &&
-      question.originalIndex < form.endQuestion
+    const selected = currentQuestions().filter(
+      (question) =>
+        state.reviewSelectedIndices.has(question.originalIndex) &&
+        question.originalIndex >= form.startQuestion - 1 &&
+        question.originalIndex < form.endQuestion
     );
     if (!selected.length) {
       toast('Hãy chọn ít nhất một câu hỏi.');
       return;
-    };
+    }
     $('input-count').value = String(selected.length);
     persistSetupForm();
     const selectedIndices = selected.map((question) => question.originalIndex);
@@ -2324,20 +2440,20 @@ function bindEvents() {
     if (!Number.isInteger(n) || n < 1 || n > total) {
       toast(`Nhập số câu từ 1 đến ${total}.`);
       return;
-    };
+    }
     if (state.reviewSelectMode) {
       const form = readSetupForm();
       if (n < form.startQuestion || n > form.endQuestion) {
         toast(`Câu này nằm ngoài vùng ${form.startQuestion}–${form.endQuestion} đang chọn.`);
         return;
-      };
-    };
+      }
+    }
     const target = `review-question-${n}`;
     if (!$(target)) {
       state.reviewSearch = '';
       $('input-review-search').value = '';
       renderQuestionBank();
-    };
+    }
     document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById(target)?.classList.add('review-q-highlight');
   });
@@ -2383,7 +2499,7 @@ function bindEvents() {
       if (setupId === 'input-time-limit') {
         const value = Number.parseInt(setupInput.value, 10);
         setupInput.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
-      };
+      }
       persistSetupForm();
       refreshSetupUI();
     });
@@ -2397,7 +2513,10 @@ function bindEvents() {
     else refreshSetupUI();
   });
   $('btn-discard-session')?.addEventListener('click', async () => {
-    const ok = await confirmModal('Bỏ phiên đang dở?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
+    const ok = await confirmModal(
+      'Bỏ phiên đang dở?',
+      'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.'
+    );
     if (!ok) return;
     clearSession(state.currentDeck);
     state.session = null;
@@ -2418,7 +2537,7 @@ function bindEvents() {
     clearInterval(state.timerInterval);
     state.timerInterval = null;
     if (s) {
-    };
+    }
     clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
@@ -2434,7 +2553,7 @@ function bindEvents() {
     if (result == null) {
       toast('Không thể lưu dấu trang. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
-    };
+    }
     renderQuestion();
     toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
   });
@@ -2452,7 +2571,7 @@ function bindEvents() {
       toast('Đã tạo tệp sao lưu tiến độ.');
     } catch {
       toast('Không thể tạo tệp sao lưu trên trình duyệt này.');
-    };
+    }
   });
 
   $('btn-import-progress').addEventListener('click', () => $('input-import-progress').click());
@@ -2463,7 +2582,7 @@ function bindEvents() {
     if (file.size > 2 * 1024 * 1024) {
       toast('Tệp sao lưu quá lớn hoặc không hợp lệ.');
       return;
-    };
+    }
     const ok = await confirmModal(
       'Khôi phục tiến độ?',
       'Tiến độ đang lưu trên thiết bị này sẽ được thay bằng dữ liệu trong tệp sao lưu. Hãy chắc chắn bạn đã sao lưu dữ liệu hiện tại nếu cần.'
@@ -2475,11 +2594,11 @@ function bindEvents() {
     } catch {
       toast('Không đọc được tệp đã chọn.');
       return;
-    };
+    }
     if (!importBackup(raw)) {
       toast('Tệp sao lưu không hợp lệ hoặc không được hỗ trợ.');
       return;
-    };
+    }
     await loadAll();
     if (!state.error) toast('Đã khôi phục tiến độ từ tệp sao lưu.');
   });
@@ -2493,7 +2612,7 @@ function bindEvents() {
     if (!resetDeckProgress(state.currentDeck)) {
       toast('Không thể xóa tiến độ. Hãy kiểm tra quyền lưu trữ của trình duyệt.');
       return;
-    };
+    }
     toast('Đã xóa tiến độ bộ đề.');
     refreshSetupUI();
   });
@@ -2511,7 +2630,7 @@ function bindEvents() {
     state.timerInterval = null;
     const currentSession = state.session;
     if (currentSession) {
-    };
+    }
     const cleared = clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
@@ -2525,14 +2644,14 @@ function bindEvents() {
     if (!previous || !state.decks[previous.deckId]) {
       toast('Không tìm thấy dữ liệu lượt vừa hoàn thành.');
       return;
-    };
+    }
     state.currentDeck = previous.deckId;
     const byIndex = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
     const pool = previous.indices.map((index) => byIndex.get(index)).filter(Boolean);
     if (!pool.length) {
       toast('Không còn câu hỏi phù hợp để làm lại.');
       return;
-    };
+    }
     $('input-range-start').value = String(previous.rangeStart);
     $('input-range-end').value = String(previous.rangeEnd);
     $('input-count').value = String(pool.length);
@@ -2549,7 +2668,7 @@ function bindEvents() {
       requestedCount: pool.length,
       examMode: previous.mode === 'exam',
       forceShuffleQ: true,
-        alreadyShuffled: false
+      alreadyShuffled: false
     });
   });
 
@@ -2576,7 +2695,7 @@ function bindEvents() {
     if (!saveDeckProgress(state.currentDeck, progress)) {
       toast('Không thể đặt lại tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       return;
-    };
+    }
     $('chk-shuffle-q').checked = false;
     persistSetupForm();
     showScreen('setup');
@@ -2603,10 +2722,10 @@ function bindEvents() {
     if (Number.isInteger(state._lastSummaryRangeStart) && Number.isInteger(state._lastSummaryRangeEnd)) {
       $('input-range-start').value = String(state._lastSummaryRangeStart);
       $('input-range-end').value = String(state._lastSummaryRangeEnd);
-    };
+    }
     if (Number.isInteger(state._lastSummaryCount) && state._lastSummaryCount > 0) {
       $('input-count').value = String(state._lastSummaryCount);
-    };
+    }
     setPracticeMode('practice');
     showScreen('setup');
     refreshSetupUI();
@@ -2625,9 +2744,9 @@ function bindEvents() {
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     } else {
       location.reload();
-    };
+    }
   });
-};
+}
 
 let reloadAfterUpdate = false;
 
@@ -2635,7 +2754,7 @@ function registerSW() {
   if (!('serviceWorker' in navigator)) {
     toast('Trình duyệt này không hỗ trợ chế độ ngoại tuyến.');
     return;
-  };
+  }
   const swUrl = new URL('sw.js', document.baseURI).href;
   const scope = new URL('.', document.baseURI).href;
   navigator.serviceWorker
@@ -2650,7 +2769,7 @@ function registerSW() {
             $('update-banner').hidden = false;
           } else if (nw.state === 'redundant') {
             toast('Không thể cài bản ngoại tuyến mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.');
-          };
+          }
         });
       });
     })
@@ -2664,13 +2783,13 @@ function registerSW() {
     refreshing = true;
     location.reload();
   });
-};
+}
 
 function boot() {
   initTheme();
   if (!storageAvailable()) {
     toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
-  };
+  }
   bindEvents();
 
   window.addEventListener('pagehide', () => {
@@ -2681,7 +2800,7 @@ function boot() {
     if (document.hidden) {
       persistSession();
       return;
-    };
+    }
     if (!enforceSessionDeadline()) updateTimerDisplay();
   });
 
@@ -2689,11 +2808,11 @@ function boot() {
     if (state.session && !enforceSessionDeadline()) {
       updateTimerDisplay();
       persistSession();
-    };
+    }
   });
 
   registerSW();
   loadAll();
-};
+}
 
 boot();
