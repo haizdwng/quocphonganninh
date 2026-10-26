@@ -1,6 +1,8 @@
 import {
   getSettings,
   saveSettings,
+  getBankSettings,
+  saveBankSettings,
   getDeckProgress,
   saveDeckProgress,
   getSession,
@@ -48,17 +50,18 @@ const state = {
   loading: true,
   error: null,
   currentDeck: 'quocphong1',
+  bankDeck: 'quocphong1',
+  bankPracticeMode: 'practice',
   mode: 'setup',
   practiceMode: 'practice',
   session: null,
   reviewMode: false,
-  searchResults: [],
   timerInterval: null,
   examFilter: 'all',
   examSubmitting: false,
-  reviewSearch: '',
   reviewSelectMode: false,
   reviewSelectedIndices: new Set(),
+  reviewVirtual: null,
   _lastSummarySession: null,
   _lastSummaryWrongIndices: [],
   _lastSummaryRangeStart: null,
@@ -67,6 +70,10 @@ const state = {
   highlightEditMode: false,
   lastTextSelection: null
 };
+
+const REVIEW_VIRTUAL_OVERSCAN = 3;
+const REVIEW_VIRTUAL_ESTIMATED_HEIGHT = 240;
+const REVIEW_VIRTUAL_POOL_SIZE = 14;
 
 const $ = (id) => document.getElementById(id);
 
@@ -85,7 +92,10 @@ async function loadDeck(id) {
       `Không thể tải ${meta.label}. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.`
     );
   }
-  if (!res.ok) throw new Error(`Không tải được ${meta.label} (${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`);
+  if (!res.ok)
+    throw new Error(
+      `Không tải được ${meta.label} (${res.status}). Hãy kiểm tra vị trí tệp dữ liệu.`
+    );
   let raw;
   try {
     raw = await res.json();
@@ -104,7 +114,8 @@ async function loadDeck(id) {
     if (progress.dataFingerprint === legacyFingerprint) {
       state.legacyFingerprintMatched[id] = true;
       progress.dataFingerprint = fp;
-      if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
+      if (!saveDeckProgress(id, progress))
+        toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
     } else {
       progress.completed = [];
       progress.sequentialCursor = 0;
@@ -113,8 +124,10 @@ async function loadDeck(id) {
       progress.practiceMap = {};
       progress.bookmarks = [];
       progress.dataFingerprint = fp;
-      if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
-      if (!resetDeckHighlights(id)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
+      if (!saveDeckProgress(id, progress))
+        toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+      if (!resetDeckHighlights(id))
+        toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
     }
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fp;
@@ -194,21 +207,40 @@ function showScreen(name) {
   if (screen) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+    requestAnimationFrame(updateScrollTopButton);
   }
 }
 
-function toast(msg, ms = 2800) {
-  const el = $('toast');
-  if (!el) {
-    console.warn('Không tìm thấy phần tử #toast:', msg);
+function updateScrollTopButton() {
+  const btn = $('btn-scroll-top');
+  if (!btn) return;
+  const threshold = Math.max(360, Math.floor(window.innerHeight * 0.75));
+  const show = window.scrollY > threshold;
+  btn.hidden = false;
+  btn.classList.toggle('is-visible', show);
+  if (!show) {
+    // keep in DOM but hide via class; also set hidden when near top for a11y
+    btn.hidden = true;
+  }
+}
+
+function scrollToPageTop() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+}
+
+function toast(message, durationMs = 2800) {
+  const toastElement = $('toast');
+  if (!toastElement) {
+    console.warn('Không tìm thấy phần tử #toast:', message);
     return;
   }
-  el.textContent = msg;
-  el.hidden = false;
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => {
-    if (el.isConnected) el.hidden = true;
-  }, ms);
+  toastElement.textContent = message;
+  toastElement.hidden = false;
+  clearTimeout(toast._timeoutId);
+  toast._timeoutId = setTimeout(() => {
+    if (toastElement.isConnected) toastElement.hidden = true;
+  }, durationMs);
 }
 
 function confirmModal(title, body) {
@@ -250,6 +282,16 @@ function currentQuestions() {
   return state.decks[state.currentDeck] || [];
 }
 
+function bankQuestions() {
+  return state.decks[state.bankDeck] || [];
+}
+
+/** Tuỳ chọn khi đang làm bài: phiên từ ngân hàng dùng bankSettings, còn lại dùng settings thiết lập. */
+function sessionPreferences(deckId) {
+  if (state.session?.fromBank) return getBankSettings();
+  return getSettings(deckId || state.session?.deckId || state.currentDeck);
+}
+
 function renderTextWithHighlights(element, text, deckId, originalIndex, target) {
   element.replaceChildren();
   element.dataset.highlightTarget = target;
@@ -267,7 +309,8 @@ function renderTextWithHighlights(element, text, deckId, originalIndex, target) 
   }
   let cursor = 0;
   for (const range of merged) {
-    if (range.start > cursor) element.appendChild(document.createTextNode(text.slice(cursor, range.start)));
+    if (range.start > cursor)
+      element.appendChild(document.createTextNode(text.slice(cursor, range.start)));
     const mark = document.createElement('span');
     mark.className = 'text-highlight';
     mark.textContent = text.slice(range.start, range.end);
@@ -296,7 +339,11 @@ function toggleHighlightSelection(deckId, questionIndex, selection) {
   if (fullyHighlighted) {
     updated = [];
     for (const range of saved) {
-      if (range.target !== selected.target || range.end <= selected.start || range.start >= selected.end) {
+      if (
+        range.target !== selected.target ||
+        range.end <= selected.start ||
+        range.start >= selected.end
+      ) {
         updated.push(range);
         continue;
       }
@@ -334,7 +381,11 @@ function createHighlightToolbar(questionIndex, bankMode = false) {
     captureHighlightSelection();
     const selection = state.lastTextSelection;
     const expectedDeck = bankMode ? state.currentDeck : state.session?.deckId;
-    if (!selection || selection.questionIndex !== questionIndex || selection.deckId !== expectedDeck) {
+    if (
+      !selection ||
+      selection.questionIndex !== questionIndex ||
+      selection.deckId !== expectedDeck
+    ) {
       toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
     }
@@ -409,114 +460,428 @@ function captureHighlightSelection() {
   }
 }
 
+function getFilteredBankQuestions() {
+  const questions = bankQuestions();
+  const form = readBankForm();
+  // Ngân hàng luôn hiển thị toàn bộ câu của bộ đề đang chọn (không phụ thuộc vùng thiết lập)
+  return { questions, form, filtered: questions };
+}
+
+function getReviewVirtualState() {
+  if (!state.reviewVirtual) {
+    state.reviewVirtual = {
+      filtered: [],
+      heights: [],
+      positions: [],
+      totalHeight: 0,
+      pool: [],
+      phantom: null,
+      scrollBound: false,
+      rangeStart: 0,
+      rangeEnd: -1,
+      measureRaf: 0,
+      scrollRaf: 0
+    };
+  }
+  return state.reviewVirtual;
+}
+
+function rebuildReviewVirtualMetrics(vs) {
+  const n = vs.filtered.length;
+  if (vs.heights.length !== n) {
+    vs.heights = Array.from(
+      { length: n },
+      (_, i) => vs.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT
+    );
+  }
+  vs.positions = new Array(n);
+  let y = 0;
+  for (let i = 0; i < n; i++) {
+    vs.positions[i] = y;
+    y += vs.heights[i];
+  }
+  vs.totalHeight = y;
+  if (vs.phantom) vs.phantom.style.height = `${Math.max(y, 0)}px`;
+}
+
+function findReviewVirtualIndex(vs, offsetY) {
+  const pos = vs.positions;
+  if (!pos.length) return 0;
+  let lo = 0;
+  let hi = pos.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (pos[mid] <= offsetY) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}
+
+function createReviewBankCard() {
+  const card = document.createElement('article');
+  card.className = 'review-q-card review-vs-item';
+  card.style.position = 'absolute';
+  card.style.left = '0';
+  card.style.right = '0';
+  card.style.top = '0';
+  card.style.willChange = 'transform';
+
+  const selectLabel = document.createElement('label');
+  selectLabel.className = 'review-select-label';
+  selectLabel.hidden = true;
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  const selectSpan = document.createElement('span');
+  selectSpan.textContent = 'Chọn câu này';
+  selectLabel.append(checkbox, selectSpan);
+
+  const heading = document.createElement('h3');
+  heading.className = 'review-q-heading';
+
+  const prompt = document.createElement('p');
+  prompt.className = 'review-q-text';
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'highlight-toolbar';
+  const hlBtn = document.createElement('button');
+  hlBtn.type = 'button';
+  hlBtn.className = 'btn btn-secondary btn-sm highlight-toggle-btn';
+  hlBtn.dataset.icon = 'underline';
+  hlBtn.textContent = 'Highlight';
+  hlBtn.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
+  hlBtn.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') event.preventDefault();
+  });
+  hlBtn.addEventListener('mousedown', (event) => event.preventDefault());
+  hlBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    captureHighlightSelection();
+    const selection = state.lastTextSelection;
+    if (!selection || selection.questionIndex !== qIndex || selection.deckId !== state.bankDeck) {
+      toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
+      return;
+    }
+    toggleHighlightSelection(selection.deckId, qIndex, selection);
+  });
+  toolbar.appendChild(hlBtn);
+
+  const options = document.createElement('ol');
+  options.className = 'review-options';
+  options.type = 'A';
+
+  const optionNodes = [];
+  for (let i = 0; i < 6; i++) {
+    const item = document.createElement('li');
+    item.className = 'review-option';
+    item.hidden = true;
+    const label = document.createElement('span');
+    label.className = 'review-option-label';
+    const text = document.createElement('span');
+    text.className = 'review-option-text';
+    const badge = document.createElement('span');
+    badge.className = 'review-correct-badge';
+    badge.textContent = 'Đáp án đúng';
+    badge.hidden = true;
+    item.append(label, text, badge);
+    options.appendChild(item);
+    optionNodes.push({ item, label, text, badge });
+  }
+
+  checkbox.addEventListener('change', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    if (checkbox.checked) state.reviewSelectedIndices.add(qIndex);
+    else state.reviewSelectedIndices.delete(qIndex);
+    const count = state.reviewSelectedIndices.size;
+    $('btn-review-start-selected').textContent =
+      `Bắt đầu ${state.bankPracticeMode === 'exam' ? 'thi' : 'ôn'} ${count} câu đã chọn`;
+    $('btn-review-start-selected').disabled = count === 0;
+  });
+
+  card.append(selectLabel, heading, prompt, toolbar, options);
+  card._vs = { selectLabel, checkbox, heading, prompt, toolbar, options, optionNodes };
+  return card;
+}
+
+function bindReviewBankCard(card, question, listIndex) {
+  const parts = card._vs;
+  const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+  card.dataset.listIndex = String(listIndex);
+  card.dataset.originalIndex = String(question.originalIndex);
+  card.id = `review-question-${question.originalIndex + 1}`;
+  parts.heading.textContent = `Câu ${question.originalIndex + 1}`;
+
+  if (state.reviewSelectMode) {
+    parts.selectLabel.hidden = false;
+    parts.checkbox.checked = state.reviewSelectedIndices.has(question.originalIndex);
+    parts.checkbox.setAttribute('aria-label', `Chọn câu ${question.originalIndex + 1}`);
+  } else {
+    parts.selectLabel.hidden = true;
+  }
+
+  renderTextWithHighlights(
+    parts.prompt,
+    question.question,
+    state.bankDeck,
+    question.originalIndex,
+    'question'
+  );
+
+  const optionCount = question.options.length;
+  parts.optionNodes.forEach((node, index) => {
+    if (index >= optionCount) {
+      node.item.hidden = true;
+      return;
+    }
+    node.item.hidden = false;
+    const isCorrect = index === question.correct;
+    node.item.className = isCorrect ? 'review-option is-correct' : 'review-option';
+    node.label.textContent = labels[index] || String(index + 1);
+    renderTextWithHighlights(
+      node.text,
+      question.options[index],
+      state.bankDeck,
+      question.originalIndex,
+      `option:${index}`
+    );
+    node.badge.hidden = !isCorrect;
+  });
+}
+
+function ensureReviewVirtualPool(vs, list) {
+  while (vs.pool.length < REVIEW_VIRTUAL_POOL_SIZE) {
+    const card = createReviewBankCard();
+    card.hidden = true;
+    list.appendChild(card);
+    vs.pool.push(card);
+  }
+}
+
+function measureReviewVirtualVisible(vs) {
+  for (const card of vs.pool) {
+    if (card.hidden) continue;
+    const idx = Number(card.dataset.listIndex);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= vs.filtered.length) continue;
+    const h = card.offsetHeight;
+    // +12px khoảng cách giữa các card (thay cho grid gap)
+    const withGap = h + 12;
+    if (h > 0 && Math.abs((vs.heights[idx] || 0) - withGap) > 2) {
+      vs.heights[idx] = withGap;
+    }
+  }
+  rebuildReviewVirtualMetrics(vs);
+}
+
+function syncReviewVirtualWindow() {
+  if (state.mode !== 'review') return;
+  const list = $('review-list');
+  const vs = getReviewVirtualState();
+  if (!list || !vs.filtered.length) return;
+
+  const listTop = list.getBoundingClientRect().top + window.scrollY;
+  const viewTop = Math.max(0, window.scrollY - listTop);
+  const viewBottom = viewTop + window.innerHeight;
+
+  let start = findReviewVirtualIndex(vs, viewTop);
+  start = Math.max(0, start - REVIEW_VIRTUAL_OVERSCAN);
+  let end = findReviewVirtualIndex(vs, viewBottom);
+  end = Math.min(vs.filtered.length - 1, end + REVIEW_VIRTUAL_OVERSCAN);
+
+  const needed = end - start + 1;
+  while (vs.pool.length < needed) {
+    const card = createReviewBankCard();
+    card.hidden = true;
+    list.appendChild(card);
+    vs.pool.push(card);
+  }
+
+  const neededIndices = [];
+  for (let i = start; i <= end; i++) neededIndices.push(i);
+
+  const assigned = new Map(); // listIndex -> card
+  const free = [];
+  for (const card of vs.pool) {
+    const idx = Number(card.dataset.listIndex);
+    if (!card.hidden && Number.isInteger(idx) && idx >= start && idx <= end && !assigned.has(idx)) {
+      assigned.set(idx, card);
+    } else {
+      free.push(card);
+    }
+  }
+
+  for (const i of neededIndices) {
+    let card = assigned.get(i);
+    if (!card) card = free.pop();
+    if (!card) continue;
+    assigned.set(i, card);
+    const question = vs.filtered[i];
+    if (
+      Number(card.dataset.listIndex) !== i ||
+      Number(card.dataset.originalIndex) !== question.originalIndex
+    ) {
+      bindReviewBankCard(card, question, i);
+    } else if (state.reviewSelectMode) {
+      card._vs.checkbox.checked = state.reviewSelectedIndices.has(question.originalIndex);
+      card._vs.selectLabel.hidden = false;
+    } else {
+      card._vs.selectLabel.hidden = true;
+    }
+    card.hidden = false;
+    card.style.transform = `translateY(${vs.positions[i] || 0}px)`;
+  }
+
+  const used = new Set(assigned.values());
+  for (const card of vs.pool) {
+    if (!used.has(card)) {
+      card.hidden = true;
+      card.dataset.listIndex = '';
+      card.dataset.originalIndex = '';
+    }
+  }
+  vs.rangeStart = start;
+  vs.rangeEnd = end;
+
+  if (vs.measureRaf) cancelAnimationFrame(vs.measureRaf);
+  vs.measureRaf = requestAnimationFrame(() => {
+    vs.measureRaf = 0;
+    const before = vs.totalHeight;
+    measureReviewVirtualVisible(vs);
+    if (Math.abs(before - vs.totalHeight) > 4) {
+      for (const card of vs.pool) {
+        if (card.hidden) continue;
+        const idx = Number(card.dataset.listIndex);
+        if (!Number.isInteger(idx)) continue;
+        card.style.transform = `translateY(${vs.positions[idx] || 0}px)`;
+      }
+    }
+  });
+}
+
+function onReviewVirtualScroll() {
+  const vs = getReviewVirtualState();
+  if (vs.scrollRaf) return;
+  vs.scrollRaf = requestAnimationFrame(() => {
+    vs.scrollRaf = 0;
+    syncReviewVirtualWindow();
+  });
+}
+
+function ensureReviewVirtualScrollBinding() {
+  const vs = getReviewVirtualState();
+  if (vs.scrollBound) return;
+  window.addEventListener('scroll', onReviewVirtualScroll, { passive: true });
+  window.addEventListener('resize', onReviewVirtualScroll, { passive: true });
+  vs.scrollBound = true;
+}
+
+function scrollReviewToQuestionNumber(questionNumber) {
+  const vs = getReviewVirtualState();
+  const idx = vs.filtered.findIndex((q) => q.originalIndex + 1 === questionNumber);
+  if (idx < 0) return false;
+  const list = $('review-list');
+  if (!list) return false;
+  rebuildReviewVirtualMetrics(vs);
+  const listTop = list.getBoundingClientRect().top + window.scrollY;
+  const y = listTop + (vs.positions[idx] || 0) - 12;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: Math.max(0, y), behavior: reducedMotion ? 'auto' : 'smooth' });
+  requestAnimationFrame(() => {
+    syncReviewVirtualWindow();
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`review-question-${questionNumber}`);
+      el?.classList.add('review-q-highlight');
+    });
+  });
+  return true;
+}
+
 function renderQuestionBank() {
-  const questions = currentQuestions();
-  const form = readSetupForm();
+  const { questions, form, filtered } = getFilteredBankQuestions();
   const gotoInput = $('input-review-goto');
-  gotoInput.min = '1';
-  gotoInput.max = String(Math.max(1, questions.length));
-  gotoInput.placeholder = `1–${questions.length}`;
-  gotoInput.setAttribute('aria-label', `Đi đến câu số từ 1 đến ${questions.length}`);
-  const query = normalizeSearchText(state.reviewSearch.trim());
-  const inRange = state.reviewSelectMode
-    ? questions.filter(
-        (question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion
-      )
-    : questions;
-  const filtered = query
-    ? inRange.filter((question) =>
-        normalizeSearchText([question.question, ...question.options].join(' ')).includes(query)
-      )
-    : inRange;
-  const selectedCount = [...state.reviewSelectedIndices].filter(
-    (index) => index >= form.startQuestion - 1 && index < form.endQuestion
-  ).length;
-  $('btn-review-select-mode').textContent = state.reviewSelectMode ? 'Thoát chọn câu' : 'Tự chọn câu';
+  if (gotoInput) {
+    gotoInput.min = '1';
+    gotoInput.max = String(Math.max(1, questions.length));
+    gotoInput.placeholder = `1–${questions.length}`;
+    gotoInput.setAttribute('aria-label', `Đi đến câu số từ 1 đến ${questions.length}`);
+  }
+  const selectedCount = state.reviewSelectedIndices.size;
+  $('btn-review-select-mode').textContent = state.reviewSelectMode
+    ? 'Thoát chọn câu'
+    : 'Tự chọn câu';
   $('btn-review-start-selected').hidden = !state.reviewSelectMode;
   $('btn-review-start-selected').textContent =
-    `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${selectedCount} câu đã chọn`;
+    `Bắt đầu ${state.bankPracticeMode === 'exam' ? 'thi' : 'ôn'} ${selectedCount} câu đã chọn`;
   $('btn-review-start-selected').disabled = selectedCount === 0;
-  const list = $('review-list');
-  const fragment = document.createDocumentFragment();
-  $('review-title').textContent = DECKS[state.currentDeck].label;
+  $('review-title').textContent = DECKS[state.bankDeck]?.label || 'Ngân hàng câu hỏi';
+  document.querySelectorAll('[data-bank-deck]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.bankDeck === state.bankDeck);
+  });
+  if ($('bank-count-quocphong1')) {
+    $('bank-count-quocphong1').textContent = `${state.decks.quocphong1?.length ?? 479} câu`;
+    $('bank-count-quocphong2').textContent = `${state.decks.quocphong2?.length ?? 262} câu`;
+  }
 
-  for (const question of filtered) {
-    const card = document.createElement('article');
-    card.className = 'review-q-card';
-    card.id = `review-question-${question.originalIndex + 1}`;
-    const heading = document.createElement('h3');
-    heading.className = 'review-q-heading';
-    heading.textContent = `Câu ${question.originalIndex + 1}`;
-    if (state.reviewSelectMode) {
-      const selectLabel = document.createElement('label');
-      selectLabel.className = 'review-select-label';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = state.reviewSelectedIndices.has(question.originalIndex);
-      checkbox.setAttribute('aria-label', `Chọn câu ${question.originalIndex + 1}`);
-      checkbox.addEventListener('change', () => {
-        if (checkbox.checked) state.reviewSelectedIndices.add(question.originalIndex);
-        else state.reviewSelectedIndices.delete(question.originalIndex);
-        const currentForm = readSetupForm();
-        const count = [...state.reviewSelectedIndices].filter(
-          (index) => index >= currentForm.startQuestion - 1 && index < currentForm.endQuestion
-        ).length;
-        $('btn-review-start-selected').textContent =
-          `Bắt đầu ${state.practiceMode === 'exam' ? 'thi' : 'ôn'} ${count} câu đã chọn`;
-        $('btn-review-start-selected').disabled = count === 0;
-      });
-      const span = document.createElement('span');
-      span.textContent = 'Chọn câu này';
-      selectLabel.append(checkbox, span);
-      card.appendChild(selectLabel);
-    }
-    const prompt = document.createElement('p');
-    prompt.className = 'review-q-text';
-    renderTextWithHighlights(prompt, question.question, state.currentDeck, question.originalIndex, 'question');
-    const highlightToolbar = createHighlightToolbar(question.originalIndex, true);
-    const options = document.createElement('ol');
-    options.className = 'review-options';
-    options.type = 'A';
-    const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
-    question.options.forEach((option, index) => {
-      const item = document.createElement('li');
-      item.className = index === question.correct ? 'review-option is-correct' : 'review-option';
-      const label = document.createElement('span');
-      label.className = 'review-option-label';
-      label.textContent = labels[index] || String(index + 1);
-      const text = document.createElement('span');
-      text.className = 'review-option-text';
-      renderTextWithHighlights(text, option, state.currentDeck, question.originalIndex, `option:${index}`);
-      item.append(label, text);
-      if (index === question.correct) {
-        const badge = document.createElement('span');
-        badge.className = 'review-correct-badge';
-        badge.textContent = 'Đáp án đúng';
-        item.appendChild(badge);
-      }
-      options.appendChild(item);
-    });
-    card.append(heading, prompt, highlightToolbar, options);
-    fragment.appendChild(card);
+  const list = $('review-list');
+  const vs = getReviewVirtualState();
+  vs.filtered = filtered;
+  vs.heights = filtered.map((_, i) => vs.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT);
+  if (vs.heights.length > filtered.length) vs.heights.length = filtered.length;
+
+  list.classList.add('review-list-virtual');
+  // Keep pool nodes; rebuild shell
+  const keep = new Set(vs.pool);
+  if (vs.phantom) keep.add(vs.phantom);
+  for (const child of [...list.children]) {
+    if (!keep.has(child)) child.remove();
   }
-  list.replaceChildren(fragment);
+  if (!vs.phantom) {
+    vs.phantom = document.createElement('div');
+    vs.phantom.className = 'review-vs-phantom';
+    vs.phantom.setAttribute('aria-hidden', 'true');
+  }
+  if (!vs.phantom.parentNode) list.insertBefore(vs.phantom, list.firstChild);
+  ensureReviewVirtualPool(vs, list);
+  rebuildReviewVirtualMetrics(vs);
+
   if (!filtered.length) {
-    const empty = document.createElement('p');
-    empty.className = 'card review-empty';
-    empty.textContent = 'Không tìm thấy câu hỏi hoặc đáp án phù hợp.';
-    list.appendChild(empty);
+    for (const card of vs.pool) card.hidden = true;
+    vs.phantom.style.height = '0px';
+    let empty = list.querySelector('.review-empty');
+    if (!empty) {
+      empty = document.createElement('p');
+      empty.className = 'card review-empty';
+      list.appendChild(empty);
+    }
+    empty.textContent = 'Không có câu hỏi trong vùng hiện tại.';
+    empty.hidden = false;
+    return;
   }
+  const empty = list.querySelector('.review-empty');
+  if (empty) empty.hidden = true;
+
+  ensureReviewVirtualScrollBinding();
+  syncReviewVirtualWindow();
 }
 
 function openQuestionBank() {
   state.reviewSelectedIndices.clear();
-  state.reviewSearch = '';
   state.reviewSelectMode = false;
-  $('input-review-search').value = '';
-  $('input-review-goto').value = '';
+  const vs = getReviewVirtualState();
+  vs.heights = [];
+  vs.positions = [];
+  vs.rangeStart = 0;
+  vs.rangeEnd = -1;
+  if ($('input-review-goto')) $('input-review-goto').value = '';
+  const bank = getBankSettings();
+  state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  applyBankSettingsToForm(bank);
   renderQuestionBank();
-  refreshSearchUI();
   showScreen('review');
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: 0 });
+    syncReviewVirtualWindow();
+  });
 }
 
 function refreshSetupUI() {
@@ -578,14 +943,17 @@ function refreshSetupUI() {
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
   const rangeBookmarkCount = qs.filter(
     (question) =>
-      question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex)
+      question.originalIndex >= start - 1 &&
+      question.originalIndex < end &&
+      bookmarks.has(question.originalIndex)
   ).length;
   const btnBookmarks = $('btn-practice-bookmarks');
   btnBookmarks.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
   btnBookmarks.textContent = `Ôn ${rangeBookmarkCount} câu đã đánh dấu`;
 
-  const rangeQuestions = qs.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
-  refreshSearchUI();
+  const rangeQuestions = qs.filter(
+    (question) => question.originalIndex >= start - 1 && question.originalIndex < end
+  );
   const shuffleQ = $('chk-shuffle-q').checked;
   const btnContinue = $('btn-continue');
   const nextQuestion = findNextUncompletedQuestion(
@@ -608,7 +976,6 @@ function refreshSetupUI() {
     btn.disabled = n > rangeTotal;
   });
 
-  syncReviewSettingsFromSetup();
   refreshResumeCard();
 }
 
@@ -633,63 +1000,94 @@ function refreshResumeCard() {
     ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? ' · Đã chấm' : ''}`
     : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
 }
-function normalizeSearchText(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[đĐ]/g, (letter) => (letter === 'Đ' ? 'D' : 'd'))
-    .toLocaleLowerCase('vi');
+
+function readBankForm() {
+  const total = Math.max(1, bankQuestions().length);
+  let count = Number.parseInt($('review-input-count')?.value, 10);
+  if (!Number.isFinite(count) || count < 1) count = 1;
+  if (count > total) count = total;
+  let timeLimit = Number.parseInt($('review-input-time-limit')?.value, 10);
+  if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
+  timeLimit = Math.min(1440, timeLimit);
+  return {
+    deck: state.bankDeck === 'quocphong2' ? 'quocphong2' : 'quocphong1',
+    count,
+    timeLimit,
+    shuffleQ: !!$('review-chk-shuffle-q')?.checked,
+    shuffleA: !!$('review-chk-shuffle-a')?.checked,
+    practiceMode: state.bankPracticeMode === 'exam' ? 'exam' : 'practice',
+    autoCheck: !!$('review-chk-auto-check')?.checked,
+    autoAdvance: !!$('review-chk-auto-advance')?.checked,
+    soundEnabled: $('review-chk-sound') ? !!$('review-chk-sound').checked : true,
+    vibrationEnabled: $('review-chk-vibration') ? !!$('review-chk-vibration').checked : true,
+    startQuestion: 1,
+    endQuestion: total
+  };
 }
 
-function refreshSearchUI() {
-  const searchInput = $('input-review-search');
-  const button = $('btn-review-search-practice');
-  if (!searchInput || !button) return;
-  const query = normalizeSearchText(searchInput.value.trim());
-  const form = readSetupForm();
-  const pool = selectedQuestions(form);
-  state.searchResults = query
-    ? pool.filter((question) => normalizeSearchText([question.question, ...question.options].join(' ')).includes(query))
-    : [];
-  button.disabled = state.searchResults.length === 0;
-  button.textContent = state.searchResults.length
-    ? `Ôn ${Math.min(state.searchResults.length, form.count)} / ${state.searchResults.length} câu tìm được`
-    : 'Ôn kết quả tìm kiếm';
-}
-
-function syncReviewSettingsFromSetup() {
-  if (!$('review-input-count')) return;
-  $('review-input-count').value = $('input-count').value;
-  $('review-input-count').max = $('input-count').max || '1';
-  $('review-input-time-limit').value = $('input-time-limit').value;
-  $('review-chk-shuffle-q').checked = $('chk-shuffle-q').checked;
-  $('review-chk-shuffle-a').checked = $('chk-shuffle-a').checked;
-}
-
-function startSearchResults() {
-  const form = readSetupForm();
-  refreshSearchUI();
-  let pool = state.searchResults.slice();
-  if (!pool.length) {
-    toast('Không có kết quả tìm kiếm để ôn.');
-    return;
+function applyBankSettingsToForm(settings) {
+  if (!settings || !$('review-input-count')) return;
+  const total = Math.max(1, bankQuestions().length || settings.endQuestion || 1);
+  $('review-input-count').value = String(settings.count || 30);
+  $('review-input-count').max = String(total);
+  $('review-input-time-limit').value = String(
+    Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0
+      ? Math.min(1440, settings.timeLimit)
+      : 35
+  );
+  $('review-chk-shuffle-q').checked = settings.shuffleQ !== false;
+  $('review-chk-shuffle-a').checked = settings.shuffleA !== false;
+  if ($('review-chk-auto-check')) {
+    $('review-chk-auto-check').checked = settings.autoCheck === true;
+    $('review-chk-auto-advance').checked = settings.autoAdvance === true;
+    $('review-chk-sound').checked = settings.soundEnabled !== false;
+    $('review-chk-vibration').checked = settings.vibrationEnabled !== false;
   }
-  if (form.shuffleQ) {
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-  }
-  pool = pool.slice(0, form.count);
-  persistSetupForm();
-  startSessionFromPool(pool, {
-    mode: 'search',
-    sequential: false,
-    forceShuffleQ: form.shuffleQ,
-    alreadyShuffled: true,
-    requestedCount: pool.length,
-    examMode: state.practiceMode === 'exam'
+  state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
+  document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode);
   });
+  document.querySelectorAll('[data-bank-deck]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.bankDeck === state.bankDeck);
+  });
+}
+
+function persistBankForm() {
+  const form = readBankForm();
+  const saved = saveBankSettings(form);
+  if (!saved)
+    toast('Không thể lưu tuỳ chọn ngân hàng. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+  return form;
+}
+
+function setBankPracticeMode(mode) {
+  state.bankPracticeMode = mode === 'exam' ? 'exam' : 'practice';
+  document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode);
+  });
+  persistBankForm();
+  renderQuestionBank();
+}
+
+function setBankDeck(deckId) {
+  const id = deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  if (state.bankDeck === id) return;
+  persistBankForm();
+  state.bankDeck = id;
+  state.reviewSelectedIndices.clear();
+  state.reviewSelectMode = false;
+  const vs = getReviewVirtualState();
+  vs.heights = [];
+  vs.positions = [];
+  const settings = getBankSettings();
+  // giữ practiceMode/count đã lưu toàn cục ngân hàng nhưng gắn deck mới
+  applyBankSettingsToForm({ ...settings, deck: id });
+  persistBankForm();
+  renderQuestionBank();
+  if ($('bank-count-quocphong1')) {
+    $('bank-count-quocphong1').textContent = `${state.decks.quocphong1?.length ?? 479} câu`;
+    $('bank-count-quocphong2').textContent = `${state.decks.quocphong2?.length ?? 262} câu`;
+  }
 }
 
 function startPracticeBookmarks() {
@@ -702,7 +1100,9 @@ function startPracticeBookmarks() {
     toast('Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.');
     return;
   }
-  const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
+  const practiceSaveFailed = pool.some(
+    (question) => markPracticed(state.currentDeck, question.originalIndex) === null
+  );
   if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
     mode: 'practice-bookmarks',
@@ -758,10 +1158,14 @@ function applySettingsToForm(settings) {
   const total = currentQuestions().length || settings.endQuestion || 1;
   $('input-count').value = String(settings.count || 30);
   $('input-time-limit').value = String(
-    Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35
+    Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0
+      ? Math.min(1440, settings.timeLimit)
+      : 35
   );
   $('input-range-start').value = String(settings.startQuestion || 1);
-  $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
+  $('input-range-end').value = String(
+    settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total
+  );
   $('chk-shuffle-q').checked = !!settings.shuffleQ;
   $('chk-shuffle-a').checked = !!settings.shuffleA;
   $('chk-auto-check').checked = settings.autoCheck === true;
@@ -784,14 +1188,23 @@ function stopSessionTimer(freeze = true) {
 
 function selectedQuestions(form = readSetupForm()) {
   return currentQuestions().filter(
-    (question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion
+    (question) =>
+      question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion
   );
 }
 function startSessionFromPool(pool, meta) {
-  const form = readSetupForm();
-  const shuffleA = form.shuffleA;
+  const fromBank = !!meta.fromBank;
+  const form = fromBank
+    ? {
+        ...readBankForm(),
+        shuffleA: meta.shuffleA != null ? meta.shuffleA : readBankForm().shuffleA,
+        timeLimit: meta.timeLimit != null ? meta.timeLimit : readBankForm().timeLimit
+      }
+    : readSetupForm();
+  const shuffleA = meta.shuffleA != null ? meta.shuffleA : form.shuffleA;
   const shuffleQ = meta.forceShuffleQ != null ? meta.forceShuffleQ : form.shuffleQ;
   const shouldShuffleQ = meta.alreadyShuffled ? false : !!shuffleQ;
+  const timeLimit = meta.timeLimit != null ? meta.timeLimit : form.timeLimit;
   const items = createSessionItems(pool, { shuffleQ: shouldShuffleQ, shuffleA });
   const session = {
     deckId: state.currentDeck,
@@ -805,6 +1218,7 @@ function startSessionFromPool(pool, meta) {
     nextCursor: meta.nextCursor ?? null,
     shuffleQ,
     shuffleA,
+    fromBank,
     pool: pool.map((q) => ({
       originalIndex: q.originalIndex,
       question: q.question,
@@ -821,15 +1235,21 @@ function startSessionFromPool(pool, meta) {
     practiceWrongHistory: [],
     firstTryCorrect: 0,
     totalWrongAttempts: 0,
-    timeLimit: form.timeLimit,
+    timeLimit,
     startedAt: Date.now(),
-    deadlineAt: form.timeLimit > 0 ? Date.now() + form.timeLimit * 60000 : null,
+    deadlineAt: timeLimit > 0 ? Date.now() + timeLimit * 60000 : null,
     pausedAt: null,
     pausedDurationMs: 0,
     remainingMs: null,
     timeExpired: false
   };
-  if (meta.examMode || state.practiceMode === 'exam') {
+  const examRequested =
+    meta.examMode != null
+      ? !!meta.examMode
+      : fromBank
+        ? state.bankPracticeMode === 'exam'
+        : state.practiceMode === 'exam';
+  if (examRequested) {
     session.examMode = true;
     session.mode = session.mode === 'normal' ? 'exam' : session.mode;
   }
@@ -837,7 +1257,8 @@ function startSessionFromPool(pool, meta) {
   state.reviewMode = false;
   state.examFilter = 'all';
   state.examSubmitting = false;
-  if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
+  if (!saveSession(session))
+    toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
   if (session.examMode) {
     showScreen('exam');
     renderExam();
@@ -868,7 +1289,8 @@ function startNormal(opts = {}) {
 
   if (opts.restart) {
     const { items, nextCursor } = pickSequential(qs, 0, form.count, new Set());
-    const globalNextCursor = nextCursor > 0 ? qs[Math.min(nextCursor, qs.length) - 1].originalIndex + 1 : rangeStart;
+    const globalNextCursor =
+      nextCursor > 0 ? qs[Math.min(nextCursor, qs.length) - 1].originalIndex + 1 : rangeStart;
     startSessionFromPool(items, {
       mode: 'normal',
       sequential: true,
@@ -881,21 +1303,33 @@ function startNormal(opts = {}) {
   }
 
   if (opts.sequential) {
-    const nextQuestion = findNextUncompletedQuestion(qs, Math.max(progress.sequentialCursor, rangeStart), completedSet);
+    const nextQuestion = findNextUncompletedQuestion(
+      qs,
+      Math.max(progress.sequentialCursor, rangeStart),
+      completedSet
+    );
     if (!nextQuestion) {
       toast('Đã hoàn thành toàn bộ câu trong vùng đã chọn.');
       return;
     }
     const cursor = nextQuestion.originalIndex;
     const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
-    const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
+    const { items, nextCursor, actualCount } = pickSequential(
+      scanQuestions,
+      0,
+      form.count,
+      completedSet
+    );
     if (!items.length) {
       toast('Không còn câu tuần tự trong vùng đã chọn.');
       return;
     }
-    if (actualCount < form.count) toast(`Chỉ còn ${actualCount} câu theo thứ tự trong vùng đã chọn.`);
+    if (actualCount < form.count)
+      toast(`Chỉ còn ${actualCount} câu theo thứ tự trong vùng đã chọn.`);
     const globalNextCursor =
-      nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1 : cursor;
+      nextCursor > 0
+        ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
+        : cursor;
     startSessionFromPool(items, {
       mode: 'normal',
       sequential: true,
@@ -908,14 +1342,18 @@ function startNormal(opts = {}) {
   }
 
   if (form.shuffleQ) {
-    const remainingCount = qs.filter((question) => !completedSet.has(question.originalIndex)).length;
+    const remainingCount = qs.filter(
+      (question) => !completedSet.has(question.originalIndex)
+    ).length;
     const pool = pickRandom(qs, form.count, true, completedSet);
     if (!pool.length) {
       toast('Không lấy được câu hỏi trong vùng đã chọn.');
       return;
     }
     if (remainingCount === 0) {
-      toast('Bạn đã hoàn thành các câu trong vùng này; lượt này lấy ngẫu nhiên trong vùng đã chọn.');
+      toast(
+        'Bạn đã hoàn thành các câu trong vùng này; lượt này lấy ngẫu nhiên trong vùng đã chọn.'
+      );
     } else if (remainingCount < form.count) {
       toast(
         `Chỉ còn ${remainingCount} câu chưa hoàn thành trong vùng; đã bổ sung câu đã làm để đủ ${pool.length} câu.`
@@ -930,10 +1368,19 @@ function startNormal(opts = {}) {
     return;
   }
 
-  const nextQuestion = findNextUncompletedQuestion(qs, Math.max(progress.sequentialCursor, rangeStart), completedSet);
+  const nextQuestion = findNextUncompletedQuestion(
+    qs,
+    Math.max(progress.sequentialCursor, rangeStart),
+    completedSet
+  );
   const cursor = nextQuestion?.originalIndex ?? rangeEnd;
   const scanQuestions = qs.filter((question) => question.originalIndex >= cursor);
-  const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
+  const { items, nextCursor, actualCount } = pickSequential(
+    scanQuestions,
+    0,
+    form.count,
+    completedSet
+  );
   if (!items.length) {
     const pool = pickRandom(qs, form.count, false, completedSet);
     startSessionFromPool(pool, {
@@ -947,7 +1394,9 @@ function startNormal(opts = {}) {
   }
   if (actualCount < form.count) toast(`Lượt này có ${actualCount} câu trong vùng đã chọn.`);
   const globalNextCursor =
-    nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1 : cursor;
+    nextCursor > 0
+      ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1
+      : cursor;
   startSessionFromPool(items, {
     mode: 'normal',
     sequential: true,
@@ -970,7 +1419,11 @@ function startPracticeWrong(options = {}) {
       : getRangeWrongIndices(state.currentDeck, form.startQuestion, form.endQuestion);
   const wrongs = [...new Set(sourceIndices)].filter((index) => rangeIndices.has(index));
   if (!wrongs.length) {
-    toast(allDeck ? 'Bộ đề này chưa có câu sai để ôn.' : 'Trong vùng câu hỏi đã chọn không có câu sai để ôn.');
+    toast(
+      allDeck
+        ? 'Bộ đề này chưa có câu sai để ôn.'
+        : 'Trong vùng câu hỏi đã chọn không có câu sai để ôn.'
+    );
     return;
   }
   const pool = pickWrong(qs, wrongs, allDeck ? wrongs.length : form.count, form.shuffleQ);
@@ -978,7 +1431,9 @@ function startPracticeWrong(options = {}) {
     toast('Không tìm thấy câu sai hợp lệ trong bộ đề đã chọn. Hãy tải lại bộ đề.');
     return;
   }
-  const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
+  const practiceSaveFailed = pool.some(
+    (question) => markPracticed(state.currentDeck, question.originalIndex) === null
+  );
   if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
     mode: 'practice-wrong',
@@ -1024,8 +1479,10 @@ function renderQuestion() {
   const viewingHistory = s.viewIndex < s.maxReached;
 
   $('progress-label').textContent = `Câu ${s.viewIndex + 1} / ${s.items.length}`;
-  const progressTotal = s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : s.items.length;
-  $('progress-score').textContent = `Điểm ${formatScore(s.firstTryCorrect || 0, progressTotal)} / 10`;
+  const progressTotal =
+    s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : s.items.length;
+  $('progress-score').textContent =
+    `Điểm ${formatScore(s.firstTryCorrect || 0, progressTotal)} / 10`;
   updateTimerDisplay();
   const pct = progressTotal ? Math.round((s.completedInSession / progressTotal) * 100) : 0;
   $('progress-fill').style.width = `${pct}%`;
@@ -1084,7 +1541,13 @@ function renderQuestion() {
     key.textContent = labels[displayIdx] || String(displayIdx + 1);
     const text = document.createElement('span');
     text.className = 'option-text';
-    renderTextWithHighlights(text, q.options[origIdx], s.deckId, q.originalIndex, `option:${origIdx}`);
+    renderTextWithHighlights(
+      text,
+      q.options[origIdx],
+      s.deckId,
+      q.originalIndex,
+      `option:${origIdx}`
+    );
     btn.append(key, text);
 
     if (!btn.disabled) {
@@ -1097,7 +1560,9 @@ function renderQuestion() {
               ? range.startContainer
               : range.startContainer.parentElement;
           const endNode =
-            range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement;
+            range.endContainer.nodeType === Node.ELEMENT_NODE
+              ? range.endContainer
+              : range.endContainer.parentElement;
           if (btn.contains(startNode) && btn.contains(endNode)) {
             captureHighlightSelection();
             return;
@@ -1148,7 +1613,7 @@ function renderQuestion() {
 
 function setPracticeMode(mode) {
   state.practiceMode = mode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('.mode-btn').forEach((btn) => {
+  document.querySelectorAll('#screen-setup .mode-btn').forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.mode === state.practiceMode);
   });
   const startBtn = $('btn-start');
@@ -1157,7 +1622,6 @@ function setPracticeMode(mode) {
   }
   persistSetupForm();
   if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
-  else if (state.mode === 'review' && state.decks[state.currentDeck]) renderQuestionBank();
 }
 
 function updateExamProgressHeader() {
@@ -1271,7 +1735,8 @@ function renderExam() {
     if (s.reviewMode) {
       const badge = document.createElement('span');
       badge.className = `exam-status-badge ${item.status === 'correct' ? 'ok' : 'bad'}`;
-      badge.textContent = item.status === 'correct' ? 'Đúng' : item.userAnswer == null ? 'Bỏ trống' : 'Sai';
+      badge.textContent =
+        item.status === 'correct' ? 'Đúng' : item.userAnswer == null ? 'Bỏ trống' : 'Sai';
       head.appendChild(badge);
     }
     card.appendChild(head);
@@ -1298,7 +1763,8 @@ function renderExam() {
         btn.disabled = true;
         const correctDisplay = item.optionOrder.indexOf(q.correct);
         if (displayIdx === correctDisplay) btn.classList.add('correct');
-        if (item.userAnswer === displayIdx && item.status === 'wrong') btn.classList.add('incorrect');
+        if (item.userAnswer === displayIdx && item.status === 'wrong')
+          btn.classList.add('incorrect');
       }
       const label = document.createElement('span');
       label.className = 'option-key';
@@ -1380,10 +1846,16 @@ async function onExamSubmit() {
   }
   const unanswered = s.items.filter((it) => it.userAnswer == null).length;
   if (unanswered > 0) {
-    const ok = await confirmModal('Còn câu chưa chọn', `Bạn còn ${unanswered} câu chưa chọn đáp án. Vẫn nộp bài?`);
+    const ok = await confirmModal(
+      'Còn câu chưa chọn',
+      `Bạn còn ${unanswered} câu chưa chọn đáp án. Vẫn nộp bài?`
+    );
     if (!ok) return;
   } else {
-    const ok = await confirmModal('Nộp bài thi?', `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`);
+    const ok = await confirmModal(
+      'Nộp bài thi?',
+      `Bạn đã chọn đủ ${s.items.length} câu. Nộp bài để xem kết quả?`
+    );
     if (!ok) return;
   }
 
@@ -1417,7 +1889,8 @@ async function onExamSubmit() {
         wrongAttempts += 1;
         const wrongOriginalIndex = item.optionOrder[item.userAnswer];
         if (!item.wrongOptions) item.wrongOptions = [];
-        if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
+        if (!item.wrongOptions.includes(wrongOriginalIndex))
+          item.wrongOptions.push(wrongOriginalIndex);
         recordWrongAnswer(s, q.originalIndex);
       }
     }
@@ -1431,7 +1904,9 @@ async function onExamSubmit() {
     stopSessionTimer(true);
     persistSession();
     renderExam();
-    toast(`Đã chấm bài: ${firstTry}/${s.items.length} đúng · Điểm ${formatScore(firstTry, s.items.length)}/10`);
+    toast(
+      `Đã chấm bài: ${firstTry}/${s.items.length} đúng · Điểm ${formatScore(firstTry, s.items.length)}/10`
+    );
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } finally {
     state.examSubmitting = false;
@@ -1441,7 +1916,13 @@ async function onExamSubmit() {
 
 function enforceSessionDeadline() {
   const session = state.session;
-  if (!session || !(session.timeLimit > 0) || !session.deadlineAt || Date.now() < session.deadlineAt) return false;
+  if (
+    !session ||
+    !(session.timeLimit > 0) ||
+    !session.deadlineAt ||
+    Date.now() < session.deadlineAt
+  )
+    return false;
   session.timeExpired = true;
   if (session.examMode && !session.reviewMode) {
     session.reviewMode = true;
@@ -1463,7 +1944,8 @@ function enforceSessionDeadline() {
         recordWrongAnswer(session, q.originalIndex);
       }
     }
-    if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
+    if (completedIdx.length)
+      addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
     session.firstTryCorrect = firstTry;
     session.totalWrongAttempts = wrongAttempts;
     session.completedInSession = session.items.length;
@@ -1485,7 +1967,11 @@ function onSelectOption(displayIdx) {
   if (!s || !item) return;
   if (item.status === 'correct' || s.viewIndex < s.maxReached) return;
   const q = currentQ();
-  if (!q || (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))) return;
+  if (
+    !q ||
+    (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))
+  )
+    return;
 
   item.userAnswer = displayIdx;
   if (item.status === 'wrong') {
@@ -1494,7 +1980,7 @@ function onSelectOption(displayIdx) {
   }
   persistSession();
   renderQuestion();
-  if (getSettings(s.deckId).autoCheck) onCheck();
+  if (sessionPreferences(s.deckId).autoCheck) onCheck();
 }
 
 const answerSounds = {
@@ -1508,7 +1994,7 @@ for (const audio of Object.values(answerSounds)) {
 }
 
 function playAnswerSound(isCorrect) {
-  if (getSettings(state.session?.deckId || state.currentDeck).soundEnabled === false) return;
+  if (sessionPreferences(state.session?.deckId || state.currentDeck).soundEnabled === false) return;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
@@ -1531,7 +2017,7 @@ function onCheck() {
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
   const isCorrect = isAnswerCorrect(item, q);
-  const preferences = getSettings(s.deckId);
+  const preferences = sessionPreferences(s.deckId);
   const vibrate = (pattern) => {
     if (preferences.vibrationEnabled !== false && typeof navigator.vibrate === 'function') {
       try {
@@ -1571,9 +2057,16 @@ function onCheck() {
     s.totalWrongAttempts += 1;
     if (s.mode === 'practice-wrong') {
       if (!Array.isArray(s.practiceWrongHistory)) s.practiceWrongHistory = [];
-      const history = s.practiceWrongHistory.find((entry) => entry.originalIndex === q.originalIndex);
+      const history = s.practiceWrongHistory.find(
+        (entry) => entry.originalIndex === q.originalIndex
+      );
       if (history) history.wrongCount += 1;
-      else s.practiceWrongHistory.push({ originalIndex: q.originalIndex, question: q.question, wrongCount: 1 });
+      else
+        s.practiceWrongHistory.push({
+          originalIndex: q.originalIndex,
+          question: q.question,
+          wrongCount: 1
+        });
     }
     recordWrongAnswer(s, q.originalIndex);
   }
@@ -1679,7 +2172,9 @@ function pauseSession() {
   if (!session || session.reviewMode || session.finishedAt || session.pausedAt) return;
   session.pausedAt = Date.now();
   session.remainingMs =
-    session.timeLimit > 0 && session.deadlineAt ? Math.max(0, session.deadlineAt - session.pausedAt) : null;
+    session.timeLimit > 0 && session.deadlineAt
+      ? Math.max(0, session.deadlineAt - session.pausedAt)
+      : null;
   clearInterval(state.timerInterval);
   state.timerInterval = null;
   if (!saveSession(session)) {
@@ -1785,7 +2280,9 @@ function updateTimerDisplay() {
         : `Hoàn thành · ${formatTime(elapsed)}`;
     el.classList.remove('time-warning');
   } else {
-    el.textContent = hasLimit ? `Thời gian ${formatTime(remaining)}` : `Thời gian ${formatTime(elapsed)}`;
+    el.textContent = hasLimit
+      ? `Thời gian ${formatTime(remaining)}`
+      : `Thời gian ${formatTime(elapsed)}`;
     el.classList.toggle('time-warning', hasLimit && remaining <= 60);
   }
 }
@@ -1831,7 +2328,9 @@ function finishSession() {
   stopSessionTimer(true);
 
   if (s.mode !== 'practice-wrong') {
-    const completedIdx = s.items.filter((it) => it.status === 'correct').map((it) => s.pool[it.poolIdx].originalIndex);
+    const completedIdx = s.items
+      .filter((it) => it.status === 'correct')
+      .map((it) => s.pool[it.poolIdx].originalIndex);
     const progressSaved = addCompleted(s.deckId, completedIdx, state.fingerprints[s.deckId]);
     if (!progressSaved) {
       toast('Không thể lưu tiến độ hoàn thành. Hãy kiểm tra dung lượng bộ nhớ trình duyệt.');
@@ -1869,7 +2368,8 @@ function finishSession() {
     }
   }
 
-  const scoreTotal = s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : s.items.length;
+  const scoreTotal =
+    s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : s.items.length;
   s.summary = {
     total: scoreTotal,
     score: formatScore(s.firstTryCorrect || 0, scoreTotal),
@@ -1880,7 +2380,11 @@ function finishSession() {
     wrongAttempts: s.totalWrongAttempts,
     practiceQuestions: s.mode === 'practice-wrong' ? s.practiceInitialCount || s.items.length : 0,
     firstTryRate: (s.mode === 'practice-wrong' ? s.practiceInitialCount : s.items.length)
-      ? Math.round((s.firstTryCorrect / (s.mode === 'practice-wrong' ? s.practiceInitialCount : s.items.length)) * 100)
+      ? Math.round(
+          (s.firstTryCorrect /
+            (s.mode === 'practice-wrong' ? s.practiceInitialCount : s.items.length)) *
+            100
+        )
       : 0,
     wrongList: wrongInSession,
     sequential: s.sequential,
@@ -1917,7 +2421,8 @@ function finishSession() {
 
   const sessionCleared = clearSession(s.deckId);
   state.session = null;
-  if (!sessionCleared) toast('Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.');
+  if (!sessionCleared)
+    toast('Không thể xóa phiên đã lưu. Nếu tải lại trang, phiên cũ có thể xuất hiện lại.');
   showSummary(s.summary, s.deckId, s.mode);
 }
 
@@ -2095,11 +2600,17 @@ function restoreSessionIfAny() {
               (value) => Number.isInteger(value) && value >= 0 && value < question.options.length
             ))) &&
         new Set(item.optionOrder).size === question.options.length &&
-        item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) &&
+        item.optionOrder.every(
+          (index) => Number.isInteger(index) && index >= 0 && index < question.options.length
+        ) &&
         ['pending', 'wrong', 'correct'].includes(item.status) &&
-        (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') &&
+        (index >= saved.maxReached ||
+          item.status === 'correct' ||
+          saved.mode === 'practice-wrong') &&
         (item.userAnswer == null ||
-          (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) &&
+          (Number.isInteger(item.userAnswer) &&
+            item.userAnswer >= 0 &&
+            item.userAnswer < item.optionOrder.length)) &&
         Number.isInteger(item.wrongCount) &&
         item.wrongCount >= 0
       );
@@ -2114,11 +2625,13 @@ function restoreSessionIfAny() {
     clearSession(state.currentDeck);
     return false;
   }
-  saved.timeLimit = Number.isInteger(saved.timeLimit) && saved.timeLimit > 0 ? Math.min(1440, saved.timeLimit) : 0;
+  saved.timeLimit =
+    Number.isInteger(saved.timeLimit) && saved.timeLimit > 0 ? Math.min(1440, saved.timeLimit) : 0;
   saved.pausedAt = Number.isFinite(saved.pausedAt) ? saved.pausedAt : null;
   saved.pausedDurationMs = Math.max(0, Number(saved.pausedDurationMs) || 0);
   saved.remainingMs = Number.isFinite(saved.remainingMs) ? Math.max(0, saved.remainingMs) : null;
-  saved.startedAt = Number.isFinite(saved.startedAt) && saved.startedAt > 0 ? saved.startedAt : Date.now();
+  saved.startedAt =
+    Number.isFinite(saved.startedAt) && saved.startedAt > 0 ? saved.startedAt : Date.now();
   saved.deadlineAt =
     Number.isFinite(saved.deadlineAt) && saved.deadlineAt > 0
       ? saved.deadlineAt
@@ -2144,7 +2657,11 @@ function restoreSessionIfAny() {
         ? saved.items.length
         : 0;
   saved.practiceCompletedIndices = Array.isArray(saved.practiceCompletedIndices)
-    ? [...new Set(saved.practiceCompletedIndices.filter((index) => Number.isInteger(index) && index >= 0))]
+    ? [
+        ...new Set(
+          saved.practiceCompletedIndices.filter((index) => Number.isInteger(index) && index >= 0)
+        )
+      ]
     : [];
   saved.practiceWrongHistory = Array.isArray(saved.practiceWrongHistory)
     ? saved.practiceWrongHistory.filter(
@@ -2225,6 +2742,9 @@ function initUI() {
   state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
+  const bank = getBankSettings();
+  state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  applyBankSettingsToForm(bank);
   showScreen('setup');
   refreshSetupUI();
 }
@@ -2244,7 +2764,11 @@ function bindKeyboardShortcuts() {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (!$('modal').hidden) return;
     const target = event.target;
-    if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (
+      target instanceof HTMLElement &&
+      target.closest('input, textarea, select, [contenteditable="true"]')
+    )
+      return;
 
     const quizActive = $('screen-quiz') && !$('screen-quiz').hidden;
     const examActive = $('screen-exam') && !$('screen-exam').hidden;
@@ -2353,7 +2877,9 @@ function bindEvents() {
 
   $('input-time-limit').addEventListener('change', () => {
     const value = Number.parseInt($('input-time-limit').value, 10);
-    $('input-time-limit').value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
+    $('input-time-limit').value = String(
+      Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0
+    );
     persistSetupForm();
   });
 
@@ -2387,80 +2913,97 @@ function bindEvents() {
     $(id).addEventListener('change', persistSetupForm);
   }
 
-  document.querySelectorAll('.mode-btn').forEach((btn) => {
+  document.querySelectorAll('#screen-setup .mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode));
+  });
+  document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setBankPracticeMode(btn.dataset.mode));
+  });
+  document.querySelectorAll('[data-bank-deck]').forEach((btn) => {
+    btn.addEventListener('click', () => setBankDeck(btn.dataset.bankDeck));
   });
 
   $('btn-view-bank').addEventListener('click', openQuestionBank);
+
+  const scrollTopBtn = $('btn-scroll-top');
+  if (scrollTopBtn) {
+    scrollTopBtn.addEventListener('click', scrollToPageTop);
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (state._scrollTopRaf) return;
+        state._scrollTopRaf = requestAnimationFrame(() => {
+          state._scrollTopRaf = 0;
+          updateScrollTopButton();
+        });
+      },
+      { passive: true }
+    );
+    window.addEventListener('resize', updateScrollTopButton, { passive: true });
+    updateScrollTopButton();
+  }
+
   $('btn-review-back').addEventListener('click', () => {
     showScreen('setup');
     refreshSetupUI();
   });
-  $('input-review-search').addEventListener('input', () => {
-    state.reviewSearch = $('input-review-search').value;
-    renderQuestionBank();
-    refreshSearchUI();
-  });
+
   $('btn-review-select-mode').addEventListener('click', () => {
     state.reviewSelectMode = !state.reviewSelectMode;
     renderQuestionBank();
   });
   $('btn-review-start-selected').addEventListener('click', () => {
-    const form = readSetupForm();
-    const selected = currentQuestions().filter(
-      (question) =>
-        state.reviewSelectedIndices.has(question.originalIndex) &&
-        question.originalIndex >= form.startQuestion - 1 &&
-        question.originalIndex < form.endQuestion
+    const form = persistBankForm();
+    const selected = bankQuestions().filter((question) =>
+      state.reviewSelectedIndices.has(question.originalIndex)
     );
     if (!selected.length) {
       toast('Hãy chọn ít nhất một câu hỏi.');
       return;
     }
-    $('input-count').value = String(selected.length);
-    persistSetupForm();
-    const selectedIndices = selected.map((question) => question.originalIndex);
-    const pool = selected.slice();
+    let pool = selected.slice();
+    if (form.shuffleQ) {
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+    }
+    const take = Math.min(pool.length, Math.max(1, form.count));
+    pool = pool.slice(0, take);
+    const selectedIndices = pool.map((question) => question.originalIndex);
     state.reviewSelectedIndices.clear();
     state.reviewSelectMode = false;
+    // Dùng bộ đề + tuỳ chọn của ngân hàng, không đụng thiết lập
+    state.currentDeck = state.bankDeck;
     startSessionFromPool(pool, {
       mode: 'normal',
       sequential: false,
       rangeStart: Math.min(...selectedIndices) + 1,
       rangeEnd: Math.max(...selectedIndices) + 1,
-      requestedCount: selected.length,
-      examMode: state.practiceMode === 'exam',
+      requestedCount: pool.length,
+      examMode: form.practiceMode === 'exam',
       forceShuffleQ: form.shuffleQ,
-      alreadyShuffled: false
+      alreadyShuffled: true,
+      fromBank: true,
+      timeLimit: form.timeLimit,
+      shuffleA: form.shuffleA
     });
   });
   $('btn-review-goto').addEventListener('click', () => {
     const n = Number.parseInt($('input-review-goto').value, 10);
-    const total = currentQuestions().length;
+    const total = bankQuestions().length;
     if (!Number.isInteger(n) || n < 1 || n > total) {
       toast(`Nhập số câu từ 1 đến ${total}.`);
       return;
     }
-    if (state.reviewSelectMode) {
-      const form = readSetupForm();
-      if (n < form.startQuestion || n > form.endQuestion) {
-        toast(`Câu này nằm ngoài vùng ${form.startQuestion}–${form.endQuestion} đang chọn.`);
-        return;
-      }
+    if (!scrollReviewToQuestionNumber(n)) {
+      toast(`Không tìm thấy câu ${n} trong danh sách hiện tại.`);
     }
-    const target = `review-question-${n}`;
-    if (!$(target)) {
-      state.reviewSearch = '';
-      $('input-review-search').value = '';
-      renderQuestionBank();
-    }
-    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    document.getElementById(target)?.classList.add('review-q-highlight');
   });
   $('input-review-goto').addEventListener('input', (event) => {
     const input = event.currentTarget;
     if (input.value === '') return;
-    const total = currentQuestions().length;
+    const total = bankQuestions().length;
     const value = Number.parseInt(input.value, 10);
     if (!Number.isFinite(value)) return;
     input.value = String(Math.min(Math.max(value, 1), Math.max(1, total)));
@@ -2483,26 +3026,37 @@ function bindEvents() {
     setPracticeMode('practice');
     startPracticeBookmarks();
   });
-  $('btn-review-search-practice').addEventListener('click', () => startSearchResults());
 
-  for (const [reviewId, setupId] of [
-    ['review-input-count', 'input-count'],
-    ['review-input-time-limit', 'input-time-limit'],
-    ['review-chk-shuffle-q', 'chk-shuffle-q'],
-    ['review-chk-shuffle-a', 'chk-shuffle-a']
+  // Tuỳ chọn ngân hàng lưu riêng — không đồng bộ với trang thiết lập
+  for (const reviewId of [
+    'review-input-count',
+    'review-input-time-limit',
+    'review-chk-shuffle-q',
+    'review-chk-shuffle-a',
+    'review-chk-auto-check',
+    'review-chk-auto-advance',
+    'review-chk-sound',
+    'review-chk-vibration'
   ]) {
-    $(reviewId).addEventListener('change', () => {
-      const reviewInput = $(reviewId);
-      const setupInput = $(setupId);
-      if (reviewInput.type === 'checkbox') setupInput.checked = reviewInput.checked;
-      else setupInput.value = reviewInput.value;
-      if (setupId === 'input-time-limit') {
-        const value = Number.parseInt(setupInput.value, 10);
-        setupInput.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
+    const el = $(reviewId);
+    if (!el) continue;
+    const persist = () => {
+      if (reviewId === 'review-input-time-limit') {
+        const value = Number.parseInt(el.value, 10);
+        el.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
       }
-      persistSetupForm();
-      refreshSetupUI();
-    });
+      persistBankForm();
+      if (state.mode === 'review') {
+        // Cập nhật nhãn nút bắt đầu theo mode
+        const count = state.reviewSelectedIndices.size;
+        if ($('btn-review-start-selected')) {
+          $('btn-review-start-selected').textContent =
+            `Bắt đầu ${state.bankPracticeMode === 'exam' ? 'thi' : 'ôn'} ${count} câu đã chọn`;
+        }
+      }
+    };
+    el.addEventListener('change', persist);
+    if (el.type !== 'checkbox') el.addEventListener('input', persist);
   }
 
   $('btn-exam-submit')?.addEventListener('click', () => onExamSubmit());
@@ -2634,7 +3188,8 @@ function bindEvents() {
     const cleared = clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
-    if (!cleared) toast('Không thể xóa phiên đã lưu; phiên này có thể xuất hiện lại khi tải trang.');
+    if (!cleared)
+      toast('Không thể xóa phiên đã lưu; phiên này có thể xuất hiện lại khi tải trang.');
     showScreen('setup');
     refreshSetupUI();
   });
@@ -2646,7 +3201,9 @@ function bindEvents() {
       return;
     }
     state.currentDeck = previous.deckId;
-    const byIndex = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
+    const byIndex = new Map(
+      currentQuestions().map((question) => [question.originalIndex, question])
+    );
     const pool = previous.indices.map((index) => byIndex.get(index)).filter(Boolean);
     if (!pool.length) {
       toast('Không còn câu hỏi phù hợp để làm lại.');
@@ -2719,7 +3276,10 @@ function bindEvents() {
 
   $('btn-sum-practice').addEventListener('click', () => {
     if (state._lastSummaryDeck) state.currentDeck = state._lastSummaryDeck;
-    if (Number.isInteger(state._lastSummaryRangeStart) && Number.isInteger(state._lastSummaryRangeEnd)) {
+    if (
+      Number.isInteger(state._lastSummaryRangeStart) &&
+      Number.isInteger(state._lastSummaryRangeEnd)
+    ) {
       $('input-range-start').value = String(state._lastSummaryRangeStart);
       $('input-range-end').value = String(state._lastSummaryRangeEnd);
     }
@@ -2768,7 +3328,9 @@ function registerSW() {
           if (nw.state === 'installed' && navigator.serviceWorker.controller) {
             $('update-banner').hidden = false;
           } else if (nw.state === 'redundant') {
-            toast('Không thể cài bản ngoại tuyến mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.');
+            toast(
+              'Không thể cài bản ngoại tuyến mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.'
+            );
           }
         });
       });

@@ -99,7 +99,9 @@ export function pickSequential(allQuestions, cursor, count, completedSet = new S
 export function findNextUncompletedQuestion(allQuestions, cursor, completedSet = new Set()) {
   const start = Math.max(0, Number.isInteger(cursor) ? cursor : 0);
   return (
-    allQuestions.find((question) => question.originalIndex >= start && !completedSet.has(question.originalIndex)) ||
+    allQuestions.find(
+      (question) => question.originalIndex >= start && !completedSet.has(question.originalIndex)
+    ) ||
     allQuestions.find((question) => !completedSet.has(question.originalIndex)) ||
     null
   );

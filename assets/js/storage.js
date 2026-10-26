@@ -6,6 +6,7 @@ function emptyRoot() {
     version: STORAGE_VERSION,
     settings: [],
     activeDeck: 'quocphong1',
+    bankSettings: null,
     decks: {},
     sessions: {},
     highlights: { quocphong1: {}, quocphong2: {} }
@@ -33,7 +34,8 @@ function readRoot() {
           (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))
       ) &&
       (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) &&
-      (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights)));
+      (!data.highlights ||
+        (typeof data.highlights === 'object' && !Array.isArray(data.highlights)));
 
     if (valid) return data;
 
@@ -129,6 +131,22 @@ export function saveSettings(settings) {
   return writeRoot(root);
 }
 
+export function getBankSettings() {
+  const root = readRoot();
+  const raw =
+    root.bankSettings && typeof root.bankSettings === 'object' && !Array.isArray(root.bankSettings)
+      ? root.bankSettings
+      : null;
+  const deckId = normalizeDeckId(raw?.deck || root.activeDeck || 'quocphong1');
+  return normalizeSettingsEntry(raw || {}, deckId);
+}
+
+export function saveBankSettings(settings) {
+  const root = readRoot();
+  root.bankSettings = normalizeSettingsEntry(settings, settings?.deck);
+  return writeRoot(root);
+}
+
 export function getDeckProgress(deckId) {
   const root = readRoot();
   const decks = root.decks && typeof root.decks === 'object' ? root.decks : {};
@@ -137,10 +155,16 @@ export function getDeckProgress(deckId) {
       ? decks[normalizeDeckId(deckId)]
       : {};
   const completed = Array.isArray(deckData.completed)
-    ? [...new Set(deckData.completed.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
+    ? [
+        ...new Set(deckData.completed.filter((value) => Number.isInteger(value) && value >= 0))
+      ].sort((a, b) => a - b)
     : [];
   const wrongMap = {};
-  if (deckData.wrongMap && typeof deckData.wrongMap === 'object' && !Array.isArray(deckData.wrongMap)) {
+  if (
+    deckData.wrongMap &&
+    typeof deckData.wrongMap === 'object' &&
+    !Array.isArray(deckData.wrongMap)
+  ) {
     for (const [key, value] of Object.entries(deckData.wrongMap)) {
       const index = Number(key);
       const count = Number(value);
@@ -155,7 +179,9 @@ export function getDeckProgress(deckId) {
     completed,
     wrongMap,
     wrongRangeMap:
-      deckData.wrongRangeMap && typeof deckData.wrongRangeMap === 'object' && !Array.isArray(deckData.wrongRangeMap)
+      deckData.wrongRangeMap &&
+      typeof deckData.wrongRangeMap === 'object' &&
+      !Array.isArray(deckData.wrongRangeMap)
         ? Object.fromEntries(
             Object.entries(deckData.wrongRangeMap)
               .filter(([range, indices]) => /^\d+-\d+$/.test(range) && Array.isArray(indices))
@@ -164,23 +190,34 @@ export function getDeckProgress(deckId) {
                 return [
                   range,
                   [
-                    ...new Set(indices.filter((index) => Number.isInteger(index) && index >= start - 1 && index < end))
+                    ...new Set(
+                      indices.filter(
+                        (index) => Number.isInteger(index) && index >= start - 1 && index < end
+                      )
+                    )
                   ].sort((a, b) => a - b)
                 ];
               })
           )
         : {},
     practiceMap:
-      deckData.practiceMap && typeof deckData.practiceMap === 'object' && !Array.isArray(deckData.practiceMap)
+      deckData.practiceMap &&
+      typeof deckData.practiceMap === 'object' &&
+      !Array.isArray(deckData.practiceMap)
         ? Object.fromEntries(
             Object.entries(deckData.practiceMap).filter(
               ([key, value]) =>
-                Number.isInteger(Number(key)) && Number(key) >= 0 && Number.isInteger(value) && value > 0
+                Number.isInteger(Number(key)) &&
+                Number(key) >= 0 &&
+                Number.isInteger(value) &&
+                value > 0
             )
           )
         : {},
     bookmarks: Array.isArray(deckData.bookmarks)
-      ? [...new Set(deckData.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
+      ? [
+          ...new Set(deckData.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))
+        ].sort((a, b) => a - b)
       : [],
     dataFingerprint: typeof deckData.dataFingerprint === 'string' ? deckData.dataFingerprint : ''
   };
@@ -190,16 +227,24 @@ export function saveDeckProgress(deckId, progress) {
   const root = readRoot();
   if (!root.decks || typeof root.decks !== 'object' || Array.isArray(root.decks)) root.decks = {};
   root.decks[normalizeDeckId(deckId)] = {
-    sequentialCursor: Number.isInteger(progress.sequentialCursor) ? Math.max(0, progress.sequentialCursor) : 0,
+    sequentialCursor: Number.isInteger(progress.sequentialCursor)
+      ? Math.max(0, progress.sequentialCursor)
+      : 0,
     completed: Array.isArray(progress.completed)
-      ? [...new Set(progress.completed.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
+      ? [
+          ...new Set(progress.completed.filter((value) => Number.isInteger(value) && value >= 0))
+        ].sort((a, b) => a - b)
       : [],
     wrongMap:
-      progress.wrongMap && typeof progress.wrongMap === 'object' && !Array.isArray(progress.wrongMap)
+      progress.wrongMap &&
+      typeof progress.wrongMap === 'object' &&
+      !Array.isArray(progress.wrongMap)
         ? progress.wrongMap
         : {},
     wrongRangeMap:
-      progress.wrongRangeMap && typeof progress.wrongRangeMap === 'object' && !Array.isArray(progress.wrongRangeMap)
+      progress.wrongRangeMap &&
+      typeof progress.wrongRangeMap === 'object' &&
+      !Array.isArray(progress.wrongRangeMap)
         ? Object.fromEntries(
             Object.entries(progress.wrongRangeMap)
               .filter(([range, indices]) => /^\d+-\d+$/.test(range) && Array.isArray(indices))
@@ -208,18 +253,26 @@ export function saveDeckProgress(deckId, progress) {
                 return [
                   range,
                   [
-                    ...new Set(indices.filter((index) => Number.isInteger(index) && index >= start - 1 && index < end))
+                    ...new Set(
+                      indices.filter(
+                        (index) => Number.isInteger(index) && index >= start - 1 && index < end
+                      )
+                    )
                   ].sort((a, b) => a - b)
                 ];
               })
           )
         : {},
     practiceMap:
-      progress.practiceMap && typeof progress.practiceMap === 'object' && !Array.isArray(progress.practiceMap)
+      progress.practiceMap &&
+      typeof progress.practiceMap === 'object' &&
+      !Array.isArray(progress.practiceMap)
         ? progress.practiceMap
         : {},
     bookmarks: Array.isArray(progress.bookmarks)
-      ? [...new Set(progress.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b)
+      ? [
+          ...new Set(progress.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))
+        ].sort((a, b) => a - b)
       : [],
     dataFingerprint: typeof progress.dataFingerprint === 'string' ? progress.dataFingerprint : ''
   };
@@ -230,7 +283,9 @@ export function getSession(deckId) {
   const root = readRoot();
   const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   const sessions =
-    root.sessions && typeof root.sessions === 'object' && !Array.isArray(root.sessions) ? root.sessions : {};
+    root.sessions && typeof root.sessions === 'object' && !Array.isArray(root.sessions)
+      ? root.sessions
+      : {};
   const session = sessions[id] || (root.session?.deckId === id ? root.session : null);
   return session && typeof session === 'object' && !Array.isArray(session) ? session : null;
 }
@@ -238,7 +293,8 @@ export function getSession(deckId) {
 export function saveSession(session) {
   if (!session || !['quocphong1', 'quocphong2'].includes(session.deckId)) return false;
   const root = readRoot();
-  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
+  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions))
+    root.sessions = {};
   root.sessions[session.deckId] = session;
   if (root.session?.deckId === session.deckId) delete root.session;
   return writeRoot(root);
@@ -246,7 +302,8 @@ export function saveSession(session) {
 
 export function clearSession(deckId) {
   const root = readRoot();
-  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
+  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions))
+    root.sessions = {};
   const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   delete root.sessions[id];
   if (root.session?.deckId === id) delete root.session;
@@ -257,7 +314,8 @@ export function resetDeckProgress(deckId) {
   const root = readRoot();
   if (!root.decks || typeof root.decks !== 'object' || Array.isArray(root.decks)) root.decks = {};
   delete root.decks[normalizeDeckId(deckId)];
-  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
+  if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions))
+    root.sessions = {};
   delete root.sessions[normalizeDeckId(deckId)];
   if (root.session?.deckId === normalizeDeckId(deckId)) delete root.session;
   return writeRoot(root);
@@ -299,7 +357,9 @@ export function getWrongIndices(deckId) {
   const progress = getDeckProgress(deckId);
   return Object.keys(progress.wrongMap)
     .map(Number)
-    .filter((index) => Number.isInteger(index) && index >= 0 && progress.wrongMap[String(index)] > 0)
+    .filter(
+      (index) => Number.isInteger(index) && index >= 0 && progress.wrongMap[String(index)] > 0
+    )
     .sort((a, b) => a - b);
 }
 
@@ -323,7 +383,13 @@ export function getRangeWrongIndices(deckId, startQuestion, endQuestion) {
 export function addWrongIndicesForRange(deckId, startQuestion, endQuestion, indices) {
   const start = Number(startQuestion);
   const end = Number(endQuestion);
-  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || !Array.isArray(indices))
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(end) ||
+    start < 1 ||
+    end < start ||
+    !Array.isArray(indices)
+  )
     return false;
   const progress = getDeckProgress(deckId);
   const key = `${start}-${end}`;
@@ -384,9 +450,14 @@ export function resetDeckHighlights(deckId) {
 export function saveQuestionHighlights(deckId, originalIndex, ranges) {
   if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
   const root = readRoot();
-  if (!root.highlights || typeof root.highlights !== 'object' || Array.isArray(root.highlights)) root.highlights = {};
+  if (!root.highlights || typeof root.highlights !== 'object' || Array.isArray(root.highlights))
+    root.highlights = {};
   const id = normalizeDeckId(deckId);
-  if (!root.highlights[id] || typeof root.highlights[id] !== 'object' || Array.isArray(root.highlights[id]))
+  if (
+    !root.highlights[id] ||
+    typeof root.highlights[id] !== 'object' ||
+    Array.isArray(root.highlights[id])
+  )
     root.highlights[id] = {};
   const normalized = normalizeHighlightRanges(ranges);
   if (normalized.length) root.highlights[id][String(originalIndex)] = normalized;
@@ -451,7 +522,11 @@ export function importBackup(raw) {
     highlights: { quocphong1: {}, quocphong2: {} }
   };
 
-  if (backup.highlights && typeof backup.highlights === 'object' && !Array.isArray(backup.highlights)) {
+  if (
+    backup.highlights &&
+    typeof backup.highlights === 'object' &&
+    !Array.isArray(backup.highlights)
+  ) {
     for (const id of ['quocphong1', 'quocphong2']) {
       const deck = backup.highlights[id];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
@@ -468,7 +543,11 @@ export function importBackup(raw) {
     const deckData = backup.decks[id];
     if (!deckData || typeof deckData !== 'object' || Array.isArray(deckData)) continue;
     const wrongMap = {};
-    if (deckData.wrongMap && typeof deckData.wrongMap === 'object' && !Array.isArray(deckData.wrongMap)) {
+    if (
+      deckData.wrongMap &&
+      typeof deckData.wrongMap === 'object' &&
+      !Array.isArray(deckData.wrongMap)
+    ) {
       for (const [key, value] of Object.entries(deckData.wrongMap)) {
         const index = Number(key);
         const count = Number(value);
@@ -477,7 +556,11 @@ export function importBackup(raw) {
       }
     }
     const practiceMap = {};
-    if (deckData.practiceMap && typeof deckData.practiceMap === 'object' && !Array.isArray(deckData.practiceMap)) {
+    if (
+      deckData.practiceMap &&
+      typeof deckData.practiceMap === 'object' &&
+      !Array.isArray(deckData.practiceMap)
+    ) {
       for (const [key, value] of Object.entries(deckData.practiceMap)) {
         const index = Number(key);
         if (Number.isInteger(index) && index >= 0 && Number.isInteger(value) && value > 0)
@@ -486,15 +569,19 @@ export function importBackup(raw) {
     }
     normalized.decks[id] = {
       sequentialCursor:
-        Number.isInteger(deckData.sequentialCursor) && deckData.sequentialCursor >= 0 ? deckData.sequentialCursor : 0,
+        Number.isInteger(deckData.sequentialCursor) && deckData.sequentialCursor >= 0
+          ? deckData.sequentialCursor
+          : 0,
       completed: Array.isArray(deckData.completed)
-        ? [...new Set(deckData.completed.filter((value) => Number.isInteger(value) && value >= 0))].sort(
-            (a, b) => a - b
-          )
+        ? [
+            ...new Set(deckData.completed.filter((value) => Number.isInteger(value) && value >= 0))
+          ].sort((a, b) => a - b)
         : [],
       wrongMap,
       wrongRangeMap:
-        deckData.wrongRangeMap && typeof deckData.wrongRangeMap === 'object' && !Array.isArray(deckData.wrongRangeMap)
+        deckData.wrongRangeMap &&
+        typeof deckData.wrongRangeMap === 'object' &&
+        !Array.isArray(deckData.wrongRangeMap)
           ? Object.fromEntries(
               Object.entries(deckData.wrongRangeMap)
                 .filter(([range, indices]) => /^\d+-\d+$/.test(range) && Array.isArray(indices))
@@ -504,7 +591,9 @@ export function importBackup(raw) {
                     range,
                     [
                       ...new Set(
-                        indices.filter((index) => Number.isInteger(index) && index >= start - 1 && index < end)
+                        indices.filter(
+                          (index) => Number.isInteger(index) && index >= start - 1 && index < end
+                        )
                       )
                     ].sort((a, b) => a - b)
                   ];
@@ -513,9 +602,9 @@ export function importBackup(raw) {
           : {},
       practiceMap,
       bookmarks: Array.isArray(deckData.bookmarks)
-        ? [...new Set(deckData.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))].sort(
-            (a, b) => a - b
-          )
+        ? [
+            ...new Set(deckData.bookmarks.filter((value) => Number.isInteger(value) && value >= 0))
+          ].sort((a, b) => a - b)
         : [],
       dataFingerprint: typeof deckData.dataFingerprint === 'string' ? deckData.dataFingerprint : ''
     };

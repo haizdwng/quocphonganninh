@@ -30,7 +30,10 @@ export function initEnhance({ onPrev, onNext }) {
         return;
       }
       const target = event.target instanceof Element ? event.target : null;
-      if (!target || target.closest('button:not(.option), input, textarea, select, a, .highlight-toolbar')) {
+      if (
+        !target ||
+        target.closest('button:not(.option), input, textarea, select, a, .highlight-toolbar')
+      ) {
         touchStart = null;
         return;
       }
@@ -47,7 +50,11 @@ export function initEnhance({ onPrev, onNext }) {
   document.addEventListener(
     'touchend',
     (event) => {
-      if (!touchStart || document.body.dataset.screen !== 'quiz' || event.changedTouches.length !== 1) {
+      if (
+        !touchStart ||
+        document.body.dataset.screen !== 'quiz' ||
+        event.changedTouches.length !== 1
+      ) {
         touchStart = null;
         return;
       }
@@ -58,7 +65,12 @@ export function initEnhance({ onPrev, onNext }) {
       const deltaY = touch.clientY - start.y;
       const selection = window.getSelection();
       if (selection && !selection.isCollapsed && selection.toString().trim()) return;
-      if (Date.now() - start.time > 800 || Math.abs(deltaX) < 65 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+      if (
+        Date.now() - start.time > 800 ||
+        Math.abs(deltaX) < 65 ||
+        Math.abs(deltaX) < Math.abs(deltaY) * 1.25
+      )
+        return;
       event.preventDefault();
       if (deltaX < 0) onNext();
       else onPrev();
