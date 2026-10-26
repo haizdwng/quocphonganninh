@@ -75,9 +75,9 @@ export function buildOptionOrder(optionCount, shuffleAnswers, fixed = false) {
   return order;
 }
 
-export function createSessionItems(pool, { shuffleQ, shuffleA }) {
+export function createSessionItems(pool, { shuffleQuestions, shuffleAnswers }) {
   const indices = pool.map((_, index) => index);
-  if (shuffleQ) shuffleInPlace(indices);
+  if (shuffleQuestions) shuffleInPlace(indices);
   return indices.map((poolIndex) => {
     const question = pool[poolIndex];
     return {
@@ -85,7 +85,7 @@ export function createSessionItems(pool, { shuffleQ, shuffleA }) {
       originalIndex: question.originalIndex,
       optionOrder: buildOptionOrder(
         question.options.length,
-        shuffleA,
+        shuffleAnswers,
         question.fixed,
       ),
       userAnswer: null,
