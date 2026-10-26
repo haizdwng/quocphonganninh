@@ -23,7 +23,7 @@ const storage = await import("../assets/js/storage.js");
 
 beforeEach(() => localStorage.clear());
 
-const questions = Array.from({ length: 5 }, (_, originalIndex) => ({
+const questions = Array.from({ length: 5 }, (unusedQuestion, originalIndex) => ({
   originalIndex,
   question: `Câu ${originalIndex + 1}`,
   options: ["A", "B", "C", "D"],
