@@ -419,40 +419,6 @@ function toggleHighlightSelection(deckId, questionIndex, selection) {
   return true;
 }
 
-function createHighlightToolbar(questionIndex, bankMode = false) {
-  const toolbar = document.createElement("div");
-  toolbar.className = "highlight-toolbar";
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "btn btn-secondary btn-sm highlight-toggle-btn";
-  button.dataset.icon = "underline";
-  button.textContent = "Highlight";
-  button.setAttribute(
-    "aria-label",
-    "Highlight hoặc bỏ highlight đoạn văn bản đã chọn",
-  );
-  button.addEventListener("pointerdown", (event) => {
-    if (event.pointerType !== "touch") event.preventDefault();
-  });
-  button.addEventListener("mousedown", (event) => event.preventDefault());
-  button.addEventListener("click", () => {
-    captureHighlightSelection();
-    const selection = state.lastTextSelection;
-    const expectedDeck = bankMode ? state.currentDeck : state.session?.deckId;
-    if (
-      !selection ||
-      selection.questionIndex !== questionIndex ||
-      selection.deckId !== expectedDeck
-    ) {
-      toast("Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.");
-      return;
-    }
-    toggleHighlightSelection(selection.deckId, questionIndex, selection);
-  });
-  toolbar.appendChild(button);
-  return toolbar;
-}
-
 function captureHighlightSelection() {
   const selection = window.getSelection();
   if (!selection || !selection.rangeCount || selection.isCollapsed)
