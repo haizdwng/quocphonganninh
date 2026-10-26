@@ -190,7 +190,7 @@ export function getDeckProgress(deckId) {
             (value) => Number.isInteger(value) && value >= 0,
           ),
         ),
-      ].sort((a, b) => a - b)
+      ].sort((leftValue, rightValue) => leftValue - rightValue)
     : [];
   const wrongMap = {};
   if (
@@ -239,7 +239,7 @@ export function getDeckProgress(deckId) {
                           index < end,
                       ),
                     ),
-                  ].sort((a, b) => a - b),
+                  ].sort((leftValue, rightValue) => leftValue - rightValue),
                 ];
               }),
           )
@@ -265,7 +265,7 @@ export function getDeckProgress(deckId) {
               (value) => Number.isInteger(value) && value >= 0,
             ),
           ),
-        ].sort((a, b) => a - b)
+        ].sort((leftValue, rightValue) => leftValue - rightValue)
       : [],
     dataFingerprint:
       typeof deckData.dataFingerprint === "string"
@@ -293,7 +293,7 @@ export function saveDeckProgress(deckId, progress) {
               (value) => Number.isInteger(value) && value >= 0,
             ),
           ),
-        ].sort((a, b) => a - b)
+        ].sort((leftValue, rightValue) => leftValue - rightValue)
       : [],
     wrongMap:
       progress.wrongMap &&
@@ -324,7 +324,7 @@ export function saveDeckProgress(deckId, progress) {
                           index < end,
                       ),
                     ),
-                  ].sort((a, b) => a - b),
+                  ].sort((leftValue, rightValue) => leftValue - rightValue),
                 ];
               }),
           )
@@ -342,7 +342,7 @@ export function saveDeckProgress(deckId, progress) {
               (value) => Number.isInteger(value) && value >= 0,
             ),
           ),
-        ].sort((a, b) => a - b)
+        ].sort((leftValue, rightValue) => leftValue - rightValue)
       : [],
     dataFingerprint:
       typeof progress.dataFingerprint === "string"
@@ -437,7 +437,7 @@ export function addCompleted(deckId, indices, fingerprint) {
   for (const index of indices) {
     if (Number.isInteger(index) && index >= 0) completed.add(index);
   }
-  progress.completed = [...completed].sort((a, b) => a - b);
+  progress.completed = [...completed].sort((leftValue, rightValue) => leftValue - rightValue);
   if (fingerprint) progress.dataFingerprint = fingerprint;
   return saveDeckProgress(deckId, progress) ? progress : null;
 }
@@ -461,7 +461,7 @@ export function getWrongIndices(deckId) {
         index >= 0 &&
         progress.wrongMap[String(index)] > 0,
     )
-    .sort((a, b) => a - b);
+    .sort((leftValue, rightValue) => leftValue - rightValue);
 }
 
 export function getRangeWrongIndices(deckId, startQuestion, endQuestion) {
@@ -486,7 +486,7 @@ export function getRangeWrongIndices(deckId, startQuestion, endQuestion) {
           index < end &&
           progress.wrongMap[String(index)] > 0,
       )
-      .sort((a, b) => a - b);
+      .sort((leftValue, rightValue) => leftValue - rightValue);
     saveDeckProgress(deckId, progress);
   }
   return progress.wrongRangeMap[key].filter(
@@ -517,7 +517,7 @@ export function addWrongIndicesForRange(
     if (Number.isInteger(index) && index >= start - 1 && index < end)
       existing.add(index);
   }
-  progress.wrongRangeMap[key] = [...existing].sort((a, b) => a - b);
+  progress.wrongRangeMap[key] = [...existing].sort((leftValue, rightValue) => leftValue - rightValue);
   return saveDeckProgress(deckId, progress);
 }
 
@@ -531,7 +531,7 @@ export function toggleBookmark(deckId, originalIndex) {
   const bookmarks = new Set(progress.bookmarks);
   if (bookmarks.has(originalIndex)) bookmarks.delete(originalIndex);
   else bookmarks.add(originalIndex);
-  progress.bookmarks = [...bookmarks].sort((a, b) => a - b);
+  progress.bookmarks = [...bookmarks].sort((leftValue, rightValue) => leftValue - rightValue);
   return saveDeckProgress(deckId, progress)
     ? bookmarks.has(originalIndex)
     : null;
@@ -757,7 +757,7 @@ export function importBackup(raw) {
                 (value) => Number.isInteger(value) && value >= 0,
               ),
             ),
-          ].sort((a, b) => a - b)
+          ].sort((leftValue, rightValue) => leftValue - rightValue)
         : [],
       wrongMap,
       wrongRangeMap:
@@ -783,7 +783,7 @@ export function importBackup(raw) {
                             index < end,
                         ),
                       ),
-                    ].sort((a, b) => a - b),
+                    ].sort((leftValue, rightValue) => leftValue - rightValue),
                   ];
                 }),
             )
@@ -796,7 +796,7 @@ export function importBackup(raw) {
                 (value) => Number.isInteger(value) && value >= 0,
               ),
             ),
-          ].sort((a, b) => a - b)
+          ].sort((leftValue, rightValue) => leftValue - rightValue)
         : [],
       dataFingerprint:
         typeof deckData.dataFingerprint === "string"
