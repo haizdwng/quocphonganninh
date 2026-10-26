@@ -295,42 +295,22 @@
   },
   {
     "question": "Phương châm chống phá về chính trị, tư tưởng trong chiến lược “DBHB”,  BLLĐ của địch là gì?",
-    "options": [
-      "Hàng đầu",
-      "Mũi nhọn",
-      "Ngòi nổ",
-      "Hậu thuẫn"
-    ],
+    "options": ["Hàng đầu", "Mũi nhọn", "Ngòi nổ", "Hậu thuẫn"],
     "correct": 0
   },
   {
     "question": "Phương châm chống phá về kinh tế trong chiến lược “DBHB”,  BLLĐ của địch là gì?",
-    "options": [
-      "Mũi nhọn",
-      "Hàng đầu",
-      "Ngòi nổ",
-      "Hậu thuẫn"
-    ],
+    "options": ["Mũi nhọn", "Hàng đầu", "Ngòi nổ", "Hậu thuẫn"],
     "correct": 0
   },
   {
     "question": "Phương châm chống phá về dân tộc, tôn giáo trong chiến lược “DBHB”,  BLLĐ của địch là gì?",
-    "options": [
-      "Mũi nhọn",
-      "Hàng đầu",
-      "Ngòi nổ",
-      "Hậu thuẫn"
-    ],
+    "options": ["Mũi nhọn", "Hàng đầu", "Ngòi nổ", "Hậu thuẫn"],
     "correct": 2
   },
   {
     "question": "Phương châm chống phá về ngoại giao trong chiến lược “DBHB”,  BLLĐ của địch là gì?",
-    "options": [
-      "Mũi nhọn",
-      "Hàng đầu",
-      "Ngòi nổ",
-      "Hậu thuẫn"
-    ],
+    "options": ["Mũi nhọn", "Hàng đầu", "Ngòi nổ", "Hậu thuẫn"],
     "correct": 3
   },
   {
@@ -456,12 +436,7 @@
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lê nin, tư tưởng Hồ Chí Minh vấn đề dân tộc là vấn đề có vị trí như thế nào trong cách mạng XHCN",
-    "options": [
-      "Chiến lược",
-      "Lâu dài",
-      "Quan trọng",
-      "Rất quan trọng"
-    ],
+    "options": ["Chiến lược", "Lâu dài", "Quan trọng", "Rất quan trọng"],
     "correct": 0
   },
   {
@@ -1026,12 +1001,7 @@
   },
   {
     "question": "Theo từ điển bách khoa tôn giáo năm 2001, tôn giáo nào có số lượng chức sắc tín đồ lớn nhất thế giới?",
-    "options": [
-      "Ki tô giáo",
-      "Hồi giáo",
-      "Ấn Độ giáo",
-      "Phật giáo"
-    ],
+    "options": ["Ki tô giáo", "Hồi giáo", "Ấn Độ giáo", "Phật giáo"],
     "correct": 0
   },
   {
@@ -1307,12 +1277,7 @@
   },
   {
     "question": "Phương tiện nào thường xảy ra tai nạn giao thông nhiều nhất ở Việt Nam trong những năm gần đây?",
-    "options": [
-      "Xe đạp",
-      "Xe máy",
-      "Ô tô",
-      "Tàu hỏa"
-    ],
+    "options": ["Xe đạp", "Xe máy", "Ô tô", "Tàu hỏa"],
     "correct": 1
   },
   {
@@ -1337,12 +1302,7 @@
   },
   {
     "question": "Loại hình giao thông nào xảy ra nhiều vụ việc vi phạm trật tự an toàn giao thông nhất ở Việt Nam trong những năm gần đây?",
-    "options": [
-      "Đường bộ.",
-      "Đường sắt.",
-      "Đường thủy.",
-      "Đường không."
-    ],
+    "options": ["Đường bộ.", "Đường sắt.", "Đường thủy.", "Đường không."],
     "correct": 0
   },
   {
@@ -1357,12 +1317,7 @@
   },
   {
     "question": "Đâu là phương tiện chủ yếu của người dân Việt Nam khi tham gia giao thông trong những năm gần đây?",
-    "options": [
-      "Xe đạp.",
-      "Xe máy.",
-      "Ô tô.",
-      "Tàu, thuyền."
-    ],
+    "options": ["Xe đạp.", "Xe máy.", "Ô tô.", "Tàu, thuyền."],
     "correct": 1
   },
   {
@@ -1377,12 +1332,7 @@
   },
   {
     "question": "Loại hình giao thông nào đang chiếm tỉ trọng vận tải người và hàng hóa cao nhất ở Việt Nam hiện nay?",
-    "options": [
-      "Đường bộ.",
-      "Đường sắt.",
-      "Đường thủy.",
-      "Đường không."
-    ],
+    "options": ["Đường bộ.", "Đường sắt.", "Đường thủy.", "Đường không."],
     "correct": 0
   },
   {
@@ -1567,12 +1517,7 @@
   },
   {
     "question": "Luật An toàn thông tin được ban hành vào năm nào?",
-    "options": [
-      "2015",
-      "2016",
-      "2017",
-      "2019"
-    ],
+    "options": ["2015", "2016", "2017", "2019"],
     "correct": 0
   },
   {
@@ -1587,12 +1532,7 @@
   },
   {
     "question": "Luật An ninh mạng được ban hành vào năm nào?",
-    "options": [
-      "2015",
-      "2016",
-      "2018",
-      "2019"
-    ],
+    "options": ["2015", "2016", "2018", "2019"],
     "correct": 2
   },
   {
@@ -1617,12 +1557,7 @@
   },
   {
     "question": "Thuật ngữ spam lần đầu xuất hiện vào năm nào?",
-    "options": [
-      "1970",
-      "1973",
-      "1978",
-      "1980"
-    ],
+    "options": ["1970", "1973", "1978", "1980"],
     "correct": 2
   },
   {
@@ -1637,12 +1572,7 @@
   },
   {
     "question": "Tin giả có thể được tạo và lan truyền nhằm các mục đích gì?",
-    "options": [
-      "Chính trị",
-      "Văn hóa",
-      "Thể thao",
-      "Mua chuộc"
-    ],
+    "options": ["Chính trị", "Văn hóa", "Thể thao", "Mua chuộc"],
     "correct": 0
   },
   {
@@ -1697,12 +1627,7 @@
   },
   {
     "question": "Luật An toàn thông tin có hiệu lực thi hành từ ngày?",
-    "options": [
-      "01/01/2016",
-      "01/12/2015",
-      "01/7/2016",
-      "01/7/2017"
-    ],
+    "options": ["01/01/2016", "01/12/2015", "01/7/2016", "01/7/2017"],
     "correct": 2
   },
   {
@@ -1717,12 +1642,7 @@
   },
   {
     "question": "Luật An ninh mạng có hiệu lực thi hành từ ngày?",
-    "options": [
-      "01/7/2019",
-      "01/7/2018",
-      "01/03/2019",
-      "01/01/2019"
-    ],
+    "options": ["01/7/2019", "01/7/2018", "01/03/2019", "01/01/2019"],
     "correct": 3
   },
   {
@@ -2097,22 +2017,12 @@
   },
   {
     "question": "Theo qui định tại điều 9 Bộ Luật hình sự 2015 được sửa đổi bổ sung năm 2017 có mấy loại tội phạm",
-    "options": [
-      "4",
-      "2",
-      "3",
-      "1"
-    ],
+    "options": ["4", "2", "3", "1"],
     "correct": 0
   },
   {
     "question": "Căn cứ tại điều 9 Bộ Luật hình sự 2015 được sửa đổi bổ sung năm 2017 nếu phạm tội ít nghiêm trọng thì khung hình phạt cao nhất là bao nhiêu",
-    "options": [
-      "4 năm tù",
-      "5 năm tù",
-      "3 năm tù",
-      "7 năm tù"
-    ],
+    "options": ["4 năm tù", "5 năm tù", "3 năm tù", "7 năm tù"],
     "correct": 2
   },
   {
@@ -2137,12 +2047,7 @@
   },
   {
     "question": "Căn cứ tại điều 9 Bộ Luật hình sự 2015 được sửa đổi bổ sung năm 2017 nếu phạm tội nghiêm trọng thì khung hình phạt cao nhất là bao nhiêu",
-    "options": [
-      "4 năm tù",
-      "6 năm tù",
-      "5 năm tù",
-      "7 năm tù"
-    ],
+    "options": ["4 năm tù", "6 năm tù", "5 năm tù", "7 năm tù"],
     "correct": 3
   },
   {
@@ -2217,42 +2122,22 @@
   },
   {
     "question": "Theo BLHS 1999 (sửa đổi, bổ sung 2009) của Việt Nam, tội hiếp dâm được qui định tại điều mấy",
-    "options": [
-      "Điều 111",
-      "Điều 114",
-      "Điều 112",
-      "Điều 113"
-    ],
+    "options": ["Điều 111", "Điều 114", "Điều 112", "Điều 113"],
     "correct": 1
   },
   {
     "question": "Theo qui định của Bộ luật Hình sự 2015, sửa đổi, bổ sung năm 2017 về tội mua bán người được qui định tại điều mấy",
-    "options": [
-      "Điều 150",
-      "Điều 160",
-      "Điều 170",
-      "Điều 180"
-    ],
+    "options": ["Điều 150", "Điều 160", "Điều 170", "Điều 180"],
     "correct": 0
   },
   {
     "question": "Theo qui định của Bộ luật Hình sự 2015, sửa đổi, bổ sung năm 2017 về tội vu khống được qui định tại điều mấy",
-    "options": [
-      "Điều 155",
-      "Điều 156",
-      "Điều 157",
-      "Điều 158"
-    ],
+    "options": ["Điều 155", "Điều 156", "Điều 157", "Điều 158"],
     "correct": 1
   },
   {
     "question": "Theo BLHS 1999 (sửa đổi, bổ sung 2009) Việt Nam về tội làm nhục người khác được qui định tại điều mấy",
-    "options": [
-      "Điều 120",
-      "Điều 121",
-      "Điều 122",
-      "Điều 123"
-    ],
+    "options": ["Điều 120", "Điều 121", "Điều 122", "Điều 123"],
     "correct": 1
   },
   {
@@ -2297,12 +2182,7 @@
   },
   {
     "question": "Công tác phòng, chống tội phạm xâm phạm danh dự, nhân phẩm được tiến hành theo mấy hướng cơ bản :",
-    "options": [
-      "3",
-      "4",
-      "1",
-      "2"
-    ],
+    "options": ["3", "4", "1", "2"],
     "correct": 3
   },
   {
@@ -2317,22 +2197,12 @@
   },
   {
     "question": "Có mấy nội dung trong hoạt động phòng, chống tôi phạm xâm phạm danh dự, nhân phẩm của người khác:",
-    "options": [
-      "4",
-      "2",
-      "1",
-      "3"
-    ],
+    "options": ["4", "2", "1", "3"],
     "correct": 1
   },
   {
     "question": "Có mấy biện pháp chính trong phòng ngừa tội phạm xâm phạm danh dự, nhân phẩm của người khác",
-    "options": [
-      "3",
-      "2",
-      "4",
-      "1"
-    ],
+    "options": ["3", "2", "4", "1"],
     "correct": 1
   },
   {
@@ -2357,12 +2227,7 @@
   },
   {
     "question": "Theo qui định của Bộ luật Hình sự 2015, sửa đổi, bổ sung năm 2017 phạm tội với người bao nhiêu tuổi thì gọi là tội phạm tình dục",
-    "options": [
-      "Dưới 16 tuổi",
-      "17 tuổi",
-      "18 tuổi",
-      "19 tuổi"
-    ],
+    "options": ["Dưới 16 tuổi", "17 tuổi", "18 tuổi", "19 tuổi"],
     "correct": 0
   },
   {
@@ -2475,32 +2340,17 @@
   },
   {
     "question": "Tội phạm về môi trường được quy định tại chương mấy của bộ luật hình sự 2015 (sửa đổi, bổ sung 2017)?",
-    "options": [
-      "Chương 17",
-      "Chương 18",
-      "Chương 19",
-      "Chương 20"
-    ],
+    "options": ["Chương 17", "Chương 18", "Chương 19", "Chương 20"],
     "correct": 2
   },
   {
     "question": "Bộ luật hình sự 2015 (sửa đổi, bổ sung 2017) tội phạm về môi trường gồm bao nhiêu tội danh?",
-    "options": [
-      "10",
-      "12",
-      "14",
-      "16"
-    ],
+    "options": ["10", "12", "14", "16"],
     "correct": 1
   },
   {
     "question": "Các dấu hiệu pháp lý đặc trưng của tội phạm về môi trường được thể hiện qua mấy yếu tố cấu thành tội phạm?",
-    "options": [
-      "4",
-      "6",
-      "8",
-      "10"
-    ],
+    "options": ["4", "6", "8", "10"],
     "correct": 0
   },
   {

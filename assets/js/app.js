@@ -1128,7 +1128,10 @@ function applyBankSettingsToForm(settings) {
     settings.practiceMode === "exam" ? "exam" : "practice";
   state.practiceMode = state.bankPracticeMode;
   document.querySelectorAll("#screen-setup .mode-btn").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.mode === state.practiceMode);
+    button.classList.toggle(
+      "is-active",
+      button.dataset.mode === state.practiceMode,
+    );
   });
   document.querySelectorAll("#screen-review .mode-btn").forEach((btn) => {
     btn.classList.toggle(
@@ -1155,7 +1158,10 @@ function setBankPracticeMode(mode) {
   state.bankPracticeMode = mode === "exam" ? "exam" : "practice";
   state.practiceMode = state.bankPracticeMode;
   document.querySelectorAll("#screen-setup .mode-btn").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.mode === state.practiceMode);
+    button.classList.toggle(
+      "is-active",
+      button.dataset.mode === state.practiceMode,
+    );
   });
   document.querySelectorAll("#screen-review .mode-btn").forEach((btn) => {
     btn.classList.toggle(

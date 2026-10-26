@@ -162,7 +162,9 @@ export function saveBankSettings(settings) {
   const activeDeck = normalizeDeckId(root.activeDeck);
   const bankDeck = normalizeDeckId(settings?.deck || activeDeck);
   root.bankSettings = { deck: bankDeck };
-  if (!saveSettings({ ...getSettings(bankDeck), ...settings, deck: bankDeck })) {
+  if (
+    !saveSettings({ ...getSettings(bankDeck), ...settings, deck: bankDeck })
+  ) {
     return false;
   }
   const updatedRoot = readRoot();
