@@ -851,7 +851,7 @@ function scrollReviewToQuestionNumber(questionNumber) {
 }
 
 function renderQuestionBank() {
-  const { questions, form, filtered } = getFilteredBankQuestions();
+  const { questions, filtered } = getFilteredBankQuestions();
   const gotoInput = $("input-review-goto");
   if (gotoInput) {
     gotoInput.min = "1";
