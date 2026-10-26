@@ -97,28 +97,28 @@ test("quiz settings are shared between both decks", () => {
       deck: "quocphong1",
       count: 25,
       timeLimit: 0,
-      shuffleQ: false,
-      shuffleA: true,
+      shuffleQuestions: false,
+      shuffleAnswers: true,
     }),
     true,
   );
   assert.equal(storage.getSettings("quocphong2").count, 25);
   assert.equal(storage.getSettings("quocphong2").timeLimit, 0);
-  assert.equal(storage.getSettings("quocphong2").shuffleQ, false);
+  assert.equal(storage.getSettings("quocphong2").shuffleQuestions, false);
 
   assert.equal(
     storage.saveSettings({
       deck: "quocphong2",
       count: 40,
       timeLimit: 35,
-      shuffleQ: true,
-      shuffleA: false,
+      shuffleQuestions: true,
+      shuffleAnswers: false,
     }),
     true,
   );
   assert.equal(storage.getSettings("quocphong1").count, 40);
   assert.equal(storage.getSettings("quocphong1").timeLimit, 35);
-  assert.equal(storage.getSettings("quocphong1").shuffleA, false);
+  assert.equal(storage.getSettings("quocphong1").shuffleAnswers, false);
 });
 
 test("experience settings are shared between both decks", () => {
@@ -147,14 +147,14 @@ test("question bank settings use the same shared settings", () => {
     count: 24,
     timeLimit: 12,
     practiceMode: "exam",
-    shuffleQ: false,
+    shuffleQuestions: false,
     autoCheck: true,
   });
   const bankSettings = storage.getBankSettings();
   assert.equal(bankSettings.count, 24);
   assert.equal(bankSettings.timeLimit, 12);
   assert.equal(bankSettings.practiceMode, "exam");
-  assert.equal(bankSettings.shuffleQ, false);
+  assert.equal(bankSettings.shuffleQuestions, false);
   assert.equal(bankSettings.autoCheck, true);
 
   storage.saveBankSettings({
@@ -162,7 +162,7 @@ test("question bank settings use the same shared settings", () => {
     count: 18,
     timeLimit: 0,
     practiceMode: "practice",
-    shuffleQ: true,
+    shuffleQuestions: true,
   });
   assert.equal(storage.getSettings("quocphong1").count, 18);
   assert.equal(storage.getSettings("quocphong2").timeLimit, 0);
@@ -211,8 +211,8 @@ test("sao lưu và khôi phục giữ tùy chọn cùng tiến độ", () => {
     deck: "quocphong1",
     count: 17,
     timeLimit: 0,
-    shuffleQ: true,
-    shuffleA: false,
+    shuffleQuestions: true,
+    shuffleAnswers: false,
   });
   storage.saveDeckProgress("quocphong1", {
     sequentialCursor: 4,
