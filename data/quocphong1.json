@@ -15,17 +15,17 @@
       "Các dân tộc ở Việt Nam chung sống hoà thuận, yêu quê hương đất nước",
       "Yếu tố chính trị, văn hoá – xã hội",
       "Dân tộc ta có tính thần đoàn kết, thông minh, sáng tạo",
-      "Dân tộc ta có tinh thần chống ngoại xâm kiên cường, bất khuất."
+      "Dân tộc ta có tinh thần chống ngoại xâm kiên cường, bất khuất"
     ],
     "correct": 1
   },
   {
     "question": "Trong nghệ thuật đánh giặc của tổ tiên ta, thể hiện cách tiến công như thế nào?",
     "options": [
-      "Tích cực chuẩn bị, tiến công liên tục từ nhỏ đến lớn, từ cục bộ đến toàn bộ.",
-      "Tích cực tiến công liên tục và phòng ngự toàn diện.",
+      "Tích cực chuẩn bị, tiến công liên tục từ nhỏ đến lớn, từ cục bộ đến toàn bộ",
+      "Tích cực tiến công liên tục và phòng ngự toàn diện",
       "Tích cực chuẩn bị tiến công phá thế tiến công của địch",
-      "Tích cực chuẩn bị tiến công kiên quyết, liên tục."
+      "Tích cực chuẩn bị tiến công kiên quyết, liên tục"
     ],
     "correct": 0
   },
@@ -45,7 +45,7 @@
       "Nghệ thuật toàn dân đánh giặc trên mọi vùng miền",
       "Nghệ thuật đánh giặc toàn diện trên mọi mặt trận",
       "Nghệ thuật chiến tranh nhân dân, toàn dân đánh giặc",
-      "Nghệ thuật tác chiến của chiến tranh nhân dân."
+      "Nghệ thuật tác chiến của chiến tranh nhân dân"
     ],
     "correct": 2
   },
@@ -65,7 +65,7 @@
       "Nguyễn Trãi",
       "Quang Trung",
       "Trần Quốc Tuấn",
-      "Lý thường Kiệt"
+      "Lý Thường Kiệt"
     ],
     "correct": 2
   },
@@ -90,7 +90,7 @@
     "correct": 0
   },
   {
-    "question": "Tư tưởng, nghệ thuật đánh giặc tiêu biểu của Lê Lợi, Nguyến Trãi là gì?",
+    "question": "Tư tưởng, nghệ thuật đánh giặc tiêu biểu của Lê Lợi, Nguyễn Trãi là gì?",
     "options": [
       "Tiêu thổ, thanh giã",
       "Tiên phát chế nhân",
@@ -131,7 +131,12 @@
   },
   {
     "question": "Tư tưởng chỉ đạo tác chiến xuyên suốt trong chuẩn bị và tiến hành chiến tranh giữ nước của cha ông ta là gì?",
-    "options": ["Tiến công", "Phòng ngự", "Hoà hoãn", "Phản công"],
+    "options": [
+      "Tiến công",
+      "Phòng ngự",
+      "Hoà hoãn",
+      "Phản công"
+    ],
     "correct": 0
   },
   {
@@ -178,7 +183,7 @@
     "question": "Cuộc khởi nghĩa Lam Sơn chống giặc Minh diễn ra vào giai đoạn nào và do ai lãnh đạo?",
     "options": [
       "Giai đoạn 1427 - 1428, Lê Lợi, Nguyễn Trãi",
-      "Giai đoạn 1427 - 1437, Nguyễn Trãi , Hồ Quý Ly",
+      "Giai đoạn 1427 - 1437, Nguyễn Trãi, Hồ Quý Ly",
       "Giai đoạn 1418 - 1427, Hồ Quý Ly, Lê Lợi,",
       "Giai đoạn 1418 - 1427, Lê Lợi, Nguyễn Trãi"
     ],
@@ -186,7 +191,12 @@
   },
   {
     "question": "Giai đoạn cuối của hai cuộc kháng chiến chống Pháp và chống Mỹ, hình thức chiến thuật nào được xuất hiện?",
-    "options": ["Tiến công", "Phản công", "Tập kích", "Phòng ngự"],
+    "options": [
+      "Tiến công",
+      "Phản công",
+      "Tập kích",
+      "Phòng ngự"
+    ],
     "correct": 3
   },
   {
@@ -195,7 +205,7 @@
       "Cách đánh",
       "Sử dụng lực lượng",
       "Nguyên tắc chiến đấu",
-      "Các phương án trên đều sai"
+      "Các Các phương án trên đều sai"
     ],
     "correct": 0,
     "fixed": true
@@ -218,8 +228,7 @@
       "Trường kỳ kháng chiến, trường kỳ kiến quốc",
       "Các phương án đều đúng"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Trong cuộc kháng chiến chống Mỹ xâm lược, Đảng và Bác Hồ đã đánh giá về đế quốc Mỹ như thế nào?",
@@ -234,9 +243,9 @@
   {
     "question": "Tháng 12/1972, Mỹ thực hiện tập kích bằng máy bay B52 vào miền Bắc nhằm mục đích gì?",
     "options": [
-      "Chứng minh cho thế giới biết sức manh quân sự của Mỹ",
+      "Chứng minh cho thế giới biết sức mạnh quân sự của Mỹ",
       "Răn đe các nước đang đấu tranh chống Mỹ",
-      "Thử nghiệm máy bay ném bom chiên lược B52",
+      "Thử nghiệm máy bay ném bom chiến lược B52",
       "Ép ta nhân nhượng, ký hiệp định do Mỹ đề ra"
     ],
     "correct": 3
@@ -256,8 +265,8 @@
     "options": [
       "Chiến dịch Tây Nguyên, chiến dịch Huế - Đà Nẵng, chiến dịch Hồ Chí Minh",
       "Chiến dịch Huế - Đà Nẵng, chiến dịch Hồ Chí Minh",
-      "Chiến dịch Huế - Đà Nẵng, chiế dịch Thành Cổ Quảng Trị, chiến dịch Tây Nguyên",
-      "Chiến dịch Tây Nguyên, chiến dịch Thành Cổ Quảng trị, chiến dịch Hồ Chí Minh"
+      "Chiến dịch Huế - Đà Nẵng, chiến dịch Thành Cổ Quảng Trị, chiến dịch Tây Nguyên",
+      "Chiến dịch Tây Nguyên, chiến dịch Thành Cổ Quảng Trị, chiến dịch Hồ Chí Minh"
     ],
     "correct": 0
   },
@@ -267,7 +276,7 @@
       "Chiến dịch Việt Bắc-Thu Đông năm 1947",
       "Chiến dịch Điện Biên Phủ 1954",
       "Chiến dịch Hồ Chí Minh 1975",
-      "Chiến dịch Thành Cổ, Quảng trị 1972"
+      "Chiến dịch Thành Cổ, Quảng Trị 1972"
     ],
     "correct": 1
   },
@@ -277,7 +286,7 @@
       "Chiến dịch Việt Bắc-Thu Đông năm 1947",
       "Chiến dịch Điện Biên Phủ 1954",
       "Chiến dịch Hồ Chí Minh 1975",
-      "Chiến dịch Thành Cổ, Quảng trị 1972"
+      "Chiến dịch Thành Cổ, Quảng Trị 1972"
     ],
     "correct": 2
   },
@@ -287,7 +296,7 @@
       "Tư tưởng vũ trang toàn dân của Hồ Chí Minh",
       "Tư tưởng lãnh đạo cách mạng của Hồ Chí Minh",
       "Tư tưởng quân sự của Hồ Chí Minh",
-      "Tư tưởng chiến tranh Hồ chí Minh"
+      "Tư tưởng chiến tranh Hồ Chí Minh"
     ],
     "correct": 2
   },
@@ -303,17 +312,32 @@
   },
   {
     "question": "Chiến dịch Hồ Chí Minh thuộc loại hình chiến dịch quân sự nào?",
-    "options": ["Phòng không", "Tiến công", "Phản công", "Phòng ngự"],
+    "options": [
+      "Phòng không",
+      "Tiến công",
+      "Phản công",
+      "Phòng ngự"
+    ],
     "correct": 1
   },
   {
     "question": "Chiến dịch Việt Bắc-Thu Đông 1947 thuộc loại hình chiến dịch quân sự nào?",
-    "options": ["Phòng không", "Tiến công", "Phản công", "Phòng ngự"],
+    "options": [
+      "Phòng không",
+      "Tiến công",
+      "Phản công",
+      "Phòng ngự"
+    ],
     "correct": 2
   },
   {
-    "question": "Chiến dịch Thành Cổ, Quảng trị 1972 thuộc loại hình chiến dịch quân sự nào?",
-    "options": ["Phòng không", "Tiến công", "Phản công", "Phòng ngự"],
+    "question": "Chiến dịch Thành Cổ, Quảng Trị 1972 thuộc loại hình chiến dịch quân sự nào?",
+    "options": [
+      "Phòng không",
+      "Tiến công",
+      "Phản công",
+      "Phòng ngự"
+    ],
     "correct": 3
   },
   {
@@ -329,15 +353,15 @@
   {
     "question": "Thời Lý đã vận dụng tư tưởng “Tiên phát chế nhân” có nghĩa là gì?",
     "options": [
-      "Chủ động phòng thủ chống lại thế mạnh của địch.",
+      "Chủ động phòng thủ chống lại thế mạnh của địch",
       "Tích cực tiến công để chống lại thế mạnh của địch",
-      "Chủ động tiến công trước để phá thế mạnh của giặc.",
+      "Chủ động tiến công trước để phá thế mạnh của giặc",
       "Chủ động phòng ngự kết hợp tiến công, phản công"
     ],
     "correct": 2
   },
   {
-    "question": "Cơ sở của việc kết hợp phát triển KT-XH với tăng cường củng cố QP, AN trong thực hiện nhiệm vụ chiến lược bảo vệ Tổ quốc là",
+    "question": "Cơ sở của việc kết hợp phát triển KT-XH với tăng cường củng cố QP, AN trong thực hiện nhiệm vụ chiến lược bảo vệ Tổ quốc là?",
     "options": [
       "Mục tiêu và lực lượng bảo vệ Tổ quốc, giữ gìn an ninh quốc gia",
       "Mục tiêu và phương thức bảo vệ Tổ quốc, giữ gìn an ninh quốc gia",
@@ -367,12 +391,12 @@
     "correct": 0
   },
   {
-    "question": "Việc kết hợp phát triển KT-XH với tăng cường củng cố QP, AN trong một chỉnh thể thống nhất nhằm",
+    "question": "Việc kết hợp phát triển KT-XH với tăng cường củng cố QP, AN trong một chỉnh thể thống nhất nhằm?",
     "options": [
       "Phát huy tác động tích cực của QP,AN đối với KT-XH",
       "Hạn chế tác động tiêu cực của QP,AN đối với KT-XH",
       "Thúc đẩy nhau cùng phát triển",
-      "Các phương án trên đều sai"
+      "Các Các phương án trên đều sai"
     ],
     "correct": 2,
     "fixed": true
@@ -390,10 +414,10 @@
   {
     "question": "Kết hợp kinh tế với quốc phòng, an ninh là yêu cầu như thế nào?",
     "options": [
-      "Yêu cầu nội sinh của sự phát triển kinh tế, yêu cầu được bảo vệ của nền kinh tế.",
-      "Yêu cầu phát sinh của sự phát triển kinh tế, yêu cầu được bảo vệ của nền kinh tế.",
+      "Yêu cầu nội sinh của sự phát triển kinh tế, yêu cầu được bảo vệ của nền kinh tế",
+      "Yêu cầu phát sinh của sự phát triển kinh tế, yêu cầu được bảo vệ của nền kinh tế",
       "Yêu cầu sự nghiệp CNH, HĐH",
-      "Yêu cầu mới của sự phát triển kinh tế, yêu cầu được bảo vệ của nền kinh tế."
+      "Yêu cầu mới của sự phát triển kinh tế, yêu cầu được bảo vệ của nền kinh tế"
     ],
     "correct": 0
   },
@@ -401,30 +425,29 @@
     "question": "Kết hợp kinh tế với quốc phòng, an ninh là?",
     "options": [
       "Quy luật lịch sử nhân loại",
-      "Quy luật tự nhiên của xã hội.",
-      "Quy luật riêng của các theo CNXH.",
-      "Quy luật phát triển của mọi chế độ xã hội."
+      "Quy luật tự nhiên của xã hội",
+      "Quy luật riêng của các theo CNXH",
+      "Quy luật phát triển của mọi chế độ xã hội"
     ],
     "correct": 0
   },
   {
     "question": "Nội dung nào không thể hiện chính sách kết hợp kinh tế với quốc phòng ở nước ta?",
     "options": [
-      "Quốc phú, binh cường.",
-      "Động vi binh, tĩnh vi dân.",
-      "Ngụ binh, ư nông.",
-      "Các phương án đều sai."
+      "Quốc phú, binh cường",
+      "Động vi binh, tĩnh vi dân",
+      "Ngụ binh, ư nông",
+      "Các phương án đều sai"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Nội dung nào không thể hiện chính sách kết hợp kinh tế với quốc phòng ở nước ta?",
     "options": [
-      "Quốc phú, binh cường.",
-      "Động vi binh, tĩnh vi dân.",
+      "Quốc phú, binh cường",
+      "Động vi binh, tĩnh vi dân",
       "Ngụ binh, ư nông",
-      "Binh quý hồ tinh, bất quý hồ đa."
+      "Binh quý hồ tinh, bất quý hồ đa"
     ],
     "correct": 3
   },
@@ -454,7 +477,7 @@
     "options": [
       "QP,AN vững mạnh quyết định sự tăng trưởng KH-XH bền vững",
       "Bản chất QPAN quyết định bản chất chế độ KT-XH",
-      "QP,AN vững mạnh quyết định sự tồn tại và phát triển của chế độ KT-XH.",
+      "QP,AN vững mạnh quyết định sự tồn tại và phát triển của chế độ KT-XH",
       "KT-XH cung cấp nguồn nhân lực, vật lực cho QPAN"
     ],
     "correct": 3
@@ -635,7 +658,7 @@
     "question": "Bồi dưỡng nâng cao kiến thức kết hợp phát triển kinh tế - xã hội với tăng cường củng cố QP, AN trước hết cần tập trung vào đối tượng nào?",
     "options": [
       "Đội ngũ cán bộ chủ trì từ Trung ương đến cơ sở",
-      "Học sinh, sih viêm",
+      "Học sinh, sinh viên",
       "Đội ngũ chức sắc tôn giáo",
       "Cán bộ dân tộc ít người"
     ],
@@ -649,8 +672,7 @@
       "Người theo đạo",
       "Các phương án đều sai"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Kết hợp phát triển KT-XH với tăng cường củng cố QP, AN là hoạt động của lực lượng nào?",
@@ -667,8 +689,8 @@
     "options": [
       "Bố trí phân tán, trải đều trên diện rông các khu công nghiệp, kinh tế",
       "Phát triển nhanh mạnh các khu công nghirpj, kinh tế gắn với quy hoạch quốc phòng",
-      "Phát triển các khu công nghiệp, kinh tế và bố trí xen kẽ.",
-      "Phát triển thành phố gắn với các khu công nghiệp, kinh tế."
+      "Phát triển các khu công nghiệp, kinh tế và bố trí xen kẽ",
+      "Phát triển thành phố gắn với các khu công nghiệp, kinh tế"
     ],
     "correct": 0
   },
@@ -690,12 +712,16 @@
       "Mở rộng quan hệ đối ngoại",
       "Các phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Thực hiện phát triển KT-XH với tăng cường cửng cố QP, AN nhằm giải quyết như thế nào hai nhiệm vụ chiến lược của cách mạng Việt Nam?",
-    "options": ["Song song", "Hài hòa", "Phối hợp", "Đồng thời"],
+    "options": [
+      "Song song",
+      "Hài hòa",
+      "Phối hợp",
+      "Đồng thời"
+    ],
     "correct": 1
   },
   {
@@ -794,7 +820,7 @@
       "Nền quốc phòng toàn dân phát triển theo hướng hiện đại",
       "Toàn dân, toàn diện, độc lập, tự chủ, tự lực, tự cường và ngày càng hiện đại",
       "Nền QPTD phát triển theo hướng vững mạnh và ngày càng hiện đại",
-      "Nền QPTD phát triển theo hướng toàn dân, toàn diện và hiện đại."
+      "Nền QPTD phát triển theo hướng toàn dân, toàn diện và hiện đại"
     ],
     "correct": 1
   },
@@ -834,7 +860,7 @@
       "Là nền QPTD, ANND có sức mạnh tổng hợp chiến thắng kẻ thù xâm lược",
       "Là nền QPTD, ANND có sức mạnh đối phó với mọi tình huống",
       "Là nền QPTD, ANND có sức mạnh đối phó với mọi loại hình chiến tranh",
-      "Là nền QPTD, ANND có sứ mạnh tổng hợp do nhiều yếu tố tạo nên."
+      "Là nền QPTD, ANND có sứ mạnh tổng hợp do nhiều yếu tố tạo nên"
     ],
     "correct": 3
   },
@@ -900,7 +926,7 @@
     "correct": 1
   },
   {
-    "question": "Lực lượng nòng cốt của an ninh nhân dân là ?",
+    "question": "Lực lượng nòng cốt của an ninh nhân dân là?",
     "options": [
       "Công an nhân dân",
       "An ninh nhân dân",
@@ -921,7 +947,7 @@
     "correct": 1
   },
   {
-    "question": "Hãy chọn cụm từ đúng nhất điền vào dấu … trong câu nói sau: “Quốc phòng là công việc giữ nước của một quốc gia, bao gồm tổng thể các hoạt động đối ngoại và đối nội trên tất cả các lĩnh vực: …, ?",
+    "question": "Hãy chọn cụm từ đúng nhất điền vào dấu … trong câu nói sau: “Quốc phòng là công việc giữ nước của một quốc gia, bao gồm tổng thể các hoạt động đối ngoại và đối nội trên tất cả các lĩnh vực: …,?",
     "options": [
       "Chiến đấu và sẵn sàng chiến đấu, xây dựng đất",
       "Kinh tế, chính trị, quân sự, văn hóa, xã hội",
@@ -941,7 +967,7 @@
     "correct": 0
   },
   {
-    "question": "Một trong những nội dung cơ bản xây dựng tiềm lực kinh tế trong xây dựng nền quốc phòng toàn dân, an ninh nhân dân là gì ?",
+    "question": "Một trong những nội dung cơ bản xây dựng tiềm lực kinh tế trong xây dựng nền quốc phòng toàn dân, an ninh nhân dân là gì?",
     "options": [
       "Kết hợp xây dựng kinh tế và xã hội",
       "Kết hợp xây dựng hạ tầng kinh tế với hạ tầng quốc phòng",
@@ -1005,7 +1031,7 @@
     "options": [
       "Tổ chức phòng thủ dân sự và phòng tránh khắc phục hậu quả chiến tranh",
       "Tổ chức phòng thủ dân sự bảo đảm an toàn",
-      "Phân vùng chiến lược về quốc phòng , an ninh kết hợp với vùng kinh tế",
+      "Phân vùng chiến lược về quốc phòng, an ninh kết hợp với vùng kinh tế",
       "Tổ chức xây dựng khu vực phòng thủ dân sự"
     ],
     "correct": 2
@@ -1074,16 +1100,15 @@
   {
     "question": "Sức mạnh của nền quốc phòng toàn dân, an ninh nhân dân được tạo bởi?",
     "options": [
-      "Sức mạnh mọi mặt: cả tiềm lực và thế trận quốc phòng.",
+      "Sức mạnh mọi mặt: cả tiềm lực và thế trận quốc phòng",
       "Sức mạnh của dân tộc và sức mạnh của thời đại",
-      "Sức mạnh của các yếu tố kinh tế, chính trị, văn hóa.",
+      "Sức mạnh của các yếu tố kinh tế, chính trị, văn hóa",
       "Cả 3 nội dung trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
-    "question": "Chọn phương án đúng nhất cho mục đích duy nhất của nền quốc phòng toàn dân, an ninh nhân dân hiện nay là ?",
+    "question": "Chọn phương án đúng nhất cho mục đích duy nhất của nền quốc phòng toàn dân, an ninh nhân dân hiện nay là?",
     "options": [
       "Giải phóng nhân dân khỏi áp bức, bóc lột",
       "Đấu tranh chống lại kẻ thù xâm lược",
@@ -1095,7 +1120,7 @@
   {
     "question": "Vị trí của tiềm lực kinh tế trong xây dựng nền quốc phòng toàn dân, an ninh nhân dân?",
     "options": [
-      "Là điều kiện vật chất đáp ứng yêu cầu của hoạt động quốc phòng toàn dân.",
+      "Là điều kiện vật chất đáp ứng yêu cầu của hoạt động quốc phòng toàn dân",
       "Là điều kiện vật chất bảo đảm của lực lượng vũ trang để xây dựng thế trận QP-AN",
       "Tạo sức mạnh vật chất cho lực lượng vũ trang nhân dân",
       "Tạo sức mạnh vật chất cho nền quốc phòng toàn dân, an ninh nhân dân"
@@ -1113,29 +1138,33 @@
     "correct": 1
   },
   {
-    "question": "Tiềm lực chính trị - tinh thần của nền quốc phòng toàn dân biểu hiện ở ?",
+    "question": "Tiềm lực chính trị - tinh thần của nền quốc phòng toàn dân biểu hiện ở?",
     "options": [
       "Năng lực lãnh đạo của Đảng và Nhà nước",
       "Ý chí quyết tâm của nhân dân",
       "Ý chí quyết tâm của các lực lượng vũ trang",
       "Cả 3 phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
-    "question": "Vì sao phải kết hợp thế trận QPTD với thế trận ANND ?",
+    "question": "Vì sao phải kết hợp thế trận QPTD với thế trận ANND?",
     "options": [
-      "Chủ nghĩa đế quốc tiến hành âm mưu xâm lược nước ta.",
-      "Chủ nghĩa đế quốc được thế lực phản động nước ngoài thao túng.",
-      "Chủ nghĩa đế quốc câu kết với lực lượng thù địch phản động trong nước.",
+      "Chủ nghĩa đế quốc tiến hành âm mưu xâm lược nước ta",
+      "Chủ nghĩa đế quốc được thế lực phản động nước ngoài thao túng",
+      "Chủ nghĩa đế quốc câu kết với lực lượng thù địch phản động trong nước",
       "Chủ nghĩa đế quốc đánh ta toàn diện trên tất cả các mặt"
     ],
     "correct": 3
   },
   {
     "question": "Ngày nào sau đây được lấy làm ngày hội Quốc phòng toàn dân?",
-    "options": ["22-12-1944", "22-12-1965", "22-12-1975", "22-12-1989"],
+    "options": [
+      "22-12-1944",
+      "22-12-1965",
+      "22-12-1975",
+      "22-12-1989"
+    ],
     "correct": 3
   },
   {
@@ -1146,11 +1175,10 @@
       "Đảm bảo đánh địch dài ngày",
       "Cả 3 phương án"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
-    "question": "Để xây dựng tiềm lực quân sự, an ninh vững mạnh, đáp ứng yêu cầu bảo vệ Tổ quốc trong tình hình hiện nay cần làm gì sau đây ?",
+    "question": "Để xây dựng tiềm lực quân sự, an ninh vững mạnh, đáp ứng yêu cầu bảo vệ Tổ quốc trong tình hình hiện nay cần làm gì sau đây?",
     "options": [
       "Kết hợp phát triển xã hội với CNH, HĐH đất nước",
       "Gắn quá trình CNH,HĐH với tăng cường vũ khí trang bị cho lực lượng vũ trang nhân dân",
@@ -1160,7 +1188,7 @@
     "correct": 1
   },
   {
-    "question": "Một trong những nội dung xây dựng tiềm lực quân sự, an ninh hiện nay là gì ?",
+    "question": "Một trong những nội dung xây dựng tiềm lực quân sự, an ninh hiện nay là gì?",
     "options": [
       "Sẵn sàng động viên thời chiến",
       "Sẵn sàng động viên công nghiệp quốc phòng",
@@ -1180,12 +1208,12 @@
     "correct": 3
   },
   {
-    "question": "Một trong những biểu hiện của tiềm lực quân sự, an ninh là gì ?",
+    "question": "Một trong những biểu hiện của tiềm lực quân sự, an ninh là gì?",
     "options": [
-      "Nguồn dự trự sức người, sức của trên các lĩnh vực đời sống xã hội và nhân dân có thể huy động cho công cuộc bảo vệ tổ quốc",
+      "Nguồn dự trữ sức người, sức của trên các lĩnh vực đời sống xã hội và nhân dân có thể huy động cho công cuộc bảo vệ tổ quốc",
       "Nguồn dự trữ của quốc gia trên lĩnh vực quốc phòng có thể huy động cho công cuộc bảo vệ tổ quốc",
       "Nguồn dự trữ tài chính của quốc gia có thể huy động cho công cuộc bảo vệ tổ quốc",
-      "Các phương án trên đều sai"
+      "Các Các phương án trên đều sai"
     ],
     "correct": 0,
     "fixed": true
@@ -1201,7 +1229,7 @@
     "correct": 1
   },
   {
-    "question": "Nội dung quan trọng hàng đầu trong xây dựng tiềm lực quân sự, an ninh là gì ?",
+    "question": "Nội dung quan trọng hàng đầu trong xây dựng tiềm lực quân sự, an ninh là gì?",
     "options": [
       "Xây dựng Quân đội ngày càng hùng mạnh",
       "Xây dựng lực lượng vũ trang nhân dân ba thứ quân vững mạnh",
@@ -1243,20 +1271,20 @@
   {
     "question": "Đảng lãnh đạo Lực lượng vũ trang nhân dân theo nguyên tắc?",
     "options": [
-      "Tuyệt đối, toàn diện về mọi mặt.",
+      "Tuyệt đối, toàn diện về mọi mặt",
       "Tuyệt đối, trực tiếp về nhiều mặt",
       "Tuyệt đối, trực tiếp về mọi mặt",
-      "Tuyệt đối, trực tiếp không qua khâu trung gian nào."
+      "Tuyệt đối, trực tiếp không qua khâu trung gian nào"
     ],
     "correct": 2
   },
   {
     "question": "Đảng Cộng sản Việt Nam lãnh đạo Lực lượng vũ trang nhân dân Việt Nam?",
     "options": [
-      "Theo hệ thống tổ chức của Đảng từ Trung ương đến cơ sở.",
-      "Theo hệ thống tổ chức của Đảng trong LLVT.",
+      "Theo hệ thống tổ chức của Đảng từ Trung ương đến cơ sở",
+      "Theo hệ thống tổ chức của Đảng trong LLVT",
       "Theo hệ thống tổ chức của Đảng từ Trung ương đến địa phương",
-      "Theo hệ thống tổ chức của Đảng từ trên xuống dưới."
+      "Theo hệ thống tổ chức của Đảng từ trên xuống dưới"
     ],
     "correct": 0
   },
@@ -1281,7 +1309,7 @@
     "correct": 1
   },
   {
-    "question": "Để đáp ứng yêu cầu bảo vệ Tổ quốc trong tình hình mới, cần xây dựng Lực lượng vũ trang nhân dân như thế nào ?",
+    "question": "Để đáp ứng yêu cầu bảo vệ Tổ quốc trong tình hình mới, cần xây dựng Lực lượng vũ trang nhân dân như thế nào?",
     "options": [
       "Ngày càng phát triển về tổ chức",
       "Mạnh, có khả năng tác chiến độc lập",
@@ -1298,8 +1326,7 @@
       "Xây dựng LLVT lấy chất lượng là chính, lấy xây dựng về quân sự làm cơ sở",
       "Cả ba đều sai"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Quân đội nhân dân Việt Nam bao gồm?",
@@ -1314,8 +1341,8 @@
   {
     "question": "Xây dựng quân đội, công an nhân dân Việt Nam theo hướng nào trong tình hình hiện nay?",
     "options": [
-      "Cách mạng, chính qui, tinh nhuệ và từng bước hiện đại.",
-      "Vững mạnh, rộng khắp, lấy chất lượng làm chính.",
+      "Cách mạng, chính qui, tinh nhuệ và từng bước hiện đại",
+      "Vững mạnh, rộng khắp, lấy chất lượng làm chính",
       "Cách mạng, chính qui, tinh nhuệ và ngày càng hùng hậu",
       "Cách mạng, chính qui, tinh nhuệ, hùng hậu và từng bước hiện đại"
     ],
@@ -1355,7 +1382,7 @@
     "question": "Để đáp ứng yêu cầu, nhiệm vụ của lực lượng dân quân tự vệ, cần xây dựng như thế nào hiện nay?",
     "options": [
       "Vững mạnh, rộng khắp, rải đều trên phạm vi cả nước",
-      "Vững mạnh, rộng khắp nhưng có trọng tâm, trọng điểm.",
+      "Vững mạnh, rộng khắp nhưng có trọng tâm, trọng điểm",
       "Cách mạng, chính qui, tinh nhuệ và ngày càng hùng hậu",
       "Cách mạng, chính qui, tinh nhuệ, hùng hậu và từng bước hiện đại"
     ],
@@ -1389,42 +1416,40 @@
       "Lực lượng vũ trang địa phương",
       "Các phương án đều sai"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Một trong những biện pháp chủ yếu xây dựng Lực lượng vũ trang nhân dân là gì?",
     "options": [
       "Xây dựng đội ngũ cán bộ lãnh đạo, chỉ huy có trình độ và kỷ luật tốt",
       "Xây dựng đội ngũ cán bộ lực lượng vũ trang có phẩm chất, trình độ, năng lực tốt",
-      "Xây dựng cán bộ lực lượng vũ trang luôn sẵn sàng chiến đấu, tác chiến giỏi.",
+      "Xây dựng cán bộ lực lượng vũ trang luôn sẵn sàng chiến đấu, tác chiến giỏi",
       "Xây dựng cán bộ cơ sở có trình độ và đạo đức tốt"
     ],
     "correct": 1
   },
   {
-    "question": "Nắm vững quan điểm \"tự lực tự cường\" trong xây dựng Lực lượng vũ trang nhân dân có ý nghĩa gì (Chọn PA đúng ?)",
+    "question": "Nắm vững quan điểm \"tự lực tự cường\" trong xây dựng Lực lượng vũ trang nhân dân có ý nghĩa gì (Chọn PA đúng)?",
     "options": [
       "Để giữ vững tính độc lập tự chủ",
       "Để giữ vững sự chủ động",
       "Để không bị chi phối ràng buộc",
       "Các phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Trong xây dựng lực lượng vũ trang, lấy xây dựng chính trị làm cơ sở vì?",
     "options": [
-      "Chính trị là yếu tố được chuyển hóa thành tư tưởng của người lính.",
+      "Chính trị là yếu tố được chuyển hóa thành tư tưởng của người lính",
       "Chính trị là cơ sở để nâng cao chất lượng tổng hợp của lực lượng vũ trang",
-      "Chính trị là sức mạnh vô địch không có gì lay chuyển được.",
-      "Chính trị quyết định phương hướng tiến lên của lực lượng vũ trang."
+      "Chính trị là sức mạnh vô địch không có gì lay chuyển được",
+      "Chính trị quyết định phương hướng tiến lên của lực lượng vũ trang"
     ],
     "correct": 1
   },
   {
-    "question": "Chọn từ thích hợp điền vào dấu … trong câu nói của Bác sau đây: “Quân đội ta trung với Đảng, hiếu với dân, …vì độc lập tự do của Tổ quốc, vì chủ nghĩa xã hội.” ?",
+    "question": "Chọn từ thích hợp điền vào dấu … trong câu nói của Bác sau đây: “Quân đội ta trung với Đảng, hiếu với dân, …vì độc lập tự do của Tổ quốc, vì chủ nghĩa xã hội.”?",
     "options": [
       "Quyết tâm đánh giặc",
       "Sẵn sàng chiến đấu hy sinh",
@@ -1436,10 +1461,10 @@
   {
     "question": "Một trong những nội dung xây dựng quân đội cách mạng hiện nay là gì?",
     "options": [
-      "Xây dựng quân đội đông đảo, trình độ tác chiến tốt.",
+      "Xây dựng quân đội đông đảo, trình độ tác chiến tốt",
       "Xây dựng quân đội có sức chiến đấu, cơ động cao",
       "Xây dựng quân đội có kỷ luật tự giác nghiêm minh, dân chủ rộng ri",
-      "Xây dựng quân đội có khả năng phản ứng nhanh trước tình hình an ninh chính trị."
+      "Xây dựng quân đội có khả năng phản ứng nhanh trước tình hình an ninh chính trị"
     ],
     "correct": 2
   },
@@ -1448,7 +1473,7 @@
     "options": [
       "Thể hiện bản chất, truyền thống và kinh nghiệm của quân đội ta",
       "Thể hiện sức mạnh, của quân đội",
-      "Thể hiện bản chất , truyền thống tốt đẹp của quân đội ta",
+      "Thể hiện bản chất, truyền thống tốt đẹp của quân đội ta",
       "Phản ánh cả mặt đối nội, đối ngoại của quân đội"
     ],
     "correct": 3
@@ -1534,7 +1559,7 @@
     "correct": 2
   },
   {
-    "question": "Một trong những quan điểm xây dựng Lực lượng vũ trang nhân dân trong giai đoạn mới đó là:",
+    "question": "Một trong những quan điểm xây dựng Lực lượng vũ trang nhân dân trong giai đoạn mới đó là?",
     "options": [
       "Xây dựng LLVT cả về số lượng và chất lượng, lấy chất lượng là chính",
       "Xây dựng LLVT toàn diện, coi trọng cả số lượng, chất lượng, lấy chính trị là chính",
@@ -1556,7 +1581,7 @@
   {
     "question": "Một trong những quan điểm xây dựng Lực lượng vũ trang nhân dân trong giai đoạn mới đó là?",
     "options": [
-      "Tự lực tự cường xây dựng LLVT.",
+      "Tự lực tự cường xây dựng LLVT",
       "Giữ vững và luôn phát huy tốt vai trò lãnh đạo của Đảng đối với LLVT",
       "Xây dựng LLVT lấy quân sự là chính, lấy chất lượng chính trị làm cơ sở",
       "Xây dựng LLVT lấy chất lượng là chính, lấy xây dựng quân sự làm cơ sở"
@@ -1614,7 +1639,7 @@
     "correct": 1
   },
   {
-    "question": "Một trong những biện pháp để nâng cao chất lượng sẵn sàng chiến đấu của Lực lượng vũ trang nhân dân là gì ?",
+    "question": "Một trong những biện pháp để nâng cao chất lượng sẵn sàng chiến đấu của Lực lượng vũ trang nhân dân là gì?",
     "options": [
       "Thường xuyên làm tốt công tác diễn tập",
       "Thường xuyên làm tốt công tác tổ chức",
@@ -1644,7 +1669,7 @@
     "correct": 1
   },
   {
-    "question": "Xây dựng Quân đội và Công an chính qui để làm gì ?",
+    "question": "Xây dựng Quân đội và Công an chính qui để làm gì?",
     "options": [
       "Tăng cường sức mạnh chiến đấu tổng hợp",
       "Tăng cường sức mạnh quốc phòng",
@@ -1654,7 +1679,7 @@
     "correct": 0
   },
   {
-    "question": "Xây dựng Quân đội và Công an tinh nhuệ nhằm làm gì ?",
+    "question": "Xây dựng Quân đội và Công an tinh nhuệ nhằm làm gì?",
     "options": [
       "Nâng cao chất lượng chính trị của Quân đội và Công an",
       "Đạt hiệu quả cao trong mọi hoạt động của Quân đội và Công an",
@@ -1707,8 +1732,8 @@
   {
     "question": "Hồ Chí Minh đánh giá tổng quát về chế độ thực dân như thế nào?",
     "options": [
-      "Chế độ thực dân là phản động.",
-      "Chế độ thực dân là chế độ nô dịch.",
+      "Chế độ thực dân là phản động",
+      "Chế độ thực dân là chế độ nô dịch",
       "Chế độ thực dân là ăn cướp, là hiếp dâm, là giết người",
       "Chế độ thực dân là xấu xa"
     ],
@@ -1737,7 +1762,7 @@
   {
     "question": "Quan điểm của Hồ Chí Minh về phương pháp đấu tranh cách mạng chủ yếu là gì?",
     "options": [
-      "Nhân nhượng để có hoà bình",
+      "nhân nhượng để có hoà bình",
       "Đấu tranh bằng phương pháp hoà bình tránh đổ máu",
       "Dùng bạo lực cách mạng chống lại bạo lực phản cách mạng",
       "Đấu tranh chính trị, ngoại giao giành thắng lợi đỡ tổn thất"
@@ -1797,8 +1822,8 @@
   {
     "question": "Một trong những nội dung trong Tư tưởng Hồ Chí Minh về bảo vệ Tổ quốc là gì?",
     "options": [
-      "Xây dựng và bảo vệ Tổ quốc là qui luật tồn tại và phát triển của dân tộc ta",
-      "Là tất yếu khách quan, là qui luật tồn tại và phát triển của dân tộc ta",
+      "Xây dựng và bảo vệ Tổ quốc là quy luật tồn tại và phát triển của dân tộc ta",
+      "Là tất yếu khách quan, là quy luật tồn tại và phát triển của dân tộc ta",
       "Là tất yếu khách quan, thể hiện ý chí quyết tâm của nhân dân ta",
       "Là ý chí quyết tâm của nhân dân ta"
     ],
@@ -1807,9 +1832,9 @@
   {
     "question": "Theo quan điểm của chủ nghĩa Mác - Lênin, nguồn gốc của chiến tranh từ đâu?",
     "options": [
-      "Từ sự xuất hiện chế độ nhà nước áp bức bóc lột.",
-      "Từ sự xuất hiện giai cấp áp bức bóc lột.",
-      "Từ sự xuất hiện giai cấp đối kháng.",
+      "Từ sự xuất hiện chế độ nhà nước áp bức bóc lột",
+      "Từ sự xuất hiện giai cấp áp bức bóc lột",
+      "Từ sự xuất hiện giai cấp đối kháng",
       "Từ sự xuất hiện chế độ tư hữu, giai cấp, nhà nước"
     ],
     "correct": 3
@@ -1866,7 +1891,12 @@
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Hồ Chí Minh về bạo lực cách mạng:\"Chế độ thực dân, tự bản thân nó đã là một hành động...\"?",
-    "options": ["Lật đổ", "Bạo lực", "Ăn cướp", "Điên rồ"],
+    "options": [
+      "Lật đổ",
+      "Bạo lực",
+      "Ăn cướp",
+      "Điên rồ"
+    ],
     "correct": 1
   },
   {
@@ -1904,12 +1934,22 @@
   },
   {
     "question": "Câu nói “ Trong thời đại ngày nay còn chủ nghĩa đế quốc thì còn nguy cơ xảy ra chiến tranh...\" là của ai?",
-    "options": ["Các Mác", "V.I Lê Nin", "Ph. Ăngghen", "C.Ph Claudơvít"],
+    "options": [
+      "Các Mác",
+      "V.I Lê Nin",
+      "Ph. Ăngghen",
+      "C.Ph Claudơvít"
+    ],
     "correct": 1
   },
   {
     "question": "Câu nói:\"Chiến tranh là sự tiếp tục của chính trị bằng những biện pháp khác\" (cụ thể là bằng bạo lực) là của ai?",
-    "options": ["Các Mác", "C. Ph Claudơít", "VI. Lênin", "Ph. Ănghen"],
+    "options": [
+      "Các Mác",
+      "C. Ph Claudơít",
+      "VI. Lênin",
+      "Ph. Ănghen"
+    ],
     "correct": 2
   },
   {
@@ -1923,18 +1963,33 @@
     "correct": 2
   },
   {
-    "question": "Chọn từ thích hợp điền vào dấu ba chấm trong lời nói của Hồ Chí Minh về chiến tranh nhân dân:\"Ai cũng phải...chống thực dân Pháp cứu nước\"",
-    "options": ["Tích cực", "Ra sức", "Quyết tâm", "Dũng cảm"],
+    "question": "Chọn từ thích hợp điền vào dấu ba chấm trong lời nói của Hồ Chí Minh về chiến tranh nhân dân:\"Ai cũng phải...chống thực dân Pháp cứu nước\"?",
+    "options": [
+      "Tích cực",
+      "Ra sức",
+      "Quyết tâm",
+      "Dũng cảm"
+    ],
     "correct": 1
   },
   {
     "question": "Khái niệm “ Quân đội là một tập đoàn người vũ trang, có tổ chức do nhà nước xây dựng đề dùng vào cuộc chiến tranh tiến công hoặc chiến tranh phòng ngự” là của ai?",
-    "options": ["C.Ph Claudơvít", "Ph. Ăngghen", "Các Mác", "V.I Lê Nin"],
+    "options": [
+      "C.Ph Claudơvít",
+      "Ph. Ăngghen",
+      "Các Mác",
+      "V.I Lê Nin"
+    ],
     "correct": 1
   },
   {
-    "question": "Chọn từ thích hợp điền vào dấu ba chấm trong lời nói của Lênin:\"Chức năng cơ bản của quân đội đế quốc là tiến hành chiến tranh...\"",
-    "options": ["Xâm lược", "Hủy diệt", "Khủng bố", "Vũ trang"],
+    "question": "Chọn từ thích hợp điền vào dấu ba chấm trong lời nói của Lênin:\"Chức năng cơ bản của quân đội đế quốc là tiến hành chiến tranh...\"?",
+    "options": [
+      "Xâm lược",
+      "Hủy diệt",
+      "Khủng bố",
+      "Vũ trang"
+    ],
     "correct": 0
   },
   {
@@ -1945,8 +2000,7 @@
       "Dần thoái hóa về chính trị tư tưởng, phai nhạt bản chất cách mạng",
       "Tất cả các phương án"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Theo Chủ nghĩa Mác - Lênin sức mạnh chiến đấu của quân đội phụ thuộc vào những yếu tố nào?",
@@ -1956,27 +2010,46 @@
       "Vũ khí trang bị, khoa học quân sự",
       "Tất cả phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Lênin:\"Giành chính quyền đã khó, nhưng giữ được chính quyền còn...\"?",
-    "options": ["Vất vả hơn", "Phức tạp hơn", "Gian nan nhiều", "Khó khăn hơn"],
+    "options": [
+      "Vất vả hơn",
+      "Phức tạp hơn",
+      "Gian nan nhiều",
+      "Khó khăn hơn"
+    ],
     "correct": 3
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Lênin về bảo vệ Tổ quốc:\"Tuyệt đối không chủ quan, phải có thái độ...với quốc phòng\"?",
-    "options": ["Tích cực", "Nghiêm túc", "Ủng hộ", "Xây dựng"],
+    "options": [
+      "Tích cực",
+      "Nghiêm túc",
+      "Ủng hộ",
+      "Xây dựng"
+    ],
     "correct": 1
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Lênin về bảo vệ Tổ quốc:\"Đảng Cộng sản phải lãnh đạo ... sự nghiệp bảo vệ Tổ quốc\"?",
-    "options": ["Tuyệt đối", "Mọi mặt", "Trực tiếp", "Gián tiếp"],
+    "options": [
+      "Tuyệt đối",
+      "Mọi mặt",
+      "Trực tiếp",
+      "Gián tiếp"
+    ],
     "correct": 1
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Di chúc của Hồ Chí Minh: \"Dù sao chúng ta phải ... Đánh giặc Mĩ đến thắng lợi hoàn toàn\"?",
-    "options": ["Xung phong.", "Tích cực", "Hết sức", "Quyết tâm"],
+    "options": [
+      "Xung phong",
+      "Tích cực",
+      "Hết sức",
+      "Quyết tâm"
+    ],
     "correct": 3
   },
   {
@@ -2004,7 +2077,7 @@
     "question": "Tư tưởng Hồ Chí Minh về sức mạnh chiến đấu của quân đội, yếu tố nào giữ vai trò quyết định?",
     "options": [
       "Vũ khí và cán bộ giỏi giữ vai trò quyết định",
-      "Vũ khí giữ vai trò quyết định.",
+      "Vũ khí giữ vai trò quyết định",
       "Con người với trình độ chính trị cao giữ vai trò quyết định",
       "Người chỉ huy giỏi giữ vai trò quyết định"
     ],
@@ -2013,8 +2086,8 @@
   {
     "question": "Hồ Chí Minh xác định mục đích của chiến tranh chống xâm lược là gì?",
     "options": [
-      "Bảo vệ độc lập dân tộc, chủ quyền quốc gia.",
-      "Bảo vệ Đảng, Nhà nước và nhân dân.",
+      "Bảo vệ độc lập dân tộc, chủ quyền quốc gia",
+      "Bảo vệ Đảng, Nhà nước và nhân dân",
       "Bảo vệ Đảng, Nhà nước, nhân dân và chế độ dân chủ",
       "Bảo vệ chủ quyền lãnh thổ"
     ],
@@ -2024,7 +2097,7 @@
     "question": "Khi xem xét bản chất của một cuộc chiến tranh, chúng ta phải xem xét nội dung gì?",
     "options": [
       "Phương tiện, thủ đoạn của giai cấp, Nhà nước tiến hành chiến tranh",
-      "Qui mô tổ chức kỹ thuật quân sự",
+      "quy mô tổ chức kỹ thuật quân sự",
       "Mục đích chính trị của cuộc chiến tranh đó và giai cấp, Nhà nước điều hành nó",
       "Lực lượng, phương tiện, thủ đoạn tiến hành chiến tranh của giai cấp, nhà nước"
     ],
@@ -2038,8 +2111,7 @@
       "Lực lượng nòng cốt để nhà nước, giai cấp tiến hành chiến tranh và đấu tranh vũ trang",
       "Cả 3 phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Khi nói về mục đích của cuộc kháng chiến chống thực dân Pháp, Hồ Chí Minh khẳng định như thế nào?",
@@ -2049,8 +2121,7 @@
       "Còn thực dân Pháp thì mong ăn cướp nước ta, mong bắt nhân dân ta làm nô lệ",
       "Cả 3 phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Theo quan niệm của C.Ph. Claudơvít, chiến tranh là một hành vi bạo lực dùng để buộc đối phương làm gì với ý chí của mình?",
@@ -2064,7 +2135,12 @@
   },
   {
     "question": "Chọn từ thích hợp đưa vào dấu ba chấm trong Câu nói của Lê Nin: \"Chiến tranh là ... của chủ nghĩa đế quốc\"?",
-    "options": ["Công cụ", "Bạn đường", "Phương tiện", "Công cụ chủ yếu"],
+    "options": [
+      "Công cụ",
+      "Bạn đường",
+      "Phương tiện",
+      "Công cụ chủ yếu"
+    ],
     "correct": 1
   },
   {
@@ -2119,7 +2195,12 @@
   },
   {
     "question": "Chọn từ thích hợp đưa vào dấu ba chấm trong câu nói của Ph. Ăngghen: \"Chế độ áp bức bóc lột càng … thì chiến tranh càng phát triển\"?",
-    "options": ["Suy tàn", "Lung lay", "Thất bại", "Hoàn thiện"],
+    "options": [
+      "Suy tàn",
+      "Lung lay",
+      "Thất bại",
+      "Hoàn thiện"
+    ],
     "correct": 3
   },
   {
@@ -2175,22 +2256,36 @@
   },
   {
     "question": "Khi nói về chiến tranh nhân dân Việt Nam, Hồ Chí Minh chỉ ra rằng: kháng chiến toàn dân phải đi đôi với kháng chiến…nào?",
-    "options": ["Toàn quân", "Toàn diện", "Hiện đại", "Du kích"],
+    "options": [
+      "Toàn quân",
+      "Toàn diện",
+      "Hiện đại",
+      "Du kích"
+    ],
     "correct": 1
   },
   {
-    "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu viết của Hồ Chí Minh: \"Ngoài lợi ích của … , quân đội ta không có lợi ích nào khác\".",
-    "options": ["Xã hội", "Nhân dân", "Giai cấp", "Bản thân"],
+    "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu viết của Hồ Chí Minh: \"Ngoài lợi ích của …, quân đội ta không có lợi ích nào khác\"?",
+    "options": [
+      "Xã hội",
+      "Nhân dân",
+      "Giai cấp",
+      "Bản thân"
+    ],
     "correct": 1
   },
   {
     "question": "Theo V.I.Lênin, chiến tranh mang tính?",
-    "options": ["Xã hội", "Giai cấp", "Lịch sử cụ thể", "Các phương án trên"],
-    "correct": 3,
-    "fixed": true
+    "options": [
+      "Xã hội",
+      "Giai cấp",
+      "Lịch sử cụ thể",
+      "Các phương án trên"
+    ],
+    "correct": 3
   },
   {
-    "question": "Theo Mác- Ănghen, chiến tranh là kết quả của mối quan hệ ?",
+    "question": "Theo Mác- Ănghen, chiến tranh là kết quả của mối quan hệ?",
     "options": [
       "Giữa người với người nói chung",
       "Giữa các nhà nước",
@@ -2204,7 +2299,7 @@
     "options": [
       "Chiến tranh là một bộ phận của chính trị",
       "Chiến tranh làm gián đoạn chính trị",
-      "Chính trị qui định và điều chỉnh mục tiêu của chiến tranh",
+      "Chính trị quy định và điều chỉnh mục tiêu của chiến tranh",
       "Chính trị quyết định tiến trình và kết cục của chiến tranh"
     ],
     "correct": 1
@@ -2220,7 +2315,7 @@
     "correct": 0
   },
   {
-    "question": "Theo tư tưởng Hồ Chí Minh, bản chất giai cấp của Quân đội nhân dân Việt Nam là ?",
+    "question": "Theo tư tưởng Hồ Chí Minh, bản chất giai cấp của Quân đội nhân dân Việt Nam là?",
     "options": [
       "Bản chất của chế độ",
       "Bản chất giai cấp công nhân",
@@ -2233,7 +2328,7 @@
     "question": "Mác - Ăngghen căn cứ vào nội dung nào để phân loại tính chất của chiến tranh?",
     "options": [
       "Mục đích chính trị của các cuộc chiến tranh",
-      "Điều kiện lịch sử gây ra chiến tranh.",
+      "Điều kiện lịch sử gây ra chiến tranh",
       "Địa vị lịch sử của các giai cấp, mục đích chính trị của các cuộc chiến tranh",
       "Giai cấp tiến hành chiến tranh"
     ],
@@ -2242,19 +2337,19 @@
   {
     "question": "Theo quan điểm chủ nghĩa Mác - Lênin, chiến tranh gắn liền với chế độ xã hội nào?",
     "options": [
-      "Chế độ chiếm hữu nô lệ.",
-      "Chế độ phong kiến và tư bản chủ nghĩa.",
+      "Chế độ chiếm hữu nô lệ",
+      "Chế độ phong kiến và tư bản chủ nghĩa",
       "Với mọi chế độ xã hội",
-      "Chế độ xã hội có giai cấp và nhà nước áp bức bóc lột."
+      "Chế độ xã hội có giai cấp và nhà nước áp bức bóc lột"
     ],
     "correct": 3
   },
   {
     "question": "Lênin đã phân chia tính chất xã hội của chiến tranh như thế nào?",
     "options": [
-      "Chiến tranh tiến bộ và chiến tranh phản động.",
+      "Chiến tranh tiến bộ và chiến tranh phản động",
       "Chiến tranh cách mạng, chính nghĩa và chiến tranh phản cách mạng, phi nghĩa",
-      "Chiến tranh tự vệ và chiến tranh xâm lược.",
+      "Chiến tranh tự vệ và chiến tranh xâm lược",
       "Chiến tranh tự vệ, chính nghĩa và chiến tranh xâm lược, phi nghĩa"
     ],
     "correct": 1
@@ -2273,9 +2368,9 @@
     "question": "Tư tưởng nhất quán của Hồ Chí Minh về sức mạnh bảo vệ Tổ quốc?",
     "options": [
       "Là sức mạnh của nhân dân, của lực lượng vũ trang nhân dân",
-      "Là sức mạnh tổng hợp của cả dân tộc, cả nước kết hợp với sức mạnh thời đại.",
-      "Là sức mạnh của lực lượng, sức mạnh quốc phòng toàn dân.",
-      "Là sức mạnh của nền kinh tế, của khoa học kỹ thuật."
+      "Là sức mạnh tổng hợp của cả dân tộc, cả nước kết hợp với sức mạnh thời đại",
+      "Là sức mạnh của lực lượng, sức mạnh quốc phòng toàn dân",
+      "Là sức mạnh của nền kinh tế, của khoa học kỹ thuật"
     ],
     "correct": 1
   },
@@ -2284,7 +2379,7 @@
     "options": [
       "Trong chiến tranh giải phóng dân tộc của các nước",
       "Khi xuất hiện chế độ tư hữu về tư liệu sản xuất và sự đối kháng giai cấp trong xã hội",
-      "Từ khi xuất hiện xã hội loài người.",
+      "Từ khi xuất hiện xã hội loài người",
       "Khi xuất hiện giai cấp và mâu thuẫn xã hội"
     ],
     "correct": 1
@@ -2292,9 +2387,9 @@
   {
     "question": "Chủ nghĩa Mác-Lênin khẳng định nguồn gốc trực tiếp dẫn đến sự xuất hiện, tồn tại của chiến tranh là gì?",
     "options": [
-      "Sự xuất hiện của chủ nghĩa đế quốc.",
-      "Sự xuất hiện của các thế lực hiếu chiến.",
-      "Khi loài người xuất hiện và phân chia quyền lực.",
+      "Sự xuất hiện của chủ nghĩa đế quốc",
+      "Sự xuất hiện của các thế lực hiếu chiến",
+      "Khi loài người xuất hiện và phân chia quyền lực",
       "Sự xuất hiện và tồn tại của giai cấp và đối kháng giai cấp"
     ],
     "correct": 3
@@ -2302,13 +2397,12 @@
   {
     "question": "Lênin chỉ ra chức năng cơ bản của quân đội đế quốc là gì?",
     "options": [
-      "Là phương tiện quân sự để đạt mục đích chính trị đối ngoại.",
+      "Là phương tiện quân sự để đạt mục đích chính trị đối ngoại",
       "Là tiến hành chiến tranh xâm lược",
       "Là duy trì quyền thống trị, bóc lột đối với nhân dân trong nước",
       "Cả 3 phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Theo quan điểm chủ nghĩa Mác - Lê nin bản chất của quân đội như thế nào?",
@@ -2323,9 +2417,9 @@
   {
     "question": "Hồ Chí Minh khẳng định như thế nào về sự ra đời của Quân đội nhân dân Việt Nam?",
     "options": [
-      "Là một tất yếu, là vấn đề có tính quy luật trong đấu tranh giai cấp, đấu tranh dân tộc ở Việt Nam.",
-      "Là một qui luật trong đấu tranh cách mạng để giải phóng nhân dân Việt Nam.",
-      "Là một tất yếu do đòi hỏi của phát triển xã hội Việt Nam.",
+      "Là một tất yếu, là vấn đề có tính quy luật trong đấu tranh giai cấp, đấu tranh dân tộc ở Việt Nam",
+      "Là một quy luật trong đấu tranh cách mạng để giải phóng nhân dân Việt Nam",
+      "Là một tất yếu do đòi hỏi của phát triển xã hội Việt Nam",
       "Cả 3 phương án"
     ],
     "correct": 0,
@@ -2342,7 +2436,7 @@
     "correct": 1
   },
   {
-    "question": "Kết hợp sức mạnh dân tộc với sức mạnh thời đại là vận dụng qui luật gì trong chiến tranh?",
+    "question": "Kết hợp sức mạnh dân tộc với sức mạnh thời đại là vận dụng quy luật gì trong chiến tranh?",
     "options": [
       "Thế thắng lực",
       "Lực tạo thế, thế tạo lực",
@@ -2353,7 +2447,7 @@
     "fixed": true
   },
   {
-    "question": "Kết hợp sức mạnh dân tộc với sức mạnh thời đại là vận dụng qui luật gì trong chiến tranh?",
+    "question": "Kết hợp sức mạnh dân tộc với sức mạnh thời đại là vận dụng quy luật gì trong chiến tranh?",
     "options": [
       "Mạnh được, yếu thua",
       "Dựng nước đi đôi với giữ nước",
@@ -2395,7 +2489,12 @@
   },
   {
     "question": "Trong chiến tranh, kẻ thù thực hiện các biện pháp phi vũ trang nhằm làm gì là chủ yếu?",
-    "options": ["Lừa bịp dư luận", "Mỵ dân", "Tạo liên minh", "Kéo bè cánh"],
+    "options": [
+      "Lừa bịp dư luận",
+      "Mỵ dân",
+      "Tạo liên minh",
+      "Kéo bè cánh"
+    ],
     "correct": 0
   },
   {
@@ -2422,7 +2521,7 @@
     "question": "Khi tiến hành chiến tranh xâm lược nước ta, kẻ thù có điểm yếu cơ bản nào sau đây?",
     "options": [
       "Rất khó cấu kết với lực lượng phản động bên trong",
-      "Khó khăn khi triển khai lực lượng , phương tiện chiến tranh",
+      "Khó khăn khi triển khai lực lượng, phương tiện chiến tranh",
       "Khả năng đảm bảo vũ khí, phương tiện chiến tranh không tốt",
       "Các phương án trên"
     ],
@@ -2442,27 +2541,27 @@
   {
     "question": "Sau cách mạng Tháng 8, lực lượng nào là kẻ thù chính của cách mạng Việt Nam?",
     "options": [
-      "Thực dân Pháp xâm lăng.",
-      "Thực dân Pháp và phát xít Nhật.",
-      "Thực dân Pháp và quân Tưởng.",
-      "Thực dân Pháp và bọn Việt gian."
+      "Thực dân Pháp xâm lăng",
+      "Thực dân Pháp và phát xít Nhật",
+      "Thực dân Pháp và quân Tưởng",
+      "Thực dân Pháp và bọn Việt gian"
     ],
     "correct": 0
   },
   {
     "question": "Thắng lợi của dân tộc ta trong kháng chiến chống Mỹ có ý nghĩa gì đối với thế giới?",
     "options": [
-      "Là nguồn cổ vũ to lớn đối với cách dân tộc đang đấu tranh chống CNĐQ.",
-      "Chấm dứt ách thống trị của CNĐQ và chế độ phong kiến Việt Nam.",
-      "Giải phóng hoàn toàn Miền Nam thống nhất đất nước.",
-      "Mở ra kỉ nguyên mới cho các dân tộc trên thế giới."
+      "Là nguồn cổ vũ to lớn đối với cách dân tộc đang đấu tranh chống CNĐQ",
+      "Chấm dứt ách thống trị của CNĐQ và chế độ phong kiến Việt Nam",
+      "Giải phóng hoàn toàn Miền Nam thống nhất đất nước",
+      "Mở ra kỉ nguyên mới cho các dân tộc trên thế giới"
     ],
     "correct": 0
   },
   {
     "question": "Thắng lợi của dân tộc ta trong kháng chiến chống Mỹ có ý nghĩa gì đối với thế giới?",
     "options": [
-      "Giải phóng hoàn toàn Miền Nam thống nhất đất nước.",
+      "Giải phóng hoàn toàn Miền Nam thống nhất đất nước",
       "Mở ra kỉ nguyên mới của dân tộc, dất nước thống nhất đi lên CNXH",
       "Rửa sạch cái nhục và nỗi đau mất nước hơn nửa thế kỷ",
       "Phá vỡ phòng tuyến quan trọng ngăn chặn CNCS ở Đông Nam Á của đế quốc Mỹ"
@@ -2562,7 +2661,7 @@
   {
     "question": "Nếu chiến tranh xảy ra chúng ta đánh giá quân địch có điểm yếu gì sâu dây?",
     "options": [
-      "Mâu thuẫn nội bộ của chúng nhất định sẽ bùng nổ nhất là khi cuộc chiến tranh bị sa lầy.",
+      "Mâu thuẫn nội bộ của chúng nhất định sẽ bùng nổ nhất là khi cuộc chiến tranh bị sa lầy",
       "Khả năng bảo đảm hậu cần không tốt vì hậu phương của cúng ở xa",
       "Khả năng chi viện giữa các lực lượng không tốt",
       "Khả năng tập hợp lực lượng phương tiện hạn chế"
@@ -2590,37 +2689,37 @@
     "correct": 0
   },
   {
-    "question": "Một trong những tính chất chiến tranh nhân dân bảo vệ Tổ quốc là gì ?",
+    "question": "Một trong những tính chất chiến tranh nhân dân bảo vệ Tổ quốc là gì?",
     "options": [
       "Chiến tranh chính nghĩa, bảo vệ Tổ quốc",
-      "Chiến tranh chính nghĩa, tự vệ, cách mạng.",
+      "Chiến tranh chính nghĩa, tự vệ, cách mạng",
       "Chiến tranh chính nghĩa, tự vệ, tự chủ",
       "Chiến tranh chính nghĩa, toàn dân, toàn diện"
     ],
     "correct": 1
   },
   {
-    "question": "Lực lượng tiến hành chiến tranh nhân dân là",
+    "question": "Lực lượng tiến hành chiến tranh nhân dân là?",
     "options": [
-      "Lực lượng vũ tranh nhân dân 3 thứ quân.",
+      "Lực lượng vũ tranh nhân dân 3 thứ quân",
       "Toàn dân",
-      "Quân đội nhân dân và công an nhân dân.",
-      "Quân đội nhân dân , công an nhân dân và dân quân tự vệ"
+      "Quân đội nhân dân và công an nhân dân",
+      "Quân đội nhân dân, công an nhân dân và dân quân tự vệ"
     ],
     "correct": 1
   },
   {
-    "question": "Một trong những tính chất của cuộc chiến tranh nhân dân Việt Nam là",
+    "question": "Một trong những tính chất của cuộc chiến tranh nhân dân Việt Nam là?",
     "options": [
       "Tự vệ, toàn diện, tích cực",
-      "Toàn dân, toàn diện, sáng tạo.",
+      "Toàn dân, toàn diện, sáng tạo",
       "Là cuộc chiến tranh nhân dân cách mạng",
       "Mang tính hiện đại"
     ],
     "correct": 3
   },
   {
-    "question": "Nếu chiến tranh xảy ra kẻ thù sẽ thực hiện âm mưu gì ?",
+    "question": "Nếu chiến tranh xảy ra kẻ thù sẽ thực hiện âm mưu gì?",
     "options": [
       "Đánh chắc, tiến chắc",
       "Đánh nhanh, thắng nhanh",
@@ -2640,7 +2739,7 @@
     "correct": 2
   },
   {
-    "question": "Để đánh thắng đội quân xâm lược trong chiến tranh nhân dân bảo vệ Tổ quốc Đảng ta dựa vào ?",
+    "question": "Để đánh thắng đội quân xâm lược trong chiến tranh nhân dân bảo vệ Tổ quốc Đảng ta dựa vào?",
     "options": [
       "Sức mạnh của lực lượng vũ trang 3 thứ quân",
       "Sức mạnh của lực lượng vũ trang",
@@ -2651,7 +2750,12 @@
   },
   {
     "question": "Theo tư tưởng Hồ Chí Minh, trong xây dựng phong trào toàn dân đánh giặc thì lực lượng vũ trang nhân dân có vị trí như thế nào?",
-    "options": ["Trụ cột", "Nòng cốt", "Xung phong", "Quan trọng"],
+    "options": [
+      "Trụ cột",
+      "Nòng cốt",
+      "Xung phong",
+      "Quan trọng"
+    ],
     "correct": 1
   },
   {
@@ -2718,7 +2822,7 @@
     "question": "Đối tượng tác chiến của quân và dân ta là đối tượng nào?",
     "options": [
       "Những lực lượng xâm phạm an ninh quốc gia",
-      "Những lực lượng gây BLLĐ, gây xung đột vũ trang, gây chiến tranh xâm lược.",
+      "Những lực lượng gây BLLĐ, gây xung đột vũ trang, gây chiến tranh xâm lược",
       "Quân đội đế quốc xâm lược và lực lượng phản động gây BLLĐ",
       "Chủ nghĩa đế quốc và lực lượng phản động"
     ],
@@ -2742,8 +2846,7 @@
       "Tổ chức thế trận chiến tranh nhân dân",
       "Bao gồm cả 3 nội dung trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Nếu chiến tranh xảy ra, chúng ta đánh giá quân địch có điểm mạnh gì?",
@@ -2888,7 +2991,7 @@
   {
     "question": "Lãnh thổ của một quốc gia được cấu thành bởi những bộ phận nào?",
     "options": [
-      "Vùng đất, vùng biển, vựng trời, và hệ thống sụng, hồ.",
+      "Vùng đất, vùng biển, vựng trời, và hệ thống sụng, hồ",
       "Vựng đất, vựng biển, vùng trời, vùng lãnh thổ đặc biệt",
       "Vùng lãnh hải, nội thủy, vùng đất và vùng trời",
       "Đại sứ quán ở nước ngoài, vùng trời, vùng biển, vùng đất"
@@ -2907,12 +3010,22 @@
   },
   {
     "question": "Bờ biển Việt nam dài bao nhiêu Km?",
-    "options": ["3250 km", "3260 km", "3620 km", "3520 km"],
+    "options": [
+      "3250 km",
+      "3260 km",
+      "3620 km",
+      "3520 km"
+    ],
     "correct": 1
   },
   {
     "question": "Đường biên giới đất liền của Việt Nam tiếp giáp với nước nào là dài nhất?",
-    "options": ["Trung quốc", "Thái lan", "Campuchia", "Lào."],
+    "options": [
+      "Trung quốc",
+      "Thái lan",
+      "Campuchia",
+      "Lào"
+    ],
     "correct": 3
   },
   {
@@ -2966,7 +3079,7 @@
     "correct": 2
   },
   {
-    "question": "Lãnh thổ đất liền của nước ta rộng bao nhiêu Km2 ?",
+    "question": "Lãnh thổ đất liền của nước ta rộng bao nhiêu Km2?",
     "options": [
       "Rộng 330.689 Km2",
       "Rộng 332.689 Km2",
@@ -3067,7 +3180,12 @@
   },
   {
     "question": "Đường biên giới trên đất liền của nước ta dài bao nhiêu km?",
-    "options": ["Dài 2550 km", "Dài 3550 km", "Dài 4550 km", "Dài 5550 km"],
+    "options": [
+      "Dài 2550 km",
+      "Dài 3550 km",
+      "Dài 4550 km",
+      "Dài 5550 km"
+    ],
     "correct": 2
   },
   {
@@ -3165,9 +3283,13 @@
   },
   {
     "question": "Vùng đất quốc gia Việt Nam bao gồm?",
-    "options": ["Đất liền", "Các đảo", "Các quần đảo", "Cả 3 phương án trên"],
-    "correct": 3,
-    "fixed": true
+    "options": [
+      "Đất liền",
+      "Các đảo",
+      "Các quần đảo",
+      "Cả 3 phương án trên"
+    ],
+    "correct": 3
   },
   {
     "question": "Vùng đất quốc gia Việt Nam bao gồm?",
@@ -3182,12 +3304,17 @@
   },
   {
     "question": "Vùng đất quốc gia Việt Nam bao gồm?",
-    "options": ["Đất liền", "Đất nông nghiệp", "Quần đảo", "Phương án A và C"],
+    "options": [
+      "Đất liền",
+      "Đất nông nghiệp",
+      "Quần đảo",
+      "Phương án A và C"
+    ],
     "correct": 3,
     "fixed": true
   },
   {
-    "question": "Qui định về Đường cơ sở do quốc gia hay tổ chức nào xác định và công bố?",
+    "question": "quy định về Đường cơ sở do quốc gia hay tổ chức nào xác định và công bố?",
     "options": [
       "Liên Hiệp Quốc",
       "Hiệp hội Asean",
@@ -3252,7 +3379,7 @@
     "options": [
       "Tôn trọng chủ quyền quốc gia",
       "Tôn trọng chủ quyền biên giới",
-      "Tôn trọng độc lập,tồn vẹn lãnh thổ",
+      "Tôn trọng độc lập,toàn vẹn lãnh thổ",
       "Tôn trọng các Hiệp ước quốc tế"
     ],
     "correct": 0
@@ -3389,7 +3516,12 @@
   },
   {
     "question": "Chức năng chủ yếu của dân quân tự vệ là gì?",
-    "options": ["Chiến đấu", "Lao động sản xuất", "Công tác", "Giáo dục"],
+    "options": [
+      "Chiến đấu",
+      "Lao động sản xuất",
+      "Công tác",
+      "Giáo dục"
+    ],
     "correct": 1
   },
   {
@@ -3493,17 +3625,17 @@
     "correct": 1
   },
   {
-    "question": "Động viên công nghiệp có vị trí như sau:",
+    "question": "Động viên công nghiệp có vị trí như sau?",
     "options": [
-      "Để nâng cao tiềm lực quốc phòng trong chiến tranh bảo vệ Tổ quốc.",
-      "Để nâng cao khả năng sẵn sàng chiến đấu của quân đội.",
-      "ĐVCN để nâng cao sức mạnh chiến đấu của đất nước trong chiến tranh hiện đại.",
-      "Để nâng cao tính chủ động tích cực chiến đấu của LLVT khi chiến tranh xảy ra."
+      "Để nâng cao tiềm lực quốc phòng trong chiến tranh bảo vệ Tổ quốc",
+      "Để nâng cao khả năng sẵn sàng chiến đấu của quân đội",
+      "ĐVCN để nâng cao sức mạnh chiến đấu của đất nước trong chiến tranh hiện đại",
+      "Để nâng cao tính chủ động tích cực chiến đấu của LLVT khi chiến tranh xảy ra"
     ],
     "correct": 0
   },
   {
-    "question": "Để đáp ứng yêu cầu lực lượng vũ trang, nhiệm vụ của công tác động viên công nghiệp là:",
+    "question": "Để đáp ứng yêu cầu lực lượng vũ trang, nhiệm vụ của công tác động viên công nghiệp là?",
     "options": [
       "Các sản phẩm công nghiệp của quốc phòng phải được kiểm tra giám sát chặt chẽ, bảo đảm đủ về số lượng và tốt về chất lượng",
       "Nghiệm thu quản lý, bảo quản chặt chẽ, bí mật an toàn, phân phối điều tiết sản phẩm cho LLVT",
@@ -3634,7 +3766,12 @@
   },
   {
     "question": "Biên chế cán bộ Ban chỉ huy quân sự cơ sở của dân quân tự vệ gồm mấy người?",
-    "options": ["Gồm 5 người", "Gồm 4 người", "Gồm 3 người", "Gồm 2 người"],
+    "options": [
+      "Gồm 5 người",
+      "Gồm 4 người",
+      "Gồm 3 người",
+      "Gồm 2 người"
+    ],
     "correct": 2
   },
   {
@@ -3910,18 +4047,17 @@
     "correct": 0
   },
   {
-    "question": "Vai trò của quần chúng nhân dân trong bảo vệ an ninh Tổ quốc là",
+    "question": "Vai trò của quần chúng nhân dân trong bảo vệ an ninh Tổ quốc là?",
     "options": [
       "Phát hiện, quản lý, giáo dục đối tượng phạm tội để thu hẹp tội phạm",
       "Phát hiện khắc phục sơ hở, thiết sút mà địch và tội phạm hay lợi dụng",
       "Tham gia bảo vệ an ninh trật tự, giúp cơ quan chuyên trách hoàn thành tốt nhiệm vụ",
-      "Cả 3 phương án."
+      "Cả 3 phương án"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
-    "question": "Phong trào toàn dân bảo vệ an ninh Tổ quốc hoạt động trên hình thức nào",
+    "question": "Phong trào toàn dân bảo vệ an ninh Tổ quốc hoạt động trên hình thức nào?",
     "options": [
       "Tự giác có tổ chức",
       "Tự phát có sự tham gia của chuyên môn",
@@ -3946,22 +4082,22 @@
       "Bảo vệ an ninh chính trị, trật tự an toàn xã hội, tài sản nhà nước, tính mạng và tài sản của nhân dân",
       "Bảo vệ ANCT, nền kinh tế, văn hóa, tính mạng, tài sản của nhân dân",
       "Bảo vệ ANCT, quốc phòng an ninh, đối ngoại, đoàn kết dân tộc, tôn giáo",
-      "Bảo vệ ANCT, kinh tế, văn hóa, đại đoàn kết các dừn tộc, các tôn giáo"
+      "Bảo vệ ANCT, kinh tế, văn hóa, đại đoàn kết các dân tộc, các tôn giáo"
     ],
     "correct": 0
   },
   {
     "question": "Phong trào toàn dân bảo vệ ANTQ giữ vị trí như thế nào trong sự nghiệp cách mạng?",
     "options": [
-      "Quan trọng, không thể thiếu.",
-      "Tiên phong, không thể thiếu.",
-      "Trọng tâm, trọng điểm.",
+      "Quan trọng, không thể thiếu",
+      "Tiên phong, không thể thiếu",
+      "Trọng tâm, trọng điểm",
       "Là điều kiện để nhân dân làm chủ"
     ],
     "correct": 0
   },
   {
-    "question": "Phong trào toàn dân bảo vệ ANTQ và các phong trào cách mạng khỏc của Đảng ở địa phương, đơn vị có quan hệ như thế nào?",
+    "question": "Phong trào toàn dân bảo vệ ANTQ và các phong trào cách mạng khác của Đảng ở địa phương, đơn vị có quan hệ như thế nào?",
     "options": [
       "Khăng khít, tác động hỗ trợ nhau",
       "Chặt chẽ, gắn bó nhau",
@@ -4001,7 +4137,7 @@
     "correct": 0
   },
   {
-    "question": "Phong trào toàn dân bảo vệ ANTQ cỳ vai trò quan trọng như thế nào tác động đến việc nâng cao ý thức tự giác của đại bộ phận quần chúng nhân dân?",
+    "question": "Phong trào toàn dân bảo vệ ANTQ có vai trò quan trọng như thế nào tác động đến việc nâng cao ý thức tự giác của đại bộ phận quần chúng nhân dân?",
     "options": [
       "Là động lực quan trọng",
       "Sự hỗ trợ đắc lực tinh thần tự giác",
@@ -4021,7 +4157,7 @@
     "correct": 0
   },
   {
-    "question": "Hình thức hoạt động của phong trào toàn dân bảo vệ ANTQ có ý nghĩa, tác dụng như thế nào trong nhiệm vụ bảo vệ ANTT xã hội.",
+    "question": "Hình thức hoạt động của phong trào toàn dân bảo vệ ANTQ có ý nghĩa, tác dụng như thế nào trong nhiệm vụ bảo vệ ANTT xã hội?",
     "options": [
       "Tập hợp, thu hút, phát huy quyền làm chủ quần chúng bảo vệ ANTT",
       "Tập hợp, thu hút, phát huy khả năng của quần chúng nhân dân bảo vệ ANTT",
@@ -4053,13 +4189,12 @@
   {
     "question": "Đặc điểm của phong trào toàn dân bảo vệ ANTQ là gì?",
     "options": [
-      "Tất cả các phương án.",
+      "Tất cả các phương án",
       "Đối tượng tham gia đa dạng, liên quan đến nhiều người và mọi tầng lớp xã hội",
       "Nội dung, hình thức, phương pháp phụ thuộc vào đặc điểm, tình hình địa phương",
       "Phong trào gắn với phong trào khác của Đảng, việc thực hiện chính sách địa phương"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Một trong những đặc điểm của phong trào toàn dân bảo vệ ANTQ là gì?",
@@ -4147,10 +4282,9 @@
       "Địa lý, nghề nghiệp, tôn giáo, dân tộc",
       "Tình hình ANTT trên địa bàn",
       "Tình hình quần chúng chấp hành",
-      "Cả 3 phương án."
+      "Cả 3 phương án"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Nội dung cụ thể nắm tình hình địa bàn là?",
@@ -4164,7 +4298,7 @@
     "fixed": true
   },
   {
-    "question": "Phương pháp nắm tình hình xây dựng kế hoạch phong trào toàn dân bảo vệ ANTQ:",
+    "question": "Phương pháp nắm tình hình xây dựng kế hoạch phong trào toàn dân bảo vệ ANTQ?",
     "options": [
       "Nghiên cứu, khai thác tài liệu có sẵn",
       "Tiếp xúc, gặp gỡ, thu thập ý kiến",
@@ -4205,7 +4339,7 @@
     "correct": 3
   },
   {
-    "question": "Để bảo vệ an ninh quốc gia, Đảng ta xác định nhiệm vụ trọng yếu hàng đầu, thường xuyên và cấp bách hiện nay là:",
+    "question": "Để bảo vệ an ninh quốc gia, Đảng ta xác định nhiệm vụ trọng yếu hàng đầu, thường xuyên và cấp bách hiện nay là?",
     "options": [
       "Bảo vệ an ninh kinh tế",
       "Bảo vệ an ninh văn hoá",
@@ -4297,7 +4431,7 @@
   {
     "question": "An ninh quốc gia của Việt Nam được khái quát theo nội dung nào?",
     "options": [
-      "Sự ổn định, phát triển bền vững của chế độ nhà nước...",
+      "Sự ổn định, phát triển bền vững của chế độ nhà nước",
       "Giữ bí mật nhà nước và các mục tiêu quan trọng về ANQG",
       "Duy trì hòa bình ổn định và trật tự an toàn xã hội",
       "Đấu tranh làm thất bại các hoạt động chống phá của địch"
@@ -4365,7 +4499,7 @@
     "correct": 0
   },
   {
-    "question": "Mục tiêu quan trọng về an ninh quốc gia là",
+    "question": "Mục tiêu quan trọng về an ninh quốc gia là?",
     "options": [
       "Những đối tượng, địa điểm, công trình, cơ sở về CT, AN, QP, KT, KHKT, VH, XH",
       "Là độc lập chủ quyền, thống nhất, toàn vẹn lãnh thổ nhà nước CHXHCN Việt Nam",
@@ -4387,7 +4521,7 @@
   {
     "question": "Một trong những nhiệm vụ bảo vệ an ninh quốc gia là gì?",
     "options": [
-      "Bảo vệ chế độ và nhà nước CHXHCNVN, độc lập, chủ quyền, tồn vẹn lãnh thổ",
+      "Bảo vệ chế độ và nhà nước CHXHCNVN, độc lập, chủ quyền, toàn vẹn lãnh thổ",
       "Kết hợp chặt chẽ bảo vệ an ninh quốc gia và xây dựng đất nước",
       "Tuân thủ hiến pháp, pháp luật bảo đảm lợi ích nhà nước",
       "Tuân thủ HP, PL và quy định của địa phương bảo đảm lợi ích của tổ chức cá nhân"
@@ -4400,7 +4534,7 @@
       "Bảo vệ an ninh trật tự và văn hoá, khối đại đoàn kêt toàn dân tộc, quyền lợi hợp pháp của nhân dân",
       "Kết hợp chặt chẽ bảo vệ ANQG và xây dựng đất nước",
       "Tuân thủ hiến pháp, pháp luật bảo đảm lợi ích nhà nước",
-      "Tuân thủ Hiến pháp, pháp luật và quy định của đòa phương bảo đảm lợi ích của tổ chức cá nhân"
+      "Tuân thủ Hiến pháp, pháp luật và quy định của địa phương bảo đảm lợi ích của tổ chức cá nhân"
     ],
     "correct": 0
   },
@@ -4410,17 +4544,17 @@
       "Bảo vệ an ninh KT, QP, đối ngoại và các lợi ích quốc gia",
       "Kết hợp chặt chẽ bảo vệ ANQG và xây dựng đất nước",
       "Tuân thủ hiến pháp, pháp luật bảo đảm lợi ích nhà nước",
-      "Tuân thủ HP, PL và quy định của đòa phương bảo đảm lợi ích của tổ chức cá nhân"
+      "Tuân thủ HP, PL và quy định của địa phương bảo đảm lợi ích của tổ chức cá nhân"
     ],
     "correct": 0
   },
   {
     "question": "Để quốc gia luôn được ổn định, phát triển, bền vững cần phải thực hiện tốt nội dung nhiệm vụ nào?",
     "options": [
-      "Giữ bí mật nhà nước và các môc tiêu quan trọng",
+      "Giữ bí mật nhà nước và các mục tiêu quan trọng",
       "Kết hợp chặt chẽ bảo vệ ANQG và xây dựng đất nước",
       "Tuân thủ hiến pháp, pháp luật bảo đảm lợi ích nhà nước",
-      "Tuân thủ Hiến pháp, pháp luật và quy định của đòa phương bảo đảm lợi ích của tổ chức cá nhân"
+      "Tuân thủ Hiến pháp, pháp luật và quy định của địa phương bảo đảm lợi ích của tổ chức cá nhân"
     ],
     "correct": 0
   },
@@ -4430,7 +4564,7 @@
       "phòng ngừa, phát hiện, ngăn chặn, đấu tranh loại trừ các hoạt động xâm phạm ANQG",
       "Kết hợp chặt chẽ bảo vệ ANQG và xây dựng đất nước",
       "Tuân thủ hiến pháp, pháp luật bảo đảm lợi ích nhà nước",
-      "Tuân thủ HP, PL và quy định của đòa phương bảo đảm lợi ích của tổ chức cá nhân"
+      "Tuân thủ HP, PL và quy định của địa phương bảo đảm lợi ích của tổ chức cá nhân"
     ],
     "correct": 0
   },
@@ -4440,7 +4574,7 @@
       "Bảo vệ chế độ chính trị, nhà nước CHXHCNVN độc lập, chủ quyền, toàn vẹn lãnh thổ",
       "Bảo vệ an ninh trật tự, văn hoá, khối đại đoàn kết toàn dân tộc, quyền lợi hợp pháp của tổ chức, cá nhân",
       "Bảo vệ an ninh kinh tế, quốc phòng, đối ngoại và các lợi ích khác của quốc gia",
-      "Bảo vệ bí mật nhà nước và các môc tiêu quan trọng về an ninh quốc gia"
+      "Bảo vệ bí mật nhà nước và các mục tiêu quan trọng về an ninh quốc gia"
     ],
     "correct": 0
   },
@@ -4457,7 +4591,7 @@
   {
     "question": "Một trong những nguyên tắc bảo vệ an ninh quốc gia là gì?",
     "options": [
-      "Đảng lãnh đạo của, NN quản lý huy động sức mạnh tổng hợp...",
+      "Đảng lãnh đạo của, NN quản lý huy động sức mạnh tổng hợp",
       "Bảo vệ an ninh tư tưởng văn hóa, khối đại đoàn kết toàn dân",
       "Bảo vệ chế độ, nhà nước và độc lập, chủ quyền toàn vẹn lãnh thổ",
       "Bảo vệ bí mật nhà nước, phát huy sức mạnh tổng hợp của QPAN"
@@ -4479,7 +4613,7 @@
     "options": [
       "Chủ động phòng ngừa, phát hiện, đấu tranh",
       "Bảo vệ an ninh trật tự, văn hoá, khối đại đoàn kết toàn dân tộc",
-      "Bảo vệ chế độ, Nà nước, chủ quyền, toàn vẹn lãnh thổ",
+      "Bảo vệ chế độ, Nhà nước, chủ quyền, toàn vẹn lãnh thổ",
       "Phương án B và C"
     ],
     "correct": 0,
@@ -4498,8 +4632,8 @@
   {
     "question": "Nguyên tắc bảo vệ an ninh quốc gia là gì?",
     "options": [
-      "Đảng lãnh đạo, Nhà nước quản lí; huy động sức mạnh tổng hợp của toàn dân tộc...",
-      "Kết hợp nhiệm vụ bảo vệ ANQG và xây dựng, phát triển kinh tế - văn hố, xã hội...",
+      "Đảng lãnh đạo, Nhà nước quản lí; huy động sức mạnh tổng hợp của toàn dân tộc",
+      "Kết hợp nhiệm vụ bảo vệ ANQG và xây dựng, phát triển kinh tế - văn hố, xã hội",
       "Chủ động phòng ngừa, đấu tranh làm thất bại mọi âm mưu xâm phạm ANQG",
       "Cả 3 phương án A, B và C"
     ],
@@ -4510,9 +4644,9 @@
     "question": "Nguyên tắc bảo vệ an ninh quốc gia là gì?",
     "options": [
       "Bảo vệ bí mật nhà nước và các mục tiêu quan trọng về an ninh quốc gia",
-      "Đảng lãnh đạo, NN quản lí; huy động sức mạnh tổng hợp của dân tộc...",
+      "Đảng lãnh đạo, NN quản lí; huy động sức mạnh tổng hợp của dân tộc",
       "Phương án B và D",
-      "Chủ động phòng ngừa, đấu tranh làm thất bại mọi âm mưu xâm phạm ANQG."
+      "Chủ động phòng ngừa, đấu tranh làm thất bại mọi âm mưu xâm phạm ANQG"
     ],
     "correct": 2,
     "fixed": true
@@ -4530,7 +4664,7 @@
   {
     "question": "Cơ quan nào có nhiệm vụ chuyên trách trong hoạt động bảo vệ an ninh quốc gia?",
     "options": [
-      "Lực lượng Hải quan Việt Nam.",
+      "Lực lượng Hải quan Việt Nam",
       "Đơn vị bảo vệ an ninh, tình báo quân đội",
       "Cơ quan thanh tra, điều tra, kiểm sát",
       "Các tổ chức chính trị của Đảng và Nhà nước"
@@ -4554,10 +4688,9 @@
       "Biện pháp pháp luật",
       "Biện pháp kinh tế",
       "Biện pháp ngoại giao",
-      "Cả 3 phương án."
+      "Cả 3 phương án"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Để ANQG luôn được ổn định, phát triển bền vững, Đảng ta xác định phải thực hiện biện pháp nào?",
@@ -4567,8 +4700,7 @@
       "Biện pháp nghiệp vụ, vũ trang",
       "Biện pháp khoa học kĩ thuật"
     ],
-    "correct": 1,
-    "fixed": true
+    "correct": 1
   },
   {
     "question": "Một trong những biện pháp bảo vệ an ninh quốc gia là gì?",
@@ -4617,7 +4749,7 @@
   {
     "question": "Biện pháp bảo vệ an ninh quốc gia trong sự nghiệp xây dựng và BVTQ là gì?",
     "options": [
-      "Đánh giá, rút kinh nghiệm.",
+      "Đánh giá, rút kinh nghiệm",
       "Vận động quần chúng",
       "Phương án B và D",
       "Biện pháp vũ trang"
@@ -4657,7 +4789,7 @@
     "correct": 0
   },
   {
-    "question": "Để phòng chống các hoạt động của địch xâm phạm an ninh quốc gia, Đảng ta xác định nội dung nhiệm vụ nào là bộ phận quan trọng ?",
+    "question": "Để phòng chống các hoạt động của địch xâm phạm an ninh quốc gia, Đảng ta xác định nội dung nhiệm vụ nào là bộ phận quan trọng?",
     "options": [
       "Bảo vệ an ninh thông tin",
       "Bảo vệ an ninh dân tộc",
@@ -4671,17 +4803,16 @@
     "options": [
       "An ninh chính trị nội bộ",
       "An ninh kinh tế",
-      "An ninh văn hóa, tư tưởng.",
-      "Cả 3 phương án."
+      "An ninh văn hóa, tư tưởng",
+      "Cả 3 phương án"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Nguyên nhân tiềm ẩn các thế lực thù địch nhằm gây mất ổn định trật tự xã hội là gì?",
     "options": [
       "Bức xúc, bất bình của nhân dân",
-      "Ngụy quyền không chưu cải tạo",
+      "Ngụy quyền không chưa cải tạo",
       "Đảng phái, tổ chức phản động",
       "Cán bộ bất mãn, tiêu cực"
     ],
@@ -4692,7 +4823,7 @@
     "options": [
       "Là nhiệm vụ cực kì quan trọng",
       "Là nhiệm vụ rất quan trọng",
-      "Là nhiệm vụ vụ cựng quan trọng",
+      "Là nhiệm vụ cũng quan trọng",
       "Là nhiệm vụ trọng yếu"
     ],
     "correct": 0
