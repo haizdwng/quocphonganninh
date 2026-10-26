@@ -843,7 +843,9 @@ function scrollReviewToQuestionNumber(questionNumber) {
   requestAnimationFrame(() => {
     syncReviewVirtualWindow();
     requestAnimationFrame(() => {
-      const element = document.getElementById(`review-question-${questionNumber}`);
+      const element = document.getElementById(
+        `review-question-${questionNumber}`,
+      );
       element?.classList.add("review-q-highlight");
     });
   });
@@ -977,7 +979,9 @@ function refreshSetupUI() {
 
   const progress = getDeckProgress(state.currentDeck);
   const completed = new Set(progress.completed);
-  const remaining = questions.filter((q) => !completed.has(q.originalIndex)).length;
+  const remaining = questions.filter(
+    (q) => !completed.has(q.originalIndex),
+  ).length;
   const wrongs = getWrongIndices(state.currentDeck);
   $("stat-completed").textContent = String(completed.size);
   $("stat-remaining").textContent = String(remaining);
@@ -1200,7 +1204,12 @@ function startPracticeBookmarks() {
   persistSetupForm();
   const questions = selectedQuestions(form);
   const bookmarked = getBookmarkedIndices(state.currentDeck);
-  const pool = pickWrong(questions, bookmarked, form.count, form.shuffleQuestions);
+  const pool = pickWrong(
+    questions,
+    bookmarked,
+    form.count,
+    form.shuffleQuestions,
+  );
   if (!pool.length) {
     toast("Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.");
     return;
@@ -1424,10 +1433,16 @@ function startNormal(opts = {}) {
   const rangeEnd = form.endQuestion;
 
   if (opts.restart) {
-    const { items, nextCursor } = pickSequential(questions, 0, form.count, new Set());
+    const { items, nextCursor } = pickSequential(
+      questions,
+      0,
+      form.count,
+      new Set(),
+    );
     const globalNextCursor =
       nextCursor > 0
-        ? questions[Math.min(nextCursor, questions.length) - 1].originalIndex + 1
+        ? questions[Math.min(nextCursor, questions.length) - 1].originalIndex +
+          1
         : rangeStart;
     startSessionFromPool(items, {
       mode: "normal",
@@ -1558,7 +1573,9 @@ function startPracticeWrong(options = {}) {
   persistSetupForm();
   const allDeck = options.allDeck === true;
   const questions = allDeck ? currentQuestions() : selectedQuestions(form);
-  const rangeIndices = new Set(questions.map((question) => question.originalIndex));
+  const rangeIndices = new Set(
+    questions.map((question) => question.originalIndex),
+  );
   const sourceIndices = Array.isArray(options.indices)
     ? options.indices
     : allDeck
@@ -1603,7 +1620,11 @@ function startPracticeWrong(options = {}) {
     forceShuffleQuestions: form.shuffleQuestions,
     alreadyShuffled: true,
     ...(allDeck
-      ? { rangeStart: 1, rangeEnd: questions.length, requestedCount: pool.length }
+      ? {
+          rangeStart: 1,
+          rangeEnd: questions.length,
+          requestedCount: pool.length,
+        }
       : {}),
   });
 }
@@ -2025,7 +2046,9 @@ function patchExamQuestion(qIdx) {
     btn.classList.toggle("selected", selected);
     btn.setAttribute("aria-pressed", String(selected));
   });
-  const dot = $("exam-nav")?.querySelector(`.exam-nav-dot[data-index="${qIdx}"]`);
+  const dot = $("exam-nav")?.querySelector(
+    `.exam-nav-dot[data-index="${qIdx}"]`,
+  );
   if (dot) dot.classList.toggle("is-answered", item.userAnswer != null);
   updateExamProgressHeader();
   applyExamFilter();
@@ -2917,7 +2940,10 @@ function restoreSessionIfAny() {
         item.wrongCount >= 0
       );
     });
-  if (!validSession || (saved.dataFingerprint !== fingerprint && !legacyCompatible)) {
+  if (
+    !validSession ||
+    (saved.dataFingerprint !== fingerprint && !legacyCompatible)
+  ) {
     clearSession(state.currentDeck);
     return false;
   }
