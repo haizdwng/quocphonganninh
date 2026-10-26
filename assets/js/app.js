@@ -943,6 +943,8 @@ function renderQuestionBank() {
 }
 
 function openQuestionBank() {
+  state.setupDeckBeforeBank = state.currentDeck;
+  persistSetupForm();
   state.reviewSelectedIndices.clear();
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
@@ -3281,7 +3283,10 @@ function bindEvents() {
       persistSetupForm();
       state.currentDeck = btn.dataset.deck;
       const settings = getSettings(state.currentDeck);
-      if (endWasMaximum) settings.endQuestion = currentQuestions().length;
+      const currentTotal = currentQuestions().length;
+      settings.endQuestion = endWasMaximum
+        ? currentTotal
+        : Math.min(settings.endQuestion || previousEnd, currentTotal);
       applySettingsToForm(settings);
       refreshSetupUI();
       persistSetupForm();
@@ -3398,6 +3403,7 @@ function bindEvents() {
   }
 
   $("btn-review-back").addEventListener("click", () => {
+    state.currentDeck = state.setupDeckBeforeBank;
     applySettingsToForm(getSettings(state.currentDeck));
     showScreen("setup");
     refreshSetupUI();
@@ -3423,9 +3429,7 @@ function bindEvents() {
     pool = pool.slice(0, take);
     const selectedIndices = pool.map((question) => question.originalIndex);
     state.reviewSelectedIndices.clear();
-    // Keep setup selection independent from the question bank.
-    state.setupDeckBeforeBank = state.currentDeck;
-    state.currentDeck = state.bankDeck;
+    // Keep the setup deck independent from the question bank.
     startSessionFromPool(pool, {
       mode: "normal",
       sequential: false,
