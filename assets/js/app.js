@@ -1027,7 +1027,7 @@ function refreshSetupUI() {
     (question) =>
       question.originalIndex >= start - 1 && question.originalIndex < end,
   );
-  const shuffleQ = $("chk-shuffle-q").checked;
+  const shuffleQuestions = $("chk-shuffle-q").checked;
   const btnContinue = $("btn-continue");
   const nextQuestion = findNextUncompletedQuestion(
     rangeQuestions,
@@ -1036,7 +1036,7 @@ function refreshSetupUI() {
   );
   const nextIndex = nextQuestion?.originalIndex ?? end;
   const canContinue =
-    state.practiceMode !== "exam" && !shuffleQ && !!nextQuestion;
+    state.practiceMode !== "exam" && !shuffleQuestions && !!nextQuestion;
   btnContinue.hidden = !canContinue;
   if (canContinue) {
     const left = end - nextIndex;
@@ -1089,8 +1089,8 @@ function readBankForm() {
     deck: state.bankDeck === "quocphong2" ? "quocphong2" : "quocphong1",
     count,
     timeLimit,
-    shuffleQ: !!$("review-chk-shuffle-q")?.checked,
-    shuffleA: !!$("review-chk-shuffle-a")?.checked,
+    shuffleQuestions: !!$("review-chk-shuffle-q")?.checked,
+    shuffleAnswers: !!$("review-chk-shuffle-a")?.checked,
     practiceMode: state.bankPracticeMode === "exam" ? "exam" : "practice",
     autoCheck: !!$("review-chk-auto-check")?.checked,
     autoAdvance: !!$("review-chk-auto-advance")?.checked,
@@ -1116,8 +1116,8 @@ function applyBankSettingsToForm(settings) {
       ? Math.min(1440, settings.timeLimit)
       : 35,
   );
-  $("review-chk-shuffle-q").checked = settings.shuffleQ !== false;
-  $("review-chk-shuffle-a").checked = settings.shuffleA !== false;
+  $("review-chk-shuffle-q").checked = settings.shuffleQuestions !== false;
+  $("review-chk-shuffle-a").checked = settings.shuffleAnswers !== false;
   if ($("review-chk-auto-check")) {
     $("review-chk-auto-check").checked = settings.autoCheck === true;
     $("review-chk-auto-advance").checked = settings.autoAdvance === true;
@@ -1200,7 +1200,7 @@ function startPracticeBookmarks() {
   persistSetupForm();
   const qs = selectedQuestions(form);
   const bookmarked = getBookmarkedIndices(state.currentDeck);
-  const pool = pickWrong(qs, bookmarked, form.count, form.shuffleQ);
+  const pool = pickWrong(qs, bookmarked, form.count, form.shuffleQuestions);
   if (!pool.length) {
     toast("Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.");
     return;
@@ -1214,7 +1214,7 @@ function startPracticeBookmarks() {
   startSessionFromPool(pool, {
     mode: "practice-bookmarks",
     sequential: false,
-    forceShuffleQ: form.shuffleQ,
+    forceShuffleQuestions: form.shuffleQuestions,
     alreadyShuffled: true,
   });
 }
@@ -1239,9 +1239,9 @@ function readSetupForm() {
   if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
   timeLimit = Math.min(1440, timeLimit);
   $("input-time-limit").value = String(timeLimit);
-  const shuffleQ = $("chk-shuffle-q").checked;
-  const shuffleA = $("chk-shuffle-a").checked;
-  return { count, shuffleQ, shuffleA, startQuestion, endQuestion, timeLimit };
+  const shuffleQuestions = $("chk-shuffle-q").checked;
+  const shuffleAnswers = $("chk-shuffle-a").checked;
+  return { count, shuffleQuestions, shuffleAnswers, startQuestion, endQuestion, timeLimit };
 }
 
 function persistSetupForm() {
@@ -1249,8 +1249,8 @@ function persistSetupForm() {
   const saved = saveSettings({
     deck: state.currentDeck,
     count: form.count,
-    shuffleQ: form.shuffleQ,
-    shuffleA: form.shuffleA,
+    shuffleQuestions: form.shuffleQuestions,
+    shuffleAnswers: form.shuffleAnswers,
     startQuestion: form.startQuestion,
     endQuestion: form.endQuestion,
     timeLimit: form.timeLimit,
@@ -1279,8 +1279,8 @@ function applySettingsToForm(settings) {
   $("input-range-end").value = String(
     settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total,
   );
-  $("chk-shuffle-q").checked = !!settings.shuffleQ;
-  $("chk-shuffle-a").checked = !!settings.shuffleA;
+  $("chk-shuffle-q").checked = !!settings.shuffleQuestions;
+  $("chk-shuffle-a").checked = !!settings.shuffleAnswers;
   $("chk-auto-check").checked = settings.autoCheck === true;
   $("chk-auto-advance").checked = settings.autoAdvance === true;
   $("chk-sound").checked = settings.soundEnabled !== false;
@@ -1311,20 +1311,20 @@ function startSessionFromPool(pool, meta) {
   const form = fromBank
     ? {
         ...readBankForm(),
-        shuffleA:
-          meta.shuffleA != null ? meta.shuffleA : readBankForm().shuffleA,
+        shuffleAnswers:
+          meta.shuffleAnswers != null ? meta.shuffleAnswers : readBankForm().shuffleAnswers,
         timeLimit:
           meta.timeLimit != null ? meta.timeLimit : readBankForm().timeLimit,
       }
     : readSetupForm();
-  const shuffleA = meta.shuffleA != null ? meta.shuffleA : form.shuffleA;
-  const shuffleQ =
-    meta.forceShuffleQ != null ? meta.forceShuffleQ : form.shuffleQ;
-  const shouldShuffleQ = meta.alreadyShuffled ? false : !!shuffleQ;
+  const shuffleAnswers = meta.shuffleAnswers != null ? meta.shuffleAnswers : form.shuffleAnswers;
+  const shuffleQuestions =
+    meta.forceShuffleQuestions != null ? meta.forceShuffleQuestions : form.shuffleQuestions;
+  const shouldShuffleQuestions = meta.alreadyShuffled ? false : !!shuffleQuestions;
   const timeLimit = meta.timeLimit != null ? meta.timeLimit : form.timeLimit;
   const items = createSessionItems(pool, {
-    shuffleQ: shouldShuffleQ,
-    shuffleA,
+    shuffleQuestions: shouldShuffleQuestions,
+    shuffleAnswers,
   });
   const session = {
     deckId: state.currentDeck,
@@ -1336,8 +1336,8 @@ function startSessionFromPool(pool, meta) {
     sequential: !!meta.sequential,
     startCursor: meta.startCursor ?? null,
     nextCursor: meta.nextCursor ?? null,
-    shuffleQ,
-    shuffleA,
+    shuffleQuestions,
+    shuffleAnswers,
     fromBank,
     pool: pool.map((q) => ({
       originalIndex: q.originalIndex,
@@ -1420,7 +1420,7 @@ function startNormal(opts = {}) {
       sequential: true,
       startCursor: rangeStart,
       nextCursor: globalNextCursor,
-      forceShuffleQ: false,
+      forceShuffleQuestions: false,
       alreadyShuffled: true,
     });
     return;
@@ -1462,13 +1462,13 @@ function startNormal(opts = {}) {
       sequential: true,
       startCursor: cursor,
       nextCursor: globalNextCursor,
-      forceShuffleQ: false,
+      forceShuffleQuestions: false,
       alreadyShuffled: true,
     });
     return;
   }
 
-  if (form.shuffleQ) {
+  if (form.shuffleQuestions) {
     const remainingCount = qs.filter(
       (question) => !completedSet.has(question.originalIndex),
     ).length;
@@ -1489,7 +1489,7 @@ function startNormal(opts = {}) {
     startSessionFromPool(pool, {
       mode: "normal",
       sequential: false,
-      forceShuffleQ: true,
+      forceShuffleQuestions: true,
       alreadyShuffled: true,
     });
     return;
@@ -1515,7 +1515,7 @@ function startNormal(opts = {}) {
     startSessionFromPool(pool, {
       mode: "normal",
       sequential: false,
-      forceShuffleQ: true,
+      forceShuffleQuestions: true,
       alreadyShuffled: true,
     });
     toast(
@@ -1535,7 +1535,7 @@ function startNormal(opts = {}) {
     sequential: true,
     startCursor: cursor,
     nextCursor: globalNextCursor,
-    forceShuffleQ: false,
+    forceShuffleQuestions: false,
     alreadyShuffled: true,
   });
 }
@@ -1569,7 +1569,7 @@ function startPracticeWrong(options = {}) {
     qs,
     wrongs,
     allDeck ? wrongs.length : form.count,
-    form.shuffleQ,
+    form.shuffleQuestions,
   );
   if (!pool.length) {
     toast(
@@ -1586,7 +1586,7 @@ function startPracticeWrong(options = {}) {
   startSessionFromPool(pool, {
     mode: "practice-wrong",
     sequential: false,
-    forceShuffleQ: form.shuffleQ,
+    forceShuffleQuestions: form.shuffleQuestions,
     alreadyShuffled: true,
     ...(allDeck
       ? { rangeStart: 1, rangeEnd: qs.length, requestedCount: pool.length }
@@ -3279,7 +3279,7 @@ function bindEvents() {
       return;
     }
     let pool = selected.slice();
-    if (form.shuffleQ) {
+    if (form.shuffleQuestions) {
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -3298,11 +3298,11 @@ function bindEvents() {
       rangeEnd: Math.max(...selectedIndices) + 1,
       requestedCount: pool.length,
       examMode: form.practiceMode === "exam",
-      forceShuffleQ: form.shuffleQ,
+      forceShuffleQuestions: form.shuffleQuestions,
       alreadyShuffled: true,
       fromBank: true,
       timeLimit: form.timeLimit,
-      shuffleA: form.shuffleA,
+      shuffleAnswers: form.shuffleAnswers,
     });
   });
   $("btn-review-goto").addEventListener("click", () => {
@@ -3553,7 +3553,7 @@ function bindEvents() {
       rangeEnd: previous.rangeEnd,
       requestedCount: pool.length,
       examMode: previous.mode === "exam",
-      forceShuffleQ: true,
+      forceShuffleQuestions: true,
       alreadyShuffled: false,
     });
   });
