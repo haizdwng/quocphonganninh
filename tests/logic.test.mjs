@@ -223,13 +223,31 @@ test("sao lưu và khôi phục giữ tùy chọn cùng tiến độ", () => {
     bookmarks: [2],
     dataFingerprint: "fp-backup",
   });
+  storage.saveDeckProgress("quocphong2", {
+    sequentialCursor: 2,
+    completed: [1],
+    wrongMap: { 3: 2 },
+    wrongRangeMap: {},
+    practiceMap: {},
+    bookmarks: [4],
+    dataFingerprint: "fp-backup-2",
+  });
+  storage.saveBankSettings({
+    deck: "quocphong2",
+    count: 17,
+    timeLimit: 0,
+  });
   const backup = storage.exportBackup();
   localStorage.clear();
   assert.equal(storage.importBackup(backup), true);
   assert.equal(storage.getSettings("quocphong1").count, 17);
+  assert.equal(storage.getSettings("quocphong2").count, 17);
   assert.equal(storage.getSettings("quocphong1").timeLimit, 0);
+  assert.equal(storage.getBankSettings().deck, "quocphong2");
   assert.deepEqual(storage.getDeckProgress("quocphong1").completed, [0, 3]);
   assert.deepEqual(storage.getBookmarkedIndices("quocphong1"), [2]);
+  assert.deepEqual(storage.getDeckProgress("quocphong2").completed, [1]);
+  assert.deepEqual(storage.getBookmarkedIndices("quocphong2"), [4]);
 });
 
 test("màn hình thiết lập dùng thẻ phiên đang dở thay cho lịch sử 10 phiên", () => {
