@@ -1,6 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
+import fileSystem from "node:fs";
 
 const values = new Map();
 globalThis.localStorage = {
@@ -251,15 +251,15 @@ test("sao lưu và khôi phục giữ tùy chọn cùng tiến độ", () => {
 });
 
 test("màn hình thiết lập dùng thẻ phiên đang dở thay cho lịch sử 10 phiên", () => {
-  const html = fs.readFileSync(
+  const html = fileSystem.readFileSync(
     new URL("../index.html", import.meta.url),
     "utf8",
   );
-  const app = fs.readFileSync(
+  const app = fileSystem.readFileSync(
     new URL("../assets/js/app.js", import.meta.url),
     "utf8",
   );
-  const css = fs.readFileSync(
+  const css = fileSystem.readFileSync(
     new URL("../assets/css/style.css", import.meta.url),
     "utf8",
   );
