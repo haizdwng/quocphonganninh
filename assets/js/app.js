@@ -3374,7 +3374,7 @@ function bindEvents() {
     startPracticeBookmarks();
   });
 
-  // Tuỳ chọn ngân hàng lưu riêng — không đồng bộ với trang thiết lập
+  // Question bank preferences share the main setup settings.
   for (const reviewId of [
     "review-input-count",
     "review-input-time-limit",
@@ -3439,8 +3439,6 @@ function bindEvents() {
     if (!ok) return;
     clearInterval(state.timerInterval);
     state.timerInterval = null;
-    if (s) {
-    }
     clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
@@ -3539,9 +3537,6 @@ function bindEvents() {
     if (!ok) return;
     clearInterval(state.timerInterval);
     state.timerInterval = null;
-    const currentSession = state.session;
-    if (currentSession) {
-    }
     const cleared = clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
