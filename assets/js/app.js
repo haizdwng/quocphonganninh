@@ -28,7 +28,7 @@ import {
 } from "./storage.js";
 import { initEnhance } from "./enhance.js";
 import { calculateStudyStatistics } from "./statistics.js";
-import { initStudyTools, recordStudyAnswer, exportStudyReportCsv, getCustomQuestionBank } from "./study-tools.js";
+import { initStudyTools, recordStudyAnswer, exportStudyReportCsv, getCustomQuestionBank, getQuestionCategory } from "./study-tools.js";
 import {
   fingerprintQuestions,
   normalizeQuestions,
@@ -551,8 +551,10 @@ function getFilteredBankQuestions() {
     topicSelect.value = topics.includes(selectedTopic) ? selectedTopic : "";
   }
   const selectedTopic = topicSelect?.value || "";
+  const selectedCategory = $("review-category-filter")?.value || "";
   const filtered = questions.filter((question) => {
     if (selectedTopic && question.topic !== selectedTopic) return false;
+    if (selectedCategory && getQuestionCategory(state.bankDeck, question.originalIndex) !== selectedCategory) return false;
     if (!search) return true;
     return [question.question, ...question.options, question.explanation, question.topic]
       .some((value) => String(value || "").toLocaleLowerCase().includes(search));
@@ -3408,6 +3410,7 @@ function bindEvents() {
   initEnhance({ onPrev, onNext });
   $("review-search")?.addEventListener("input", renderQuestionBank);
   $("review-topic-filter")?.addEventListener("change", renderQuestionBank);
+  $("review-category-filter")?.addEventListener("change", renderQuestionBank);
   document.addEventListener("study-tools-duplicate-check", (event) => {
     const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
     const groups = findDuplicateQuestions(state.decks[deckId] || []);
