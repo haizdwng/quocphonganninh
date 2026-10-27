@@ -332,6 +332,14 @@
               <div><span>Câu đến hạn ôn</span><strong id="study-due-count">0</strong></div>
               <div><span>Ghi chú</span><strong id="study-notes-count">0</strong></div>
             </div>
+            <h3>Lịch học 7 ngày gần đây</h3>
+            <div id="study-calendar" class="study-calendar" aria-label="Số câu đã làm mỗi ngày"></div>
+            <div class="study-reminder">
+              <label for="study-reminder-time">Giờ nhắc học</label>
+              <input id="study-reminder-time" type="time" value="20:00">
+              <button type="button" class="btn btn-ghost" id="study-reminder-toggle">Bật nhắc học</button>
+              <p class="hint">Nhắc học bằng thông báo trình duyệt khi trang đang mở; không cần tài khoản hay máy chủ.</p>
+            </div>
             <div class="study-tools-row">
               <label for="study-daily-goal">Mục tiêu câu/ngày</label>
               <input id="study-daily-goal" type="number" min="1" max="500" value="20" inputmode="numeric">
@@ -357,9 +365,10 @@
             </div>
             <hr class="study-tools-divider">
             <h3>Sao lưu công cụ học tập</h3>
-            <p class="hint">Xuất/nhập ghi chú, lịch ôn và mục tiêu học. Tiến độ và thiết lập hiện có vẫn được quản lý riêng.</p>
+            <p class="hint">Xuất/nhập ghi chú, phân loại, lịch ôn và mục tiêu. Tệp JSON có thể chuyển thủ công sang thiết bị khác; không có đồng bộ tự động.</p>
             <div class="study-tools-row">
               <button type="button" class="btn btn-ghost" id="study-tools-export">Xuất dữ liệu</button>
+              <button type="button" class="btn btn-ghost" id="study-report-export">Xuất báo cáo CSV</button>
               <label class="btn btn-ghost study-import-label" for="study-tools-import-file">Nhập dữ liệu</label>
               <input id="study-tools-import-file" type="file" accept="application/json,.json" hidden>
             </div>

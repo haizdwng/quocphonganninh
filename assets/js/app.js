@@ -28,7 +28,7 @@ import {
 } from "./storage.js";
 import { initEnhance } from "./enhance.js";
 import { calculateStudyStatistics } from "./statistics.js";
-import { initStudyTools, recordStudyAnswer } from "./study-tools.js";
+import { initStudyTools, recordStudyAnswer, exportStudyReportCsv } from "./study-tools.js";
 import {
   fingerprintQuestions,
   normalizeQuestions,
@@ -3331,6 +3331,21 @@ function bindKeyboardShortcuts() {
 function bindEvents() {
   bindKeyboardShortcuts();
   initEnhance({ onPrev, onNext });
+  document.addEventListener("study-tools-report-export", () => {
+    const rows = ["quocphong1", "quocphong2"].map((deckId) => ({
+      deckId,
+      label: DECKS[deckId].label,
+      questions: state.decks[deckId] || [],
+      progress: getDeckProgress(deckId),
+    }));
+    const blob = new Blob([exportStudyReportCsv(rows)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "bao-cao-hoc-tap-quoc-phong.csv";
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
   document.addEventListener("study-tools-wrong-review", (event) => {
     const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
     const progress = getDeckProgress(deckId);

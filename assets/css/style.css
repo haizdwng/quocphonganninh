@@ -2269,3 +2269,12 @@ body.theme-light { background: linear-gradient(180deg, var(--bg-2) 0, var(--bg) 
 
 .storage-recovery-notice { border-color: #b7791f; background: color-mix(in srgb, var(--surface) 92%, #b7791f); }
 .storage-recovery-notice h2 { color: #d69e2e; }
+
+.study-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; align-items: end; margin: 8px 0 16px; padding: 12px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+.study-calendar-day { display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 3px; min-width: 0; font-size: .7rem; }
+.study-calendar-day strong { font-size: .75rem; font-variant-numeric: tabular-nums; }
+.study-calendar-day small { color: var(--muted); line-height: 1.2; }
+.study-calendar-bar { display: block; width: min(100%, 22px); min-height: 4px; border-radius: 5px 5px 2px 2px; background: var(--primary); }
+.study-reminder { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.study-reminder input { min-height: var(--touch); padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); }
+.study-reminder .hint { flex-basis: 100%; }

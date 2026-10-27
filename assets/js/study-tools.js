@@ -117,6 +117,68 @@ export function getQuestionNote(deckId, questionIndex) {
   return typeof notes[questionIndex] === "string" ? notes[questionIndex] : "";
 }
 
+export function getStudyCalendar(days = 7, now = new Date()) {
+  const data = readData();
+  const activity = data.activity || {};
+  const count = Math.max(1, Math.min(31, Math.floor(days) || 7));
+  const result = [];
+  for (let offset = count - 1; offset >= 0; offset -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
+    const key = dayKey(date);
+    result.push({
+      key,
+      label: new Intl.DateTimeFormat("vi-VN", { weekday: "short" }).format(date),
+      dateLabel: `${date.getDate()}/${date.getMonth() + 1}`,
+      count: Math.max(0, Number(activity[key]) || 0),
+    });
+  }
+  return result;
+}
+
+export function exportStudyReportCsv(decks) {
+  const data = readData();
+  const rows = [[
+    "Bộ đề", "Câu", "Nội dung câu hỏi", "Đã hoàn thành", "Số lần sai",
+    "Số lượt ôn", "Đã đánh dấu", "Đến hạn ôn", "Mức độ", "Phân loại",
+    "Ghi chú", "Lần trả lời gần nhất",
+  ]];
+  const now = Date.now();
+  for (const entry of Array.isArray(decks) ? decks : []) {
+    if (!DECKS.includes(entry.deckId) || !Array.isArray(entry.questions)) continue;
+    const progress = entry.progress || {};
+    const completed = new Set(Array.isArray(progress.completed) ? progress.completed : []);
+    const bookmarks = new Set(Array.isArray(progress.bookmarks) ? progress.bookmarks : []);
+    const wrongMap = progress.wrongMap || {};
+    const practiceMap = progress.practiceMap || {};
+    const deck = getDeck(data, entry.deckId);
+    const schedule = deck.schedule || {};
+    const notes = deck.notes || {};
+    const categories = deck.categories || {};
+    for (const question of entry.questions) {
+      const index = question.originalIndex;
+      const record = schedule[index] || {};
+      const reps = Math.max(0, Number(record.repetitions) || 0);
+      const mastery = !record.lastAnsweredAt ? "Chưa ôn" : !record.lastCorrect ? "Cần ôn" : reps >= 4 ? "Thành thạo" : reps >= 2 ? "Đang nhớ" : "Đang học";
+      rows.push([
+        entry.label || entry.deckId,
+        index + 1,
+        question.question || "",
+        completed.has(index) ? "Có" : "Không",
+        Number(wrongMap[index]) || 0,
+        Number(practiceMap[index]) || 0,
+        bookmarks.has(index) ? "Có" : "Không",
+        Number(record.dueAt) > 0 && Number(record.dueAt) <= now ? "Có" : "Không",
+        mastery,
+        ({ remember: "Cần ghi nhớ", confusing: "Hay nhầm", important: "Trọng tâm" })[categories[index]] || "",
+        notes[index] || "",
+        record.lastAnsweredAt ? new Date(record.lastAnsweredAt).toISOString() : "",
+      ]);
+    }
+  }
+  const quote = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  return "\uFEFF" + rows.map((row) => row.map(quote).join(",")).join("\r\n");
+}
+
 export function getStudyToolSummary(now = new Date()) {
   const data = readData();
   const today = dayKey(now);
@@ -180,6 +242,7 @@ function renderSummary() {
   const streak = document.getElementById("study-streak");
   const due = document.getElementById("study-due-count");
   const notes = document.getElementById("study-notes-count");
+  const calendar = document.getElementById("study-calendar");
   if (goal && document.activeElement !== goal) goal.value = String(summary.dailyGoal);
   if (progress) {
     const percent = Math.min(100, Math.round(summary.todayCount / summary.dailyGoal * 100));
@@ -189,6 +252,32 @@ function renderSummary() {
   if (streak) streak.textContent = `${summary.streak} ngày`;
   if (due) due.textContent = String(summary.dueCount);
   if (notes) notes.textContent = String(summary.notesCount);
+  if (calendar) {
+    const days = getStudyCalendar(7);
+    const maxCount = Math.max(1, ...days.map((day) => day.count));
+    calendar.replaceChildren(...days.map((day) => {
+      const item = document.createElement("div");
+      item.className = "study-calendar-day";
+      item.title = `${day.dateLabel}: ${day.count} câu`;
+      const bar = document.createElement("span");
+      bar.className = "study-calendar-bar";
+      bar.style.height = `${Math.max(4, Math.round(day.count / maxCount * 42))}px`;
+      bar.setAttribute("aria-hidden", "true");
+      const count = document.createElement("strong");
+      count.textContent = String(day.count);
+      const label = document.createElement("small");
+      label.textContent = day.label;
+      const date = document.createElement("small");
+      date.textContent = day.dateLabel;
+      item.append(bar, count, label, date);
+      return item;
+    }));
+  }
+  const reminderButton = document.getElementById("study-reminder-toggle");
+  const reminder = readData();
+  if (reminderButton) reminderButton.textContent = reminder.reminderEnabled ? "Tắt nhắc học" : "Bật nhắc học";
+  const reminderInput = document.getElementById("study-reminder-time");
+  if (reminderInput && document.activeElement !== reminderInput && /^\\d{2}:\\d{2}$/.test(reminder.reminderTime || "")) reminderInput.value = reminder.reminderTime;
 }
 
 export function initStudyTools() {
@@ -198,6 +287,22 @@ export function initStudyTools() {
   renderSummary();
   document.getElementById("study-daily-goal")?.addEventListener("change", (event) => {
     setDailyGoal(event.currentTarget.value);
+    renderSummary();
+  });
+  document.getElementById("study-reminder-toggle")?.addEventListener("click", async () => {
+    const data = readData();
+    if (data.reminderEnabled) {
+      data.reminderEnabled = false;
+      writeData(data);
+      renderSummary();
+      return;
+    }
+    if (!("Notification" in window)) { alert("Trình duyệt này không hỗ trợ thông báo."); return; }
+    const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (permission !== "granted") { alert("Bạn chưa cấp quyền thông báo cho trang web."); return; }
+    data.reminderEnabled = true;
+    data.reminderTime = document.getElementById("study-reminder-time").value || "20:00";
+    writeData(data);
     renderSummary();
   });
   document.getElementById("study-theme-toggle")?.addEventListener("click", () => {
@@ -280,6 +385,19 @@ export function initStudyTools() {
     eventThemeLabel(theme === "light");
   } catch {}
   document.addEventListener("study-tools-answer-recorded", renderSummary);
+  if (!window.__studyReminderInterval) {
+    window.__studyReminderInterval = window.setInterval(() => {
+      const data = readData();
+      if (!data.reminderEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+      const now = new Date();
+      const today = dayKey(now);
+      const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      if (time !== (data.reminderTime || "20:00") || data.lastReminderDay === today) return;
+      data.lastReminderDay = today;
+      if (!writeData(data)) return;
+      try { new Notification("Đến giờ ôn tập", { body: "Dành vài phút ôn các câu hỏi đến hạn nhé.", icon: new URL("../icons/icon.svg", import.meta.url).href }); } catch {}
+    }, 30000);
+  }
 }
 
 function eventThemeLabel(light) {
