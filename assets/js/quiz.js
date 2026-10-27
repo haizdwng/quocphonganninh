@@ -1,5 +1,5 @@
 function stableQuestionId(question) {
-  const source = JSON.stringify({ question: question.question.trim(), options: question.options.map((option) => option.trim()), correct: question.correct, fixed: question.fixed === true });
+  const source = JSON.stringify({ question: question.question.trim().replace(/\s+/g, " "), options: question.options.map((option) => option.trim().replace(/\s+/g, " ")), correct: question.correct, fixed: question.fixed === true });
   let hash = 2166136261;
   for (let index = 0; index < source.length; index++) { hash ^= source.charCodeAt(index); hash = Math.imul(hash, 16777619); }
   return `q-${(hash >>> 0).toString(16).padStart(8, "0")}`;
@@ -9,8 +9,8 @@ export function findDuplicateQuestions(questions) {
   const groups = new Map();
   for (const question of Array.isArray(questions) ? questions : []) {
     const key = JSON.stringify({
-      question: String(question.question || "").trim().replace(/\\s+/g, " ").toLocaleLowerCase(),
-      options: Array.isArray(question.options) ? question.options.map((option) => String(option).trim().replace(/\\s+/g, " ").toLocaleLowerCase()) : [],
+      question: String(question.question || "").trim().replace(/\s+/g, " ").toLocaleLowerCase(),
+      options: Array.isArray(question.options) ? question.options.map((option) => String(option).trim().replace(/\s+/g, " ").toLocaleLowerCase()) : [],
       correct: question.correct,
       fixed: question.fixed === true,
     });
