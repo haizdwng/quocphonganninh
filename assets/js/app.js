@@ -37,6 +37,7 @@ import {
   findNextUncompletedQuestion,
   findDuplicateQuestions,
   findConflictingQuestions,
+  remapQuestionProgress,
   pickRandom,
   pickWrong,
   isAnswerCorrect,
@@ -125,33 +126,53 @@ async function loadDeck(id) {
   const last =
     questions[questions.length - 1]?.question?.trim().slice(0, 40) || "";
   const legacyFingerprint = `${questions.length}|${first}|${last}`;
+  const questionIds = questions.map((question) => question.id);
+  const oldQuestionIds = progress.questionIds;
   if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
     if (progress.dataFingerprint === legacyFingerprint) {
       state.legacyFingerprintMatched[id] = true;
-      progress.dataFingerprint = fingerprint;
-      if (!saveDeckProgress(id, progress))
-        toast("Không thể cập nhật phiên bản tiến độ trong trình duyệt.");
     } else {
+      const remapped = remapQuestionProgress(progress, oldQuestionIds, questions);
+      if (remapped) {
+        Object.assign(progress, remapped);
+        toast(`${meta.label}: đã ghép tiến độ theo ID câu hỏi ổn định.`);
+      } else {
+        progress.completed = [];
+        progress.sequentialCursor = 0;
+        progress.wrongMap = {};
+        progress.wrongRangeMap = {};
+        progress.practiceMap = {};
+        progress.bookmarks = [];
+      }
+      clearSession(id);
+      if (!resetDeckHighlights(id)) toast("Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.");
+    }
+    progress.dataFingerprint = fingerprint;
+    progress.questionIds = questionIds;
+    if (!saveDeckProgress(id, progress)) toast("Không thể lưu tiến độ đã cập nhật trong trình duyệt.");
+  } else if (!progress.dataFingerprint) {
+    progress.dataFingerprint = fingerprint;
+    progress.questionIds = questionIds;
+    if (!saveDeckProgress(id, progress)) toast("Không thể lưu dấu vân tay bộ đề vào trình duyệt.");
+  } else if (!Array.isArray(oldQuestionIds) || !oldQuestionIds.length) {
+    progress.questionIds = questionIds;
+    if (!saveDeckProgress(id, progress)) toast("Không thể lưu ID câu hỏi vào tiến độ.");
+  } else if (JSON.stringify(oldQuestionIds) !== JSON.stringify(questionIds)) {
+    const remapped = remapQuestionProgress(progress, oldQuestionIds, questions);
+    if (remapped) Object.assign(progress, remapped);
+    else {
       progress.completed = [];
       progress.sequentialCursor = 0;
       progress.wrongMap = {};
       progress.wrongRangeMap = {};
       progress.practiceMap = {};
       progress.bookmarks = [];
-      progress.dataFingerprint = fingerprint;
-      if (!saveDeckProgress(id, progress))
-        toast(
-          "Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.",
-        );
-      if (!resetDeckHighlights(id))
-        toast(
-          "Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.",
-        );
     }
-  } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fingerprint;
-    if (!saveDeckProgress(id, progress))
-      toast("Không thể lưu dấu vân tay bộ đề vào trình duyệt.");
+    progress.questionIds = questionIds;
+    clearSession(id);
+    resetDeckHighlights(id);
+    if (!saveDeckProgress(id, progress)) toast("Không thể lưu tiến độ sau khi cập nhật ID câu hỏi.");
   }
 
   const progressBeforeSanitize = JSON.stringify(progress);
@@ -195,18 +216,34 @@ function loadCustomDeck(rawQuestions) {
   const fingerprint = fingerprintQuestions(questions);
   state.fingerprints.custom = fingerprint;
   const progress = getDeckProgress("custom");
+  const questionIds = questions.map((question) => question.id);
   if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
-    progress.completed = [];
-    progress.sequentialCursor = 0;
-    progress.wrongMap = {};
-    progress.wrongRangeMap = {};
-    progress.practiceMap = {};
-    progress.bookmarks = [];
+    const remapped = remapQuestionProgress(progress, progress.questionIds, questions);
+    if (remapped) Object.assign(progress, remapped);
+    else {
+      progress.completed = [];
+      progress.sequentialCursor = 0;
+      progress.wrongMap = {};
+      progress.wrongRangeMap = {};
+      progress.practiceMap = {};
+      progress.bookmarks = [];
+    }
     progress.dataFingerprint = fingerprint;
-    saveDeckProgress("custom", progress);
+    progress.questionIds = questionIds;
+    clearSession("custom");
     resetDeckHighlights("custom");
-  } else if (!progress.dataFingerprint) {
+    saveDeckProgress("custom", progress);
+  } else if (!progress.dataFingerprint || !Array.isArray(progress.questionIds) || !progress.questionIds.length) {
     progress.dataFingerprint = fingerprint;
+    progress.questionIds = questionIds;
+    saveDeckProgress("custom", progress);
+  } else if (JSON.stringify(progress.questionIds) !== JSON.stringify(questionIds)) {
+    const remapped = remapQuestionProgress(progress, progress.questionIds, questions);
+    if (remapped) Object.assign(progress, remapped);
+    progress.dataFingerprint = fingerprint;
+    progress.questionIds = questionIds;
+    clearSession("custom");
+    resetDeckHighlights("custom");
     saveDeckProgress("custom", progress);
   }
   const valid = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
