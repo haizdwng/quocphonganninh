@@ -582,7 +582,7 @@ function getFilteredBankQuestions() {
   const topicSelect = $("review-topic-filter");
   if (topicSelect && topicSelect.dataset.deck !== state.bankDeck) {
     const selectedTopic = topicSelect.value;
-    const topics = [...new Set(questions.map((question) => question.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi"));
+    const topics = [...new Set(questions.map((question) => question.topic).filter(Boolean))].sort((leftTopic, rightTopic) => leftTopic.localeCompare(rightTopic, "vi"));
     topicSelect.replaceChildren(new Option("Tất cả chủ đề", ""));
     for (const topic of topics) topicSelect.add(new Option(topic, topic));
     topicSelect.dataset.deck = state.bankDeck;
@@ -3489,7 +3489,7 @@ function bindEvents() {
   document.addEventListener("study-tools-wrong-review", (event) => {
     const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
     const progress = getDeckProgress(deckId);
-    const indices = Object.entries(progress.wrongMap || {}).filter(([, count]) => Number.isInteger(count) && count > 0).sort((a, b) => b[1] - a[1]).map(([index]) => Number(index));
+    const indices = Object.entries(progress.wrongMap || {}).filter(([, count]) => Number.isInteger(count) && count > 0).sort((leftEntry, rightEntry) => rightEntry[1] - leftEntry[1]).map(([index]) => Number(index));
     if (!indices.length) { toast("Bộ đề này chưa có câu sai được ghi nhận."); return; }
     state.currentDeck = deckId;
     state.bankDeck = deckId;
@@ -3521,7 +3521,6 @@ function bindEvents() {
       if (state.currentDeck === btn.dataset.deck) return;
       const previousTotal = currentQuestions().length;
       const previousEnd = Number.parseInt($("input-range-end").value, 10);
-      const endWasMaximum = previousEnd >= previousTotal;
       persistSetupForm();
       state.currentDeck = btn.dataset.deck;
       const settings = getSettings(state.currentDeck);
