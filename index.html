@@ -66,6 +66,9 @@
                 <span class="deck-name">Quốc Phòng 2</span>
                 <span class="deck-count" id="count-quocphong2">262 câu</span>
               </button>
+              <button type="button" class="deck-btn" data-deck="custom" id="btn-deck-custom" hidden>
+                <span class="deck-name">Bộ đề nhập</span><span class="deck-count" id="count-custom">0 câu</span>
+              </button>
             </div>
           </div>
 
@@ -352,7 +355,7 @@
             <h3>Ghi chú theo câu hỏi</h3>
             <div class="study-note-fields">
               <label for="study-note-deck">Bộ đề</label>
-              <select id="study-note-deck"><option value="quocphong1">Quốc Phòng 1</option><option value="quocphong2">Quốc Phòng 2</option></select>
+              <select id="study-note-deck"><option value="quocphong1">Quốc Phòng 1</option><option value="quocphong2">Quốc Phòng 2</option><option value="custom" hidden>Bộ đề nhập</option></select>
               <label for="study-note-question">Số câu</label>
               <input id="study-note-question" type="number" min="1" value="1" inputmode="numeric">
               <label for="study-note-category">Phân loại</label>
@@ -363,6 +366,14 @@
                 <button type="button" class="btn btn-primary" id="study-note-save">Lưu ghi chú</button>
               </div>
               <p id="study-note-status" class="hint" aria-live="polite"></p>
+            </div>
+            <hr class="study-tools-divider">
+            <h3>Nhập bộ đề JSON riêng</h3>
+            <p class="hint">Nhập một mảng JSON câu hỏi. Hỗ trợ question, options, correct và tùy chọn id, topic/section, explanation/explain, fixed. Tối đa 2.000 câu, 6 đáp án/câu và 2 MB. Bộ đề gốc không bị thay đổi.</p>
+            <div class="study-tools-row">
+              <label class="btn btn-secondary study-import-label" for="custom-bank-import-file">Nhập bộ đề JSON</label>
+              <input id="custom-bank-import-file" type="file" accept="application/json,.json" hidden>
+              <button type="button" class="btn btn-ghost" id="custom-bank-export">Xuất bộ đề nhập</button>
             </div>
             <hr class="study-tools-divider">
             <h3>Sao lưu công cụ học tập</h3>
@@ -453,6 +464,9 @@
                 <span class="deck-count" id="bank-count-quocphong2"
                   >262 câu</span
                 >
+              </button>
+              <button type="button" class="deck-btn" data-bank-deck="custom" id="btn-bank-deck-custom" hidden>
+                <span class="deck-name">Bộ đề nhập</span><span class="deck-count" id="bank-count-custom">0 câu</span>
               </button>
             </div>
             <div class="review-practice-settings">

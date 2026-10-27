@@ -28,7 +28,7 @@ import {
 } from "./storage.js";
 import { initEnhance } from "./enhance.js";
 import { calculateStudyStatistics } from "./statistics.js";
-import { initStudyTools, recordStudyAnswer, exportStudyReportCsv } from "./study-tools.js";
+import { initStudyTools, recordStudyAnswer, exportStudyReportCsv, getCustomQuestionBank } from "./study-tools.js";
 import {
   fingerprintQuestions,
   normalizeQuestions,
@@ -57,9 +57,9 @@ const DECKS = {
 };
 
 const state = {
-  decks: { quocphong1: null, quocphong2: null },
-  fingerprints: { quocphong1: "", quocphong2: "" },
-  legacyFingerprintMatched: { quocphong1: false, quocphong2: false },
+  decks: { quocphong1: null, quocphong2: null, custom: null },
+  fingerprints: { quocphong1: "", quocphong2: "", custom: "" },
+  legacyFingerprintMatched: { quocphong1: false, quocphong2: false, custom: false },
   loading: true,
   error: null,
   currentDeck: "quocphong1",
@@ -183,6 +183,46 @@ async function loadDeck(id) {
   return questions;
 }
 
+function loadCustomDeck(rawQuestions) {
+  if (!Array.isArray(rawQuestions) || !rawQuestions.length) return false;
+  const questions = normalizeQuestions(rawQuestions);
+  if (questions.length > 2000 || questions.some((question) => question.options.length > 6)) {
+    throw new Error("Bộ đề nhập vượt giới hạn hỗ trợ.");
+  }
+  DECKS.custom = { id: "custom", label: "Bộ đề nhập", file: "" };
+  state.decks.custom = questions;
+  const fingerprint = fingerprintQuestions(questions);
+  state.fingerprints.custom = fingerprint;
+  const progress = getDeckProgress("custom");
+  if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
+    progress.completed = [];
+    progress.sequentialCursor = 0;
+    progress.wrongMap = {};
+    progress.wrongRangeMap = {};
+    progress.practiceMap = {};
+    progress.bookmarks = [];
+    progress.dataFingerprint = fingerprint;
+    saveDeckProgress("custom", progress);
+    resetDeckHighlights("custom");
+  } else if (!progress.dataFingerprint) {
+    progress.dataFingerprint = fingerprint;
+    saveDeckProgress("custom", progress);
+  }
+  const valid = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
+  progress.completed = progress.completed.filter(valid);
+  progress.bookmarks = progress.bookmarks.filter(valid);
+  progress.wrongMap = Object.fromEntries(Object.entries(progress.wrongMap || {}).filter(([key, count]) => valid(Number(key)) && Number.isInteger(count) && count > 0));
+  progress.practiceMap = Object.fromEntries(Object.entries(progress.practiceMap || {}).filter(([key, count]) => valid(Number(key)) && Number.isInteger(count) && count > 0));
+  saveDeckProgress("custom", progress);
+  document.querySelectorAll('[data-deck="custom"], [data-bank-deck="custom"]').forEach((button) => { button.hidden = false; });
+  if ($("count-custom")) $("count-custom").textContent = `${questions.length} câu`;
+  if ($("bank-count-custom")) $("bank-count-custom").textContent = `${questions.length} câu`;
+  const noteDeck = $("study-note-deck");
+  const customOption = noteDeck?.querySelector('option[value="custom"]');
+  if (customOption) customOption.hidden = false;
+  return true;
+}
+
 async function loadAll() {
   state.loading = true;
   state.error = null;
@@ -190,6 +230,8 @@ async function loadAll() {
   let stage = "tải dữ liệu";
   try {
     await Promise.all([loadDeck("quocphong1"), loadDeck("quocphong2")]);
+    const customQuestions = getCustomQuestionBank();
+    if (customQuestions) loadCustomDeck(customQuestions);
     state.loading = false;
     stage = "khởi tạo giao diện";
     initUI();
@@ -923,6 +965,7 @@ function renderQuestionBank() {
       `${state.decks.quocphong1?.length ?? 479} câu`;
     $("bank-count-quocphong2").textContent =
       `${state.decks.quocphong2?.length ?? 262} câu`;
+    if ($("bank-count-custom")) $("bank-count-custom").textContent = `${state.decks.custom?.length ?? 0} câu`;
   }
 
   const list = $("review-list");
@@ -1275,7 +1318,7 @@ function setBankPracticeMode(mode) {
 }
 
 function setBankDeck(deckId) {
-  const id = deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+  const id = deckId === "custom" && state.decks.custom ? "custom" : deckId === "quocphong2" ? "quocphong2" : "quocphong1";
   if (state.bankDeck === id) return;
   persistBankForm();
   state.bankDeck = id;
@@ -3366,14 +3409,25 @@ function bindEvents() {
   $("review-search")?.addEventListener("input", renderQuestionBank);
   $("review-topic-filter")?.addEventListener("change", renderQuestionBank);
   document.addEventListener("study-tools-duplicate-check", (event) => {
-    const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
     const groups = findDuplicateQuestions(state.decks[deckId] || []);
     if (!groups.length) { toast(`${DECKS[deckId].label}: không phát hiện câu trùng hoàn toàn.`); return; }
     const message = groups.slice(0, 20).map((group) => `Câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`).join("\n\n");
     alert(`${DECKS[deckId].label}: phát hiện ${groups.length} nhóm câu trùng.\n\n${message}${groups.length > 20 ? "\n\n…còn nhóm khác." : ""}`);
   });
+  document.addEventListener("study-tools-custom-bank-imported", (event) => {
+    try {
+      if (!loadCustomDeck(event.detail?.questions)) throw new Error("Bộ đề nhập không hợp lệ.");
+      state.currentDeck = "custom";
+      state.bankDeck = "custom";
+      applySettingsToForm(getSettings("custom"));
+      refreshSetupUI();
+      toast("Đã chuyển sang bộ đề nhập. Tiến độ bộ đề gốc vẫn được giữ nguyên.");
+    } catch (error) { alert(error?.message || "Không thể tải bộ đề nhập."); }
+  });
   document.addEventListener("study-tools-report-export", () => {
-    const rows = ["quocphong1", "quocphong2"].map((deckId) => ({
+    const reportDecks = ["quocphong1", "quocphong2", ...(state.decks.custom ? ["custom"] : [])];
+    const rows = reportDecks.map((deckId) => ({
       deckId,
       label: DECKS[deckId].label,
       questions: state.decks[deckId] || [],
@@ -3388,7 +3442,7 @@ function bindEvents() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   document.addEventListener("study-tools-wrong-review", (event) => {
-    const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
     const progress = getDeckProgress(deckId);
     const indices = Object.entries(progress.wrongMap || {}).filter(([, count]) => Number.isInteger(count) && count > 0).sort((a, b) => b[1] - a[1]).map(([index]) => Number(index));
     if (!indices.length) { toast("Bộ đề này chưa có câu sai được ghi nhận."); return; }
@@ -3403,7 +3457,7 @@ function bindEvents() {
     renderQuestionBank();
   });
   document.addEventListener("study-tools-review", (event) => {
-    const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
     const indices = Array.isArray(event.detail?.indices) ? event.detail.indices : [];
     if (!indices.length) return;
     state.currentDeck = deckId;

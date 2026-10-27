@@ -100,6 +100,7 @@ function writeRoot(data) {
 }
 
 function normalizeDeckId(deckId) {
+  if (deckId === "custom") return "custom";
   return deckId === "quocphong2" ? "quocphong2" : "quocphong1";
 }
 
@@ -403,7 +404,7 @@ export function getSession(deckId) {
 }
 
 export function saveSession(session) {
-  if (!session || !["quocphong1", "quocphong2"].includes(session.deckId))
+  if (!session || !["quocphong1", "quocphong2", "custom"].includes(session.deckId))
     return false;
   const root = readRoot();
   if (

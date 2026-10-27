@@ -351,3 +351,16 @@ test("question IDs remain stable across ordering and duplicate groups are detect
   assert.equal(normalized[1].explanation, "Giải thích mẫu.");
   assert.equal(quiz.findDuplicateQuestions(normalized).length, 1);
 });
+
+test("custom question bank can be saved and remains isolated in storage", async () => {
+  const tools = await import("../assets/js/study-tools.js?custom-bank-test");
+  const input = [{ question: "Câu riêng", options: ["A", "B"], correct: 1, topic: "Chủ đề riêng" }];
+  assert.equal(tools.saveCustomQuestionBank(input), true);
+  assert.equal(tools.getCustomQuestionBank().length, 1);
+  assert.equal(tools.getCustomQuestionBank()[0].topic, "Chủ đề riêng");
+  assert.equal(storage.getDeckProgress("quocphong1").completed.length, 0);
+  assert.equal(storage.getDeckProgress("custom").completed.length, 0);
+  assert.equal(storage.saveSession({ deckId: "custom", marker: "custom-session" }), true);
+  assert.equal(storage.getSession("custom").marker, "custom-session");
+  assert.equal(storage.getSession("quocphong1"), null);
+});

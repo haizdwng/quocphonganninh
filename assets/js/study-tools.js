@@ -1,5 +1,8 @@
+import { normalizeQuestions } from "./quiz.js";
+
 const KEY = "quocphonganninh:study-tools:v1";
-const DECKS = ["quocphong1", "quocphong2"];
+const CUSTOM_BANK_KEY = "quocphonganninh:custom-bank:v1";
+const DECKS = ["quocphong1", "quocphong2", "custom"];
 const INTERVAL_DAYS = [1, 3, 7, 14, 30];
 
 function readData() {
@@ -38,6 +41,33 @@ function getDeck(data, deckId) {
 
 function validIndex(value) {
   return Number.isInteger(value) && value >= 0;
+}
+
+export function getCustomQuestionBank() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_BANK_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCustomQuestionBank(questions) {
+  try {
+    const normalized = normalizeQuestions(questions);
+    if (normalized.length > 2000 || normalized.some((question) => question.options.length > 6)) return false;
+    localStorage.setItem(CUSTOM_BANK_KEY, JSON.stringify(normalized));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function exportCustomQuestionBank() {
+  const questions = getCustomQuestionBank();
+  return questions ? JSON.stringify(questions, null, 2) : "";
 }
 
 export function recordStudyAnswer(deckId, questionIndex, correct) {
@@ -343,6 +373,44 @@ export function initStudyTools() {
     renderSummary();
     const status = document.getElementById("study-note-status");
     if (status) status.textContent = textarea.value.trim() ? "Đã lưu ghi chú và phân loại." : "Đã lưu phân loại; ghi chú trống đã được xóa.";
+  });
+  document.getElementById("custom-bank-import-file")?.addEventListener("change", async (event) => {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Tệp bộ đề quá lớn (tối đa 2 MB).");
+      event.currentTarget.value = "";
+      return;
+    }
+    let questions;
+    try {
+      questions = normalizeQuestions(JSON.parse(await file.text()));
+      if (questions.length > 2000) throw new Error("Bộ đề tối đa 2.000 câu.");
+      if (questions.some((question) => question.options.length > 6)) throw new Error("Mỗi câu chỉ hỗ trợ tối đa 6 đáp án.");
+    } catch (error) {
+      alert(`Không thể nhập bộ đề: ${error?.message || "JSON không hợp lệ"}`);
+      event.currentTarget.value = "";
+      return;
+    }
+    if (!saveCustomQuestionBank(questions)) {
+      alert("Không đủ bộ nhớ để lưu bộ đề nhập.");
+      event.currentTarget.value = "";
+      return;
+    }
+    document.dispatchEvent(new CustomEvent("study-tools-custom-bank-imported", { detail: { questions } }));
+    alert(`Đã nhập ${questions.length} câu. Bộ đề nhập xuất hiện ở phần chọn bộ đề.`);
+    event.currentTarget.value = "";
+  });
+  document.getElementById("custom-bank-export")?.addEventListener("click", () => {
+    const json = exportCustomQuestionBank();
+    if (!json) { alert("Chưa có bộ đề nhập để xuất."); return; }
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "bo-de-tuy-chinh.json";
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   document.getElementById("study-tools-export")?.addEventListener("click", () => {
     const blob = new Blob([exportStudyTools()], { type: "application/json" });
