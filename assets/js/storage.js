@@ -306,6 +306,9 @@ export function getDeckProgress(deckId) {
       typeof deckData.dataFingerprint === "string"
         ? deckData.dataFingerprint
         : "",
+    questionIds: Array.isArray(deckData.questionIds)
+      ? deckData.questionIds.filter((value) => typeof value === "string")
+      : [],
   };
 }
 
@@ -383,6 +386,9 @@ export function saveDeckProgress(deckId, progress) {
       typeof progress.dataFingerprint === "string"
         ? progress.dataFingerprint
         : "",
+    questionIds: Array.isArray(progress.questionIds)
+      ? progress.questionIds.filter((value) => typeof value === "string")
+      : [],
   };
   return writeRoot(root);
 }
@@ -860,6 +866,9 @@ export function importBackup(raw) {
         typeof deckData.dataFingerprint === "string"
           ? deckData.dataFingerprint
           : "",
+      questionIds: Array.isArray(deckData.questionIds)
+        ? deckData.questionIds.filter((value) => typeof value === "string")
+        : [],
     };
   }
   return writeRoot(normalized);

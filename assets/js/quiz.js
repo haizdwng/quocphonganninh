@@ -21,6 +21,37 @@ export function findDuplicateQuestions(questions) {
   return [...groups.values()].filter((group) => group.length > 1);
 }
 
+export function remapQuestionProgress(progress, oldQuestionIds, newQuestions) {
+  if (!Array.isArray(oldQuestionIds) || !oldQuestionIds.length || !Array.isArray(newQuestions)) return null;
+  const nextIndexById = new Map(newQuestions.map((question, index) => [question.id, index]));
+  const remapIndex = (index) => {
+    const oldId = oldQuestionIds[index];
+    return typeof oldId === "string" && nextIndexById.has(oldId) ? nextIndexById.get(oldId) : null;
+  };
+  const remapIndices = (indices) => [...new Set((Array.isArray(indices) ? indices : []).map(remapIndex).filter(Number.isInteger))].sort((a, b) => a - b);
+  const remapCounts = (source) => {
+    const result = {};
+    for (const [key, value] of Object.entries(source && typeof source === "object" ? source : {})) {
+      const nextIndex = remapIndex(Number(key));
+      if (nextIndex == null || !Number.isInteger(value) || value <= 0) continue;
+      result[nextIndex] = (result[nextIndex] || 0) + value;
+    }
+    return result;
+  };
+  const cursorId = oldQuestionIds[progress?.sequentialCursor];
+  const cursorIndex = typeof cursorId === "string" && nextIndexById.has(cursorId) ? nextIndexById.get(cursorId) : 0;
+  return {
+    ...progress,
+    completed: remapIndices(progress?.completed),
+    bookmarks: remapIndices(progress?.bookmarks),
+    wrongMap: remapCounts(progress?.wrongMap),
+    practiceMap: remapCounts(progress?.practiceMap),
+    wrongRangeMap: {},
+    sequentialCursor: cursorIndex,
+    questionIds: newQuestions.map((question) => question.id),
+  };
+}
+
 export function findConflictingQuestions(questions) {
   const groups = new Map();
   for (const question of Array.isArray(questions) ? questions : []) {
@@ -56,6 +87,7 @@ export function normalizeQuestions(raw) {
   if (!Array.isArray(raw))
     throw new Error("Dữ liệu bộ đề không phải mảng câu hỏi.");
   const normalized = [];
+  const idCounts = new Map();
   for (let index = 0; index < raw.length; index++) {
     const question = raw[index];
     if (
@@ -84,9 +116,13 @@ export function normalizeQuestions(raw) {
     ) {
       throw new Error(`Câu ${index + 1} có chỉ số đáp án đúng không hợp lệ.`);
     }
+    const baseId = typeof question.id === "string" && question.id.trim() ? question.id.trim() : stableQuestionId({ question: question.question, options, correct, fixed: question.fixed === true });
+    const occurrence = idCounts.get(baseId) || 0;
+    idCounts.set(baseId, occurrence + 1);
+    const id = occurrence ? `${baseId}-${occurrence + 1}` : baseId;
     normalized.push({
       originalIndex: index,
-      id: typeof question.id === "string" && question.id.trim() ? question.id.trim() : stableQuestionId({ question: question.question, options, correct, fixed: question.fixed === true }),
+      id,
       question: question.question,
       options,
       correct,
