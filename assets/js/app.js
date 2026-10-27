@@ -1090,7 +1090,7 @@ function refreshSetupUI() {
   $("count-quocphong2").textContent =
     `${state.decks.quocphong2?.length ?? "262"} câu`;
 
-  document.querySelectorAll(".deck-btn").forEach((btn) => {
+  document.querySelectorAll("#screen-setup .deck-btn[data-deck]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.deck === state.currentDeck);
   });
 
@@ -3471,7 +3471,7 @@ function bindEvents() {
     renderQuestionBank();
   });
 
-  document.querySelectorAll(".deck-btn").forEach((btn) => {
+  document.querySelectorAll("#screen-setup .deck-btn[data-deck]").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (state.currentDeck === btn.dataset.deck) return;
       const previousTotal = currentQuestions().length;
