@@ -2278,3 +2278,8 @@ body.theme-light { background: linear-gradient(180deg, var(--bg-2) 0, var(--bg) 
 .study-reminder { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
 .study-reminder input { min-height: var(--touch); padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); }
 .study-reminder .hint { flex-basis: 100%; }
+
+.review-search-controls { display: grid; grid-template-columns: minmax(0, 2fr) minmax(140px, 1fr); gap: 8px; margin-top: 12px; }
+.review-search-controls input, .review-search-controls select { width: 100%; min-width: 0; min-height: var(--touch); padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); }
+.review-q-explanation, .answer-explanation { display: block; margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--primary); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: var(--surface-2); color: var(--text); font-size: .9rem; line-height: 1.55; }
+@media (max-width: 480px) { .review-search-controls { grid-template-columns: 1fr; } }
