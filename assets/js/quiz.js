@@ -28,7 +28,7 @@ export function remapQuestionProgress(progress, oldQuestionIds, newQuestions) {
     const oldId = oldQuestionIds[index];
     return typeof oldId === "string" && nextIndexById.has(oldId) ? nextIndexById.get(oldId) : null;
   };
-  const remapIndices = (indices) => [...new Set((Array.isArray(indices) ? indices : []).map(remapIndex).filter(Number.isInteger))].sort((a, b) => a - b);
+  const remapIndices = (indices) => [...new Set((Array.isArray(indices) ? indices : []).map(remapIndex).filter(Number.isInteger))].sort((leftIndex, rightIndex) => leftIndex - rightIndex);
   const remapCounts = (source) => {
     const result = {};
     for (const [key, value] of Object.entries(source && typeof source === "object" ? source : {})) {
