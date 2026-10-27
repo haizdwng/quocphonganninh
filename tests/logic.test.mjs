@@ -342,7 +342,7 @@ test("question IDs remain stable across ordering and duplicate groups are detect
   const input = [
     { question: "Câu A", options: ["Đúng", "Sai"], correct: 0 },
     { question: "Câu B", options: ["Một", "Hai"], correct: 1, topic: "Chủ đề 1", explanation: "Giải thích mẫu." },
-    { question: "Câu A", options: ["Đúng", "Sai"], correct: 0 },
+    { question: "  Câu   A ", options: ["Đúng", "Sai"], correct: 0 },
   ];
   const normalized = quiz.normalizeQuestions(input);
   const reordered = quiz.normalizeQuestions([input[1], input[0]]);
