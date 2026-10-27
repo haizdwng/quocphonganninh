@@ -1,6 +1,6 @@
 {
   "name": "Trắc nghiệm Quốc Phòng An Ninh",
-  "short_name": "Quốc Phòng An Ninh",
+  "short_name": "Trắc nghiệm Quốc Phòng An Ninh",
   "description": "Trắc nghiệm Quốc Phòng An Ninh",
   "start_url": "./index.html",
   "scope": "./",

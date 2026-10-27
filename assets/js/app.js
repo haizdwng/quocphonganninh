@@ -1094,8 +1094,8 @@ function refreshResumeCard() {
       : "Có lượt thi thử đang dở"
     : "Có lượt ôn đang dở";
   $("resume-hint").textContent = isExam
-    ? `${deckLabel} · ${answered}/${saved.items.length} câu đã chọn${saved.reviewMode ? " · Đã chấm" : ""}`
-    : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1}/${saved.items.length}`;
+    ? `${deckLabel} · ${answered} / ${saved.items.length} câu đã chọn${saved.reviewMode ? " · Đã chấm" : ""}`
+    : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1} / ${saved.items.length}`;
 }
 
 function syncBankCountInput() {
@@ -1161,8 +1161,8 @@ function applyBankSettingsToForm(settings) {
   if ($("review-chk-auto-check")) {
     $("review-chk-auto-check").checked = settings.autoCheck === true;
     $("review-chk-auto-advance").checked = settings.autoAdvance === true;
-    $("review-chk-sound").checked = settings.soundEnabled !== false;
-    $("review-chk-vibration").checked = settings.vibrationEnabled !== false;
+    $("review-chk-sound").checked = settings.soundEnabled !== true;
+    $("review-chk-vibration").checked = settings.vibrationEnabled !== true;
   }
   state.bankPracticeMode =
     settings.practiceMode === "exam" ? "exam" : "practice";
@@ -1320,8 +1320,8 @@ function applySettingsToForm(settings) {
   $("chk-shuffle-a").checked = !!settings.shuffleAnswers;
   $("chk-auto-check").checked = settings.autoCheck === true;
   $("chk-auto-advance").checked = settings.autoAdvance === true;
-  $("chk-sound").checked = settings.soundEnabled !== false;
-  $("chk-vibration").checked = settings.vibrationEnabled !== false;
+  $("chk-sound").checked = settings.soundEnabled !== true;
+  $("chk-vibration").checked = settings.vibrationEnabled !== true;
   setPracticeMode(settings.practiceMode === "exam" ? "exam" : "practice");
 }
 
@@ -1876,7 +1876,7 @@ function updateExamProgressHeader() {
   ).length;
   const unanswered = session.items.length - answered;
   $("exam-progress-label").textContent = session.reviewMode
-    ? `Kết quả · ${session.firstTryCorrect || 0}/${session.items.length} đúng`
+    ? `Kết quả · ${session.firstTryCorrect || 0} / ${session.items.length} đúng`
     : `Đã chọn ${answered} / ${session.items.length}`;
   const pct = session.items.length
     ? Math.round((answered / session.items.length) * 100)
@@ -2183,7 +2183,7 @@ async function onExamSubmit() {
     persistSession();
     renderExam();
     toast(
-      `Đã chấm bài: ${firstTry}/${session.items.length} đúng · Điểm ${formatScore(firstTry, session.items.length)}/10`,
+      `Đã chấm bài: ${firstTry} / ${session.items.length} đúng · Điểm ${formatScore(firstTry, session.items.length)} / 10`,
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   } finally {
