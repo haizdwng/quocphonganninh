@@ -2285,3 +2285,10 @@ body.theme-light { background: linear-gradient(180deg, var(--bg-2) 0, var(--bg) 
 @media (max-width: 480px) { .review-search-controls { grid-template-columns: 1fr; } }
 
 .study-import-label { display: inline-flex; align-items: center; justify-content: center; }
+
+.review-search-controls { grid-template-columns: minmax(0, 2fr) repeat(2, minmax(120px, 1fr)); }
+body.focus-mode #app { width: min(100% - 20px, 680px); }
+body.focus-mode #screen-quiz .question-card { border-color: transparent; box-shadow: none; background: transparent; padding-inline: clamp(8px, 2vw, 18px); }
+body.focus-mode #screen-quiz .progress-wrap { box-shadow: none; }
+body.focus-mode #btn-scroll-top { display: none !important; }
+@media (max-width: 640px) { .review-search-controls { grid-template-columns: 1fr; } }

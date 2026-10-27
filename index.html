@@ -436,6 +436,8 @@
               <input type="search" id="review-search" placeholder="Tìm câu hỏi, đáp án…" autocomplete="off">
               <label class="visually-hidden" for="review-topic-filter">Lọc theo chủ đề</label>
               <select id="review-topic-filter" aria-label="Lọc theo chủ đề"><option value="">Tất cả chủ đề</option></select>
+              <label class="visually-hidden" for="review-category-filter">Lọc theo phân loại</label>
+              <select id="review-category-filter" aria-label="Lọc theo phân loại"><option value="">Tất cả phân loại</option><option value="remember">Cần ghi nhớ</option><option value="confusing">Hay nhầm</option><option value="important">Trọng tâm</option></select>
             </div>
             <p id="review-result-count" class="hint" aria-live="polite"></p>
             <div
@@ -619,6 +621,7 @@
               aria-atomic="true"
             ></h2>
             <div class="question-tools-row">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-focus-mode" aria-pressed="false">Tập trung</button>
               <button
                 type="button"
                 class="bookmark-btn"

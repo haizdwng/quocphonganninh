@@ -319,6 +319,12 @@ export function initStudyTools() {
     setDailyGoal(event.currentTarget.value);
     renderSummary();
   });
+  document.getElementById("study-reminder-time")?.addEventListener("change", (event) => {
+    const data = readData();
+    if (!data.reminderEnabled) return;
+    data.reminderTime = /^\\d{2}:\\d{2}$/.test(event.currentTarget.value) ? event.currentTarget.value : "20:00";
+    writeData(data);
+  });
   document.getElementById("study-reminder-toggle")?.addEventListener("click", async () => {
     const data = readData();
     if (data.reminderEnabled) {
@@ -450,6 +456,20 @@ export function initStudyTools() {
       return;
     }
     document.dispatchEvent(new CustomEvent("study-tools-review", { detail: { deckId: currentDeck, indices } }));
+  });
+  const focusButton = document.getElementById("btn-focus-mode");
+  const applyFocusMode = (enabled) => {
+    document.body.classList.toggle("focus-mode", enabled);
+    focusButton?.setAttribute("aria-pressed", String(enabled));
+    if (focusButton) focusButton.textContent = enabled ? "Tắt tập trung" : "Tập trung";
+  };
+  try {
+    applyFocusMode(localStorage.getItem("quocphonganninh:focus-mode") === "true");
+  } catch { applyFocusMode(false); }
+  focusButton?.addEventListener("click", () => {
+    const enabled = !document.body.classList.contains("focus-mode");
+    applyFocusMode(enabled);
+    try { localStorage.setItem("quocphonganninh:focus-mode", String(enabled)); } catch {}
   });
   try {
     const theme = localStorage.getItem("quocphonganninh:theme");
