@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const ASSETS = [
   './',
   './index.html',
@@ -7,10 +7,10 @@ const ASSETS = [
   './manifest.webmanifest',
   './assets/fonts/InterVariable.woff2',
   './assets/css/style.css',
-  './assets/js/app.js',
-  './assets/js/enhance.js',
-  './assets/js/quiz.js',
-  './assets/js/storage.js',
+  './assets/javascript/app.js',
+  './assets/javascript/enhance.js',
+  './assets/javascript/quiz.js',
+  './assets/javascript/storage.js',
   './assets/sounds/correct.mp3',
   './assets/sounds/incorrect.mp3',
   './data/quocphong1.json',
