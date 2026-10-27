@@ -860,6 +860,9 @@ export function importBackup(raw) {
         typeof deckData.dataFingerprint === "string"
           ? deckData.dataFingerprint
           : "",
+      questionIds: Array.isArray(deckData.questionIds)
+        ? deckData.questionIds.filter((value) => typeof value === "string")
+        : [],
     };
   }
   return writeRoot(normalized);
