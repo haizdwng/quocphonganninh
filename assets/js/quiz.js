@@ -1,3 +1,26 @@
+function stableQuestionId(question) {
+  const source = JSON.stringify({ question: question.question.trim().replace(/\s+/g, " "), options: question.options.map((option) => option.trim().replace(/\s+/g, " ")), correct: question.correct, fixed: question.fixed === true });
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index++) { hash ^= source.charCodeAt(index); hash = Math.imul(hash, 16777619); }
+  return `q-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+export function findDuplicateQuestions(questions) {
+  const groups = new Map();
+  for (const question of Array.isArray(questions) ? questions : []) {
+    const key = JSON.stringify({
+      question: String(question.question || "").trim().replace(/\s+/g, " ").toLocaleLowerCase(),
+      options: Array.isArray(question.options) ? question.options.map((option) => String(option).trim().replace(/\s+/g, " ").toLocaleLowerCase()) : [],
+      correct: question.correct,
+      fixed: question.fixed === true,
+    });
+    const list = groups.get(key) || [];
+    list.push({ index: question.originalIndex, question: question.question });
+    groups.set(key, list);
+  }
+  return [...groups.values()].filter((group) => group.length > 1);
+}
+
 export function fingerprintQuestions(questions) {
   const source = JSON.stringify(
     questions.map((question) => ({
@@ -48,10 +71,13 @@ export function normalizeQuestions(raw) {
     }
     normalized.push({
       originalIndex: index,
+      id: typeof question.id === "string" && question.id.trim() ? question.id.trim() : stableQuestionId({ question: question.question, options, correct, fixed: question.fixed === true }),
       question: question.question,
       options,
       correct,
       fixed: question.fixed === true,
+      topic: typeof question.topic === "string" ? question.topic.trim() : typeof question.section === "string" ? question.section.trim() : "",
+      explanation: typeof question.explanation === "string" ? question.explanation.trim() : typeof question.explain === "string" ? question.explain.trim() : "",
     });
   }
   if (!normalized.length)

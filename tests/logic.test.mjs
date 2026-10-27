@@ -337,3 +337,17 @@ test("study calendar returns a stable seven-day window and CSV quotes question t
   assert.match(csv, /"Câu ""đặc biệt"""/);
   assert.match(csv, /Mức độ/);
 });
+
+test("question IDs remain stable across ordering and duplicate groups are detected", () => {
+  const input = [
+    { question: "Câu A", options: ["Đúng", "Sai"], correct: 0 },
+    { question: "Câu B", options: ["Một", "Hai"], correct: 1, topic: "Chủ đề 1", explanation: "Giải thích mẫu." },
+    { question: "  Câu   A ", options: ["Đúng", "Sai"], correct: 0 },
+  ];
+  const normalized = quiz.normalizeQuestions(input);
+  const reordered = quiz.normalizeQuestions([input[1], input[0]]);
+  assert.equal(normalized[0].id, reordered[1].id);
+  assert.equal(normalized[1].topic, "Chủ đề 1");
+  assert.equal(normalized[1].explanation, "Giải thích mẫu.");
+  assert.equal(quiz.findDuplicateQuestions(normalized).length, 1);
+});

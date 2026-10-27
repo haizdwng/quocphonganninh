@@ -366,6 +366,10 @@ export function initStudyTools() {
     if (result.success) renderSummary();
     event.currentTarget.value = "";
   });
+  document.getElementById("study-duplicate-check")?.addEventListener("click", () => {
+    const deckId = document.getElementById("study-note-deck").value;
+    document.dispatchEvent(new CustomEvent("study-tools-duplicate-check", { detail: { deckId } }));
+  });
   document.getElementById("study-most-wrong")?.addEventListener("click", () => {
     const deckId = document.getElementById("study-note-deck").value;
     document.dispatchEvent(new CustomEvent("study-tools-wrong-review", { detail: { deckId } }));

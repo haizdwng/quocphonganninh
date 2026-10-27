@@ -345,6 +345,7 @@
               <input id="study-daily-goal" type="number" min="1" max="500" value="20" inputmode="numeric">
               <button type="button" class="btn btn-secondary" id="study-due-review">Ôn câu đến hạn</button>
               <button type="button" class="btn btn-ghost" id="study-most-wrong">Ôn câu hay sai</button>
+              <button type="button" class="btn btn-ghost" id="study-duplicate-check">Kiểm tra câu trùng</button>
               <button type="button" class="btn btn-ghost" id="study-theme-toggle">Giao diện sáng</button>
             </div>
             <hr class="study-tools-divider">
@@ -419,6 +420,13 @@
               Quay lại thiết lập
             </button>
             <h2 id="review-title">Ngân hàng câu hỏi</h2>
+            <div class="review-search-controls">
+              <label class="visually-hidden" for="review-search">Tìm trong câu hỏi và đáp án</label>
+              <input type="search" id="review-search" placeholder="Tìm câu hỏi, đáp án…" autocomplete="off">
+              <label class="visually-hidden" for="review-topic-filter">Lọc theo chủ đề</label>
+              <select id="review-topic-filter" aria-label="Lọc theo chủ đề"><option value="">Tất cả chủ đề</option></select>
+            </div>
+            <p id="review-result-count" class="hint" aria-live="polite"></p>
             <div
               class="deck-switch review-deck-switch"
               role="group"
