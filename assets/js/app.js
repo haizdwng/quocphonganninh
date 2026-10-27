@@ -36,6 +36,7 @@ import {
   pickSequential,
   findNextUncompletedQuestion,
   findDuplicateQuestions,
+  findConflictingQuestions,
   pickRandom,
   pickWrong,
   isAnswerCorrect,
@@ -3413,10 +3414,14 @@ function bindEvents() {
   $("review-category-filter")?.addEventListener("change", renderQuestionBank);
   document.addEventListener("study-tools-duplicate-check", (event) => {
     const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
-    const groups = findDuplicateQuestions(state.decks[deckId] || []);
-    if (!groups.length) { toast(`${DECKS[deckId].label}: không phát hiện câu trùng hoàn toàn.`); return; }
-    const message = groups.slice(0, 20).map((group) => `Câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`).join("\n\n");
-    alert(`${DECKS[deckId].label}: phát hiện ${groups.length} nhóm câu trùng.\n\n${message}${groups.length > 20 ? "\n\n…còn nhóm khác." : ""}`);
+    const questions = state.decks[deckId] || [];
+    const groups = findDuplicateQuestions(questions);
+    const conflicts = findConflictingQuestions(questions);
+    if (!groups.length && !conflicts.length) { toast(`${DECKS[deckId].label}: không phát hiện câu trùng hoặc xung đột nội dung.`); return; }
+    const duplicateText = groups.slice(0, 10).map((group) => `Trùng hoàn toàn — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`).join("\n\n");
+    const conflictText = conflicts.slice(0, 10).map((group) => `Cùng câu hỏi nhưng đáp án khác — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`).join("\n\n");
+    const sections = [duplicateText, conflictText].filter(Boolean).join("\n\n");
+    alert(`${DECKS[deckId].label}: ${groups.length} nhóm trùng hoàn toàn, ${conflicts.length} nhóm xung đột.\n\n${sections}${groups.length > 10 || conflicts.length > 10 ? "\n\n…còn nhóm khác." : ""}`);
   });
   document.addEventListener("study-tools-custom-bank-imported", (event) => {
     try {
