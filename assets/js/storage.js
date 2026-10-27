@@ -383,6 +383,9 @@ export function saveDeckProgress(deckId, progress) {
       typeof progress.dataFingerprint === "string"
         ? progress.dataFingerprint
         : "",
+    questionIds: Array.isArray(progress.questionIds)
+      ? progress.questionIds.filter((value) => typeof value === "string")
+      : [],
   };
   return writeRoot(root);
 }
