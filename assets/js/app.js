@@ -35,6 +35,7 @@ import {
   createSessionItems,
   pickSequential,
   findNextUncompletedQuestion,
+  findDuplicateQuestions,
   pickRandom,
   pickWrong,
   isAnswerCorrect,
@@ -497,8 +498,24 @@ function captureHighlightSelection() {
 function getFilteredBankQuestions() {
   const questions = bankQuestions();
   const form = readBankForm();
-  // Ngân hàng luôn hiển thị toàn bộ câu của bộ đề đang chọn (không phụ thuộc vùng thiết lập)
-  return { questions, form, filtered: questions };
+  const search = ($("review-search")?.value || "").trim().toLocaleLowerCase();
+  const topicSelect = $("review-topic-filter");
+  if (topicSelect && topicSelect.dataset.deck !== state.bankDeck) {
+    const selectedTopic = topicSelect.value;
+    const topics = [...new Set(questions.map((question) => question.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi"));
+    topicSelect.replaceChildren(new Option("Tất cả chủ đề", ""));
+    for (const topic of topics) topicSelect.add(new Option(topic, topic));
+    topicSelect.dataset.deck = state.bankDeck;
+    topicSelect.value = topics.includes(selectedTopic) ? selectedTopic : "";
+  }
+  const selectedTopic = topicSelect?.value || "";
+  const filtered = questions.filter((question) => {
+    if (selectedTopic && question.topic !== selectedTopic) return false;
+    if (!search) return true;
+    return [question.question, ...question.options, question.explanation, question.topic]
+      .some((value) => String(value || "").toLocaleLowerCase().includes(search));
+  });
+  return { questions, form, filtered };
 }
 
 function getReviewVirtualState() {
@@ -576,6 +593,10 @@ function createReviewBankCard() {
   const prompt = document.createElement("p");
   prompt.className = "review-q-text";
 
+  const explanation = document.createElement("p");
+  explanation.className = "review-q-explanation";
+  explanation.hidden = true;
+
   const toolbar = document.createElement("div");
   toolbar.className = "highlight-toolbar";
   const hlBtn = document.createElement("button");
@@ -642,12 +663,13 @@ function createReviewBankCard() {
     $("btn-review-start-selected").disabled = count === 0;
   });
 
-  card.append(selectLabel, heading, prompt, toolbar, options);
+  card.append(selectLabel, heading, prompt, toolbar, options, explanation);
   card._vs = {
     selectLabel,
     checkbox,
     heading,
     prompt,
+    explanation,
     toolbar,
     options,
     optionNodes,
@@ -678,6 +700,8 @@ function bindReviewBankCard(card, question, listIndex) {
     "question",
   );
 
+  parts.explanation.hidden = !question.explanation;
+  parts.explanation.textContent = question.explanation ? `Giải thích: ${question.explanation}` : "";
   const optionCount = question.options.length;
   parts.optionNodes.forEach((node, index) => {
     if (index >= optionCount) {
@@ -735,6 +759,8 @@ function measureReviewVirtualVisible(virtualScrollState) {
 
 function syncReviewVirtualWindow() {
   if (state.mode !== "review") return;
+  const resultCount = $("review-result-count");
+  if (resultCount) resultCount.textContent = `Hiển thị ${filtered.length}/${questions.length} câu hỏi`;
   const list = $("review-list");
   const virtualScrollState = getReviewVirtualState();
   if (!list || !virtualScrollState.filtered.length) return;
@@ -1874,6 +1900,12 @@ function renderQuestion() {
   } else {
     feedback.hidden = true;
     feedback.textContent = "";
+  }
+  if (item.checked && question.explanation) {
+    const explanation = document.createElement("span");
+    explanation.className = "answer-explanation";
+    explanation.textContent = `Giải thích: ${question.explanation}`;
+    feedback.append(document.createElement("br"), explanation);
   }
 
   $("btn-prev").disabled = session.viewIndex <= 0;
@@ -3331,6 +3363,15 @@ function bindKeyboardShortcuts() {
 function bindEvents() {
   bindKeyboardShortcuts();
   initEnhance({ onPrev, onNext });
+  $("review-search")?.addEventListener("input", renderQuestionBank);
+  $("review-topic-filter")?.addEventListener("change", renderQuestionBank);
+  document.addEventListener("study-tools-duplicate-check", (event) => {
+    const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const groups = findDuplicateQuestions(state.decks[deckId] || []);
+    if (!groups.length) { toast(`${DECKS[deckId].label}: không phát hiện câu trùng hoàn toàn.`); return; }
+    const message = groups.slice(0, 20).map((group) => `Câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`).join("\n\n");
+    alert(`${DECKS[deckId].label}: phát hiện ${groups.length} nhóm câu trùng.\n\n${message}${groups.length > 20 ? "\n\n…còn nhóm khác." : ""}`);
+  });
   document.addEventListener("study-tools-report-export", () => {
     const rows = ["quocphong1", "quocphong2"].map((deckId) => ({
       deckId,
