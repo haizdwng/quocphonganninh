@@ -370,3 +370,13 @@ test("question categories can be read from the study-tools data store", () => {
   assert.equal(studyTools.getQuestionCategory("quocphong1", 7), "important");
   assert.equal(studyTools.getQuestionCategory("quocphong2", 7), "");
 });
+
+test("conflicting questions with the same prompt but different answers are detected", () => {
+  const normalized = quiz.normalizeQuestions([
+    { question: "Cùng câu hỏi", options: ["A", "B"], correct: 0 },
+    { question: "Cùng câu hỏi", options: ["A", "B"], correct: 1 },
+    { question: "Câu khác", options: ["A", "B"], correct: 0 },
+  ]);
+  assert.equal(quiz.findConflictingQuestions(normalized).length, 1);
+  assert.deepEqual(quiz.findConflictingQuestions(normalized)[0].map((item) => item.index), [0, 1]);
+});

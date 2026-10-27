@@ -21,6 +21,21 @@ export function findDuplicateQuestions(questions) {
   return [...groups.values()].filter((group) => group.length > 1);
 }
 
+export function findConflictingQuestions(questions) {
+  const groups = new Map();
+  for (const question of Array.isArray(questions) ? questions : []) {
+    const prompt = String(question.question || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+    const list = groups.get(prompt) || [];
+    list.push({ index: question.originalIndex, question: question.question, options: question.options, correct: question.correct });
+    groups.set(prompt, list);
+  }
+  return [...groups.values()].filter((group) => {
+    if (group.length < 2) return false;
+    const variants = new Set(group.map((item) => JSON.stringify({ options: item.options, correct: item.correct })));
+    return variants.size > 1;
+  });
+}
+
 export function fingerprintQuestions(questions) {
   const source = JSON.stringify(
     questions.map((question) => ({
