@@ -227,6 +227,7 @@ export function getStudyToolSummary(now = new Date()) {
     streak,
     notesCount: DECKS.reduce((sum, deckId) => sum + Object.keys(getDeck(data, deckId).notes || {}).length, 0),
     dueCount: DECKS.reduce((sum, deckId) => sum + getDueQuestions(deckId, now.getTime()).length, 0),
+    masteredCount: DECKS.reduce((sum, deckId) => sum + Object.values(getDeck(data, deckId).schedule || {}).filter((record) => record && record.lastCorrect === true && Number(record.repetitions) >= 4).length, 0),
   };
 }
 
@@ -272,6 +273,7 @@ function renderSummary() {
   const streak = document.getElementById("study-streak");
   const due = document.getElementById("study-due-count");
   const notes = document.getElementById("study-notes-count");
+  const mastered = document.getElementById("study-mastered-count");
   const calendar = document.getElementById("study-calendar");
   if (goal && document.activeElement !== goal) goal.value = String(summary.dailyGoal);
   if (progress) {
@@ -282,6 +284,7 @@ function renderSummary() {
   if (streak) streak.textContent = `${summary.streak} ngày`;
   if (due) due.textContent = String(summary.dueCount);
   if (notes) notes.textContent = String(summary.notesCount);
+  if (mastered) mastered.textContent = String(summary.masteredCount);
   if (calendar) {
     const days = getStudyCalendar(7);
     const maxCount = Math.max(1, ...days.map((day) => day.count));
