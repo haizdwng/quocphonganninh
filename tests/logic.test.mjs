@@ -304,3 +304,12 @@ test("study notes are isolated by deck and backup validates its format", () => {
   assert.equal(studyTools.importStudyTools("{}").success, false);
   assert.equal(studyTools.importStudyTools(studyTools.exportStudyTools()).success, true);
 });
+
+test("study question categories are isolated and restricted to known values", () => {
+  assert.equal(studyTools.saveQuestionCategory("quocphong1", 5, "confusing"), true);
+  assert.equal(studyTools.getQuestionCategory("quocphong1", 5), "confusing");
+  assert.equal(studyTools.getQuestionCategory("quocphong2", 5), "");
+  assert.equal(studyTools.saveQuestionCategory("quocphong1", 5, "invalid"), false);
+  assert.equal(studyTools.saveQuestionCategory("quocphong1", 5, ""), true);
+  assert.equal(studyTools.getQuestionCategory("quocphong1", 5), "");
+});
