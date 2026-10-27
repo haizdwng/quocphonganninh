@@ -131,12 +131,7 @@
   },
   {
     "question": "Tư tưởng chỉ đạo tác chiến xuyên suốt trong chuẩn bị và tiến hành chiến tranh giữ nước của cha ông ta là gì?",
-    "options": [
-      "Tiến công",
-      "Phòng ngự",
-      "Hoà hoãn",
-      "Phản công"
-    ],
+    "options": ["Tiến công", "Phòng ngự", "Hoà hoãn", "Phản công"],
     "correct": 0
   },
   {
@@ -191,12 +186,7 @@
   },
   {
     "question": "Giai đoạn cuối của hai cuộc kháng chiến chống Pháp và chống Mỹ, hình thức chiến thuật nào được xuất hiện?",
-    "options": [
-      "Tiến công",
-      "Phản công",
-      "Tập kích",
-      "Phòng ngự"
-    ],
+    "options": ["Tiến công", "Phản công", "Tập kích", "Phòng ngự"],
     "correct": 3
   },
   {
@@ -312,32 +302,17 @@
   },
   {
     "question": "Chiến dịch Hồ Chí Minh thuộc loại hình chiến dịch quân sự nào?",
-    "options": [
-      "Phòng không",
-      "Tiến công",
-      "Phản công",
-      "Phòng ngự"
-    ],
+    "options": ["Phòng không", "Tiến công", "Phản công", "Phòng ngự"],
     "correct": 1
   },
   {
     "question": "Chiến dịch Việt Bắc-Thu Đông 1947 thuộc loại hình chiến dịch quân sự nào?",
-    "options": [
-      "Phòng không",
-      "Tiến công",
-      "Phản công",
-      "Phòng ngự"
-    ],
+    "options": ["Phòng không", "Tiến công", "Phản công", "Phòng ngự"],
     "correct": 2
   },
   {
     "question": "Chiến dịch Thành Cổ, Quảng Trị 1972 thuộc loại hình chiến dịch quân sự nào?",
-    "options": [
-      "Phòng không",
-      "Tiến công",
-      "Phản công",
-      "Phòng ngự"
-    ],
+    "options": ["Phòng không", "Tiến công", "Phản công", "Phòng ngự"],
     "correct": 3
   },
   {
@@ -716,12 +691,7 @@
   },
   {
     "question": "Thực hiện phát triển KT-XH với tăng cường cửng cố QP, AN nhằm giải quyết như thế nào hai nhiệm vụ chiến lược của cách mạng Việt Nam?",
-    "options": [
-      "Song song",
-      "Hài hòa",
-      "Phối hợp",
-      "Đồng thời"
-    ],
+    "options": ["Song song", "Hài hòa", "Phối hợp", "Đồng thời"],
     "correct": 1
   },
   {
@@ -1159,12 +1129,7 @@
   },
   {
     "question": "Ngày nào sau đây được lấy làm ngày hội Quốc phòng toàn dân?",
-    "options": [
-      "22-12-1944",
-      "22-12-1965",
-      "22-12-1975",
-      "22-12-1989"
-    ],
+    "options": ["22-12-1944", "22-12-1965", "22-12-1975", "22-12-1989"],
     "correct": 3
   },
   {
@@ -1891,12 +1856,7 @@
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Hồ Chí Minh về bạo lực cách mạng:\"Chế độ thực dân, tự bản thân nó đã là một hành động...\"?",
-    "options": [
-      "Lật đổ",
-      "Bạo lực",
-      "Ăn cướp",
-      "Điên rồ"
-    ],
+    "options": ["Lật đổ", "Bạo lực", "Ăn cướp", "Điên rồ"],
     "correct": 1
   },
   {
@@ -1934,22 +1894,12 @@
   },
   {
     "question": "Câu nói “ Trong thời đại ngày nay còn chủ nghĩa đế quốc thì còn nguy cơ xảy ra chiến tranh...\" là của ai?",
-    "options": [
-      "Các Mác",
-      "V.I Lê Nin",
-      "Ph. Ăngghen",
-      "C.Ph Claudơvít"
-    ],
+    "options": ["Các Mác", "V.I Lê Nin", "Ph. Ăngghen", "C.Ph Claudơvít"],
     "correct": 1
   },
   {
     "question": "Câu nói:\"Chiến tranh là sự tiếp tục của chính trị bằng những biện pháp khác\" (cụ thể là bằng bạo lực) là của ai?",
-    "options": [
-      "Các Mác",
-      "C. Ph Claudơít",
-      "VI. Lênin",
-      "Ph. Ănghen"
-    ],
+    "options": ["Các Mác", "C. Ph Claudơít", "VI. Lênin", "Ph. Ănghen"],
     "correct": 2
   },
   {
@@ -1964,32 +1914,17 @@
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong lời nói của Hồ Chí Minh về chiến tranh nhân dân:\"Ai cũng phải...chống thực dân Pháp cứu nước\"?",
-    "options": [
-      "Tích cực",
-      "Ra sức",
-      "Quyết tâm",
-      "Dũng cảm"
-    ],
+    "options": ["Tích cực", "Ra sức", "Quyết tâm", "Dũng cảm"],
     "correct": 1
   },
   {
     "question": "Khái niệm “ Quân đội là một tập đoàn người vũ trang, có tổ chức do nhà nước xây dựng đề dùng vào cuộc chiến tranh tiến công hoặc chiến tranh phòng ngự” là của ai?",
-    "options": [
-      "C.Ph Claudơvít",
-      "Ph. Ăngghen",
-      "Các Mác",
-      "V.I Lê Nin"
-    ],
+    "options": ["C.Ph Claudơvít", "Ph. Ăngghen", "Các Mác", "V.I Lê Nin"],
     "correct": 1
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong lời nói của Lênin:\"Chức năng cơ bản của quân đội đế quốc là tiến hành chiến tranh...\"?",
-    "options": [
-      "Xâm lược",
-      "Hủy diệt",
-      "Khủng bố",
-      "Vũ trang"
-    ],
+    "options": ["Xâm lược", "Hủy diệt", "Khủng bố", "Vũ trang"],
     "correct": 0
   },
   {
@@ -2014,42 +1949,22 @@
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Lênin:\"Giành chính quyền đã khó, nhưng giữ được chính quyền còn...\"?",
-    "options": [
-      "Vất vả hơn",
-      "Phức tạp hơn",
-      "Gian nan nhiều",
-      "Khó khăn hơn"
-    ],
+    "options": ["Vất vả hơn", "Phức tạp hơn", "Gian nan nhiều", "Khó khăn hơn"],
     "correct": 3
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Lênin về bảo vệ Tổ quốc:\"Tuyệt đối không chủ quan, phải có thái độ...với quốc phòng\"?",
-    "options": [
-      "Tích cực",
-      "Nghiêm túc",
-      "Ủng hộ",
-      "Xây dựng"
-    ],
+    "options": ["Tích cực", "Nghiêm túc", "Ủng hộ", "Xây dựng"],
     "correct": 1
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu nói của Lênin về bảo vệ Tổ quốc:\"Đảng Cộng sản phải lãnh đạo ... sự nghiệp bảo vệ Tổ quốc\"?",
-    "options": [
-      "Tuyệt đối",
-      "Mọi mặt",
-      "Trực tiếp",
-      "Gián tiếp"
-    ],
+    "options": ["Tuyệt đối", "Mọi mặt", "Trực tiếp", "Gián tiếp"],
     "correct": 1
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Di chúc của Hồ Chí Minh: \"Dù sao chúng ta phải ... Đánh giặc Mĩ đến thắng lợi hoàn toàn\"?",
-    "options": [
-      "Xung phong",
-      "Tích cực",
-      "Hết sức",
-      "Quyết tâm"
-    ],
+    "options": ["Xung phong", "Tích cực", "Hết sức", "Quyết tâm"],
     "correct": 3
   },
   {
@@ -2135,12 +2050,7 @@
   },
   {
     "question": "Chọn từ thích hợp đưa vào dấu ba chấm trong Câu nói của Lê Nin: \"Chiến tranh là ... của chủ nghĩa đế quốc\"?",
-    "options": [
-      "Công cụ",
-      "Bạn đường",
-      "Phương tiện",
-      "Công cụ chủ yếu"
-    ],
+    "options": ["Công cụ", "Bạn đường", "Phương tiện", "Công cụ chủ yếu"],
     "correct": 1
   },
   {
@@ -2195,12 +2105,7 @@
   },
   {
     "question": "Chọn từ thích hợp đưa vào dấu ba chấm trong câu nói của Ph. Ăngghen: \"Chế độ áp bức bóc lột càng … thì chiến tranh càng phát triển\"?",
-    "options": [
-      "Suy tàn",
-      "Lung lay",
-      "Thất bại",
-      "Hoàn thiện"
-    ],
+    "options": ["Suy tàn", "Lung lay", "Thất bại", "Hoàn thiện"],
     "correct": 3
   },
   {
@@ -2256,32 +2161,17 @@
   },
   {
     "question": "Khi nói về chiến tranh nhân dân Việt Nam, Hồ Chí Minh chỉ ra rằng: kháng chiến toàn dân phải đi đôi với kháng chiến…nào?",
-    "options": [
-      "Toàn quân",
-      "Toàn diện",
-      "Hiện đại",
-      "Du kích"
-    ],
+    "options": ["Toàn quân", "Toàn diện", "Hiện đại", "Du kích"],
     "correct": 1
   },
   {
     "question": "Chọn từ thích hợp điền vào dấu ba chấm trong Câu viết của Hồ Chí Minh: \"Ngoài lợi ích của …, quân đội ta không có lợi ích nào khác\"?",
-    "options": [
-      "Xã hội",
-      "Nhân dân",
-      "Giai cấp",
-      "Bản thân"
-    ],
+    "options": ["Xã hội", "Nhân dân", "Giai cấp", "Bản thân"],
     "correct": 1
   },
   {
     "question": "Theo V.I.Lênin, chiến tranh mang tính?",
-    "options": [
-      "Xã hội",
-      "Giai cấp",
-      "Lịch sử cụ thể",
-      "Các phương án trên"
-    ],
+    "options": ["Xã hội", "Giai cấp", "Lịch sử cụ thể", "Các phương án trên"],
     "correct": 3
   },
   {
@@ -2489,12 +2379,7 @@
   },
   {
     "question": "Trong chiến tranh, kẻ thù thực hiện các biện pháp phi vũ trang nhằm làm gì là chủ yếu?",
-    "options": [
-      "Lừa bịp dư luận",
-      "Mỵ dân",
-      "Tạo liên minh",
-      "Kéo bè cánh"
-    ],
+    "options": ["Lừa bịp dư luận", "Mỵ dân", "Tạo liên minh", "Kéo bè cánh"],
     "correct": 0
   },
   {
@@ -2750,12 +2635,7 @@
   },
   {
     "question": "Theo tư tưởng Hồ Chí Minh, trong xây dựng phong trào toàn dân đánh giặc thì lực lượng vũ trang nhân dân có vị trí như thế nào?",
-    "options": [
-      "Trụ cột",
-      "Nòng cốt",
-      "Xung phong",
-      "Quan trọng"
-    ],
+    "options": ["Trụ cột", "Nòng cốt", "Xung phong", "Quan trọng"],
     "correct": 1
   },
   {
@@ -3010,22 +2890,12 @@
   },
   {
     "question": "Bờ biển Việt nam dài bao nhiêu Km?",
-    "options": [
-      "3250 km",
-      "3260 km",
-      "3620 km",
-      "3520 km"
-    ],
+    "options": ["3250 km", "3260 km", "3620 km", "3520 km"],
     "correct": 1
   },
   {
     "question": "Đường biên giới đất liền của Việt Nam tiếp giáp với nước nào là dài nhất?",
-    "options": [
-      "Trung quốc",
-      "Thái lan",
-      "Campuchia",
-      "Lào"
-    ],
+    "options": ["Trung quốc", "Thái lan", "Campuchia", "Lào"],
     "correct": 3
   },
   {
@@ -3180,12 +3050,7 @@
   },
   {
     "question": "Đường biên giới trên đất liền của nước ta dài bao nhiêu km?",
-    "options": [
-      "Dài 2550 km",
-      "Dài 3550 km",
-      "Dài 4550 km",
-      "Dài 5550 km"
-    ],
+    "options": ["Dài 2550 km", "Dài 3550 km", "Dài 4550 km", "Dài 5550 km"],
     "correct": 2
   },
   {
@@ -3283,12 +3148,7 @@
   },
   {
     "question": "Vùng đất quốc gia Việt Nam bao gồm?",
-    "options": [
-      "Đất liền",
-      "Các đảo",
-      "Các quần đảo",
-      "Cả 3 phương án trên"
-    ],
+    "options": ["Đất liền", "Các đảo", "Các quần đảo", "Cả 3 phương án trên"],
     "correct": 3
   },
   {
@@ -3304,12 +3164,7 @@
   },
   {
     "question": "Vùng đất quốc gia Việt Nam bao gồm?",
-    "options": [
-      "Đất liền",
-      "Đất nông nghiệp",
-      "Quần đảo",
-      "Phương án A và C"
-    ],
+    "options": ["Đất liền", "Đất nông nghiệp", "Quần đảo", "Phương án A và C"],
     "correct": 3,
     "fixed": true
   },
@@ -3516,12 +3371,7 @@
   },
   {
     "question": "Chức năng chủ yếu của dân quân tự vệ là gì?",
-    "options": [
-      "Chiến đấu",
-      "Lao động sản xuất",
-      "Công tác",
-      "Giáo dục"
-    ],
+    "options": ["Chiến đấu", "Lao động sản xuất", "Công tác", "Giáo dục"],
     "correct": 1
   },
   {
@@ -3766,12 +3616,7 @@
   },
   {
     "question": "Biên chế cán bộ Ban chỉ huy quân sự cơ sở của dân quân tự vệ gồm mấy người?",
-    "options": [
-      "Gồm 5 người",
-      "Gồm 4 người",
-      "Gồm 3 người",
-      "Gồm 2 người"
-    ],
+    "options": ["Gồm 5 người", "Gồm 4 người", "Gồm 3 người", "Gồm 2 người"],
     "correct": 2
   },
   {

@@ -28,7 +28,13 @@ import {
 } from "./storage.js";
 import { initEnhance } from "./enhance.js";
 import { calculateStudyStatistics } from "./statistics.js";
-import { initStudyTools, recordStudyAnswer, exportStudyReportCsv, getCustomQuestionBank, getQuestionCategory } from "./study-tools.js";
+import {
+  initStudyTools,
+  recordStudyAnswer,
+  exportStudyReportCsv,
+  getCustomQuestionBank,
+  getQuestionCategory,
+} from "./study-tools.js";
 import {
   fingerprintQuestions,
   normalizeQuestions,
@@ -61,7 +67,11 @@ const DECKS = {
 const state = {
   decks: { quocphong1: null, quocphong2: null, custom: null },
   fingerprints: { quocphong1: "", quocphong2: "", custom: "" },
-  legacyFingerprintMatched: { quocphong1: false, quocphong2: false, custom: false },
+  legacyFingerprintMatched: {
+    quocphong1: false,
+    quocphong2: false,
+    custom: false,
+  },
   loading: true,
   error: null,
   currentDeck: "quocphong1",
@@ -132,7 +142,11 @@ async function loadDeck(id) {
     if (progress.dataFingerprint === legacyFingerprint) {
       state.legacyFingerprintMatched[id] = true;
     } else {
-      const remapped = remapQuestionProgress(progress, oldQuestionIds, questions);
+      const remapped = remapQuestionProgress(
+        progress,
+        oldQuestionIds,
+        questions,
+      );
       if (remapped) {
         Object.assign(progress, remapped);
         toast(`${meta.label}: đã ghép tiến độ theo ID câu hỏi ổn định.`);
@@ -145,18 +159,24 @@ async function loadDeck(id) {
         progress.bookmarks = [];
       }
       clearSession(id);
-      if (!resetDeckHighlights(id)) toast("Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.");
+      if (!resetDeckHighlights(id))
+        toast(
+          "Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.",
+        );
     }
     progress.dataFingerprint = fingerprint;
     progress.questionIds = questionIds;
-    if (!saveDeckProgress(id, progress)) toast("Không thể lưu tiến độ đã cập nhật trong trình duyệt.");
+    if (!saveDeckProgress(id, progress))
+      toast("Không thể lưu tiến độ đã cập nhật trong trình duyệt.");
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fingerprint;
     progress.questionIds = questionIds;
-    if (!saveDeckProgress(id, progress)) toast("Không thể lưu dấu vân tay bộ đề vào trình duyệt.");
+    if (!saveDeckProgress(id, progress))
+      toast("Không thể lưu dấu vân tay bộ đề vào trình duyệt.");
   } else if (!Array.isArray(oldQuestionIds) || !oldQuestionIds.length) {
     progress.questionIds = questionIds;
-    if (!saveDeckProgress(id, progress)) toast("Không thể lưu ID câu hỏi vào tiến độ.");
+    if (!saveDeckProgress(id, progress))
+      toast("Không thể lưu ID câu hỏi vào tiến độ.");
   } else if (JSON.stringify(oldQuestionIds) !== JSON.stringify(questionIds)) {
     const remapped = remapQuestionProgress(progress, oldQuestionIds, questions);
     if (remapped) Object.assign(progress, remapped);
@@ -172,7 +192,8 @@ async function loadDeck(id) {
     progress.questionIds = questionIds;
     clearSession(id);
     resetDeckHighlights(id);
-    if (!saveDeckProgress(id, progress)) toast("Không thể lưu tiến độ sau khi cập nhật ID câu hỏi.");
+    if (!saveDeckProgress(id, progress))
+      toast("Không thể lưu tiến độ sau khi cập nhật ID câu hỏi.");
   }
 
   const progressBeforeSanitize = JSON.stringify(progress);
@@ -208,7 +229,10 @@ async function loadDeck(id) {
 function loadCustomDeck(rawQuestions) {
   if (!Array.isArray(rawQuestions) || !rawQuestions.length) return false;
   const questions = normalizeQuestions(rawQuestions);
-  if (questions.length > 2000 || questions.some((question) => question.options.length > 6)) {
+  if (
+    questions.length > 2000 ||
+    questions.some((question) => question.options.length > 6)
+  ) {
     throw new Error("Bộ đề nhập vượt giới hạn hỗ trợ.");
   }
   DECKS.custom = { id: "custom", label: "Bộ đề nhập", file: "" };
@@ -218,7 +242,11 @@ function loadCustomDeck(rawQuestions) {
   const progress = getDeckProgress("custom");
   const questionIds = questions.map((question) => question.id);
   if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
-    const remapped = remapQuestionProgress(progress, progress.questionIds, questions);
+    const remapped = remapQuestionProgress(
+      progress,
+      progress.questionIds,
+      questions,
+    );
     if (remapped) Object.assign(progress, remapped);
     else {
       progress.completed = [];
@@ -233,12 +261,22 @@ function loadCustomDeck(rawQuestions) {
     clearSession("custom");
     resetDeckHighlights("custom");
     saveDeckProgress("custom", progress);
-  } else if (!progress.dataFingerprint || !Array.isArray(progress.questionIds) || !progress.questionIds.length) {
+  } else if (
+    !progress.dataFingerprint ||
+    !Array.isArray(progress.questionIds) ||
+    !progress.questionIds.length
+  ) {
     progress.dataFingerprint = fingerprint;
     progress.questionIds = questionIds;
     saveDeckProgress("custom", progress);
-  } else if (JSON.stringify(progress.questionIds) !== JSON.stringify(questionIds)) {
-    const remapped = remapQuestionProgress(progress, progress.questionIds, questions);
+  } else if (
+    JSON.stringify(progress.questionIds) !== JSON.stringify(questionIds)
+  ) {
+    const remapped = remapQuestionProgress(
+      progress,
+      progress.questionIds,
+      questions,
+    );
     if (remapped) Object.assign(progress, remapped);
     progress.dataFingerprint = fingerprint;
     progress.questionIds = questionIds;
@@ -246,15 +284,32 @@ function loadCustomDeck(rawQuestions) {
     resetDeckHighlights("custom");
     saveDeckProgress("custom", progress);
   }
-  const valid = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
+  const valid = (index) =>
+    Number.isInteger(index) && index >= 0 && index < questions.length;
   progress.completed = progress.completed.filter(valid);
   progress.bookmarks = progress.bookmarks.filter(valid);
-  progress.wrongMap = Object.fromEntries(Object.entries(progress.wrongMap || {}).filter(([key, count]) => valid(Number(key)) && Number.isInteger(count) && count > 0));
-  progress.practiceMap = Object.fromEntries(Object.entries(progress.practiceMap || {}).filter(([key, count]) => valid(Number(key)) && Number.isInteger(count) && count > 0));
+  progress.wrongMap = Object.fromEntries(
+    Object.entries(progress.wrongMap || {}).filter(
+      ([key, count]) =>
+        valid(Number(key)) && Number.isInteger(count) && count > 0,
+    ),
+  );
+  progress.practiceMap = Object.fromEntries(
+    Object.entries(progress.practiceMap || {}).filter(
+      ([key, count]) =>
+        valid(Number(key)) && Number.isInteger(count) && count > 0,
+    ),
+  );
   saveDeckProgress("custom", progress);
-  document.querySelectorAll('[data-deck="custom"], [data-bank-deck="custom"]').forEach((button) => { button.hidden = false; });
-  if ($("count-custom")) $("count-custom").textContent = `${questions.length} câu`;
-  if ($("bank-count-custom")) $("bank-count-custom").textContent = `${questions.length} câu`;
+  document
+    .querySelectorAll('[data-deck="custom"], [data-bank-deck="custom"]')
+    .forEach((button) => {
+      button.hidden = false;
+    });
+  if ($("count-custom"))
+    $("count-custom").textContent = `${questions.length} câu`;
+  if ($("bank-count-custom"))
+    $("bank-count-custom").textContent = `${questions.length} câu`;
   const noteDeck = $("study-note-deck");
   const customOption = noteDeck?.querySelector('option[value="custom"]');
   if (customOption) customOption.hidden = false;
@@ -582,7 +637,11 @@ function getFilteredBankQuestions() {
   const topicSelect = $("review-topic-filter");
   if (topicSelect && topicSelect.dataset.deck !== state.bankDeck) {
     const selectedTopic = topicSelect.value;
-    const topics = [...new Set(questions.map((question) => question.topic).filter(Boolean))].sort((leftTopic, rightTopic) => leftTopic.localeCompare(rightTopic, "vi"));
+    const topics = [
+      ...new Set(questions.map((question) => question.topic).filter(Boolean)),
+    ].sort((leftTopic, rightTopic) =>
+      leftTopic.localeCompare(rightTopic, "vi"),
+    );
     topicSelect.replaceChildren(new Option("Tất cả chủ đề", ""));
     for (const topic of topics) topicSelect.add(new Option(topic, topic));
     topicSelect.dataset.deck = state.bankDeck;
@@ -592,10 +651,23 @@ function getFilteredBankQuestions() {
   const selectedCategory = $("review-category-filter")?.value || "";
   const filtered = questions.filter((question) => {
     if (selectedTopic && question.topic !== selectedTopic) return false;
-    if (selectedCategory && getQuestionCategory(state.bankDeck, question.originalIndex) !== selectedCategory) return false;
+    if (
+      selectedCategory &&
+      getQuestionCategory(state.bankDeck, question.originalIndex) !==
+        selectedCategory
+    )
+      return false;
     if (!search) return true;
-    return [question.question, ...question.options, question.explanation, question.topic]
-      .some((value) => String(value || "").toLocaleLowerCase().includes(search));
+    return [
+      question.question,
+      ...question.options,
+      question.explanation,
+      question.topic,
+    ].some((value) =>
+      String(value || "")
+        .toLocaleLowerCase()
+        .includes(search),
+    );
   });
   return { questions, form, filtered };
 }
@@ -783,7 +855,9 @@ function bindReviewBankCard(card, question, listIndex) {
   );
 
   parts.explanation.hidden = !question.explanation;
-  parts.explanation.textContent = question.explanation ? `Giải thích: ${question.explanation}` : "";
+  parts.explanation.textContent = question.explanation
+    ? `Giải thích: ${question.explanation}`
+    : "";
   const optionCount = question.options.length;
   parts.optionNodes.forEach((node, index) => {
     if (index >= optionCount) {
@@ -842,7 +916,8 @@ function measureReviewVirtualVisible(virtualScrollState) {
 function syncReviewVirtualWindow() {
   if (state.mode !== "review") return;
   const resultCount = $("review-result-count");
-  if (resultCount) resultCount.textContent = `Hiển thị ${filtered.length}/${questions.length} câu hỏi`;
+  if (resultCount)
+    resultCount.textContent = `Hiển thị ${filtered.length}/${questions.length} câu hỏi`;
   const list = $("review-list");
   const virtualScrollState = getReviewVirtualState();
   if (!list || !virtualScrollState.filtered.length) return;
@@ -1005,7 +1080,9 @@ function renderQuestionBank() {
       `${state.decks.quocphong1?.length ?? 479} câu`;
     $("bank-count-quocphong2").textContent =
       `${state.decks.quocphong2?.length ?? 262} câu`;
-    if ($("bank-count-custom")) $("bank-count-custom").textContent = `${state.decks.custom?.length ?? 0} câu`;
+    if ($("bank-count-custom"))
+      $("bank-count-custom").textContent =
+        `${state.decks.custom?.length ?? 0} câu`;
   }
 
   const list = $("review-list");
@@ -1107,19 +1184,27 @@ function refreshStorageRecoveryNotice() {
   notice.hidden = !backup;
   if (backup) {
     const reason = $("storage-recovery-reason");
-    if (reason) reason.textContent = backup.reason || "Dữ liệu lưu trữ trước đó không hợp lệ.";
+    if (reason)
+      reason.textContent =
+        backup.reason || "Dữ liệu lưu trữ trước đó không hợp lệ.";
   }
-  $("btn-download-storage-recovery")?.addEventListener("click", () => {
-    const current = getRecoveryBackup();
-    if (!current) return;
-    const blob = new Blob([JSON.stringify(current, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "quocphonganninh-storage-recovery.json";
-    anchor.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, { once: true });
+  $("btn-download-storage-recovery")?.addEventListener(
+    "click",
+    () => {
+      const current = getRecoveryBackup();
+      if (!current) return;
+      const blob = new Blob([JSON.stringify(current, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "quocphonganninh-storage-recovery.json";
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    },
+    { once: true },
+  );
 }
 
 function refreshSetupUI() {
@@ -1130,9 +1215,11 @@ function refreshSetupUI() {
   $("count-quocphong2").textContent =
     `${state.decks.quocphong2?.length ?? "262"} câu`;
 
-  document.querySelectorAll("#screen-setup .deck-btn[data-deck]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.deck === state.currentDeck);
-  });
+  document
+    .querySelectorAll("#screen-setup .deck-btn[data-deck]")
+    .forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.deck === state.currentDeck);
+    });
 
   const startInput = $("input-range-start");
   const endInput = $("input-range-end");
@@ -1358,7 +1445,12 @@ function setBankPracticeMode(mode) {
 }
 
 function setBankDeck(deckId) {
-  const id = deckId === "custom" && state.decks.custom ? "custom" : deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+  const id =
+    deckId === "custom" && state.decks.custom
+      ? "custom"
+      : deckId === "quocphong2"
+        ? "quocphong2"
+        : "quocphong1";
   if (state.bankDeck === id) return;
   persistBankForm();
   state.bankDeck = id;
@@ -2315,7 +2407,10 @@ async function onExamSubmit() {
         continue;
       }
       const correct = isAnswerCorrect(item, question);
-      if (!recordStudyAnswer(session.deckId, question.originalIndex, correct)) toast("Không thể lưu lịch ôn thông minh. Hãy kiểm tra bộ nhớ trình duyệt.");
+      if (!recordStudyAnswer(session.deckId, question.originalIndex, correct))
+        toast(
+          "Không thể lưu lịch ôn thông minh. Hãy kiểm tra bộ nhớ trình duyệt.",
+        );
       document.dispatchEvent(new CustomEvent("study-tools-answer-recorded"));
       item.checked = true;
       if (correct) {
@@ -3450,35 +3545,70 @@ function bindEvents() {
   $("review-topic-filter")?.addEventListener("change", renderQuestionBank);
   $("review-category-filter")?.addEventListener("change", renderQuestionBank);
   document.addEventListener("study-tools-duplicate-check", (event) => {
-    const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const deckId =
+      event.detail?.deckId === "custom" && state.decks.custom
+        ? "custom"
+        : event.detail?.deckId === "quocphong2"
+          ? "quocphong2"
+          : "quocphong1";
     const questions = state.decks[deckId] || [];
     const groups = findDuplicateQuestions(questions);
     const conflicts = findConflictingQuestions(questions);
-    if (!groups.length && !conflicts.length) { toast(`${DECKS[deckId].label}: không phát hiện câu trùng hoặc xung đột nội dung.`); return; }
-    const duplicateText = groups.slice(0, 10).map((group) => `Trùng hoàn toàn — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`).join("\n\n");
-    const conflictText = conflicts.slice(0, 10).map((group) => `Cùng câu hỏi nhưng đáp án khác — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`).join("\n\n");
+    if (!groups.length && !conflicts.length) {
+      toast(
+        `${DECKS[deckId].label}: không phát hiện câu trùng hoặc xung đột nội dung.`,
+      );
+      return;
+    }
+    const duplicateText = groups
+      .slice(0, 10)
+      .map(
+        (group) =>
+          `Trùng hoàn toàn — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`,
+      )
+      .join("\n\n");
+    const conflictText = conflicts
+      .slice(0, 10)
+      .map(
+        (group) =>
+          `Cùng câu hỏi nhưng đáp án khác — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`,
+      )
+      .join("\n\n");
     const sections = [duplicateText, conflictText].filter(Boolean).join("\n\n");
-    alert(`${DECKS[deckId].label}: ${groups.length} nhóm trùng hoàn toàn, ${conflicts.length} nhóm xung đột.\n\n${sections}${groups.length > 10 || conflicts.length > 10 ? "\n\n…còn nhóm khác." : ""}`);
+    alert(
+      `${DECKS[deckId].label}: ${groups.length} nhóm trùng hoàn toàn, ${conflicts.length} nhóm xung đột.\n\n${sections}${groups.length > 10 || conflicts.length > 10 ? "\n\n…còn nhóm khác." : ""}`,
+    );
   });
   document.addEventListener("study-tools-custom-bank-imported", (event) => {
     try {
-      if (!loadCustomDeck(event.detail?.questions)) throw new Error("Bộ đề nhập không hợp lệ.");
+      if (!loadCustomDeck(event.detail?.questions))
+        throw new Error("Bộ đề nhập không hợp lệ.");
       state.currentDeck = "custom";
       state.bankDeck = "custom";
       applySettingsToForm(getSettings("custom"));
       refreshSetupUI();
-      toast("Đã chuyển sang bộ đề nhập. Tiến độ bộ đề gốc vẫn được giữ nguyên.");
-    } catch (error) { alert(error?.message || "Không thể tải bộ đề nhập."); }
+      toast(
+        "Đã chuyển sang bộ đề nhập. Tiến độ bộ đề gốc vẫn được giữ nguyên.",
+      );
+    } catch (error) {
+      alert(error?.message || "Không thể tải bộ đề nhập.");
+    }
   });
   document.addEventListener("study-tools-report-export", () => {
-    const reportDecks = ["quocphong1", "quocphong2", ...(state.decks.custom ? ["custom"] : [])];
+    const reportDecks = [
+      "quocphong1",
+      "quocphong2",
+      ...(state.decks.custom ? ["custom"] : []),
+    ];
     const rows = reportDecks.map((deckId) => ({
       deckId,
       label: DECKS[deckId].label,
       questions: state.decks[deckId] || [],
       progress: getDeckProgress(deckId),
     }));
-    const blob = new Blob([exportStudyReportCsv(rows)], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([exportStudyReportCsv(rows)], {
+      type: "text/csv;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -3487,23 +3617,52 @@ function bindEvents() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   document.addEventListener("study-tools-wrong-review", (event) => {
-    const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const deckId =
+      event.detail?.deckId === "custom" && state.decks.custom
+        ? "custom"
+        : event.detail?.deckId === "quocphong2"
+          ? "quocphong2"
+          : "quocphong1";
     const progress = getDeckProgress(deckId);
-    const indices = Object.entries(progress.wrongMap || {}).filter(([, count]) => Number.isInteger(count) && count > 0).sort((leftEntry, rightEntry) => rightEntry[1] - leftEntry[1]).map(([index]) => Number(index));
-    if (!indices.length) { toast("Bộ đề này chưa có câu sai được ghi nhận."); return; }
+    const indices = Object.entries(progress.wrongMap || {})
+      .filter(([, count]) => Number.isInteger(count) && count > 0)
+      .sort((leftEntry, rightEntry) => rightEntry[1] - leftEntry[1])
+      .map(([index]) => Number(index));
+    if (!indices.length) {
+      toast("Bộ đề này chưa có câu sai được ghi nhận.");
+      return;
+    }
     state.currentDeck = deckId;
     state.bankDeck = deckId;
     state.setupDeckBeforeBank = deckId;
     applySettingsToForm(getSettings(deckId));
     openQuestionBank();
     state.bankDeck = deckId;
-    state.reviewSelectedIndices = new Set(indices.filter((index) => Number.isInteger(index) && index >= 0 && index < (state.decks[deckId]?.length || 0)));
-    applyBankSettingsToForm({ ...getBankSettings(), deck: deckId, count: state.reviewSelectedIndices.size });
+    state.reviewSelectedIndices = new Set(
+      indices.filter(
+        (index) =>
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index < (state.decks[deckId]?.length || 0),
+      ),
+    );
+    applyBankSettingsToForm({
+      ...getBankSettings(),
+      deck: deckId,
+      count: state.reviewSelectedIndices.size,
+    });
     renderQuestionBank();
   });
   document.addEventListener("study-tools-review", (event) => {
-    const deckId = event.detail?.deckId === "custom" && state.decks.custom ? "custom" : event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
-    const indices = Array.isArray(event.detail?.indices) ? event.detail.indices : [];
+    const deckId =
+      event.detail?.deckId === "custom" && state.decks.custom
+        ? "custom"
+        : event.detail?.deckId === "quocphong2"
+          ? "quocphong2"
+          : "quocphong1";
+    const indices = Array.isArray(event.detail?.indices)
+      ? event.detail.indices
+      : [];
     if (!indices.length) return;
     state.currentDeck = deckId;
     state.bankDeck = deckId;
@@ -3511,30 +3670,43 @@ function bindEvents() {
     applySettingsToForm(getSettings(deckId));
     openQuestionBank();
     state.bankDeck = deckId;
-    state.reviewSelectedIndices = new Set(indices.filter((index) => Number.isInteger(index) && index >= 0 && index < (state.decks[deckId]?.length || 0)));
-    applyBankSettingsToForm({ ...getBankSettings(), deck: deckId, count: state.reviewSelectedIndices.size });
+    state.reviewSelectedIndices = new Set(
+      indices.filter(
+        (index) =>
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index < (state.decks[deckId]?.length || 0),
+      ),
+    );
+    applyBankSettingsToForm({
+      ...getBankSettings(),
+      deck: deckId,
+      count: state.reviewSelectedIndices.size,
+    });
     renderQuestionBank();
   });
 
-  document.querySelectorAll("#screen-setup .deck-btn[data-deck]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (state.currentDeck === btn.dataset.deck) return;
-      const previousTotal = currentQuestions().length;
-      const previousEnd = Number.parseInt($("input-range-end").value, 10);
-      persistSetupForm();
-      state.currentDeck = btn.dataset.deck;
-      const settings = getSettings(state.currentDeck);
-      const currentTotal = currentQuestions().length;
-      settings.endQuestion = getEndQuestionForDeckSwitch(
-        previousEnd,
-        previousTotal,
-        currentTotal,
-      );
-      applySettingsToForm(settings);
-      refreshSetupUI();
-      persistSetupForm();
+  document
+    .querySelectorAll("#screen-setup .deck-btn[data-deck]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (state.currentDeck === btn.dataset.deck) return;
+        const previousTotal = currentQuestions().length;
+        const previousEnd = Number.parseInt($("input-range-end").value, 10);
+        persistSetupForm();
+        state.currentDeck = btn.dataset.deck;
+        const settings = getSettings(state.currentDeck);
+        const currentTotal = currentQuestions().length;
+        settings.endQuestion = getEndQuestionForDeckSwitch(
+          previousEnd,
+          previousTotal,
+          currentTotal,
+        );
+        applySettingsToForm(settings);
+        refreshSetupUI();
+        persistSetupForm();
+      });
     });
-  });
 
   $("btn-all").addEventListener("click", () => {
     const form = readSetupForm();

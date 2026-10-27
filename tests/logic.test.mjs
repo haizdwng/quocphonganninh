@@ -289,10 +289,19 @@ test("study tools schedule spaced review and track daily learning", () => {
   const now = Date.now();
   assert.equal(studyTools.recordStudyAnswer("quocphong1", 2, true), true);
   assert.deepEqual(studyTools.getDueQuestions("quocphong1", now), []);
-  assert.deepEqual(studyTools.getDueQuestions("quocphong1", now + 2 * 86400000), [2]);
+  assert.deepEqual(
+    studyTools.getDueQuestions("quocphong1", now + 2 * 86400000),
+    [2],
+  );
   assert.equal(studyTools.recordStudyAnswer("quocphong1", 4, false), true);
-  assert.deepEqual(studyTools.getDueQuestions("quocphong1", now + 11 * 60000), [4]);
-  assert.deepEqual(studyTools.getDueQuestions("quocphong2", now + 86400000), []);
+  assert.deepEqual(
+    studyTools.getDueQuestions("quocphong1", now + 11 * 60000),
+    [4],
+  );
+  assert.deepEqual(
+    studyTools.getDueQuestions("quocphong2", now + 86400000),
+    [],
+  );
 });
 
 test("study notes are isolated by deck and backup validates its format", () => {
@@ -302,14 +311,23 @@ test("study notes are isolated by deck and backup validates its format", () => {
   assert.equal(studyTools.saveQuestionNote("quocphong1", 0, " "), true);
   assert.equal(studyTools.getQuestionNote("quocphong1", 0), "");
   assert.equal(studyTools.importStudyTools("{}").success, false);
-  assert.equal(studyTools.importStudyTools(studyTools.exportStudyTools()).success, true);
+  assert.equal(
+    studyTools.importStudyTools(studyTools.exportStudyTools()).success,
+    true,
+  );
 });
 
 test("study question categories are isolated and restricted to known values", () => {
-  assert.equal(studyTools.saveQuestionCategory("quocphong1", 5, "confusing"), true);
+  assert.equal(
+    studyTools.saveQuestionCategory("quocphong1", 5, "confusing"),
+    true,
+  );
   assert.equal(studyTools.getQuestionCategory("quocphong1", 5), "confusing");
   assert.equal(studyTools.getQuestionCategory("quocphong2", 5), "");
-  assert.equal(studyTools.saveQuestionCategory("quocphong1", 5, "invalid"), false);
+  assert.equal(
+    studyTools.saveQuestionCategory("quocphong1", 5, "invalid"),
+    false,
+  );
   assert.equal(studyTools.saveQuestionCategory("quocphong1", 5, ""), true);
   assert.equal(studyTools.getQuestionCategory("quocphong1", 5), "");
 });
@@ -328,12 +346,19 @@ test("study calendar returns a stable seven-day window and CSV quotes question t
   const calendar = studyTools.getStudyCalendar(7, new Date(2026, 9, 27));
   assert.equal(calendar.length, 7);
   assert.equal(calendar[6].key, "2026-10-27");
-  const csv = studyTools.exportStudyReportCsv([{
-    deckId: "quocphong1",
-    label: "Quốc Phòng 1",
-    questions: [{ originalIndex: 0, question: 'Câu "đặc biệt"' }],
-    progress: { completed: [0], wrongMap: {}, practiceMap: {}, bookmarks: [] },
-  }]);
+  const csv = studyTools.exportStudyReportCsv([
+    {
+      deckId: "quocphong1",
+      label: "Quốc Phòng 1",
+      questions: [{ originalIndex: 0, question: 'Câu "đặc biệt"' }],
+      progress: {
+        completed: [0],
+        wrongMap: {},
+        practiceMap: {},
+        bookmarks: [],
+      },
+    },
+  ]);
   assert.match(csv, /"Câu ""đặc biệt"""/);
   assert.match(csv, /Mức độ/);
 });
@@ -341,7 +366,13 @@ test("study calendar returns a stable seven-day window and CSV quotes question t
 test("question IDs remain stable across ordering and duplicate groups are detected", () => {
   const input = [
     { question: "Câu A", options: ["Đúng", "Sai"], correct: 0 },
-    { question: "Câu B", options: ["Một", "Hai"], correct: 1, topic: "Chủ đề 1", explanation: "Giải thích mẫu." },
+    {
+      question: "Câu B",
+      options: ["Một", "Hai"],
+      correct: 1,
+      topic: "Chủ đề 1",
+      explanation: "Giải thích mẫu.",
+    },
     { question: "  Câu   A ", options: ["Đúng", "Sai"], correct: 0 },
   ];
   const normalized = quiz.normalizeQuestions(input);
@@ -354,19 +385,32 @@ test("question IDs remain stable across ordering and duplicate groups are detect
 
 test("custom question bank can be saved and remains isolated in storage", async () => {
   const tools = await import("../assets/js/study-tools.js?custom-bank-test");
-  const input = [{ question: "Câu riêng", options: ["A", "B"], correct: 1, topic: "Chủ đề riêng" }];
+  const input = [
+    {
+      question: "Câu riêng",
+      options: ["A", "B"],
+      correct: 1,
+      topic: "Chủ đề riêng",
+    },
+  ];
   assert.equal(tools.saveCustomQuestionBank(input), true);
   assert.equal(tools.getCustomQuestionBank().length, 1);
   assert.equal(tools.getCustomQuestionBank()[0].topic, "Chủ đề riêng");
   assert.equal(storage.getDeckProgress("quocphong1").completed.length, 0);
   assert.equal(storage.getDeckProgress("custom").completed.length, 0);
-  assert.equal(storage.saveSession({ deckId: "custom", marker: "custom-session" }), true);
+  assert.equal(
+    storage.saveSession({ deckId: "custom", marker: "custom-session" }),
+    true,
+  );
   assert.equal(storage.getSession("custom").marker, "custom-session");
   assert.equal(storage.getSession("quocphong1"), null);
 });
 
 test("question categories can be read from the study-tools data store", () => {
-  assert.equal(studyTools.saveQuestionCategory("quocphong1", 7, "important"), true);
+  assert.equal(
+    studyTools.saveQuestionCategory("quocphong1", 7, "important"),
+    true,
+  );
   assert.equal(studyTools.getQuestionCategory("quocphong1", 7), "important");
   assert.equal(studyTools.getQuestionCategory("quocphong2", 7), "");
 });
@@ -378,7 +422,10 @@ test("conflicting questions with the same prompt but different answers are detec
     { question: "Câu khác", options: ["A", "B"], correct: 0 },
   ]);
   assert.equal(quiz.findConflictingQuestions(normalized).length, 1);
-  assert.deepEqual(quiz.findConflictingQuestions(normalized)[0].map((item) => item.index), [0, 1]);
+  assert.deepEqual(
+    quiz.findConflictingQuestions(normalized)[0].map((item) => item.index),
+    [0, 1],
+  );
 });
 
 test("progress remaps to stable question IDs when question order changes", () => {
@@ -391,19 +438,26 @@ test("progress remaps to stable question IDs when question order changes", () =>
     { question: "Câu C", options: ["A", "B"], correct: 1 },
     { question: "Câu A", options: ["A", "B"], correct: 0 },
   ]);
-  const result = quiz.remapQuestionProgress({
-    completed: [0, 2],
-    bookmarks: [1, 2],
-    wrongMap: { 0: 2, 1: 3 },
-    practiceMap: { 2: 4 },
-    sequentialCursor: 2,
-  }, questions.map((question) => question.id), reordered);
+  const result = quiz.remapQuestionProgress(
+    {
+      completed: [0, 2],
+      bookmarks: [1, 2],
+      wrongMap: { 0: 2, 1: 3 },
+      practiceMap: { 2: 4 },
+      sequentialCursor: 2,
+    },
+    questions.map((question) => question.id),
+    reordered,
+  );
   assert.deepEqual(result.completed, [0, 1]);
   assert.deepEqual(result.bookmarks, [0]);
   assert.deepEqual(result.wrongMap, { 1: 2 });
   assert.deepEqual(result.practiceMap, { 0: 4 });
   assert.equal(result.sequentialCursor, 0);
-  assert.deepEqual(result.questionIds, reordered.map((question) => question.id));
+  assert.deepEqual(
+    result.questionIds,
+    reordered.map((question) => question.id),
+  );
 });
 
 test("generated question IDs remain unique for duplicate question entries", () => {
@@ -415,10 +469,16 @@ test("generated question IDs remain unique for duplicate question entries", () =
 });
 
 test("deck progress persists stable question IDs for later migration", () => {
-  assert.equal(storage.saveDeckProgress("quocphong1", {
-    completed: [1],
-    questionIds: ["question-a", "question-b"],
-    dataFingerprint: "fingerprint",
-  }), true);
-  assert.deepEqual(storage.getDeckProgress("quocphong1").questionIds, ["question-a", "question-b"]);
+  assert.equal(
+    storage.saveDeckProgress("quocphong1", {
+      completed: [1],
+      questionIds: ["question-a", "question-b"],
+      dataFingerprint: "fingerprint",
+    }),
+    true,
+  );
+  assert.deepEqual(storage.getDeckProgress("quocphong1").questionIds, [
+    "question-a",
+    "question-b",
+  ]);
 });

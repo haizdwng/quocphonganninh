@@ -57,7 +57,11 @@ export function getCustomQuestionBank() {
 export function saveCustomQuestionBank(questions) {
   try {
     const normalized = normalizeQuestions(questions);
-    if (normalized.length > 2000 || normalized.some((question) => question.options.length > 6)) return false;
+    if (
+      normalized.length > 2000 ||
+      normalized.some((question) => question.options.length > 6)
+    )
+      return false;
     localStorage.setItem(CUSTOM_BANK_KEY, JSON.stringify(normalized));
     return true;
   } catch {
@@ -77,9 +81,13 @@ export function recordStudyAnswer(deckId, questionIndex, correct) {
   const deck = getDeck(data, deckId);
   if (!deck.schedule || typeof deck.schedule !== "object") deck.schedule = {};
   const old = deck.schedule[questionIndex] || {};
-  const repetitions = correct ? Math.min(30, (Number(old.repetitions) || 0) + 1) : 0;
+  const repetitions = correct
+    ? Math.min(30, (Number(old.repetitions) || 0) + 1)
+    : 0;
   const dueAt = correct
-    ? Date.now() + INTERVAL_DAYS[Math.min(repetitions - 1, INTERVAL_DAYS.length - 1)] * 86400000
+    ? Date.now() +
+      INTERVAL_DAYS[Math.min(repetitions - 1, INTERVAL_DAYS.length - 1)] *
+        86400000
     : Date.now() + 10 * 60000;
   deck.schedule[questionIndex] = {
     repetitions,
@@ -93,7 +101,11 @@ export function recordStudyAnswer(deckId, questionIndex, correct) {
   if (!data.activity || typeof data.activity !== "object") data.activity = {};
   data.activity[today] = Math.max(0, Number(data.activity[today]) || 0) + 1;
   const activityKeys = Object.keys(data.activity).sort();
-  for (const key of activityKeys.slice(0, Math.max(0, activityKeys.length - 120))) delete data.activity[key];
+  for (const key of activityKeys.slice(
+    0,
+    Math.max(0, activityKeys.length - 120),
+  ))
+    delete data.activity[key];
   return writeData(data);
 }
 
@@ -101,7 +113,10 @@ export function getDueQuestions(deckId, now = Date.now()) {
   const data = readData();
   const schedule = getDeck(data, deckId).schedule || {};
   return Object.entries(schedule)
-    .filter(([key, value]) => validIndex(Number(key)) && value && Number(value.dueAt) <= now)
+    .filter(
+      ([key, value]) =>
+        validIndex(Number(key)) && value && Number(value.dueAt) <= now,
+    )
     .map(([key]) => Number(key))
     .sort((leftIndex, rightIndex) => {
       const left = schedule[leftIndex] || {};
@@ -125,11 +140,17 @@ export function saveQuestionNote(deckId, questionIndex, note) {
 
 export function saveQuestionCategory(deckId, questionIndex, category) {
   if (!DECKS.includes(deckId) || !validIndex(questionIndex)) return false;
-  if (!["", "remember", "confusing", "important"].includes(category)) return false;
+  if (!["", "remember", "confusing", "important"].includes(category))
+    return false;
   const data = readData();
   if (!data.decks || typeof data.decks !== "object") data.decks = {};
   const deck = getDeck(data, deckId);
-  if (!deck.categories || typeof deck.categories !== "object" || Array.isArray(deck.categories)) deck.categories = {};
+  if (
+    !deck.categories ||
+    typeof deck.categories !== "object" ||
+    Array.isArray(deck.categories)
+  )
+    deck.categories = {};
   if (category) deck.categories[questionIndex] = category;
   else delete deck.categories[questionIndex];
   data.decks[deckId] = deck;
@@ -138,7 +159,11 @@ export function saveQuestionCategory(deckId, questionIndex, category) {
 
 export function getQuestionCategory(deckId, questionIndex) {
   const categories = getDeck(readData(), deckId).categories || {};
-  return ["remember", "confusing", "important"].includes(categories[questionIndex]) ? categories[questionIndex] : "";
+  return ["remember", "confusing", "important"].includes(
+    categories[questionIndex],
+  )
+    ? categories[questionIndex]
+    : "";
 }
 
 export function getQuestionNote(deckId, questionIndex) {
@@ -153,11 +178,17 @@ export function getStudyCalendar(days = 7, now = new Date()) {
   const count = Math.max(1, Math.min(31, Math.floor(days) || 7));
   const result = [];
   for (let offset = count - 1; offset >= 0; offset -= 1) {
-    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
+    const date = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - offset,
+    );
     const key = dayKey(date);
     result.push({
       key,
-      label: new Intl.DateTimeFormat("vi-VN", { weekday: "short" }).format(date),
+      label: new Intl.DateTimeFormat("vi-VN", { weekday: "short" }).format(
+        date,
+      ),
       dateLabel: `${date.getDate()}/${date.getMonth() + 1}`,
       count: Math.max(0, Number(activity[key]) || 0),
     });
@@ -167,17 +198,33 @@ export function getStudyCalendar(days = 7, now = new Date()) {
 
 export function exportStudyReportCsv(decks) {
   const data = readData();
-  const rows = [[
-    "Bộ đề", "Câu", "Nội dung câu hỏi", "Đã hoàn thành", "Số lần sai",
-    "Số lượt ôn", "Đã đánh dấu", "Đến hạn ôn", "Mức độ", "Phân loại",
-    "Ghi chú", "Lần trả lời gần nhất",
-  ]];
+  const rows = [
+    [
+      "Bộ đề",
+      "Câu",
+      "Nội dung câu hỏi",
+      "Đã hoàn thành",
+      "Số lần sai",
+      "Số lượt ôn",
+      "Đã đánh dấu",
+      "Đến hạn ôn",
+      "Mức độ",
+      "Phân loại",
+      "Ghi chú",
+      "Lần trả lời gần nhất",
+    ],
+  ];
   const now = Date.now();
   for (const entry of Array.isArray(decks) ? decks : []) {
-    if (!DECKS.includes(entry.deckId) || !Array.isArray(entry.questions)) continue;
+    if (!DECKS.includes(entry.deckId) || !Array.isArray(entry.questions))
+      continue;
     const progress = entry.progress || {};
-    const completed = new Set(Array.isArray(progress.completed) ? progress.completed : []);
-    const bookmarks = new Set(Array.isArray(progress.bookmarks) ? progress.bookmarks : []);
+    const completed = new Set(
+      Array.isArray(progress.completed) ? progress.completed : [],
+    );
+    const bookmarks = new Set(
+      Array.isArray(progress.bookmarks) ? progress.bookmarks : [],
+    );
     const wrongMap = progress.wrongMap || {};
     const practiceMap = progress.practiceMap || {};
     const deck = getDeck(data, entry.deckId);
@@ -188,7 +235,15 @@ export function exportStudyReportCsv(decks) {
       const index = question.originalIndex;
       const record = schedule[index] || {};
       const reps = Math.max(0, Number(record.repetitions) || 0);
-      const mastery = !record.lastAnsweredAt ? "Chưa ôn" : !record.lastCorrect ? "Cần ôn" : reps >= 4 ? "Thành thạo" : reps >= 2 ? "Đang nhớ" : "Đang học";
+      const mastery = !record.lastAnsweredAt
+        ? "Chưa ôn"
+        : !record.lastCorrect
+          ? "Cần ôn"
+          : reps >= 4
+            ? "Thành thạo"
+            : reps >= 2
+              ? "Đang nhớ"
+              : "Đang học";
       rows.push([
         entry.label || entry.deckId,
         index + 1,
@@ -197,11 +252,19 @@ export function exportStudyReportCsv(decks) {
         Number(wrongMap[index]) || 0,
         Number(practiceMap[index]) || 0,
         bookmarks.has(index) ? "Có" : "Không",
-        Number(record.dueAt) > 0 && Number(record.dueAt) <= now ? "Có" : "Không",
+        Number(record.dueAt) > 0 && Number(record.dueAt) <= now
+          ? "Có"
+          : "Không",
         mastery,
-        ({ remember: "Cần ghi nhớ", confusing: "Hay nhầm", important: "Trọng tâm" })[categories[index]] || "",
+        {
+          remember: "Cần ghi nhớ",
+          confusing: "Hay nhầm",
+          important: "Trọng tâm",
+        }[categories[index]] || "",
         notes[index] || "",
-        record.lastAnsweredAt ? new Date(record.lastAnsweredAt).toISOString() : "",
+        record.lastAnsweredAt
+          ? new Date(record.lastAnsweredAt).toISOString()
+          : "",
       ]);
     }
   }
@@ -225,9 +288,26 @@ export function getStudyToolSummary(now = new Date()) {
     dailyGoal,
     todayCount: Math.max(0, Number(activity[today]) || 0),
     streak,
-    notesCount: DECKS.reduce((sum, deckId) => sum + Object.keys(getDeck(data, deckId).notes || {}).length, 0),
-    dueCount: DECKS.reduce((sum, deckId) => sum + getDueQuestions(deckId, now.getTime()).length, 0),
-    masteredCount: DECKS.reduce((sum, deckId) => sum + Object.values(getDeck(data, deckId).schedule || {}).filter((record) => record && record.lastCorrect === true && Number(record.repetitions) >= 4).length, 0),
+    notesCount: DECKS.reduce(
+      (sum, deckId) =>
+        sum + Object.keys(getDeck(data, deckId).notes || {}).length,
+      0,
+    ),
+    dueCount: DECKS.reduce(
+      (sum, deckId) => sum + getDueQuestions(deckId, now.getTime()).length,
+      0,
+    ),
+    masteredCount: DECKS.reduce(
+      (sum, deckId) =>
+        sum +
+        Object.values(getDeck(data, deckId).schedule || {}).filter(
+          (record) =>
+            record &&
+            record.lastCorrect === true &&
+            Number(record.repetitions) >= 4,
+        ).length,
+      0,
+    ),
   };
 }
 
@@ -238,7 +318,11 @@ export function setDailyGoal(value) {
 }
 
 export function exportStudyTools() {
-  return JSON.stringify({ format: "quocphonganninh-study-tools", version: 1, data: readData() }, null, 2);
+  return JSON.stringify(
+    { format: "quocphonganninh-study-tools", version: 1, data: readData() },
+    null,
+    2,
+  );
 }
 
 export function importStudyTools(text) {
@@ -248,11 +332,23 @@ export function importStudyTools(text) {
   } catch {
     return { success: false, message: "Tệp JSON không hợp lệ." };
   }
-  if (parsed?.format !== "quocphonganninh-study-tools" || parsed?.version !== 1 || !parsed.data || typeof parsed.data !== "object" || Array.isArray(parsed.data)) {
-    return { success: false, message: "Tệp không đúng định dạng dữ liệu công cụ học tập." };
+  if (
+    parsed?.format !== "quocphonganninh-study-tools" ||
+    parsed?.version !== 1 ||
+    !parsed.data ||
+    typeof parsed.data !== "object" ||
+    Array.isArray(parsed.data)
+  ) {
+    return {
+      success: false,
+      message: "Tệp không đúng định dạng dữ liệu công cụ học tập.",
+    };
   }
   const data = parsed.data;
-  if (data.decks != null && (typeof data.decks !== "object" || Array.isArray(data.decks))) {
+  if (
+    data.decks != null &&
+    (typeof data.decks !== "object" || Array.isArray(data.decks))
+  ) {
     return { success: false, message: "Dữ liệu bộ đề trong tệp không hợp lệ." };
   }
   return writeData(data)
@@ -269,9 +365,13 @@ function renderSummary() {
   const notes = document.getElementById("study-notes-count");
   const mastered = document.getElementById("study-mastered-count");
   const calendar = document.getElementById("study-calendar");
-  if (goal && document.activeElement !== goal) goal.value = String(summary.dailyGoal);
+  if (goal && document.activeElement !== goal)
+    goal.value = String(summary.dailyGoal);
   if (progress) {
-    const percent = Math.min(100, Math.round(summary.todayCount / summary.dailyGoal * 100));
+    const percent = Math.min(
+      100,
+      Math.round((summary.todayCount / summary.dailyGoal) * 100),
+    );
     progress.textContent = `${summary.todayCount}/${summary.dailyGoal} câu hôm nay · ${percent}%`;
     progress.setAttribute("aria-valuenow", String(percent));
   }
@@ -282,29 +382,39 @@ function renderSummary() {
   if (calendar) {
     const days = getStudyCalendar(7);
     const maxCount = Math.max(1, ...days.map((day) => day.count));
-    calendar.replaceChildren(...days.map((day) => {
-      const item = document.createElement("div");
-      item.className = "study-calendar-day";
-      item.title = `${day.dateLabel}: ${day.count} câu`;
-      const bar = document.createElement("span");
-      bar.className = "study-calendar-bar";
-      bar.style.height = `${Math.max(4, Math.round(day.count / maxCount * 42))}px`;
-      bar.setAttribute("aria-hidden", "true");
-      const count = document.createElement("strong");
-      count.textContent = String(day.count);
-      const label = document.createElement("small");
-      label.textContent = day.label;
-      const date = document.createElement("small");
-      date.textContent = day.dateLabel;
-      item.append(bar, count, label, date);
-      return item;
-    }));
+    calendar.replaceChildren(
+      ...days.map((day) => {
+        const item = document.createElement("div");
+        item.className = "study-calendar-day";
+        item.title = `${day.dateLabel}: ${day.count} câu`;
+        const bar = document.createElement("span");
+        bar.className = "study-calendar-bar";
+        bar.style.height = `${Math.max(4, Math.round((day.count / maxCount) * 42))}px`;
+        bar.setAttribute("aria-hidden", "true");
+        const count = document.createElement("strong");
+        count.textContent = String(day.count);
+        const label = document.createElement("small");
+        label.textContent = day.label;
+        const date = document.createElement("small");
+        date.textContent = day.dateLabel;
+        item.append(bar, count, label, date);
+        return item;
+      }),
+    );
   }
   const reminderButton = document.getElementById("study-reminder-toggle");
   const reminder = readData();
-  if (reminderButton) reminderButton.textContent = reminder.reminderEnabled ? "Tắt nhắc học" : "Bật nhắc học";
+  if (reminderButton)
+    reminderButton.textContent = reminder.reminderEnabled
+      ? "Tắt nhắc học"
+      : "Bật nhắc học";
   const reminderInput = document.getElementById("study-reminder-time");
-  if (reminderInput && document.activeElement !== reminderInput && /^\\d{2}:\\d{2}$/.test(reminder.reminderTime || "")) reminderInput.value = reminder.reminderTime;
+  if (
+    reminderInput &&
+    document.activeElement !== reminderInput &&
+    /^\\d{2}:\\d{2}$/.test(reminder.reminderTime || "")
+  )
+    reminderInput.value = reminder.reminderTime;
 }
 
 export function initStudyTools() {
@@ -312,41 +422,65 @@ export function initStudyTools() {
   if (!root || root.dataset.ready === "true") return;
   root.dataset.ready = "true";
   renderSummary();
-  document.getElementById("study-daily-goal")?.addEventListener("change", (event) => {
-    setDailyGoal(event.currentTarget.value);
-    renderSummary();
-  });
-  document.getElementById("study-reminder-time")?.addEventListener("change", (event) => {
-    const data = readData();
-    if (!data.reminderEnabled) return;
-    data.reminderTime = /^\\d{2}:\\d{2}$/.test(event.currentTarget.value) ? event.currentTarget.value : "20:00";
-    writeData(data);
-  });
-  document.getElementById("study-reminder-toggle")?.addEventListener("click", async () => {
-    const data = readData();
-    if (data.reminderEnabled) {
-      data.reminderEnabled = false;
+  document
+    .getElementById("study-daily-goal")
+    ?.addEventListener("change", (event) => {
+      setDailyGoal(event.currentTarget.value);
+      renderSummary();
+    });
+  document
+    .getElementById("study-reminder-time")
+    ?.addEventListener("change", (event) => {
+      const data = readData();
+      if (!data.reminderEnabled) return;
+      data.reminderTime = /^\\d{2}:\\d{2}$/.test(event.currentTarget.value)
+        ? event.currentTarget.value
+        : "20:00";
+      writeData(data);
+    });
+  document
+    .getElementById("study-reminder-toggle")
+    ?.addEventListener("click", async () => {
+      const data = readData();
+      if (data.reminderEnabled) {
+        data.reminderEnabled = false;
+        writeData(data);
+        renderSummary();
+        return;
+      }
+      if (!("Notification" in window)) {
+        alert("Trình duyệt này không hỗ trợ thông báo.");
+        return;
+      }
+      const permission =
+        Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission();
+      if (permission !== "granted") {
+        alert("Bạn chưa cấp quyền thông báo cho trang web.");
+        return;
+      }
+      data.reminderEnabled = true;
+      data.reminderTime =
+        document.getElementById("study-reminder-time").value || "20:00";
       writeData(data);
       renderSummary();
-      return;
-    }
-    if (!("Notification" in window)) { alert("Trình duyệt này không hỗ trợ thông báo."); return; }
-    const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
-    if (permission !== "granted") { alert("Bạn chưa cấp quyền thông báo cho trang web."); return; }
-    data.reminderEnabled = true;
-    data.reminderTime = document.getElementById("study-reminder-time").value || "20:00";
-    writeData(data);
-    renderSummary();
-  });
-  document.getElementById("study-theme-toggle")?.addEventListener("click", () => {
-    const light = !document.body.classList.contains("theme-light");
-    document.body.classList.toggle("theme-light", light);
-    try { localStorage.setItem("quocphonganninh:theme", light ? "light" : "dark"); } catch {}
-    eventThemeLabel(light);
-  });
+    });
+  document
+    .getElementById("study-theme-toggle")
+    ?.addEventListener("click", () => {
+      const light = !document.body.classList.contains("theme-light");
+      document.body.classList.toggle("theme-light", light);
+      try {
+        localStorage.setItem("quocphonganninh:theme", light ? "light" : "dark");
+      } catch {}
+      eventThemeLabel(light);
+    });
   document.getElementById("study-note-load")?.addEventListener("click", () => {
     const deckId = document.getElementById("study-note-deck").value;
-    const questionNumber = Number(document.getElementById("study-note-question").value);
+    const questionNumber = Number(
+      document.getElementById("study-note-question").value,
+    );
     const textarea = document.getElementById("study-note-text");
     if (!Number.isInteger(questionNumber) || questionNumber < 1) {
       textarea.value = "";
@@ -356,12 +490,17 @@ export function initStudyTools() {
     }
     textarea.setCustomValidity("");
     textarea.value = getQuestionNote(deckId, questionNumber - 1);
-    document.getElementById("study-note-category").value = getQuestionCategory(deckId, questionNumber - 1);
+    document.getElementById("study-note-category").value = getQuestionCategory(
+      deckId,
+      questionNumber - 1,
+    );
     textarea.focus();
   });
   document.getElementById("study-note-save")?.addEventListener("click", () => {
     const deckId = document.getElementById("study-note-deck").value;
-    const questionNumber = Number(document.getElementById("study-note-question").value);
+    const questionNumber = Number(
+      document.getElementById("study-note-question").value,
+    );
     const textarea = document.getElementById("study-note-text");
     if (!Number.isInteger(questionNumber) || questionNumber < 1) {
       textarea.setCustomValidity("Nhập số câu từ 1 trở lên.");
@@ -369,81 +508,115 @@ export function initStudyTools() {
       return;
     }
     textarea.setCustomValidity("");
-    if (!saveQuestionNote(deckId, questionNumber - 1, textarea.value) || !saveQuestionCategory(deckId, questionNumber - 1, document.getElementById("study-note-category").value)) {
+    if (
+      !saveQuestionNote(deckId, questionNumber - 1, textarea.value) ||
+      !saveQuestionCategory(
+        deckId,
+        questionNumber - 1,
+        document.getElementById("study-note-category").value,
+      )
+    ) {
       alert("Không thể lưu ghi chú. Hãy kiểm tra bộ nhớ trình duyệt.");
       return;
     }
     renderSummary();
     const status = document.getElementById("study-note-status");
-    if (status) status.textContent = textarea.value.trim() ? "Đã lưu ghi chú và phân loại." : "Đã lưu phân loại; ghi chú trống đã được xóa.";
+    if (status)
+      status.textContent = textarea.value.trim()
+        ? "Đã lưu ghi chú và phân loại."
+        : "Đã lưu phân loại; ghi chú trống đã được xóa.";
   });
-  document.getElementById("custom-bank-import-file")?.addEventListener("change", async (event) => {
-    const file = event.currentTarget.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Tệp bộ đề quá lớn (tối đa 2 MB).");
+  document
+    .getElementById("custom-bank-import-file")
+    ?.addEventListener("change", async (event) => {
+      const file = event.currentTarget.files?.[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Tệp bộ đề quá lớn (tối đa 2 MB).");
+        event.currentTarget.value = "";
+        return;
+      }
+      let questions;
+      try {
+        questions = normalizeQuestions(JSON.parse(await file.text()));
+        if (questions.length > 2000) throw new Error("Bộ đề tối đa 2.000 câu.");
+        if (questions.some((question) => question.options.length > 6))
+          throw new Error("Mỗi câu chỉ hỗ trợ tối đa 6 đáp án.");
+      } catch (error) {
+        alert(`Không thể nhập bộ đề: ${error?.message || "JSON không hợp lệ"}`);
+        event.currentTarget.value = "";
+        return;
+      }
+      if (!saveCustomQuestionBank(questions)) {
+        alert("Không đủ bộ nhớ để lưu bộ đề nhập.");
+        event.currentTarget.value = "";
+        return;
+      }
+      document.dispatchEvent(
+        new CustomEvent("study-tools-custom-bank-imported", {
+          detail: { questions },
+        }),
+      );
+      alert(
+        `Đã nhập ${questions.length} câu. Bộ đề nhập xuất hiện ở phần chọn bộ đề.`,
+      );
       event.currentTarget.value = "";
-      return;
-    }
-    let questions;
-    try {
-      questions = normalizeQuestions(JSON.parse(await file.text()));
-      if (questions.length > 2000) throw new Error("Bộ đề tối đa 2.000 câu.");
-      if (questions.some((question) => question.options.length > 6)) throw new Error("Mỗi câu chỉ hỗ trợ tối đa 6 đáp án.");
-    } catch (error) {
-      alert(`Không thể nhập bộ đề: ${error?.message || "JSON không hợp lệ"}`);
+    });
+  document
+    .getElementById("custom-bank-export")
+    ?.addEventListener("click", () => {
+      const json = exportCustomQuestionBank();
+      if (!json) {
+        alert("Chưa có bộ đề nhập để xuất.");
+        return;
+      }
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "bo-de-tuy-chinh.json";
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  document
+    .getElementById("study-tools-export")
+    ?.addEventListener("click", () => {
+      const blob = new Blob([exportStudyTools()], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "quocphonganninh-study-tools.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
+  document
+    .getElementById("study-tools-import-file")
+    ?.addEventListener("change", async (event) => {
+      const file = event.currentTarget.files?.[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Tệp quá lớn (tối đa 2 MB).");
+        event.currentTarget.value = "";
+        return;
+      }
+      const result = importStudyTools(await file.text());
+      alert(result.message);
+      if (result.success) renderSummary();
       event.currentTarget.value = "";
-      return;
-    }
-    if (!saveCustomQuestionBank(questions)) {
-      alert("Không đủ bộ nhớ để lưu bộ đề nhập.");
-      event.currentTarget.value = "";
-      return;
-    }
-    document.dispatchEvent(new CustomEvent("study-tools-custom-bank-imported", { detail: { questions } }));
-    alert(`Đã nhập ${questions.length} câu. Bộ đề nhập xuất hiện ở phần chọn bộ đề.`);
-    event.currentTarget.value = "";
-  });
-  document.getElementById("custom-bank-export")?.addEventListener("click", () => {
-    const json = exportCustomQuestionBank();
-    if (!json) { alert("Chưa có bộ đề nhập để xuất."); return; }
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "bo-de-tuy-chinh.json";
-    anchor.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
-  document.getElementById("study-tools-export")?.addEventListener("click", () => {
-    const blob = new Blob([exportStudyTools()], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "quocphonganninh-study-tools.json";
-    anchor.click();
-    URL.revokeObjectURL(url);
-  });
-  document.getElementById("study-tools-import-file")?.addEventListener("change", async (event) => {
-    const file = event.currentTarget.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Tệp quá lớn (tối đa 2 MB).");
-      event.currentTarget.value = "";
-      return;
-    }
-    const result = importStudyTools(await file.text());
-    alert(result.message);
-    if (result.success) renderSummary();
-    event.currentTarget.value = "";
-  });
-  document.getElementById("study-duplicate-check")?.addEventListener("click", () => {
-    const deckId = document.getElementById("study-note-deck").value;
-    document.dispatchEvent(new CustomEvent("study-tools-duplicate-check", { detail: { deckId } }));
-  });
+    });
+  document
+    .getElementById("study-duplicate-check")
+    ?.addEventListener("click", () => {
+      const deckId = document.getElementById("study-note-deck").value;
+      document.dispatchEvent(
+        new CustomEvent("study-tools-duplicate-check", { detail: { deckId } }),
+      );
+    });
   document.getElementById("study-most-wrong")?.addEventListener("click", () => {
     const deckId = document.getElementById("study-note-deck").value;
-    document.dispatchEvent(new CustomEvent("study-tools-wrong-review", { detail: { deckId } }));
+    document.dispatchEvent(
+      new CustomEvent("study-tools-wrong-review", { detail: { deckId } }),
+    );
   });
   document.getElementById("study-due-review")?.addEventListener("click", () => {
     const currentDeck = document.getElementById("study-note-deck").value;
@@ -452,21 +625,32 @@ export function initStudyTools() {
       alert("Chưa có câu đến hạn ôn trong bộ đề này.");
       return;
     }
-    document.dispatchEvent(new CustomEvent("study-tools-review", { detail: { deckId: currentDeck, indices } }));
+    document.dispatchEvent(
+      new CustomEvent("study-tools-review", {
+        detail: { deckId: currentDeck, indices },
+      }),
+    );
   });
   const focusButton = document.getElementById("btn-focus-mode");
   const applyFocusMode = (enabled) => {
     document.body.classList.toggle("focus-mode", enabled);
     focusButton?.setAttribute("aria-pressed", String(enabled));
-    if (focusButton) focusButton.textContent = enabled ? "Tắt tập trung" : "Tập trung";
+    if (focusButton)
+      focusButton.textContent = enabled ? "Tắt tập trung" : "Tập trung";
   };
   try {
-    applyFocusMode(localStorage.getItem("quocphonganninh:focus-mode") === "true");
-  } catch { applyFocusMode(false); }
+    applyFocusMode(
+      localStorage.getItem("quocphonganninh:focus-mode") === "true",
+    );
+  } catch {
+    applyFocusMode(false);
+  }
   focusButton?.addEventListener("click", () => {
     const enabled = !document.body.classList.contains("focus-mode");
     applyFocusMode(enabled);
-    try { localStorage.setItem("quocphonganninh:focus-mode", String(enabled)); } catch {}
+    try {
+      localStorage.setItem("quocphonganninh:focus-mode", String(enabled));
+    } catch {}
   });
   try {
     const theme = localStorage.getItem("quocphonganninh:theme");
@@ -477,14 +661,28 @@ export function initStudyTools() {
   if (!window.__studyReminderInterval) {
     window.__studyReminderInterval = window.setInterval(() => {
       const data = readData();
-      if (!data.reminderEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+      if (
+        !data.reminderEnabled ||
+        !("Notification" in window) ||
+        Notification.permission !== "granted"
+      )
+        return;
       const now = new Date();
       const today = dayKey(now);
       const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-      if (time !== (data.reminderTime || "20:00") || data.lastReminderDay === today) return;
+      if (
+        time !== (data.reminderTime || "20:00") ||
+        data.lastReminderDay === today
+      )
+        return;
       data.lastReminderDay = today;
       if (!writeData(data)) return;
-      try { new Notification("Đến giờ ôn tập", { body: "Dành vài phút ôn các câu hỏi đến hạn nhé.", icon: new URL("../icons/icon.svg", import.meta.url).href }); } catch {}
+      try {
+        new Notification("Đến giờ ôn tập", {
+          body: "Dành vài phút ôn các câu hỏi đến hạn nhé.",
+          icon: new URL("../icons/icon.svg", import.meta.url).href,
+        });
+      } catch {}
     }, 30000);
   }
 }

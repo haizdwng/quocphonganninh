@@ -66,8 +66,15 @@
                 <span class="deck-name">Quốc Phòng 2</span>
                 <span class="deck-count" id="count-quocphong2">262 câu</span>
               </button>
-              <button type="button" class="deck-btn" data-deck="custom" id="btn-deck-custom" hidden>
-                <span class="deck-name">Bộ đề nhập</span><span class="deck-count" id="count-custom">0 câu</span>
+              <button
+                type="button"
+                class="deck-btn"
+                data-deck="custom"
+                id="btn-deck-custom"
+                hidden
+              >
+                <span class="deck-name">Bộ đề nhập</span
+                ><span class="deck-count" id="count-custom">0 câu</span>
               </button>
             </div>
           </div>
@@ -199,11 +206,29 @@
             </div>
           </div>
 
-          <section class="card storage-recovery-notice" id="storage-recovery-notice" hidden aria-labelledby="storage-recovery-title">
+          <section
+            class="card storage-recovery-notice"
+            id="storage-recovery-notice"
+            hidden
+            aria-labelledby="storage-recovery-title"
+          >
             <h2 id="storage-recovery-title">Đã giữ lại bản cứu hộ dữ liệu</h2>
-            <p id="storage-recovery-reason" class="hint">Phát hiện dữ liệu lưu trữ không hợp lệ.</p>
-            <p class="hint">Trước khi tiếp tục sử dụng, hãy tải bản cứu hộ này về thiết bị. Bản này chứa dữ liệu thô cũ để hỗ trợ khôi phục thủ công; ứng dụng không tự ghi đè bản cứu hộ.</p>
-            <button type="button" class="btn btn-secondary btn-block" id="btn-download-storage-recovery" data-icon="download">Tải bản cứu hộ</button>
+            <p id="storage-recovery-reason" class="hint">
+              Phát hiện dữ liệu lưu trữ không hợp lệ.
+            </p>
+            <p class="hint">
+              Trước khi tiếp tục sử dụng, hãy tải bản cứu hộ này về thiết bị.
+              Bản này chứa dữ liệu thô cũ để hỗ trợ khôi phục thủ công; ứng dụng
+              không tự ghi đè bản cứu hộ.
+            </p>
+            <button
+              type="button"
+              class="btn btn-secondary btn-block"
+              id="btn-download-storage-recovery"
+              data-icon="download"
+            >
+              Tải bản cứu hộ
+            </button>
           </section>
 
           <div class="card stats-card" id="deck-stats">
@@ -238,7 +263,11 @@
             >
               Thống kê chi tiết hai bộ đề
             </button>
-            <div id="study-stats-detail" class="study-stats-detail" hidden></div>
+            <div
+              id="study-stats-detail"
+              class="study-stats-detail"
+              hidden
+            ></div>
             <div class="btn-row">
               <button
                 type="button"
@@ -327,63 +356,202 @@
             </div>
           </div>
 
-          <section class="card study-tools-card" id="study-tools" aria-labelledby="study-tools-title">
+          <section
+            class="card study-tools-card"
+            id="study-tools"
+            aria-labelledby="study-tools-title"
+          >
             <h2 id="study-tools-title">Công cụ học tập</h2>
             <div class="study-tools-metrics">
-              <div><span>Mục tiêu hôm nay</span><strong id="study-goal-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0/20 câu hôm nay · 0%</strong></div>
-              <div><span>Chuỗi học</span><strong id="study-streak">0 ngày</strong></div>
-              <div><span>Câu đến hạn ôn</span><strong id="study-due-count">0</strong></div>
-              <div><span>Ghi chú</span><strong id="study-notes-count">0</strong></div>
-              <div><span>Câu thành thạo</span><strong id="study-mastered-count">0</strong></div>
+              <div>
+                <span>Mục tiêu hôm nay</span
+                ><strong
+                  id="study-goal-progress"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  >0/20 câu hôm nay · 0%</strong
+                >
+              </div>
+              <div>
+                <span>Chuỗi học</span><strong id="study-streak">0 ngày</strong>
+              </div>
+              <div>
+                <span>Câu đến hạn ôn</span
+                ><strong id="study-due-count">0</strong>
+              </div>
+              <div>
+                <span>Ghi chú</span><strong id="study-notes-count">0</strong>
+              </div>
+              <div>
+                <span>Câu thành thạo</span
+                ><strong id="study-mastered-count">0</strong>
+              </div>
             </div>
             <h3>Lịch học 7 ngày gần đây</h3>
-            <div id="study-calendar" class="study-calendar" aria-label="Số câu đã làm mỗi ngày"></div>
+            <div
+              id="study-calendar"
+              class="study-calendar"
+              aria-label="Số câu đã làm mỗi ngày"
+            ></div>
             <div class="study-reminder">
               <label for="study-reminder-time">Giờ nhắc học</label>
-              <input id="study-reminder-time" type="time" value="20:00">
-              <button type="button" class="btn btn-ghost" id="study-reminder-toggle">Bật nhắc học</button>
-              <p class="hint">Nhắc học bằng thông báo trình duyệt khi trang đang mở; không cần tài khoản hay máy chủ.</p>
+              <input id="study-reminder-time" type="time" value="20:00" />
+              <button
+                type="button"
+                class="btn btn-ghost"
+                id="study-reminder-toggle"
+              >
+                Bật nhắc học
+              </button>
+              <p class="hint">
+                Nhắc học bằng thông báo trình duyệt khi trang đang mở; không cần
+                tài khoản hay máy chủ.
+              </p>
             </div>
             <div class="study-tools-row">
               <label for="study-daily-goal">Mục tiêu câu/ngày</label>
-              <input id="study-daily-goal" type="number" min="1" max="500" value="20" inputmode="numeric">
-              <button type="button" class="btn btn-secondary" id="study-due-review">Ôn câu đến hạn</button>
-              <button type="button" class="btn btn-ghost" id="study-most-wrong">Ôn câu hay sai</button>
-              <button type="button" class="btn btn-ghost" id="study-duplicate-check">Kiểm tra câu trùng/xung đột</button>
-              <button type="button" class="btn btn-ghost" id="study-theme-toggle">Giao diện sáng</button>
+              <input
+                id="study-daily-goal"
+                type="number"
+                min="1"
+                max="500"
+                value="20"
+                inputmode="numeric"
+              />
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="study-due-review"
+              >
+                Ôn câu đến hạn
+              </button>
+              <button type="button" class="btn btn-ghost" id="study-most-wrong">
+                Ôn câu hay sai
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost"
+                id="study-duplicate-check"
+              >
+                Kiểm tra câu trùng/xung đột
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost"
+                id="study-theme-toggle"
+              >
+                Giao diện sáng
+              </button>
             </div>
-            <hr class="study-tools-divider">
+            <hr class="study-tools-divider" />
             <h3>Ghi chú theo câu hỏi</h3>
             <div class="study-note-fields">
               <label for="study-note-deck">Bộ đề</label>
-              <select id="study-note-deck"><option value="quocphong1">Quốc Phòng 1</option><option value="quocphong2">Quốc Phòng 2</option><option value="custom" hidden>Bộ đề nhập</option></select>
+              <select id="study-note-deck">
+                <option value="quocphong1">Quốc Phòng 1</option>
+                <option value="quocphong2">Quốc Phòng 2</option>
+                <option value="custom" hidden>Bộ đề nhập</option>
+              </select>
               <label for="study-note-question">Số câu</label>
-              <input id="study-note-question" type="number" min="1" value="1" inputmode="numeric">
+              <input
+                id="study-note-question"
+                type="number"
+                min="1"
+                value="1"
+                inputmode="numeric"
+              />
               <label for="study-note-category">Phân loại</label>
-              <select id="study-note-category"><option value="">Không phân loại</option><option value="remember">Cần ghi nhớ</option><option value="confusing">Hay nhầm</option><option value="important">Trọng tâm</option></select>
-              <textarea id="study-note-text" rows="3" maxlength="4000" placeholder="Ghi nhớ, giải thích hoặc mẹo phân biệt đáp án…"></textarea>
+              <select id="study-note-category">
+                <option value="">Không phân loại</option>
+                <option value="remember">Cần ghi nhớ</option>
+                <option value="confusing">Hay nhầm</option>
+                <option value="important">Trọng tâm</option>
+              </select>
+              <textarea
+                id="study-note-text"
+                rows="3"
+                maxlength="4000"
+                placeholder="Ghi nhớ, giải thích hoặc mẹo phân biệt đáp án…"
+              ></textarea>
               <div class="study-tools-row">
-                <button type="button" class="btn btn-ghost" id="study-note-load">Tải ghi chú</button>
-                <button type="button" class="btn btn-primary" id="study-note-save">Lưu ghi chú</button>
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  id="study-note-load"
+                >
+                  Tải ghi chú
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="study-note-save"
+                >
+                  Lưu ghi chú
+                </button>
               </div>
               <p id="study-note-status" class="hint" aria-live="polite"></p>
             </div>
-            <hr class="study-tools-divider">
+            <hr class="study-tools-divider" />
             <h3>Nhập bộ đề JSON riêng</h3>
-            <p class="hint">Nhập một mảng JSON câu hỏi. Hỗ trợ question, options, correct và tùy chọn id, topic/section, explanation/explain, fixed. Tối đa 2.000 câu, 6 đáp án/câu và 2 MB. Bộ đề gốc không bị thay đổi.</p>
+            <p class="hint">
+              Nhập một mảng JSON câu hỏi. Hỗ trợ question, options, correct và
+              tùy chọn id, topic/section, explanation/explain, fixed. Tối đa
+              2.000 câu, 6 đáp án/câu và 2 MB. Bộ đề gốc không bị thay đổi.
+            </p>
             <div class="study-tools-row">
-              <label class="btn btn-secondary study-import-label" for="custom-bank-import-file">Nhập bộ đề JSON</label>
-              <input id="custom-bank-import-file" type="file" accept="application/json,.json" hidden>
-              <button type="button" class="btn btn-ghost" id="custom-bank-export">Xuất bộ đề nhập</button>
+              <label
+                class="btn btn-secondary study-import-label"
+                for="custom-bank-import-file"
+                >Nhập bộ đề JSON</label
+              >
+              <input
+                id="custom-bank-import-file"
+                type="file"
+                accept="application/json,.json"
+                hidden
+              />
+              <button
+                type="button"
+                class="btn btn-ghost"
+                id="custom-bank-export"
+              >
+                Xuất bộ đề nhập
+              </button>
             </div>
-            <hr class="study-tools-divider">
+            <hr class="study-tools-divider" />
             <h3>Sao lưu công cụ học tập</h3>
-            <p class="hint">Xuất/nhập ghi chú, phân loại, lịch ôn và mục tiêu. Tệp JSON có thể chuyển thủ công sang thiết bị khác; không có đồng bộ tự động.</p>
+            <p class="hint">
+              Xuất/nhập ghi chú, phân loại, lịch ôn và mục tiêu. Tệp JSON có thể
+              chuyển thủ công sang thiết bị khác; không có đồng bộ tự động.
+            </p>
             <div class="study-tools-row">
-              <button type="button" class="btn btn-ghost" id="study-tools-export">Xuất dữ liệu</button>
-              <button type="button" class="btn btn-ghost" id="study-report-export">Xuất báo cáo CSV</button>
-              <label class="btn btn-ghost study-import-label" for="study-tools-import-file">Nhập dữ liệu</label>
-              <input id="study-tools-import-file" type="file" accept="application/json,.json" hidden>
+              <button
+                type="button"
+                class="btn btn-ghost"
+                id="study-tools-export"
+              >
+                Xuất dữ liệu
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost"
+                id="study-report-export"
+              >
+                Xuất báo cáo CSV
+              </button>
+              <label
+                class="btn btn-ghost study-import-label"
+                for="study-tools-import-file"
+                >Nhập dữ liệu</label
+              >
+              <input
+                id="study-tools-import-file"
+                type="file"
+                accept="application/json,.json"
+                hidden
+              />
             </div>
           </section>
 
@@ -433,12 +601,33 @@
             </button>
             <h2 id="review-title">Ngân hàng câu hỏi</h2>
             <div class="review-search-controls">
-              <label class="visually-hidden" for="review-search">Tìm trong câu hỏi và đáp án</label>
-              <input type="search" id="review-search" placeholder="Tìm câu hỏi, đáp án…" autocomplete="off">
-              <label class="visually-hidden" for="review-topic-filter">Lọc theo chủ đề</label>
-              <select id="review-topic-filter" aria-label="Lọc theo chủ đề"><option value="">Tất cả chủ đề</option></select>
-              <label class="visually-hidden" for="review-category-filter">Lọc theo phân loại</label>
-              <select id="review-category-filter" aria-label="Lọc theo phân loại"><option value="">Tất cả phân loại</option><option value="remember">Cần ghi nhớ</option><option value="confusing">Hay nhầm</option><option value="important">Trọng tâm</option></select>
+              <label class="visually-hidden" for="review-search"
+                >Tìm trong câu hỏi và đáp án</label
+              >
+              <input
+                type="search"
+                id="review-search"
+                placeholder="Tìm câu hỏi, đáp án…"
+                autocomplete="off"
+              />
+              <label class="visually-hidden" for="review-topic-filter"
+                >Lọc theo chủ đề</label
+              >
+              <select id="review-topic-filter" aria-label="Lọc theo chủ đề">
+                <option value="">Tất cả chủ đề</option>
+              </select>
+              <label class="visually-hidden" for="review-category-filter"
+                >Lọc theo phân loại</label
+              >
+              <select
+                id="review-category-filter"
+                aria-label="Lọc theo phân loại"
+              >
+                <option value="">Tất cả phân loại</option>
+                <option value="remember">Cần ghi nhớ</option>
+                <option value="confusing">Hay nhầm</option>
+                <option value="important">Trọng tâm</option>
+              </select>
             </div>
             <p id="review-result-count" class="hint" aria-live="polite"></p>
             <div
@@ -468,8 +657,15 @@
                   >262 câu</span
                 >
               </button>
-              <button type="button" class="deck-btn" data-bank-deck="custom" id="btn-bank-deck-custom" hidden>
-                <span class="deck-name">Bộ đề nhập</span><span class="deck-count" id="bank-count-custom">0 câu</span>
+              <button
+                type="button"
+                class="deck-btn"
+                data-bank-deck="custom"
+                id="btn-bank-deck-custom"
+                hidden
+              >
+                <span class="deck-name">Bộ đề nhập</span
+                ><span class="deck-count" id="bank-count-custom">0 câu</span>
               </button>
             </div>
             <div class="review-practice-settings">
@@ -622,7 +818,14 @@
               aria-atomic="true"
             ></h2>
             <div class="question-tools-row">
-              <button type="button" class="btn btn-ghost btn-sm" id="btn-focus-mode" aria-pressed="false">Tập trung</button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="btn-focus-mode"
+                aria-pressed="false"
+              >
+                Tập trung
+              </button>
               <button
                 type="button"
                 class="bookmark-btn"

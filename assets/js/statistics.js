@@ -3,9 +3,13 @@ const isRecord = (value) =>
 
 function validIndices(values, total) {
   if (!Array.isArray(values)) return [];
-  return [...new Set(values.filter((value) =>
-    Number.isInteger(value) && value >= 0 && value < total
-  ))];
+  return [
+    ...new Set(
+      values.filter(
+        (value) => Number.isInteger(value) && value >= 0 && value < total,
+      ),
+    ),
+  ];
 }
 
 function countAttempts(map, total) {
@@ -23,16 +27,17 @@ function countAttempts(map, total) {
 }
 
 export function calculateStudyStatistics(totalQuestions, progress = {}) {
-  const total = Number.isInteger(totalQuestions) && totalQuestions > 0
-    ? totalQuestions
-    : 0;
+  const total =
+    Number.isInteger(totalQuestions) && totalQuestions > 0 ? totalQuestions : 0;
   const completed = validIndices(progress.completed, total);
   const bookmarks = validIndices(progress.bookmarks, total);
   const wrong = countAttempts(progress.wrongMap, total);
   const practice = countAttempts(progress.practiceMap, total);
-  const cursor = Number.isInteger(progress.sequentialCursor) && progress.sequentialCursor >= 0
-    ? progress.sequentialCursor
-    : 0;
+  const cursor =
+    Number.isInteger(progress.sequentialCursor) &&
+    progress.sequentialCursor >= 0
+      ? progress.sequentialCursor
+      : 0;
   return {
     total,
     completedCount: completed.length,

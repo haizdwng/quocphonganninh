@@ -19,13 +19,16 @@ function preserveInvalidRoot(raw, reason) {
   if (typeof raw !== "string" || !raw) return false;
   try {
     if (localStorage.getItem(RECOVERY_KEY)) return true;
-    localStorage.setItem(RECOVERY_KEY, JSON.stringify({
-      format: "quocphonganninh-storage-recovery",
-      version: 1,
-      createdAt: new Date().toISOString(),
-      reason,
-      raw,
-    }));
+    localStorage.setItem(
+      RECOVERY_KEY,
+      JSON.stringify({
+        format: "quocphonganninh-storage-recovery",
+        version: 1,
+        createdAt: new Date().toISOString(),
+        reason,
+        raw,
+      }),
+    );
     return true;
   } catch {
     return false;
@@ -37,7 +40,8 @@ export function getRecoveryBackup() {
     const raw = localStorage.getItem(RECOVERY_KEY);
     if (!raw) return null;
     const backup = JSON.parse(raw);
-    return backup?.format === "quocphonganninh-storage-recovery" && typeof backup.raw === "string"
+    return backup?.format === "quocphonganninh-storage-recovery" &&
+      typeof backup.raw === "string"
       ? backup
       : null;
   } catch {
@@ -75,11 +79,16 @@ function readRoot() {
 
     if (valid) return data;
 
-    preserveInvalidRoot(raw, "Dữ liệu lưu trữ không đúng cấu trúc hoặc khác phiên bản.");
+    preserveInvalidRoot(
+      raw,
+      "Dữ liệu lưu trữ không đúng cấu trúc hoặc khác phiên bản.",
+    );
     return emptyRoot();
   } catch {
     let raw = null;
-    try { raw = localStorage.getItem(STORAGE_NAMESPACE); } catch {}
+    try {
+      raw = localStorage.getItem(STORAGE_NAMESPACE);
+    } catch {}
     preserveInvalidRoot(raw, "Không thể phân tích dữ liệu lưu trữ thành JSON.");
     return emptyRoot();
   }
@@ -410,7 +419,10 @@ export function getSession(deckId) {
 }
 
 export function saveSession(session) {
-  if (!session || !["quocphong1", "quocphong2", "custom"].includes(session.deckId))
+  if (
+    !session ||
+    !["quocphong1", "quocphong2", "custom"].includes(session.deckId)
+  )
     return false;
   const root = readRoot();
   if (
