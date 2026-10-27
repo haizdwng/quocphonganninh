@@ -1,6 +1,5 @@
 const STORAGE_NAMESPACE = "quocphonganninh";
 const STORAGE_VERSION = 2;
-const RECOVERY_KEY = `${STORAGE_NAMESPACE}:recovery-backup`;
 
 function emptyRoot() {
   return {
@@ -13,40 +12,6 @@ function emptyRoot() {
     sessions: {},
     highlights: { quocphong1: {}, quocphong2: {} },
   };
-}
-
-function preserveInvalidRoot(raw, reason) {
-  if (typeof raw !== "string" || !raw) return false;
-  try {
-    if (localStorage.getItem(RECOVERY_KEY)) return true;
-    localStorage.setItem(
-      RECOVERY_KEY,
-      JSON.stringify({
-        format: "quocphonganninh-storage-recovery",
-        version: 1,
-        createdAt: new Date().toISOString(),
-        reason,
-        raw,
-      }),
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function getRecoveryBackup() {
-  try {
-    const raw = localStorage.getItem(RECOVERY_KEY);
-    if (!raw) return null;
-    const backup = JSON.parse(raw);
-    return backup?.format === "quocphonganninh-storage-recovery" &&
-      typeof backup.raw === "string"
-      ? backup
-      : null;
-  } catch {
-    return null;
-  }
 }
 
 function readRoot() {
@@ -79,17 +44,12 @@ function readRoot() {
 
     if (valid) return data;
 
-    preserveInvalidRoot(
-      raw,
-      "Dữ liệu lưu trữ không đúng cấu trúc hoặc khác phiên bản.",
-    );
+    localStorage.removeItem(STORAGE_NAMESPACE);
     return emptyRoot();
   } catch {
-    let raw = null;
     try {
-      raw = localStorage.getItem(STORAGE_NAMESPACE);
+      localStorage.removeItem(STORAGE_NAMESPACE);
     } catch {}
-    preserveInvalidRoot(raw, "Không thể phân tích dữ liệu lưu trữ thành JSON.");
     return emptyRoot();
   }
 }
@@ -109,7 +69,6 @@ function writeRoot(data) {
 }
 
 function normalizeDeckId(deckId) {
-  if (deckId === "custom") return "custom";
   return deckId === "quocphong2" ? "quocphong2" : "quocphong1";
 }
 
@@ -315,9 +274,6 @@ export function getDeckProgress(deckId) {
       typeof deckData.dataFingerprint === "string"
         ? deckData.dataFingerprint
         : "",
-    questionIds: Array.isArray(deckData.questionIds)
-      ? deckData.questionIds.filter((value) => typeof value === "string")
-      : [],
   };
 }
 
@@ -395,9 +351,6 @@ export function saveDeckProgress(deckId, progress) {
       typeof progress.dataFingerprint === "string"
         ? progress.dataFingerprint
         : "",
-    questionIds: Array.isArray(progress.questionIds)
-      ? progress.questionIds.filter((value) => typeof value === "string")
-      : [],
   };
   return writeRoot(root);
 }
@@ -419,10 +372,7 @@ export function getSession(deckId) {
 }
 
 export function saveSession(session) {
-  if (
-    !session ||
-    !["quocphong1", "quocphong2", "custom"].includes(session.deckId)
-  )
+  if (!session || !["quocphong1", "quocphong2"].includes(session.deckId))
     return false;
   const root = readRoot();
   if (
@@ -878,9 +828,6 @@ export function importBackup(raw) {
         typeof deckData.dataFingerprint === "string"
           ? deckData.dataFingerprint
           : "",
-      questionIds: Array.isArray(deckData.questionIds)
-        ? deckData.questionIds.filter((value) => typeof value === "string")
-        : [],
     };
   }
   return writeRoot(normalized);

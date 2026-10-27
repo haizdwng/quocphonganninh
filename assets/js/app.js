@@ -21,29 +21,17 @@ import {
   exportBackup,
   importBackup,
   storageAvailable,
-  getRecoveryBackup,
   getQuestionHighlights,
   saveQuestionHighlights,
   resetDeckHighlights,
 } from "./storage.js";
 import { initEnhance } from "./enhance.js";
-import { calculateStudyStatistics } from "./statistics.js";
-import {
-  initStudyTools,
-  recordStudyAnswer,
-  exportStudyReportCsv,
-  getCustomQuestionBank,
-  getQuestionCategory,
-} from "./study-tools.js";
 import {
   fingerprintQuestions,
   normalizeQuestions,
   createSessionItems,
   pickSequential,
   findNextUncompletedQuestion,
-  findDuplicateQuestions,
-  findConflictingQuestions,
-  remapQuestionProgress,
   pickRandom,
   pickWrong,
   isAnswerCorrect,
@@ -65,13 +53,9 @@ const DECKS = {
 };
 
 const state = {
-  decks: { quocphong1: null, quocphong2: null, custom: null },
-  fingerprints: { quocphong1: "", quocphong2: "", custom: "" },
-  legacyFingerprintMatched: {
-    quocphong1: false,
-    quocphong2: false,
-    custom: false,
-  },
+  decks: { quocphong1: null, quocphong2: null },
+  fingerprints: { quocphong1: "", quocphong2: "" },
+  legacyFingerprintMatched: { quocphong1: false, quocphong2: false },
   loading: true,
   error: null,
   currentDeck: "quocphong1",
@@ -136,64 +120,33 @@ async function loadDeck(id) {
   const last =
     questions[questions.length - 1]?.question?.trim().slice(0, 40) || "";
   const legacyFingerprint = `${questions.length}|${first}|${last}`;
-  const questionIds = questions.map((question) => question.id);
-  const oldQuestionIds = progress.questionIds;
   if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
     if (progress.dataFingerprint === legacyFingerprint) {
       state.legacyFingerprintMatched[id] = true;
+      progress.dataFingerprint = fingerprint;
+      if (!saveDeckProgress(id, progress))
+        toast("Không thể cập nhật phiên bản tiến độ trong trình duyệt.");
     } else {
-      const remapped = remapQuestionProgress(
-        progress,
-        oldQuestionIds,
-        questions,
-      );
-      if (remapped) {
-        Object.assign(progress, remapped);
-        toast(`${meta.label}: đã ghép tiến độ theo ID câu hỏi ổn định.`);
-      } else {
-        progress.completed = [];
-        progress.sequentialCursor = 0;
-        progress.wrongMap = {};
-        progress.wrongRangeMap = {};
-        progress.practiceMap = {};
-        progress.bookmarks = [];
-      }
-      clearSession(id);
-      if (!resetDeckHighlights(id))
-        toast(
-          "Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.",
-        );
-    }
-    progress.dataFingerprint = fingerprint;
-    progress.questionIds = questionIds;
-    if (!saveDeckProgress(id, progress))
-      toast("Không thể lưu tiến độ đã cập nhật trong trình duyệt.");
-  } else if (!progress.dataFingerprint) {
-    progress.dataFingerprint = fingerprint;
-    progress.questionIds = questionIds;
-    if (!saveDeckProgress(id, progress))
-      toast("Không thể lưu dấu vân tay bộ đề vào trình duyệt.");
-  } else if (!Array.isArray(oldQuestionIds) || !oldQuestionIds.length) {
-    progress.questionIds = questionIds;
-    if (!saveDeckProgress(id, progress))
-      toast("Không thể lưu ID câu hỏi vào tiến độ.");
-  } else if (JSON.stringify(oldQuestionIds) !== JSON.stringify(questionIds)) {
-    const remapped = remapQuestionProgress(progress, oldQuestionIds, questions);
-    if (remapped) Object.assign(progress, remapped);
-    else {
       progress.completed = [];
       progress.sequentialCursor = 0;
       progress.wrongMap = {};
       progress.wrongRangeMap = {};
       progress.practiceMap = {};
       progress.bookmarks = [];
+      progress.dataFingerprint = fingerprint;
+      if (!saveDeckProgress(id, progress))
+        toast(
+          "Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.",
+        );
+      if (!resetDeckHighlights(id))
+        toast(
+          "Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.",
+        );
     }
+  } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fingerprint;
-    progress.questionIds = questionIds;
-    clearSession(id);
-    resetDeckHighlights(id);
     if (!saveDeckProgress(id, progress))
-      toast("Không thể lưu tiến độ sau khi cập nhật ID câu hỏi.");
+      toast("Không thể lưu dấu vân tay bộ đề vào trình duyệt.");
   }
 
   const progressBeforeSanitize = JSON.stringify(progress);
@@ -226,96 +179,6 @@ async function loadDeck(id) {
   return questions;
 }
 
-function loadCustomDeck(rawQuestions) {
-  if (!Array.isArray(rawQuestions) || !rawQuestions.length) return false;
-  const questions = normalizeQuestions(rawQuestions);
-  if (
-    questions.length > 2000 ||
-    questions.some((question) => question.options.length > 6)
-  ) {
-    throw new Error("Bộ đề nhập vượt giới hạn hỗ trợ.");
-  }
-  DECKS.custom = { id: "custom", label: "Bộ đề nhập", file: "" };
-  state.decks.custom = questions;
-  const fingerprint = fingerprintQuestions(questions);
-  state.fingerprints.custom = fingerprint;
-  const progress = getDeckProgress("custom");
-  const questionIds = questions.map((question) => question.id);
-  if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
-    const remapped = remapQuestionProgress(
-      progress,
-      progress.questionIds,
-      questions,
-    );
-    if (remapped) Object.assign(progress, remapped);
-    else {
-      progress.completed = [];
-      progress.sequentialCursor = 0;
-      progress.wrongMap = {};
-      progress.wrongRangeMap = {};
-      progress.practiceMap = {};
-      progress.bookmarks = [];
-    }
-    progress.dataFingerprint = fingerprint;
-    progress.questionIds = questionIds;
-    clearSession("custom");
-    resetDeckHighlights("custom");
-    saveDeckProgress("custom", progress);
-  } else if (
-    !progress.dataFingerprint ||
-    !Array.isArray(progress.questionIds) ||
-    !progress.questionIds.length
-  ) {
-    progress.dataFingerprint = fingerprint;
-    progress.questionIds = questionIds;
-    saveDeckProgress("custom", progress);
-  } else if (
-    JSON.stringify(progress.questionIds) !== JSON.stringify(questionIds)
-  ) {
-    const remapped = remapQuestionProgress(
-      progress,
-      progress.questionIds,
-      questions,
-    );
-    if (remapped) Object.assign(progress, remapped);
-    progress.dataFingerprint = fingerprint;
-    progress.questionIds = questionIds;
-    clearSession("custom");
-    resetDeckHighlights("custom");
-    saveDeckProgress("custom", progress);
-  }
-  const valid = (index) =>
-    Number.isInteger(index) && index >= 0 && index < questions.length;
-  progress.completed = progress.completed.filter(valid);
-  progress.bookmarks = progress.bookmarks.filter(valid);
-  progress.wrongMap = Object.fromEntries(
-    Object.entries(progress.wrongMap || {}).filter(
-      ([key, count]) =>
-        valid(Number(key)) && Number.isInteger(count) && count > 0,
-    ),
-  );
-  progress.practiceMap = Object.fromEntries(
-    Object.entries(progress.practiceMap || {}).filter(
-      ([key, count]) =>
-        valid(Number(key)) && Number.isInteger(count) && count > 0,
-    ),
-  );
-  saveDeckProgress("custom", progress);
-  document
-    .querySelectorAll('[data-deck="custom"], [data-bank-deck="custom"]')
-    .forEach((button) => {
-      button.hidden = false;
-    });
-  if ($("count-custom"))
-    $("count-custom").textContent = `${questions.length} câu`;
-  if ($("bank-count-custom"))
-    $("bank-count-custom").textContent = `${questions.length} câu`;
-  const noteDeck = $("study-note-deck");
-  const customOption = noteDeck?.querySelector('option[value="custom"]');
-  if (customOption) customOption.hidden = false;
-  return true;
-}
-
 async function loadAll() {
   state.loading = true;
   state.error = null;
@@ -323,8 +186,6 @@ async function loadAll() {
   let stage = "tải dữ liệu";
   try {
     await Promise.all([loadDeck("quocphong1"), loadDeck("quocphong2")]);
-    const customQuestions = getCustomQuestionBank();
-    if (customQuestions) loadCustomDeck(customQuestions);
     state.loading = false;
     stage = "khởi tạo giao diện";
     initUI();
@@ -633,43 +494,8 @@ function captureHighlightSelection() {
 function getFilteredBankQuestions() {
   const questions = bankQuestions();
   const form = readBankForm();
-  const search = ($("review-search")?.value || "").trim().toLocaleLowerCase();
-  const topicSelect = $("review-topic-filter");
-  if (topicSelect && topicSelect.dataset.deck !== state.bankDeck) {
-    const selectedTopic = topicSelect.value;
-    const topics = [
-      ...new Set(questions.map((question) => question.topic).filter(Boolean)),
-    ].sort((leftTopic, rightTopic) =>
-      leftTopic.localeCompare(rightTopic, "vi"),
-    );
-    topicSelect.replaceChildren(new Option("Tất cả chủ đề", ""));
-    for (const topic of topics) topicSelect.add(new Option(topic, topic));
-    topicSelect.dataset.deck = state.bankDeck;
-    topicSelect.value = topics.includes(selectedTopic) ? selectedTopic : "";
-  }
-  const selectedTopic = topicSelect?.value || "";
-  const selectedCategory = $("review-category-filter")?.value || "";
-  const filtered = questions.filter((question) => {
-    if (selectedTopic && question.topic !== selectedTopic) return false;
-    if (
-      selectedCategory &&
-      getQuestionCategory(state.bankDeck, question.originalIndex) !==
-        selectedCategory
-    )
-      return false;
-    if (!search) return true;
-    return [
-      question.question,
-      ...question.options,
-      question.explanation,
-      question.topic,
-    ].some((value) =>
-      String(value || "")
-        .toLocaleLowerCase()
-        .includes(search),
-    );
-  });
-  return { questions, form, filtered };
+  // Ngân hàng luôn hiển thị toàn bộ câu của bộ đề đang chọn (không phụ thuộc vùng thiết lập)
+  return { questions, form, filtered: questions };
 }
 
 function getReviewVirtualState() {
@@ -747,10 +573,6 @@ function createReviewBankCard() {
   const prompt = document.createElement("p");
   prompt.className = "review-q-text";
 
-  const explanation = document.createElement("p");
-  explanation.className = "review-q-explanation";
-  explanation.hidden = true;
-
   const toolbar = document.createElement("div");
   toolbar.className = "highlight-toolbar";
   const hlBtn = document.createElement("button");
@@ -817,13 +639,12 @@ function createReviewBankCard() {
     $("btn-review-start-selected").disabled = count === 0;
   });
 
-  card.append(selectLabel, heading, prompt, toolbar, options, explanation);
+  card.append(selectLabel, heading, prompt, toolbar, options);
   card._vs = {
     selectLabel,
     checkbox,
     heading,
     prompt,
-    explanation,
     toolbar,
     options,
     optionNodes,
@@ -854,10 +675,6 @@ function bindReviewBankCard(card, question, listIndex) {
     "question",
   );
 
-  parts.explanation.hidden = !question.explanation;
-  parts.explanation.textContent = question.explanation
-    ? `Giải thích: ${question.explanation}`
-    : "";
   const optionCount = question.options.length;
   parts.optionNodes.forEach((node, index) => {
     if (index >= optionCount) {
@@ -915,9 +732,6 @@ function measureReviewVirtualVisible(virtualScrollState) {
 
 function syncReviewVirtualWindow() {
   if (state.mode !== "review") return;
-  const resultCount = $("review-result-count");
-  if (resultCount)
-    resultCount.textContent = `Hiển thị ${filtered.length}/${questions.length} câu hỏi`;
   const list = $("review-list");
   const virtualScrollState = getReviewVirtualState();
   if (!list || !virtualScrollState.filtered.length) return;
@@ -1080,9 +894,6 @@ function renderQuestionBank() {
       `${state.decks.quocphong1?.length ?? 479} câu`;
     $("bank-count-quocphong2").textContent =
       `${state.decks.quocphong2?.length ?? 262} câu`;
-    if ($("bank-count-custom"))
-      $("bank-count-custom").textContent =
-        `${state.decks.custom?.length ?? 0} câu`;
   }
 
   const list = $("review-list");
@@ -1153,60 +964,6 @@ function openQuestionBank() {
   });
 }
 
-function renderStudyStats() {
-  const container = $("study-stats-detail");
-  if (!container) return;
-  const cards = ["quocphong1", "quocphong2"].map((deckId) => {
-    const questions = state.decks[deckId] || [];
-    const progress = getDeckProgress(deckId);
-    const stats = calculateStudyStatistics(questions.length, progress);
-    const label = DECKS[deckId].label;
-    return `<article class="study-stats-deck">
-      <div class="study-stats-heading"><strong>${label}</strong><span>${stats.completionPercent}%</span></div>
-      <div class="study-stats-track" role="progressbar" aria-label="Tiến độ ${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${stats.completionPercent}"><span style="width:${stats.completionPercent}%"></span></div>
-      <dl class="study-stats-grid">
-        <div><dt>Đã hoàn thành</dt><dd>${stats.completedCount}/${stats.total}</dd></div>
-        <div><dt>Còn lại</dt><dd>${stats.remainingCount}</dd></div>
-        <div><dt>Câu từng sai</dt><dd>${stats.wrongQuestionCount}</dd></div>
-        <div><dt>Lượt trả lời sai</dt><dd>${stats.wrongAttemptCount}</dd></div>
-        <div><dt>Lượt ôn lại</dt><dd>${stats.practiceAttempts}</dd></div>
-        <div><dt>Đã đánh dấu</dt><dd>${stats.bookmarkedCount}</dd></div>
-      </dl>
-    </article>`;
-  });
-  container.innerHTML = cards.join("");
-}
-
-function refreshStorageRecoveryNotice() {
-  const notice = $("storage-recovery-notice");
-  if (!notice) return;
-  const backup = getRecoveryBackup();
-  notice.hidden = !backup;
-  if (backup) {
-    const reason = $("storage-recovery-reason");
-    if (reason)
-      reason.textContent =
-        backup.reason || "Dữ liệu lưu trữ trước đó không hợp lệ.";
-  }
-  $("btn-download-storage-recovery")?.addEventListener(
-    "click",
-    () => {
-      const current = getRecoveryBackup();
-      if (!current) return;
-      const blob = new Blob([JSON.stringify(current, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = "quocphonganninh-storage-recovery.json";
-      anchor.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    },
-    { once: true },
-  );
-}
-
 function refreshSetupUI() {
   const questions = currentQuestions();
   const total = questions.length;
@@ -1215,11 +972,9 @@ function refreshSetupUI() {
   $("count-quocphong2").textContent =
     `${state.decks.quocphong2?.length ?? "262"} câu`;
 
-  document
-    .querySelectorAll("#screen-setup .deck-btn[data-deck]")
-    .forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.deck === state.currentDeck);
-    });
+  document.querySelectorAll(".deck-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.deck === state.currentDeck);
+  });
 
   const startInput = $("input-range-start");
   const endInput = $("input-range-end");
@@ -1445,12 +1200,7 @@ function setBankPracticeMode(mode) {
 }
 
 function setBankDeck(deckId) {
-  const id =
-    deckId === "custom" && state.decks.custom
-      ? "custom"
-      : deckId === "quocphong2"
-        ? "quocphong2"
-        : "quocphong1";
+  const id = deckId === "quocphong2" ? "quocphong2" : "quocphong1";
   if (state.bankDeck === id) return;
   persistBankForm();
   state.bankDeck = id;
@@ -2076,12 +1826,6 @@ function renderQuestion() {
     feedback.hidden = true;
     feedback.textContent = "";
   }
-  if (item.checked && question.explanation) {
-    const explanation = document.createElement("span");
-    explanation.className = "answer-explanation";
-    explanation.textContent = `Giải thích: ${question.explanation}`;
-    feedback.append(document.createElement("br"), explanation);
-  }
 
   $("btn-prev").disabled = session.viewIndex <= 0;
   const nextButton = $("btn-next");
@@ -2407,11 +2151,6 @@ async function onExamSubmit() {
         continue;
       }
       const correct = isAnswerCorrect(item, question);
-      if (!recordStudyAnswer(session.deckId, question.originalIndex, correct))
-        toast(
-          "Không thể lưu lịch ôn thông minh. Hãy kiểm tra bộ nhớ trình duyệt.",
-        );
-      document.dispatchEvent(new CustomEvent("study-tools-answer-recorded"));
       item.checked = true;
       if (correct) {
         item.status = "correct";
@@ -2572,10 +2311,6 @@ function onCheck() {
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
   const isCorrect = isAnswerCorrect(item, question);
-  if (!recordStudyAnswer(session.deckId, question.originalIndex, isCorrect)) {
-    toast("Không thể lưu lịch ôn thông minh. Hãy kiểm tra bộ nhớ trình duyệt.");
-  }
-  document.dispatchEvent(new CustomEvent("study-tools-answer-recorded"));
   const preferences = sessionPreferences(session.deckId);
   const vibrate = (pattern) => {
     if (
@@ -3405,8 +3140,6 @@ function restoreSessionIfAny() {
 }
 
 function initUI() {
-  initStudyTools();
-  refreshStorageRecoveryNotice();
   document.addEventListener("selectionchange", captureHighlightSelection);
   const captureAfterSelectionGesture = () => {
     captureHighlightSelection();
@@ -3541,172 +3274,27 @@ function bindKeyboardShortcuts() {
 function bindEvents() {
   bindKeyboardShortcuts();
   initEnhance({ onPrev, onNext });
-  $("review-search")?.addEventListener("input", renderQuestionBank);
-  $("review-topic-filter")?.addEventListener("change", renderQuestionBank);
-  $("review-category-filter")?.addEventListener("change", renderQuestionBank);
-  document.addEventListener("study-tools-duplicate-check", (event) => {
-    const deckId =
-      event.detail?.deckId === "custom" && state.decks.custom
-        ? "custom"
-        : event.detail?.deckId === "quocphong2"
-          ? "quocphong2"
-          : "quocphong1";
-    const questions = state.decks[deckId] || [];
-    const groups = findDuplicateQuestions(questions);
-    const conflicts = findConflictingQuestions(questions);
-    if (!groups.length && !conflicts.length) {
-      toast(
-        `${DECKS[deckId].label}: không phát hiện câu trùng hoặc xung đột nội dung.`,
-      );
-      return;
-    }
-    const duplicateText = groups
-      .slice(0, 10)
-      .map(
-        (group) =>
-          `Trùng hoàn toàn — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`,
-      )
-      .join("\n\n");
-    const conflictText = conflicts
-      .slice(0, 10)
-      .map(
-        (group) =>
-          `Cùng câu hỏi nhưng đáp án khác — câu ${group.map((item) => item.index + 1).join(", ")}: ${group[0].question}`,
-      )
-      .join("\n\n");
-    const sections = [duplicateText, conflictText].filter(Boolean).join("\n\n");
-    alert(
-      `${DECKS[deckId].label}: ${groups.length} nhóm trùng hoàn toàn, ${conflicts.length} nhóm xung đột.\n\n${sections}${groups.length > 10 || conflicts.length > 10 ? "\n\n…còn nhóm khác." : ""}`,
-    );
-  });
-  document.addEventListener("study-tools-custom-bank-imported", (event) => {
-    try {
-      if (!loadCustomDeck(event.detail?.questions))
-        throw new Error("Bộ đề nhập không hợp lệ.");
-      state.currentDeck = "custom";
-      state.bankDeck = "custom";
-      applySettingsToForm(getSettings("custom"));
-      refreshSetupUI();
-      toast(
-        "Đã chuyển sang bộ đề nhập. Tiến độ bộ đề gốc vẫn được giữ nguyên.",
-      );
-    } catch (error) {
-      alert(error?.message || "Không thể tải bộ đề nhập.");
-    }
-  });
-  document.addEventListener("study-tools-report-export", () => {
-    const reportDecks = [
-      "quocphong1",
-      "quocphong2",
-      ...(state.decks.custom ? ["custom"] : []),
-    ];
-    const rows = reportDecks.map((deckId) => ({
-      deckId,
-      label: DECKS[deckId].label,
-      questions: state.decks[deckId] || [],
-      progress: getDeckProgress(deckId),
-    }));
-    const blob = new Blob([exportStudyReportCsv(rows)], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "bao-cao-hoc-tap-quoc-phong.csv";
-    anchor.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
-  document.addEventListener("study-tools-wrong-review", (event) => {
-    const deckId =
-      event.detail?.deckId === "custom" && state.decks.custom
-        ? "custom"
-        : event.detail?.deckId === "quocphong2"
-          ? "quocphong2"
-          : "quocphong1";
-    const progress = getDeckProgress(deckId);
-    const indices = Object.entries(progress.wrongMap || {})
-      .filter(([, count]) => Number.isInteger(count) && count > 0)
-      .sort((leftEntry, rightEntry) => rightEntry[1] - leftEntry[1])
-      .map(([index]) => Number(index));
-    if (!indices.length) {
-      toast("Bộ đề này chưa có câu sai được ghi nhận.");
-      return;
-    }
-    state.currentDeck = deckId;
-    state.bankDeck = deckId;
-    state.setupDeckBeforeBank = deckId;
-    applySettingsToForm(getSettings(deckId));
-    openQuestionBank();
-    state.bankDeck = deckId;
-    state.reviewSelectedIndices = new Set(
-      indices.filter(
-        (index) =>
-          Number.isInteger(index) &&
-          index >= 0 &&
-          index < (state.decks[deckId]?.length || 0),
-      ),
-    );
-    applyBankSettingsToForm({
-      ...getBankSettings(),
-      deck: deckId,
-      count: state.reviewSelectedIndices.size,
-    });
-    renderQuestionBank();
-  });
-  document.addEventListener("study-tools-review", (event) => {
-    const deckId =
-      event.detail?.deckId === "custom" && state.decks.custom
-        ? "custom"
-        : event.detail?.deckId === "quocphong2"
-          ? "quocphong2"
-          : "quocphong1";
-    const indices = Array.isArray(event.detail?.indices)
-      ? event.detail.indices
-      : [];
-    if (!indices.length) return;
-    state.currentDeck = deckId;
-    state.bankDeck = deckId;
-    state.setupDeckBeforeBank = deckId;
-    applySettingsToForm(getSettings(deckId));
-    openQuestionBank();
-    state.bankDeck = deckId;
-    state.reviewSelectedIndices = new Set(
-      indices.filter(
-        (index) =>
-          Number.isInteger(index) &&
-          index >= 0 &&
-          index < (state.decks[deckId]?.length || 0),
-      ),
-    );
-    applyBankSettingsToForm({
-      ...getBankSettings(),
-      deck: deckId,
-      count: state.reviewSelectedIndices.size,
-    });
-    renderQuestionBank();
-  });
 
-  document
-    .querySelectorAll("#screen-setup .deck-btn[data-deck]")
-    .forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (state.currentDeck === btn.dataset.deck) return;
-        const previousTotal = currentQuestions().length;
-        const previousEnd = Number.parseInt($("input-range-end").value, 10);
-        persistSetupForm();
-        state.currentDeck = btn.dataset.deck;
-        const settings = getSettings(state.currentDeck);
-        const currentTotal = currentQuestions().length;
-        settings.endQuestion = getEndQuestionForDeckSwitch(
-          previousEnd,
-          previousTotal,
-          currentTotal,
-        );
-        applySettingsToForm(settings);
-        refreshSetupUI();
-        persistSetupForm();
-      });
+  document.querySelectorAll(".deck-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (state.currentDeck === btn.dataset.deck) return;
+      const previousTotal = currentQuestions().length;
+      const previousEnd = Number.parseInt($("input-range-end").value, 10);
+      const endWasMaximum = previousEnd >= previousTotal;
+      persistSetupForm();
+      state.currentDeck = btn.dataset.deck;
+      const settings = getSettings(state.currentDeck);
+      const currentTotal = currentQuestions().length;
+      settings.endQuestion = getEndQuestionForDeckSwitch(
+        previousEnd,
+        previousTotal,
+        currentTotal,
+      );
+      applySettingsToForm(settings);
+      refreshSetupUI();
+      persistSetupForm();
     });
+  });
 
   $("btn-all").addEventListener("click", () => {
     const form = readSetupForm();
@@ -3795,18 +3383,6 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-bank-deck]").forEach((btn) => {
     btn.addEventListener("click", () => setBankDeck(btn.dataset.bankDeck));
-  });
-
-  $("btn-toggle-study-stats")?.addEventListener("click", () => {
-    const panel = $("study-stats-detail");
-    if (!panel) return;
-    const willOpen = panel.hidden;
-    if (willOpen) renderStudyStats();
-    panel.hidden = !willOpen;
-    $("btn-toggle-study-stats").setAttribute("aria-expanded", String(willOpen));
-    $("btn-toggle-study-stats").textContent = willOpen
-      ? "Ẩn thống kê chi tiết"
-      : "Thống kê chi tiết hai bộ đề";
   });
 
   $("btn-view-bank").addEventListener("click", openQuestionBank);
