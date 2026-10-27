@@ -364,3 +364,9 @@ test("custom question bank can be saved and remains isolated in storage", async 
   assert.equal(storage.getSession("custom").marker, "custom-session");
   assert.equal(storage.getSession("quocphong1"), null);
 });
+
+test("question categories can be read from the study-tools data store", () => {
+  assert.equal(studyTools.saveQuestionCategory("quocphong1", 7, "important"), true);
+  assert.equal(studyTools.getQuestionCategory("quocphong1", 7), "important");
+  assert.equal(studyTools.getQuestionCategory("quocphong2", 7), "");
+});
