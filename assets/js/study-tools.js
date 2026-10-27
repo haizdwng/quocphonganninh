@@ -103,9 +103,9 @@ export function getDueQuestions(deckId, now = Date.now()) {
   return Object.entries(schedule)
     .filter(([key, value]) => validIndex(Number(key)) && value && Number(value.dueAt) <= now)
     .map(([key]) => Number(key))
-    .sort((a, b) => {
-      const left = schedule[a] || {};
-      const right = schedule[b] || {};
+    .sort((leftIndex, rightIndex) => {
+      const left = schedule[leftIndex] || {};
+      const right = schedule[rightIndex] || {};
       return (left.dueAt || 0) - (right.dueAt || 0);
     });
 }
@@ -258,12 +258,6 @@ export function importStudyTools(text) {
   return writeData(data)
     ? { success: true, message: "Đã nhập dữ liệu công cụ học tập." }
     : { success: false, message: "Không đủ bộ nhớ để lưu dữ liệu." };
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[char]);
 }
 
 function renderSummary() {
