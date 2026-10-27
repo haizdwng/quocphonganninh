@@ -26,6 +26,7 @@ import {
   resetDeckHighlights,
 } from "./storage.js";
 import { initEnhance } from "./enhance.js";
+import { calculateStudyStatistics } from "./statistics.js";
 import {
   fingerprintQuestions,
   normalizeQuestions,
@@ -962,6 +963,30 @@ function openQuestionBank() {
     window.scrollTo({ top: 0 });
     syncReviewVirtualWindow();
   });
+}
+
+function renderStudyStats() {
+  const container = $("study-stats-detail");
+  if (!container) return;
+  const cards = ["quocphong1", "quocphong2"].map((deckId) => {
+    const questions = state.decks[deckId] || [];
+    const progress = getDeckProgress(deckId);
+    const stats = calculateStudyStatistics(questions.length, progress);
+    const label = DECKS[deckId].label;
+    return `<article class="study-stats-deck">
+      <div class="study-stats-heading"><strong>${label}</strong><span>${stats.completionPercent}%</span></div>
+      <div class="study-stats-track" role="progressbar" aria-label="Tiến độ ${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${stats.completionPercent}"><span style="width:${stats.completionPercent}%"></span></div>
+      <dl class="study-stats-grid">
+        <div><dt>Đã hoàn thành</dt><dd>${stats.completedCount}/${stats.total}</dd></div>
+        <div><dt>Còn lại</dt><dd>${stats.remainingCount}</dd></div>
+        <div><dt>Câu từng sai</dt><dd>${stats.wrongQuestionCount}</dd></div>
+        <div><dt>Lượt trả lời sai</dt><dd>${stats.wrongAttemptCount}</dd></div>
+        <div><dt>Lượt ôn lại</dt><dd>${stats.practiceAttempts}</dd></div>
+        <div><dt>Đã đánh dấu</dt><dd>${stats.bookmarkedCount}</dd></div>
+      </dl>
+    </article>`;
+  });
+  container.innerHTML = cards.join("");
 }
 
 function refreshSetupUI() {
@@ -3383,6 +3408,18 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-bank-deck]").forEach((btn) => {
     btn.addEventListener("click", () => setBankDeck(btn.dataset.bankDeck));
+  });
+
+  $("btn-toggle-study-stats")?.addEventListener("click", () => {
+    const panel = $("study-stats-detail");
+    if (!panel) return;
+    const willOpen = panel.hidden;
+    if (willOpen) renderStudyStats();
+    panel.hidden = !willOpen;
+    $("btn-toggle-study-stats").setAttribute("aria-expanded", String(willOpen));
+    $("btn-toggle-study-stats").textContent = willOpen
+      ? "Ẩn thống kê chi tiết"
+      : "Thống kê chi tiết hai bộ đề";
   });
 
   $("btn-view-bank").addEventListener("click", openQuestionBank);
