@@ -360,4 +360,7 @@ test("custom question bank can be saved and remains isolated in storage", async 
   assert.equal(tools.getCustomQuestionBank()[0].topic, "Chủ đề riêng");
   assert.equal(storage.getDeckProgress("quocphong1").completed.length, 0);
   assert.equal(storage.getDeckProgress("custom").completed.length, 0);
+  assert.equal(storage.saveSession({ deckId: "custom", marker: "custom-session" }), true);
+  assert.equal(storage.getSession("custom").marker, "custom-session");
+  assert.equal(storage.getSession("quocphong1"), null);
 });
