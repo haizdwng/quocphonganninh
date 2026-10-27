@@ -1,4 +1,4 @@
-const CACHE_VERSION = "quocphonganninh:1.1.0";
+const CACHE_VERSION = "quocphonganninh:1.2.0";
 const CACHE_PREFIX = "quocphonganninh:";
 const ESSENTIAL = [
   "./",
@@ -12,6 +12,7 @@ const ESSENTIAL = [
   "./assets/js/quiz.js",
   "./assets/js/storage.js",
   "./assets/js/statistics.js",
+  "./assets/js/study-tools.js",
   "./assets/sounds/correct.mp3",
   "./assets/sounds/incorrect.mp3",
   "./data/quocphong1.json",
