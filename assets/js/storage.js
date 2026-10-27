@@ -1,5 +1,6 @@
 const STORAGE_NAMESPACE = "quocphonganninh";
 const STORAGE_VERSION = 2;
+const RECOVERY_KEY = `${STORAGE_NAMESPACE}:recovery-backup`;
 
 function emptyRoot() {
   return {
@@ -12,6 +13,36 @@ function emptyRoot() {
     sessions: {},
     highlights: { quocphong1: {}, quocphong2: {} },
   };
+}
+
+function preserveInvalidRoot(raw, reason) {
+  if (typeof raw !== "string" || !raw) return false;
+  try {
+    if (localStorage.getItem(RECOVERY_KEY)) return true;
+    localStorage.setItem(RECOVERY_KEY, JSON.stringify({
+      format: "quocphonganninh-storage-recovery",
+      version: 1,
+      createdAt: new Date().toISOString(),
+      reason,
+      raw,
+    }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getRecoveryBackup() {
+  try {
+    const raw = localStorage.getItem(RECOVERY_KEY);
+    if (!raw) return null;
+    const backup = JSON.parse(raw);
+    return backup?.format === "quocphonganninh-storage-recovery" && typeof backup.raw === "string"
+      ? backup
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 function readRoot() {
@@ -44,12 +75,12 @@ function readRoot() {
 
     if (valid) return data;
 
-    localStorage.removeItem(STORAGE_NAMESPACE);
+    preserveInvalidRoot(raw, "Dữ liệu lưu trữ không đúng cấu trúc hoặc khác phiên bản.");
     return emptyRoot();
   } catch {
-    try {
-      localStorage.removeItem(STORAGE_NAMESPACE);
-    } catch {}
+    let raw = null;
+    try { raw = localStorage.getItem(STORAGE_NAMESPACE); } catch {}
+    preserveInvalidRoot(raw, "Không thể phân tích dữ liệu lưu trữ thành JSON.");
     return emptyRoot();
   }
 }

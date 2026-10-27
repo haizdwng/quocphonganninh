@@ -313,3 +313,13 @@ test("study question categories are isolated and restricted to known values", ()
   assert.equal(studyTools.saveQuestionCategory("quocphong1", 5, ""), true);
   assert.equal(studyTools.getQuestionCategory("quocphong1", 5), "");
 });
+
+test("corrupt storage is preserved in a recovery backup instead of being silently discarded", async () => {
+  localStorage.setItem("quocphonganninh", "{broken-json");
+  const freshStorage = await import("../assets/js/storage.js?recovery-test");
+  assert.equal(freshStorage.getSettings("quocphong1").count, 30);
+  const recovery = freshStorage.getRecoveryBackup();
+  assert.equal(recovery.format, "quocphonganninh-storage-recovery");
+  assert.equal(recovery.raw, "{broken-json");
+  assert.match(recovery.reason, /JSON/);
+});
