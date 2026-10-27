@@ -2266,3 +2266,6 @@ body.theme-light { background: linear-gradient(180deg, var(--bg-2) 0, var(--bg) 
 }
 
 .study-note-fields select { width: 100%; min-width: 0; }
+
+.storage-recovery-notice { border-color: #b7791f; background: color-mix(in srgb, var(--surface) 92%, #b7791f); }
+.storage-recovery-notice h2 { color: #d69e2e; }
