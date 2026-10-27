@@ -2223,3 +2223,44 @@ body[data-screen="exam"] .toast {
     transition: none;
   }
 }
+
+.study-tools-card h3 { margin: 16px 0 10px; font-size: .94rem; }
+.study-tools-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.study-tools-metrics > div { min-width: 0; display: grid; gap: 4px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+.study-tools-metrics span { color: var(--muted); font-size: .78rem; }
+.study-tools-metrics strong { font-size: .92rem; overflow-wrap: anywhere; }
+.study-tools-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.study-tools-row label:not(.btn) { font-size: .86rem; }
+.study-tools-row input[type="number"], .study-note-fields input[type="number"], .study-note-fields select, .study-note-fields textarea { min-height: var(--touch); min-width: 0; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); }
+.study-tools-row input[type="number"] { width: 100px; }
+.study-note-fields { display: grid; grid-template-columns: auto minmax(90px, 1fr) auto minmax(90px, 1fr); align-items: center; gap: 8px; }
+.study-note-fields textarea { grid-column: 1 / -1; width: 100%; resize: vertical; font: inherit; }
+.study-note-fields .study-tools-row { grid-column: 1 / -1; }
+.study-tools-divider { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
+.study-import-label { cursor: pointer; }
+body.theme-light {
+  color-scheme: light;
+  --bg: #f3f6f2;
+  --bg-2: #e8eee6;
+  --surface: #ffffff;
+  --surface-2: #f3f6f2;
+  --surface-3: #e8eee6;
+  --text: #202a22;
+  --muted: #5d6b60;
+  --border: #d3ddd3;
+  --border-strong: #aab9aa;
+  --primary: #647c35;
+  --primary-soft: rgba(100, 124, 53, .14);
+  --primary-contrast: #ffffff;
+  --shadow: 0 10px 28px rgba(28, 44, 30, .08);
+}
+body.theme-light { background: linear-gradient(180deg, var(--bg-2) 0, var(--bg) 360px) fixed, var(--bg); }
+@media (max-width: 480px) {
+  .study-tools-row > .btn { flex: 1 1 100%; }
+  .study-note-fields { grid-template-columns: 1fr; }
+  .study-note-fields > label { margin-bottom: -5px; }
+  .study-note-fields textarea, .study-note-fields .study-tools-row { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .study-tools-card *, .study-tools-card *::before, .study-tools-card *::after { scroll-behavior: auto !important; transition: none !important; }
+}

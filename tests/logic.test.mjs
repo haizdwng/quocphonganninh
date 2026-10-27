@@ -20,6 +20,7 @@ globalThis.localStorage = {
 
 const quiz = await import("../assets/js/quiz.js");
 const storage = await import("../assets/js/storage.js");
+const studyTools = await import("../assets/js/study-tools.js");
 
 beforeEach(() => localStorage.clear());
 
@@ -282,4 +283,24 @@ test("màn hình thiết lập dùng thẻ phiên đang dở thay cho lịch s�
   assert.doesNotMatch(html, /session-history|10 phiên gần nhất/);
   assert.match(app, /function refreshResumeCard\(\)/);
   assert.doesNotMatch(css, /session-history|history-item/);
+});
+
+test("study tools schedule spaced review and track daily learning", () => {
+  const now = Date.now();
+  assert.equal(studyTools.recordStudyAnswer("quocphong1", 2, true), true);
+  assert.deepEqual(studyTools.getDueQuestions("quocphong1", now), []);
+  assert.deepEqual(studyTools.getDueQuestions("quocphong1", now + 2 * 86400000), [2]);
+  assert.equal(studyTools.recordStudyAnswer("quocphong1", 4, false), true);
+  assert.deepEqual(studyTools.getDueQuestions("quocphong1", now + 11 * 60000), [4]);
+  assert.deepEqual(studyTools.getDueQuestions("quocphong2", now + 86400000), []);
+});
+
+test("study notes are isolated by deck and backup validates its format", () => {
+  assert.equal(studyTools.saveQuestionNote("quocphong1", 0, "Mẹo nhớ"), true);
+  assert.equal(studyTools.getQuestionNote("quocphong1", 0), "Mẹo nhớ");
+  assert.equal(studyTools.getQuestionNote("quocphong2", 0), "");
+  assert.equal(studyTools.saveQuestionNote("quocphong1", 0, " "), true);
+  assert.equal(studyTools.getQuestionNote("quocphong1", 0), "");
+  assert.equal(studyTools.importStudyTools("{}").success, false);
+  assert.equal(studyTools.importStudyTools(studyTools.exportStudyTools()).success, true);
 });

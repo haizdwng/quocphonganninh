@@ -27,6 +27,7 @@ import {
 } from "./storage.js";
 import { initEnhance } from "./enhance.js";
 import { calculateStudyStatistics } from "./statistics.js";
+import { initStudyTools, recordStudyAnswer } from "./study-tools.js";
 import {
   fingerprintQuestions,
   normalizeQuestions,
@@ -2336,6 +2337,10 @@ function onCheck() {
   item.checked = true;
   if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
   const isCorrect = isAnswerCorrect(item, question);
+  if (!recordStudyAnswer(session.deckId, question.originalIndex, isCorrect)) {
+    toast("Không thể lưu lịch ôn thông minh. Hãy kiểm tra bộ nhớ trình duyệt.");
+  }
+  document.dispatchEvent(new CustomEvent("study-tools-answer-recorded"));
   const preferences = sessionPreferences(session.deckId);
   const vibrate = (pattern) => {
     if (
@@ -3165,6 +3170,7 @@ function restoreSessionIfAny() {
 }
 
 function initUI() {
+  initStudyTools();
   document.addEventListener("selectionchange", captureHighlightSelection);
   const captureAfterSelectionGesture = () => {
     captureHighlightSelection();
@@ -3299,6 +3305,20 @@ function bindKeyboardShortcuts() {
 function bindEvents() {
   bindKeyboardShortcuts();
   initEnhance({ onPrev, onNext });
+  document.addEventListener("study-tools-review", (event) => {
+    const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const indices = Array.isArray(event.detail?.indices) ? event.detail.indices : [];
+    if (!indices.length) return;
+    state.currentDeck = deckId;
+    state.bankDeck = deckId;
+    state.setupDeckBeforeBank = deckId;
+    applySettingsToForm(getSettings(deckId));
+    openQuestionBank();
+    state.bankDeck = deckId;
+    state.reviewSelectedIndices = new Set(indices.filter((index) => Number.isInteger(index) && index >= 0 && index < (state.decks[deckId]?.length || 0)));
+    applyBankSettingsToForm({ ...getBankSettings(), deck: deckId, count: state.reviewSelectedIndices.size });
+    renderQuestionBank();
+  });
 
   document.querySelectorAll(".deck-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
