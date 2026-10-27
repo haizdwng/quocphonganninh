@@ -2264,3 +2264,5 @@ body.theme-light { background: linear-gradient(180deg, var(--bg-2) 0, var(--bg) 
 @media (prefers-reduced-motion: reduce) {
   .study-tools-card *, .study-tools-card *::before, .study-tools-card *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+.study-note-fields select { width: 100%; min-width: 0; }

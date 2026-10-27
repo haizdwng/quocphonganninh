@@ -27,7 +27,7 @@ function dayKey(date = new Date()) {
 }
 
 function emptyDeck() {
-  return { schedule: {}, notes: {} };
+  return { schedule: {}, notes: {}, categories: {} };
 }
 
 function getDeck(data, deckId) {
@@ -91,6 +91,24 @@ export function saveQuestionNote(deckId, questionIndex, note) {
   else delete deck.notes[questionIndex];
   data.decks[deckId] = deck;
   return writeData(data);
+}
+
+export function saveQuestionCategory(deckId, questionIndex, category) {
+  if (!DECKS.includes(deckId) || !validIndex(questionIndex)) return false;
+  if (!["", "remember", "confusing", "important"].includes(category)) return false;
+  const data = readData();
+  if (!data.decks || typeof data.decks !== "object") data.decks = {};
+  const deck = getDeck(data, deckId);
+  if (!deck.categories || typeof deck.categories !== "object" || Array.isArray(deck.categories)) deck.categories = {};
+  if (category) deck.categories[questionIndex] = category;
+  else delete deck.categories[questionIndex];
+  data.decks[deckId] = deck;
+  return writeData(data);
+}
+
+export function getQuestionCategory(deckId, questionIndex) {
+  const categories = getDeck(readData(), deckId).categories || {};
+  return ["remember", "confusing", "important"].includes(categories[questionIndex]) ? categories[questionIndex] : "";
 }
 
 export function getQuestionNote(deckId, questionIndex) {
@@ -200,6 +218,7 @@ export function initStudyTools() {
     }
     textarea.setCustomValidity("");
     textarea.value = getQuestionNote(deckId, questionNumber - 1);
+    document.getElementById("study-note-category").value = getQuestionCategory(deckId, questionNumber - 1);
     textarea.focus();
   });
   document.getElementById("study-note-save")?.addEventListener("click", () => {
@@ -212,13 +231,13 @@ export function initStudyTools() {
       return;
     }
     textarea.setCustomValidity("");
-    if (!saveQuestionNote(deckId, questionNumber - 1, textarea.value)) {
+    if (!saveQuestionNote(deckId, questionNumber - 1, textarea.value) || !saveQuestionCategory(deckId, questionNumber - 1, document.getElementById("study-note-category").value)) {
       alert("Không thể lưu ghi chú. Hãy kiểm tra bộ nhớ trình duyệt.");
       return;
     }
     renderSummary();
     const status = document.getElementById("study-note-status");
-    if (status) status.textContent = textarea.value.trim() ? "Đã lưu ghi chú." : "Đã xóa ghi chú.";
+    if (status) status.textContent = textarea.value.trim() ? "Đã lưu ghi chú và phân loại." : "Đã lưu phân loại; ghi chú trống đã được xóa.";
   });
   document.getElementById("study-tools-export")?.addEventListener("click", () => {
     const blob = new Blob([exportStudyTools()], { type: "application/json" });
@@ -241,6 +260,10 @@ export function initStudyTools() {
     alert(result.message);
     if (result.success) renderSummary();
     event.currentTarget.value = "";
+  });
+  document.getElementById("study-most-wrong")?.addEventListener("click", () => {
+    const deckId = document.getElementById("study-note-deck").value;
+    document.dispatchEvent(new CustomEvent("study-tools-wrong-review", { detail: { deckId } }));
   });
   document.getElementById("study-due-review")?.addEventListener("click", () => {
     const currentDeck = document.getElementById("study-note-deck").value;

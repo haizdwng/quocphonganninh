@@ -329,6 +329,7 @@
               <label for="study-daily-goal">Mục tiêu câu/ngày</label>
               <input id="study-daily-goal" type="number" min="1" max="500" value="20" inputmode="numeric">
               <button type="button" class="btn btn-secondary" id="study-due-review">Ôn câu đến hạn</button>
+              <button type="button" class="btn btn-ghost" id="study-most-wrong">Ôn câu hay sai</button>
               <button type="button" class="btn btn-ghost" id="study-theme-toggle">Giao diện sáng</button>
             </div>
             <hr class="study-tools-divider">
@@ -338,6 +339,8 @@
               <select id="study-note-deck"><option value="quocphong1">Quốc Phòng 1</option><option value="quocphong2">Quốc Phòng 2</option></select>
               <label for="study-note-question">Số câu</label>
               <input id="study-note-question" type="number" min="1" value="1" inputmode="numeric">
+              <label for="study-note-category">Phân loại</label>
+              <select id="study-note-category"><option value="">Không phân loại</option><option value="remember">Cần ghi nhớ</option><option value="confusing">Hay nhầm</option><option value="important">Trọng tâm</option></select>
               <textarea id="study-note-text" rows="3" maxlength="4000" placeholder="Ghi nhớ, giải thích hoặc mẹo phân biệt đáp án…"></textarea>
               <div class="study-tools-row">
                 <button type="button" class="btn btn-ghost" id="study-note-load">Tải ghi chú</button>

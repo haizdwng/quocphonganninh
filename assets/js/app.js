@@ -2177,6 +2177,8 @@ async function onExamSubmit() {
         continue;
       }
       const correct = isAnswerCorrect(item, question);
+      if (!recordStudyAnswer(session.deckId, question.originalIndex, correct)) toast("Không thể lưu lịch ôn thông minh. Hãy kiểm tra bộ nhớ trình duyệt.");
+      document.dispatchEvent(new CustomEvent("study-tools-answer-recorded"));
       item.checked = true;
       if (correct) {
         item.status = "correct";
@@ -3305,6 +3307,21 @@ function bindKeyboardShortcuts() {
 function bindEvents() {
   bindKeyboardShortcuts();
   initEnhance({ onPrev, onNext });
+  document.addEventListener("study-tools-wrong-review", (event) => {
+    const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
+    const progress = getDeckProgress(deckId);
+    const indices = Object.entries(progress.wrongMap || {}).filter(([, count]) => Number.isInteger(count) && count > 0).sort((a, b) => b[1] - a[1]).map(([index]) => Number(index));
+    if (!indices.length) { toast("Bộ đề này chưa có câu sai được ghi nhận."); return; }
+    state.currentDeck = deckId;
+    state.bankDeck = deckId;
+    state.setupDeckBeforeBank = deckId;
+    applySettingsToForm(getSettings(deckId));
+    openQuestionBank();
+    state.bankDeck = deckId;
+    state.reviewSelectedIndices = new Set(indices.filter((index) => Number.isInteger(index) && index >= 0 && index < (state.decks[deckId]?.length || 0)));
+    applyBankSettingsToForm({ ...getBankSettings(), deck: deckId, count: state.reviewSelectedIndices.size });
+    renderQuestionBank();
+  });
   document.addEventListener("study-tools-review", (event) => {
     const deckId = event.detail?.deckId === "quocphong2" ? "quocphong2" : "quocphong1";
     const indices = Array.isArray(event.detail?.indices) ? event.detail.indices : [];
