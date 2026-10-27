@@ -405,3 +405,11 @@ test("progress remaps to stable question IDs when question order changes", () =>
   assert.equal(result.sequentialCursor, 0);
   assert.deepEqual(result.questionIds, reordered.map((question) => question.id));
 });
+
+test("generated question IDs remain unique for duplicate question entries", () => {
+  const normalized = quiz.normalizeQuestions([
+    { question: "Trùng", options: ["A", "B"], correct: 0 },
+    { question: "Trùng", options: ["A", "B"], correct: 0 },
+  ]);
+  assert.notEqual(normalized[0].id, normalized[1].id);
+});
