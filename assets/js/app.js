@@ -21,6 +21,7 @@ import {
   exportBackup,
   importBackup,
   storageAvailable,
+  getRecoveryBackup,
   getQuestionHighlights,
   saveQuestionHighlights,
   resetDeckHighlights,
@@ -988,6 +989,28 @@ function renderStudyStats() {
     </article>`;
   });
   container.innerHTML = cards.join("");
+}
+
+function refreshStorageRecoveryNotice() {
+  const notice = $("storage-recovery-notice");
+  if (!notice) return;
+  const backup = getRecoveryBackup();
+  notice.hidden = !backup;
+  if (backup) {
+    const reason = $("storage-recovery-reason");
+    if (reason) reason.textContent = backup.reason || "Dữ liệu lưu trữ trước đó không hợp lệ.";
+  }
+  $("btn-download-storage-recovery")?.addEventListener("click", () => {
+    const current = getRecoveryBackup();
+    if (!current) return;
+    const blob = new Blob([JSON.stringify(current, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "quocphonganninh-storage-recovery.json";
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, { once: true });
 }
 
 function refreshSetupUI() {
@@ -3173,6 +3196,7 @@ function restoreSessionIfAny() {
 
 function initUI() {
   initStudyTools();
+  refreshStorageRecoveryNotice();
   document.addEventListener("selectionchange", captureHighlightSelection);
   const captureAfterSelectionGesture = () => {
     captureHighlightSelection();
