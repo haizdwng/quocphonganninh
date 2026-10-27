@@ -100,6 +100,7 @@ function writeRoot(data) {
 }
 
 function normalizeDeckId(deckId) {
+  if (deckId === "custom") return "custom";
   return deckId === "quocphong2" ? "quocphong2" : "quocphong1";
 }
 
