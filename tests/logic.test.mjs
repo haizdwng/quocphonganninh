@@ -413,3 +413,12 @@ test("generated question IDs remain unique for duplicate question entries", () =
   ]);
   assert.notEqual(normalized[0].id, normalized[1].id);
 });
+
+test("deck progress persists stable question IDs for later migration", () => {
+  assert.equal(storage.saveDeckProgress("quocphong1", {
+    completed: [1],
+    questionIds: ["question-a", "question-b"],
+    dataFingerprint: "fingerprint",
+  }), true);
+  assert.deepEqual(storage.getDeckProgress("quocphong1").questionIds, ["question-a", "question-b"]);
+});
