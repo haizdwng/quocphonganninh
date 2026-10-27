@@ -380,3 +380,28 @@ test("conflicting questions with the same prompt but different answers are detec
   assert.equal(quiz.findConflictingQuestions(normalized).length, 1);
   assert.deepEqual(quiz.findConflictingQuestions(normalized)[0].map((item) => item.index), [0, 1]);
 });
+
+test("progress remaps to stable question IDs when question order changes", () => {
+  const questions = quiz.normalizeQuestions([
+    { question: "Câu A", options: ["A", "B"], correct: 0 },
+    { question: "Câu B", options: ["A", "B"], correct: 1 },
+    { question: "Câu C", options: ["A", "B"], correct: 1 },
+  ]);
+  const reordered = quiz.normalizeQuestions([
+    { question: "Câu C", options: ["A", "B"], correct: 1 },
+    { question: "Câu A", options: ["A", "B"], correct: 0 },
+  ]);
+  const result = quiz.remapQuestionProgress({
+    completed: [0, 2],
+    bookmarks: [1, 2],
+    wrongMap: { 0: 2, 1: 3 },
+    practiceMap: { 2: 4 },
+    sequentialCursor: 2,
+  }, questions.map((question) => question.id), reordered);
+  assert.deepEqual(result.completed, [0, 1]);
+  assert.deepEqual(result.bookmarks, [0]);
+  assert.deepEqual(result.wrongMap, { 1: 2 });
+  assert.deepEqual(result.practiceMap, { 0: 4 });
+  assert.equal(result.sequentialCursor, 0);
+  assert.deepEqual(result.questionIds, reordered.map((question) => question.id));
+});
