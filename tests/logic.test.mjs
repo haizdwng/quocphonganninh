@@ -323,3 +323,17 @@ test("corrupt storage is preserved in a recovery backup instead of being silentl
   assert.equal(recovery.raw, "{broken-json");
   assert.match(recovery.reason, /JSON/);
 });
+
+test("study calendar returns a stable seven-day window and CSV quotes question text", async () => {
+  const calendar = studyTools.getStudyCalendar(7, new Date(2026, 9, 27));
+  assert.equal(calendar.length, 7);
+  assert.equal(calendar[6].key, "2026-10-27");
+  const csv = studyTools.exportStudyReportCsv([{
+    deckId: "quocphong1",
+    label: "Quốc Phòng 1",
+    questions: [{ originalIndex: 0, question: 'Câu "đặc biệt"' }],
+    progress: { completed: [0], wrongMap: {}, practiceMap: {}, bookmarks: [] },
+  }]);
+  assert.match(csv, /"Câu ""đặc biệt"""/);
+  assert.match(csv, /Mức độ/);
+});
