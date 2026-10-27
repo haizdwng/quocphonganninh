@@ -306,6 +306,9 @@ export function getDeckProgress(deckId) {
       typeof deckData.dataFingerprint === "string"
         ? deckData.dataFingerprint
         : "",
+    questionIds: Array.isArray(deckData.questionIds)
+      ? deckData.questionIds.filter((value) => typeof value === "string")
+      : [],
   };
 }
 
