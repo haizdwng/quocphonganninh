@@ -558,9 +558,9 @@ input[type='search']:focus {
   -webkit-mask-image: url('../icons/tabler/pencil.svg');
   mask-image: url('../icons/tabler/pencil.svg');
 }
-[data-icon='underline']::before {
-  -webkit-mask-image: url('../icons/tabler/underline.svg');
-  mask-image: url('../icons/tabler/underline.svg');
+[data-icon='highlight']::before {
+  -webkit-mask-image: url('../icons/tabler/highlight.svg');
+  mask-image: url('../icons/tabler/highlight.svg');
 }
 
 .loading-card {

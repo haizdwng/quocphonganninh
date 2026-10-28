@@ -492,7 +492,7 @@ function createReviewBankCard() {
   const hlBtn = document.createElement('button');
   hlBtn.type = 'button';
   hlBtn.className = 'btn btn-secondary btn-sm highlight-toggle-btn';
-  hlBtn.dataset.icon = 'underline';
+  hlBtn.dataset.icon = 'highlight';
   hlBtn.textContent = 'Highlight';
   hlBtn.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
   hlBtn.addEventListener('pointerdown', (event) => {
@@ -828,31 +828,38 @@ function refreshSetupUI() {
   const rangeTotal = Math.max(0, end - start + 1);
   const input = $('input-count');
   input.max = String(Math.max(1, rangeTotal));
-  if (Number(input.value) > rangeTotal) input.value = String(rangeTotal || 1);
-  if (Number(input.value) < 1 || !Number.isFinite(Number(input.value))) input.value = '1';
+  const countFocused = document.activeElement === input;
+  if (!countFocused) {
+    if (Number(input.value) > rangeTotal) input.value = String(rangeTotal || 1);
+    if (Number(input.value) < 1 || !Number.isFinite(Number(input.value))) input.value = '1';
+  };
 
-  const isAllCount = Number(input.value) === rangeTotal && rangeTotal > 0;
+  const countNum = Number.parseInt(input.value, 10);
+  const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal && rangeTotal > 0;
   const btnAll = $('btn-all');
   if (btnAll) {
     btnAll.classList.toggle('is-active', isAllCount);
     btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
-  }
-  input.disabled = isAllCount;
+  };
+  input.disabled = isAllCount && !countFocused;
 
   const timeInput = $('input-time-limit');
   if (timeInput) {
+    const timeFocused = document.activeElement === timeInput;
     let timeVal = Number.parseInt(timeInput.value, 10);
-    if (!Number.isInteger(timeVal) || timeVal < 0) timeVal = 0;
-    timeVal = Math.min(1440, timeVal);
-    timeInput.value = String(timeVal);
-    const isUnlimited = timeVal === 0;
+    if (!timeFocused) {
+      if (!Number.isInteger(timeVal) || timeVal < 0) timeVal = 0;
+      timeVal = Math.min(1440, timeVal);
+      timeInput.value = String(timeVal);
+    };
+    const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
     const btnUnlimited = $('btn-time-unlimited');
     if (btnUnlimited) {
       btnUnlimited.classList.toggle('is-active', isUnlimited);
       btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
-    }
-    timeInput.disabled = isUnlimited;
-  }
+    };
+    timeInput.disabled = isUnlimited && !timeFocused;
+  };
 
   const progress = getDeckProgress(state.currentDeck);
   const completed = new Set(progress.completed);
@@ -1049,7 +1056,6 @@ function readSetupForm() {
   let timeLimit = Number.parseInt($('input-time-limit').value, 10);
   if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
   timeLimit = Math.min(1440, timeLimit);
-  $('input-time-limit').value = String(timeLimit);
   const shuffleQuestions = $('chk-shuffle-q').checked;
   const shuffleAnswers = $('chk-shuffle-a').checked;
   return {
@@ -2468,13 +2474,21 @@ function bindEvents() {
     btn.addEventListener('click', () => {
       if (state.currentDeck === btn.dataset.deck) return;
       const previousTotal = currentQuestions().length;
+      const previousStart = Number.parseInt($('input-range-start').value, 10) || 1;
       const previousEnd = Number.parseInt($('input-range-end').value, 10);
-      const endWasMaximum = previousEnd >= previousTotal;
+      const previousRangeTotal = Math.max(1, (Number.isInteger(previousEnd) ? previousEnd : previousTotal) - previousStart + 1);
+      const previousCount = Number.parseInt($('input-count').value, 10);
+      const countWasMaximum = Number.isInteger(previousCount) && previousCount >= previousRangeTotal;
       persistSetupForm();
       state.currentDeck = btn.dataset.deck;
       const settings = getSettings(state.currentDeck);
       const currentTotal = currentQuestions().length;
       settings.endQuestion = getEndQuestionForDeckSwitch(previousEnd, previousTotal, currentTotal);
+      if (countWasMaximum) {
+        const newStart = settings.startQuestion || 1;
+        const newEnd = settings.endQuestion > 0 ? Math.min(settings.endQuestion, currentTotal) : currentTotal;
+        settings.count = Math.max(1, newEnd - newStart + 1);
+      };
       applySettingsToForm(settings);
       refreshSetupUI();
       persistSetupForm();
@@ -2537,15 +2551,52 @@ function bindEvents() {
 
   $('btn-exam-next-empty')?.addEventListener('click', () => jumpToNextUnanswered());
 
+  const updateCountButtonState = () => {
+    const input = $('input-count');
+    const form = readSetupForm();
+    const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
+    const countNum = Number.parseInt(input.value, 10);
+    const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal;
+    const btnAll = $('btn-all');
+    if (btnAll) {
+      btnAll.classList.toggle('is-active', isAllCount);
+      btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+    };
+  };
+  $('input-count').addEventListener('input', updateCountButtonState);
   $('input-count').addEventListener('change', () => {
     persistSetupForm();
     refreshSetupUI();
   });
-
-  $('input-time-limit').addEventListener('change', () => {
-    const value = Number.parseInt($('input-time-limit').value, 10);
-    $('input-time-limit').value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
+  $('input-count').addEventListener('blur', () => {
     persistSetupForm();
+    refreshSetupUI();
+  });
+
+  const updateTimeButtonState = () => {
+    const timeInput = $('input-time-limit');
+    const timeVal = Number.parseInt(timeInput.value, 10);
+    const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
+    const btnUnlimited = $('btn-time-unlimited');
+    if (btnUnlimited) {
+      btnUnlimited.classList.toggle('is-active', isUnlimited);
+      btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+    };
+  };
+  $('input-time-limit').addEventListener('input', updateTimeButtonState);
+  $('input-time-limit').addEventListener('change', () => {
+    const timeInput = $('input-time-limit');
+    const value = Number.parseInt(timeInput.value, 10);
+    timeInput.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
+    persistSetupForm();
+    refreshSetupUI();
+  });
+  $('input-time-limit').addEventListener('blur', () => {
+    const timeInput = $('input-time-limit');
+    const value = Number.parseInt(timeInput.value, 10);
+    timeInput.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
+    persistSetupForm();
+    refreshSetupUI();
   });
 
   for (const id of ['input-range-start', 'input-range-end']) $(id).addEventListener('change', () => {
