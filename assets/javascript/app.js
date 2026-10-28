@@ -65,6 +65,13 @@ const REVIEW_VIRTUAL_POOL_SIZE = 14;
 
 const $ = (id) => document.getElementById(id);
 
+function setToggleIcon(button, active, icons) {
+  if (!button) return;
+  const onIcon = icons?.on || button.dataset.iconOn;
+  const offIcon = icons?.off || button.dataset.iconOff;
+  if (onIcon && offIcon) button.dataset.icon = active ? onIcon : offIcon;
+};
+
 function dataUrl(rel) {
   return new URL(rel, document.baseURI).href;
 };
@@ -1003,6 +1010,9 @@ function refreshSetupUI() {
   if (btnAll) {
     btnAll.classList.toggle('is-active', isAllCount);
     btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+    setToggleIcon(btnAll, isAllCount, { on: 'deselect', off: 'select-all' });
+    btnAll.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+    btnAll.setAttribute('aria-label', btnAll.title);
   };
   input.disabled = isAllCount && !countFocused;
 
@@ -1020,6 +1030,9 @@ function refreshSetupUI() {
     if (btnUnlimited) {
       btnUnlimited.classList.toggle('is-active', isUnlimited);
       btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+      setToggleIcon(btnUnlimited, isUnlimited, { on: 'infinity-off', off: 'infinity' });
+      btnUnlimited.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      btnUnlimited.setAttribute('aria-label', btnUnlimited.title);
     };
     timeInput.disabled = isUnlimited && !timeFocused;
   };
@@ -1104,6 +1117,9 @@ function updateBankCountButtonState() {
   const isAll = selectedCount > 0 && Number.isInteger(value) && value === selectedCount;
   btn.classList.toggle('is-active', isAll);
   btn.setAttribute('aria-pressed', isAll ? 'true' : 'false');
+  setToggleIcon(btn, isAll, { on: 'deselect', off: 'select-all' });
+  btn.title = isAll ? 'Bỏ chọn toàn bộ đã chọn' : 'Toàn bộ đã chọn';
+  btn.setAttribute('aria-label', btn.title);
   input.disabled = isAll && !countFocused;
 };
 
@@ -1116,6 +1132,9 @@ function updateBankTimeButtonState() {
   const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
   btn.classList.toggle('is-active', isUnlimited);
   btn.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+  setToggleIcon(btn, isUnlimited, { on: 'infinity-off', off: 'infinity' });
+  btn.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+  btn.setAttribute('aria-label', btn.title);
   input.disabled = isUnlimited && !timeFocused;
 };
 
@@ -1563,6 +1582,7 @@ function renderQuestion() {
   const isBookmarked = getBookmarkedIndices(session.deckId).includes(question.originalIndex);
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
+  setToggleIcon(bookmarkButton, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
   bookmarkButton.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
   bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
   renderTextWithHighlights($('q-text'), question.question, session.deckId, question.originalIndex, 'question');
@@ -2761,6 +2781,9 @@ function bindEvents() {
     if (btnAll) {
       btnAll.classList.toggle('is-active', isAllCount);
       btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+      setToggleIcon(btnAll, isAllCount, { on: 'deselect', off: 'select-all' });
+      btnAll.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+      btnAll.setAttribute('aria-label', btnAll.title);
     };
   };
   $('input-count').addEventListener('input', updateCountButtonState);
@@ -2781,6 +2804,9 @@ function bindEvents() {
     if (btnUnlimited) {
       btnUnlimited.classList.toggle('is-active', isUnlimited);
       btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+      setToggleIcon(btnUnlimited, isUnlimited, { on: 'infinity-off', off: 'infinity' });
+      btnUnlimited.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      btnUnlimited.setAttribute('aria-label', btnUnlimited.title);
     };
   };
   $('input-time-limit').addEventListener('input', updateTimeButtonState);

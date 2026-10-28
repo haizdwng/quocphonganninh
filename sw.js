@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.0.5';
+const VERSION = '1.0.6';
 const ASSETS = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const ASSETS = [
   './data/quocphong2.json',
   './assets/icons/icon.svg',
   './assets/icons/tabler/bookmark.svg',
+  './assets/icons/tabler/bookmark-off.svg',
   './assets/icons/tabler/check.svg',
   './assets/icons/tabler/chevron-left.svg',
   './assets/icons/tabler/chevron-right.svg',
@@ -33,7 +34,11 @@ const ASSETS = [
   './assets/icons/tabler/rotate-clockwise.svg',
   './assets/icons/tabler/player-pause.svg',
   './assets/icons/tabler/highlight.svg',
-  './assets/icons/tabler/x.svg'
+  './assets/icons/tabler/x.svg',
+  './assets/icons/tabler/select-all.svg',
+  './assets/icons/tabler/deselect.svg',
+  './assets/icons/tabler/infinity.svg',
+  './assets/icons/tabler/infinity-off.svg'
 ];
 
 self.addEventListener('install', (event) => event.waitUntil((async () => {

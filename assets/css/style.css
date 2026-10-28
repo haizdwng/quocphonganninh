@@ -482,6 +482,18 @@ input[type='search']:focus {
   -webkit-mask-image: url('../icons/tabler/bookmark.svg');
   mask-image: url('../icons/tabler/bookmark.svg');
 }
+[data-icon='bookmark-off']::before {
+  -webkit-mask-image: url('../icons/tabler/bookmark-off.svg');
+  mask-image: url('../icons/tabler/bookmark-off.svg');
+}
+[data-icon='select-all']::before {
+  -webkit-mask-image: url('../icons/tabler/select-all.svg');
+  mask-image: url('../icons/tabler/select-all.svg');
+}
+[data-icon='deselect']::before {
+  -webkit-mask-image: url('../icons/tabler/deselect.svg');
+  mask-image: url('../icons/tabler/deselect.svg');
+}
 [data-icon='check']::before {
   -webkit-mask-image: url('../icons/tabler/check.svg');
   mask-image: url('../icons/tabler/check.svg');
@@ -530,13 +542,13 @@ input[type='search']:focus {
   -webkit-mask-image: url('../icons/tabler/list-check.svg');
   mask-image: url('../icons/tabler/list-check.svg');
 }
-[data-icon='square']::before {
-  -webkit-mask-image: url('../icons/tabler/square.svg');
-  mask-image: url('../icons/tabler/square.svg');
-}
 [data-icon='infinity']::before {
   -webkit-mask-image: url('../icons/tabler/infinity.svg');
   mask-image: url('../icons/tabler/infinity.svg');
+}
+[data-icon='infinity-off']::before {
+  -webkit-mask-image: url('../icons/tabler/infinity-off.svg');
+  mask-image: url('../icons/tabler/infinity-off.svg');
 }
 [data-icon='arrow-right']::before {
   -webkit-mask-image: url('../icons/tabler/arrow-right.svg');
