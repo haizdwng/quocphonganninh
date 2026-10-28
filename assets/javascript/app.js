@@ -87,6 +87,8 @@ const state = {
   _lastSummaryCount: null,
   highlightEditMode: false,
   lastTextSelection: null,
+  lastCountBeforeAll: null,
+  lastTimeBeforeUnlimited: null,
 };
 
 const REVIEW_VIRTUAL_OVERSCAN = 3;
@@ -828,6 +830,29 @@ function refreshSetupUI() {
   input.max = String(Math.max(1, rangeTotal));
   if (Number(input.value) > rangeTotal) input.value = String(rangeTotal || 1);
   if (Number(input.value) < 1 || !Number.isFinite(Number(input.value))) input.value = '1';
+
+  const isAllCount = Number(input.value) === rangeTotal && rangeTotal > 0;
+  const btnAll = $('btn-all');
+  if (btnAll) {
+    btnAll.classList.toggle('is-active', isAllCount);
+    btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+  }
+  input.disabled = isAllCount;
+
+  const timeInput = $('input-time-limit');
+  if (timeInput) {
+    let timeVal = Number.parseInt(timeInput.value, 10);
+    if (!Number.isInteger(timeVal) || timeVal < 0) timeVal = 0;
+    timeVal = Math.min(1440, timeVal);
+    timeInput.value = String(timeVal);
+    const isUnlimited = timeVal === 0;
+    const btnUnlimited = $('btn-time-unlimited');
+    if (btnUnlimited) {
+      btnUnlimited.classList.toggle('is-active', isUnlimited);
+      btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+    }
+    timeInput.disabled = isUnlimited;
+  }
 
   const progress = getDeckProgress(state.currentDeck);
   const completed = new Set(progress.completed);
@@ -2458,7 +2483,35 @@ function bindEvents() {
 
   $('btn-all').addEventListener('click', () => {
     const form = readSetupForm();
-    $('input-count').value = String(Math.max(1, form.endQuestion - form.startQuestion + 1));
+    const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
+    const input = $('input-count');
+    const current = Number.parseInt(input.value, 10);
+    const isAll = current === rangeTotal;
+    if (isAll) {
+      const prev = state.lastCountBeforeAll;
+      input.value = String(Number.isInteger(prev) && prev >= 1 ? Math.min(prev, rangeTotal) : Math.min(20, rangeTotal));
+    } else {
+      state.lastCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 20;
+      input.value = String(rangeTotal);
+    }
+    persistSetupForm();
+    refreshSetupUI();
+  });
+
+  $('btn-time-unlimited')?.addEventListener('click', () => {
+    const timeInput = $('input-time-limit');
+    if (!timeInput) return;
+    let current = Number.parseInt(timeInput.value, 10);
+    if (!Number.isInteger(current) || current < 0) current = 0;
+    current = Math.min(1440, current);
+    const isUnlimited = current === 0;
+    if (isUnlimited) {
+      const prev = state.lastTimeBeforeUnlimited;
+      timeInput.value = String(Number.isInteger(prev) && prev > 0 ? Math.min(1440, prev) : 50);
+    } else {
+      state.lastTimeBeforeUnlimited = current > 0 ? current : 50;
+      timeInput.value = '0';
+    }
     persistSetupForm();
     refreshSetupUI();
   });
