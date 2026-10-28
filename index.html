@@ -116,25 +116,35 @@
                 />
                 <button
                   type='button'
-                  class='btn btn-ghost'
+                  class='btn btn-ghost btn-icon-only'
                   id='btn-all'
-                  data-icon='list-check'
-                >
-                  Toàn bộ vùng
-                </button>
+                  data-icon='square'
+                  aria-label='Toàn bộ vùng'
+                  title='Toàn bộ vùng'
+                ></button>
               </div>
             </div>
             <div class='field'>
               <label for='input-time-limit'>Thời gian làm bài</label>
-              <input
-                type='number'
-                id='input-time-limit'
-                min='0'
-                max='1440'
-                value='0'
-                step='1'
-                inputmode='numeric'
-              />
+              <div class='row'>
+                <input
+                  type='number'
+                  id='input-time-limit'
+                  min='0'
+                  max='1440'
+                  value='0'
+                  step='1'
+                  inputmode='numeric'
+                />
+                <button
+                  type='button'
+                  class='btn btn-ghost btn-icon-only'
+                  id='btn-time-unlimited'
+                  data-icon='infinity'
+                  aria-label='Không giới hạn thời gian'
+                  title='Không giới hạn thời gian'
+                ></button>
+              </div>
             </div>
             <div class='field toggles'>
               <label class='toggle'>
