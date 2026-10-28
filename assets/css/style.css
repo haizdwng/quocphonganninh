@@ -1308,6 +1308,14 @@ input[type='search']:focus {
   line-height: 1.55;
 }
 
+.wrong-list .index {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 2.8em;
+}
+
 .review-header {
   display: flex;
   flex-direction: column;
