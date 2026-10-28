@@ -1,43 +1,6 @@
 import { initEnhance } from './enhance.js';
-import {
-  fingerprintQuestions,
-  normalizeQuestions,
-  createSessionItems,
-  pickSequential,
-  findNextUncompletedQuestion,
-  pickRandom,
-  pickWrong,
-  isAnswerCorrect,
-  displayedCorrectIndex,
-  getEndQuestionForDeckSwitch
-} from './quiz.js';
-import {
-  getSettings,
-  saveSettings,
-  getBankSettings,
-  saveBankSettings,
-  getDeckProgress,
-  saveDeckProgress,
-  getSession,
-  saveSession,
-  clearSession,
-  resetDeckProgress,
-  markWrong,
-  markPracticed,
-  addCompleted,
-  setSequentialCursor,
-  getWrongIndices,
-  getRangeWrongIndices,
-  addWrongIndicesForRange,
-  getBookmarkedIndices,
-  toggleBookmark,
-  exportBackup,
-  importBackup,
-  storageAvailable,
-  getQuestionHighlights,
-  saveQuestionHighlights,
-  resetDeckHighlights
-} from './storage.js';
+import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
+import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights } from './storage.js';
 
 const DECKS = {
   quocphong1: {
@@ -89,6 +52,11 @@ const state = {
   lastTextSelection: null,
   lastCountBeforeAll: null,
   lastTimeBeforeUnlimited: null,
+  lastBankCountBeforeAll: null,
+  lastBankTimeBeforeUnlimited: null,
+  bankSearchQuery: '',
+  bankSearchMatchIndex: -1,
+  reviewFocusQuestionNumber: null
 };
 
 const REVIEW_VIRTUAL_OVERSCAN = 3;
@@ -204,6 +172,7 @@ function showScreen(name) {
   };
   state.mode = name;
   document.body.dataset.screen = name;
+  if (name !== 'review') updateBankSearchNavButtons();
   if (screen) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
@@ -414,10 +383,107 @@ function captureHighlightSelection() {
   };
 };
 
+function normalizeSearchText(value) {
+  return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+};
+
+function questionMatchesSearch(question, query) {
+  if (!query) return false;
+  const haystack = normalizeSearchText([
+    question.question || '',
+    ...(Array.isArray(question.options) ? question.options : [])
+  ].join(' '));
+  return haystack.includes(query);
+};
+
+function getBankSearchMatches(questions = bankQuestions()) {
+  const query = normalizeSearchText(state.bankSearchQuery);
+  if (!query) return [];
+  return questions.filter((question) => questionMatchesSearch(question, query));
+};
+
 function getFilteredBankQuestions() {
   const questions = bankQuestions();
   const form = readBankForm();
-  return { questions, form, filtered: questions };
+  const query = normalizeSearchText(state.bankSearchQuery);
+  const matches = query ? questions.filter((question) => questionMatchesSearch(question, query)) : [];
+  return { questions, form, filtered: questions, query, matches };
+};
+
+function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
+  const hint = $('review-search-hint');
+  if (!hint) return;
+  const query = normalizeSearchText(state.bankSearchQuery);
+  if (!query) {
+    hint.hidden = true;
+    hint.textContent = '';
+    return;
+  };
+  hint.hidden = false;
+  if (matchCount === 0) hint.textContent = 'Không tìm thấy câu hỏi phù hợp.';
+  else if (state.bankSearchMatchIndex >= 0 && state.bankSearchMatchIndex < matchCount) hint.textContent = 'Kết quả ' + (state.bankSearchMatchIndex + 1) + ' / ' + matchCount;
+  else hint.textContent = 'Tìm thấy ' + matchCount + ' câu.';
+};
+
+function updateBankSearchNavButtons() {
+  const prevBtn = $('btn-search-prev');
+  const nextBtn = $('btn-search-next');
+  if (!prevBtn || !nextBtn) return;
+  const matchCount = getBankSearchMatches().length;
+  const showNav = state.mode === 'review' && matchCount >= 1;
+  const showPrev = showNav && matchCount >= 2;
+
+  if (showPrev) {
+    prevBtn.hidden = false;
+    prevBtn.classList.add('is-visible');
+  } else {
+    prevBtn.classList.remove('is-visible');
+    prevBtn.hidden = true;
+  };
+
+  if (showNav) {
+    nextBtn.hidden = false;
+    nextBtn.classList.add('is-visible');
+  } else {
+    nextBtn.classList.remove('is-visible');
+    nextBtn.hidden = true;
+  };
+};
+
+function scrollToBankSearchMatch(direction) {
+  const matches = getBankSearchMatches();
+  if (!matches.length) return;
+  let index = state.bankSearchMatchIndex;
+  if (!Number.isInteger(index) || index < 0 || index >= matches.length) index = direction > 0 ? 0 : matches.length - 1;
+  else index = (index + direction + matches.length) % matches.length;
+  state.bankSearchMatchIndex = index;
+  const questionNumber = matches[index].originalIndex + 1;
+  scrollReviewToQuestionNumber(questionNumber);
+  updateBankSearchHint(matches.length);
+};
+
+function updateReviewSearchClearButton() {
+  const clearBtn = $('btn-review-search-clear');
+  const input = $('input-review-search');
+  if (!clearBtn || !input) return;
+  clearBtn.hidden = !String(input.value || '').length;
+};
+
+function applyBankSearch(options = {}) {
+  const input = $('input-review-search');
+  const raw = input ? input.value : state.bankSearchQuery;
+  state.bankSearchQuery = String(raw || '');
+  state.bankSearchMatchIndex = -1;
+  setReviewFocusQuestion(null);
+  updateReviewSearchClearButton();
+  const matches = getBankSearchMatches();
+  updateBankSearchHint(matches.length);
+  updateBankSearchNavButtons();
+  if (options.scrollToFirst && matches.length >= 1) {
+    state.bankSearchMatchIndex = 0;
+    scrollReviewToQuestionNumber(matches[0].originalIndex + 1);
+    updateBankSearchHint(matches.length);
+  };
 };
 
 function getReviewVirtualState() {
@@ -425,6 +491,7 @@ function getReviewVirtualState() {
     filtered: [],
     heights: [],
     positions: [],
+    heightByOriginalIndex: new Map(),
     totalHeight: 0,
     pool: [],
     phantom: null,
@@ -432,20 +499,41 @@ function getReviewVirtualState() {
     rangeStart: 0,
     rangeEnd: -1,
     measureRaf: 0,
-    scrollRaf: 0
+    scrollRaf: 0,
+    scrollTargetIndex: null,
+    scrollTargetQuestionNumber: null
   };
   return state.reviewVirtual;
 };
 
+function averageReviewMeasuredHeight(virtualScrollState) {
+  const map = virtualScrollState.heightByOriginalIndex;
+  if (!map || map.size === 0) return REVIEW_VIRTUAL_ESTIMATED_HEIGHT;
+  let sum = 0;
+  for (const height of map.values()) sum += height;
+  return Math.max(120, sum / map.size);
+};
+
+function syncReviewHeightsFromCache(virtualScrollState) {
+  const n = virtualScrollState.filtered.length;
+  const avg = averageReviewMeasuredHeight(virtualScrollState);
+  const map = virtualScrollState.heightByOriginalIndex || new Map();
+  virtualScrollState.heights = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const originalIndex = virtualScrollState.filtered[i]?.originalIndex;
+    const cached = Number.isInteger(originalIndex) ? map.get(originalIndex) : null;
+    virtualScrollState.heights[i] = cached || avg;
+  };
+};
+
 function rebuildReviewVirtualMetrics(virtualScrollState) {
   const n = virtualScrollState.filtered.length;
-  if (virtualScrollState.heights.length !== n) virtualScrollState.heights = Array.from({ length: n }, (unusedItem, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT);
-  
+  if (virtualScrollState.heights.length !== n) syncReviewHeightsFromCache(virtualScrollState);
   virtualScrollState.positions = new Array(n);
   let y = 0;
   for (let i = 0; i < n; i++) {
     virtualScrollState.positions[i] = y;
-    y += virtualScrollState.heights[i];
+    y += virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT;
   };
   virtualScrollState.totalHeight = y;
   if (virtualScrollState.phantom) virtualScrollState.phantom.style.height = Math.max(y, 0) + 'px';
@@ -478,7 +566,7 @@ function createReviewBankCard() {
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   const selectSpan = document.createElement('span');
-  selectSpan.textContent = 'Chọn câu này';
+  selectSpan.setAttribute('aria-hidden', 'true');
   selectLabel.append(checkbox, selectSpan);
 
   const heading = document.createElement('h3');
@@ -491,10 +579,10 @@ function createReviewBankCard() {
   toolbar.className = 'highlight-toolbar';
   const hlBtn = document.createElement('button');
   hlBtn.type = 'button';
-  hlBtn.className = 'btn btn-secondary btn-sm highlight-toggle-btn';
+  hlBtn.className = 'btn btn-ghost btn-icon-only highlight-toggle-btn';
   hlBtn.dataset.icon = 'highlight';
-  hlBtn.textContent = 'Highlight';
   hlBtn.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
+  hlBtn.title = 'Highlight';
   hlBtn.addEventListener('pointerdown', (event) => {
     if (event.pointerType !== 'touch') event.preventDefault();
   });
@@ -567,6 +655,7 @@ function bindReviewBankCard(card, question, listIndex) {
   parts.heading.textContent = 'Câu ' + (question.originalIndex + 1);
   parts.checkbox.checked = state.reviewSelectedIndices.has(question.originalIndex);
   parts.checkbox.setAttribute('aria-label', 'Chọn câu ' + (question.originalIndex + 1));
+  card.classList.toggle('review-q-highlight', state.reviewFocusQuestionNumber === question.originalIndex + 1);
 
   renderTextWithHighlights(parts.prompt, question.question, state.bankDeck, question.originalIndex, 'question');
 
@@ -595,15 +684,24 @@ function ensureReviewVirtualPool(virtualScrollState, list) {
 };
 
 function measureReviewVirtualVisible(virtualScrollState) {
+  let changed = false;
+  if (!virtualScrollState.heightByOriginalIndex) virtualScrollState.heightByOriginalIndex = new Map();
   for (const card of virtualScrollState.pool) {
     if (card.hidden) continue;
     const index = Number(card.dataset.listIndex);
     if (!Number.isInteger(index) || index < 0 || index >= virtualScrollState.filtered.length) continue;
     const height = card.offsetHeight;
+    if (!(height > 0)) continue;
     const withGap = height + 12;
-    if (height > 0 && Math.abs((virtualScrollState.heights[index] || 0) - withGap) > 2) virtualScrollState.heights[index] = withGap;
+    const originalIndex = virtualScrollState.filtered[index]?.originalIndex;
+    if (Number.isInteger(originalIndex)) virtualScrollState.heightByOriginalIndex.set(originalIndex, withGap);
+    if (Math.abs((virtualScrollState.heights[index] || 0) - withGap) > 2) {
+      virtualScrollState.heights[index] = withGap;
+      changed = true;
+    };
   };
-  rebuildReviewVirtualMetrics(virtualScrollState);
+  if (changed) rebuildReviewVirtualMetrics(virtualScrollState);
+  return changed;
 };
 
 function syncReviewVirtualWindow() {
@@ -695,27 +793,77 @@ function ensureReviewVirtualScrollBinding() {
   virtualScrollState.scrollBound = true;
 };
 
+function setReviewFocusQuestion(questionNumber) {
+  state.reviewFocusQuestionNumber = Number.isInteger(questionNumber) && questionNumber > 0 ? questionNumber : null;
+  const virtualScrollState = getReviewVirtualState();
+  for (const card of virtualScrollState.pool || []) {
+    const originalIndex = Number(card.dataset.originalIndex);
+    const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(originalIndex) && state.reviewFocusQuestionNumber === originalIndex + 1;
+    card.classList.toggle('review-q-highlight', shouldHighlight);
+  };
+  const list = $('review-list');
+  if (list) {
+    list.querySelectorAll('.review-q-highlight').forEach((element) => {
+      const originalIndex = Number(element.dataset.originalIndex);
+      const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(originalIndex) && state.reviewFocusQuestionNumber === originalIndex + 1;
+      if (!shouldHighlight) element.classList.remove('review-q-highlight');
+    });
+  };
+};
+
+function scrollReviewToListIndex(index, behavior = 'auto') {
+  const virtualScrollState = getReviewVirtualState();
+  const list = $('review-list');
+  if (!list || index < 0 || index >= virtualScrollState.filtered.length) return;
+  rebuildReviewVirtualMetrics(virtualScrollState);
+  const listTop = list.getBoundingClientRect().top + window.scrollY;
+  const y = Math.max(0, listTop + (virtualScrollState.positions[index] || 0) - 12);
+  window.scrollTo({ top: y, behavior });
+};
+
 function scrollReviewToQuestionNumber(questionNumber) {
   const virtualScrollState = getReviewVirtualState();
   const index = virtualScrollState.filtered.findIndex((question) => question.originalIndex + 1 === questionNumber);
   if (index < 0) return false;
   const list = $('review-list');
   if (!list) return false;
-  rebuildReviewVirtualMetrics(virtualScrollState);
-  const listTop = list.getBoundingClientRect().top + window.scrollY;
-  const y = listTop + (virtualScrollState.positions[index] || 0) - 12;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  window.scrollTo({
-    top: Math.max(0, y),
-    behavior: reducedMotion ? 'auto' : 'smooth'
-  });
-  requestAnimationFrame(() => {
+
+  setReviewFocusQuestion(questionNumber);
+  virtualScrollState.scrollTargetIndex = index;
+  virtualScrollState.scrollTargetQuestionNumber = questionNumber;
+
+  const maxPasses = 6;
+  const runPass = (pass) => {
+    if (virtualScrollState.scrollTargetQuestionNumber !== questionNumber) return;
+    scrollReviewToListIndex(index, 'auto');
     syncReviewVirtualWindow();
-    requestAnimationFrame(() => {
-      const element = document.getElementById('review-question-' + questionNumber);
-      element?.classList.add('review-q-highlight');
-    });
-  });
+    measureReviewVirtualVisible(virtualScrollState);
+    const card = document.getElementById('review-question-' + questionNumber);
+    if (card) {
+      const listIndex = Number(card.dataset.listIndex);
+      const height = card.offsetHeight;
+      if (Number.isInteger(listIndex) && height > 0) {
+        const withGap = height + 12;
+        virtualScrollState.heights[listIndex] = withGap;
+        const originalIndex = virtualScrollState.filtered[listIndex]?.originalIndex;
+        if (Number.isInteger(originalIndex)) virtualScrollState.heightByOriginalIndex.set(originalIndex, withGap);
+        rebuildReviewVirtualMetrics(virtualScrollState);
+      };
+      setReviewFocusQuestion(questionNumber);
+      const listTop = list.getBoundingClientRect().top + window.scrollY;
+      const targetY = Math.max(0, listTop + (virtualScrollState.positions[index] || 0) - 12);
+      if (Math.abs(window.scrollY - targetY) > 2) {
+        window.scrollTo({ top: targetY, behavior: 'auto' });
+        syncReviewVirtualWindow();
+      };
+    };
+    if (pass + 1 < maxPasses) requestAnimationFrame(() => runPass(pass + 1));
+    else {
+      virtualScrollState.scrollTargetIndex = null;
+      virtualScrollState.scrollTargetQuestionNumber = null;
+    };
+  };
+  runPass(0);
   return true;
 };
 
@@ -728,6 +876,8 @@ function renderQuestionBank() {
     gotoInput.placeholder = `1–${questions.length}`;
     gotoInput.setAttribute('aria-label', 'Đi đến câu số từ 1 đến ' + questions.length);
   };
+  const searchInput = $('input-review-search');
+  if (searchInput && searchInput.value !== state.bankSearchQuery) searchInput.value = state.bankSearchQuery;
   const selectedCount = state.reviewSelectedIndices.size;
   syncBankCountInput();
   const startSelectedButton = $('btn-review-start-selected');
@@ -745,8 +895,7 @@ function renderQuestionBank() {
   const list = $('review-list');
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.filtered = filtered;
-  virtualScrollState.heights = filtered.map((unusedItem, i) => virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT);
-  if (virtualScrollState.heights.length > filtered.length) virtualScrollState.heights.length = filtered.length;
+  syncReviewHeightsFromCache(virtualScrollState);
 
   list.classList.add('review-list-virtual');
   const keep = new Set(virtualScrollState.pool);
@@ -774,6 +923,8 @@ function renderQuestionBank() {
     };
     empty.textContent = 'Không có câu hỏi trong vùng hiện tại.';
     empty.hidden = false;
+    updateBankSearchHint();
+    updateBankSearchNavButtons();
     return;
   };
   const empty = list.querySelector('.review-empty');
@@ -781,12 +932,23 @@ function renderQuestionBank() {
 
   ensureReviewVirtualScrollBinding();
   syncReviewVirtualWindow();
+  updateBankSearchHint();
+  updateBankSearchNavButtons();
 };
 
 function openQuestionBank() {
   state.setupDeckBeforeBank = state.currentDeck;
   persistSetupForm();
   state.reviewSelectedIndices.clear();
+  state.bankSearchQuery = '';
+  state.bankSearchMatchIndex = -1;
+  state.reviewFocusQuestionNumber = null;
+  if ($('input-review-search')) $('input-review-search').value = '';
+  if ($('btn-review-search-clear')) $('btn-review-search-clear').hidden = true;
+  if ($('review-search-hint')) {
+    $('review-search-hint').hidden = true;
+    $('review-search-hint').textContent = '';
+  };
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
@@ -798,6 +960,7 @@ function openQuestionBank() {
   applyBankSettingsToForm(bank);
   renderQuestionBank();
   showScreen('review');
+  updateBankSearchNavButtons();
   requestAnimationFrame(() => {
     window.scrollTo({ top: 0 });
     syncReviewVirtualWindow();
@@ -931,16 +1094,46 @@ function refreshResumeCard() {
   $('resume-hint').textContent = isExam ? `${deckLabel} · ${answered} / ${saved.items.length} câu đã chọn${saved.reviewMode ? ' · Đã chấm' : ''}` : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1} / ${saved.items.length}`;
 };
 
+function updateBankCountButtonState() {
+  const input = $('review-input-count');
+  const btn = $('review-btn-all');
+  if (!input || !btn) return;
+  const selectedCount = state.reviewSelectedIndices.size;
+  const countFocused = document.activeElement === input;
+  const value = Number.parseInt(input.value, 10);
+  const isAll = selectedCount > 0 && Number.isInteger(value) && value === selectedCount;
+  btn.classList.toggle('is-active', isAll);
+  btn.setAttribute('aria-pressed', isAll ? 'true' : 'false');
+  input.disabled = isAll && !countFocused;
+};
+
+function updateBankTimeButtonState() {
+  const input = $('review-input-time-limit');
+  const btn = $('review-btn-time-unlimited');
+  if (!input || !btn) return;
+  const timeFocused = document.activeElement === input;
+  const timeVal = Number.parseInt(input.value, 10);
+  const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
+  btn.classList.toggle('is-active', isUnlimited);
+  btn.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+  input.disabled = isUnlimited && !timeFocused;
+};
+
 function syncBankCountInput() {
   const input = $('review-input-count');
   if (!input) return;
   const selectedCount = state.reviewSelectedIndices.size;
-  const value = Number.parseInt(input.value, 10);
+  const countFocused = document.activeElement === input;
   input.min = selectedCount === 0 ? '0' : '1';
   input.max = String(selectedCount);
   if (selectedCount === 0) input.value = '0';
-  else if (!Number.isInteger(value) || value < 1) input.value = '1';
-  else if (value > selectedCount) input.value = String(selectedCount);
+  else if (!countFocused) {
+    const value = Number.parseInt(input.value, 10);
+    if (!Number.isInteger(value) || value < 1) input.value = '1';
+    else if (value > selectedCount) input.value = String(selectedCount);
+  };
+  updateBankCountButtonState();
+  updateBankTimeButtonState();
 };
 
 function readBankForm() {
@@ -985,6 +1178,8 @@ function applyBankSettingsToForm(settings) {
   state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
   document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode));
   document.querySelectorAll('[data-bank-deck]').forEach((btn) => btn.classList.toggle('active', btn.dataset.bankDeck === state.bankDeck));
+  updateBankCountButtonState();
+  updateBankTimeButtonState();
 };
 
 function persistBankForm() {
@@ -1007,6 +1202,7 @@ function setBankDeck(deckId) {
   persistBankForm();
   state.bankDeck = id;
   state.reviewSelectedIndices.clear();
+  state.bankSearchMatchIndex = -1;
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
@@ -1018,6 +1214,8 @@ function setBankDeck(deckId) {
     $('bank-count-quocphong1').textContent = (state.decks.quocphong1?.length ?? 479) + ' câu';
     $('bank-count-quocphong2').textContent = (state.decks.quocphong2?.length ?? 262) + ' câu';
   };
+  updateBankSearchHint();
+  updateBankSearchNavButtons();
 };
 
 function startPracticeBookmarks() {
@@ -1363,9 +1561,10 @@ function renderQuestion() {
   $('q-badge').textContent = session.mode === 'practice-wrong' ? 'Ôn câu sai · Gốc #' + (question.originalIndex + 1) : session.mode === 'practice-bookmarks' ? 'Ôn câu đã đánh dấu · Gốc #' + (question.originalIndex + 1) : 'Câu hỏi · Gốc #' + (question.originalIndex + 1);
   const bookmarkButton = $('btn-bookmark');
   const isBookmarked = getBookmarkedIndices(session.deckId).includes(question.originalIndex);
-  bookmarkButton.textContent = isBookmarked ? 'Đã đánh dấu' : 'Đánh dấu';
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
+  bookmarkButton.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
+  bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
   renderTextWithHighlights($('q-text'), question.question, session.deckId, question.originalIndex, 'question');
   const highlightToolbar = $('quiz-highlight-toolbar');
   if (highlightToolbar) highlightToolbar.hidden = session.examMode === true;
@@ -2470,9 +2669,10 @@ function bindEvents() {
   bindKeyboardShortcuts();
   initEnhance({ onPrev, onNext });
 
-  document.querySelectorAll('.deck-btn').forEach((btn) => {
+  document.querySelectorAll('#screen-setup .deck-btn[data-deck]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      if (state.currentDeck === btn.dataset.deck) return;
+      const nextDeck = btn.dataset.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+      if (state.currentDeck === nextDeck) return;
       const previousTotal = currentQuestions().length;
       const previousStart = Number.parseInt($('input-range-start').value, 10) || 1;
       const previousEnd = Number.parseInt($('input-range-end').value, 10);
@@ -2480,7 +2680,7 @@ function bindEvents() {
       const previousCount = Number.parseInt($('input-count').value, 10);
       const countWasMaximum = Number.isInteger(previousCount) && previousCount >= previousRangeTotal;
       persistSetupForm();
-      state.currentDeck = btn.dataset.deck;
+      state.currentDeck = nextDeck;
       const settings = getSettings(state.currentDeck);
       const currentTotal = currentQuestions().length;
       settings.endQuestion = getEndQuestionForDeckSwitch(previousEnd, previousTotal, currentTotal);
@@ -2645,6 +2845,36 @@ function bindEvents() {
     updateScrollTopButton();
   };
 
+  const searchInput = $('input-review-search');
+  if (searchInput) {
+    let searchTimer = 0;
+    searchInput.addEventListener('input', () => {
+      updateReviewSearchClearButton();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => applyBankSearch(), 180);
+    });
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        clearTimeout(searchTimer);
+        applyBankSearch({ scrollToFirst: true });
+      };
+    });
+    searchInput.addEventListener('search', () => {
+      clearTimeout(searchTimer);
+      applyBankSearch();
+    });
+  }
+  $('btn-review-search-clear')?.addEventListener('click', () => {
+    const input = $('input-review-search');
+    if (input) input.value = '';
+    applyBankSearch();
+    input?.focus();
+  });
+  updateReviewSearchClearButton();
+  $('btn-search-prev')?.addEventListener('click', () => scrollToBankSearchMatch(-1));
+  $('btn-search-next')?.addEventListener('click', () => scrollToBankSearchMatch(1));
+
   $('btn-review-back').addEventListener('click', () => {
     state.currentDeck = state.setupDeckBeforeBank;
     applySettingsToForm(getSettings(state.currentDeck));
@@ -2720,24 +2950,92 @@ function bindEvents() {
     startPracticeBookmarks();
   });
 
-  for (const reviewId of ['review-input-count', 'review-input-time-limit', 'review-chk-shuffle-q', 'review-chk-shuffle-a', 'review-chk-auto-check', 'review-chk-auto-advance', 'review-chk-sound', 'review-chk-vibration']) {
-    const element = $(reviewId);
-    if (!element) continue;
-    const persist = () => {
-      if (reviewId === 'review-input-count') syncBankCountInput();
-      if (reviewId === 'review-input-time-limit') {
-        const value = Number.parseInt(element.value, 10);
-        element.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
-      };
+  const reviewCountInput = $('review-input-count');
+  const reviewTimeInput = $('review-input-time-limit');
+
+  if (reviewCountInput) {
+    reviewCountInput.addEventListener('input', () => {
+      updateBankCountButtonState();
+    });
+    reviewCountInput.addEventListener('change', () => {
+      syncBankCountInput();
       persistBankForm();
       if (state.mode === 'review') {
         const count = state.reviewSelectedIndices.size;
         if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
       };
-    };
-    element.addEventListener('change', persist);
-    if (element.type !== 'checkbox') element.addEventListener('input', persist);
+    });
+    reviewCountInput.addEventListener('blur', () => {
+      syncBankCountInput();
+      persistBankForm();
+    });
   };
+
+  if (reviewTimeInput) {
+    reviewTimeInput.addEventListener('input', () => updateBankTimeButtonState());
+    reviewTimeInput.addEventListener('change', () => {
+      let value = Number.parseInt(reviewTimeInput.value, 10);
+      if (!Number.isInteger(value) || value < 0) value = 0;
+      reviewTimeInput.value = String(Math.min(1440, value));
+      updateBankTimeButtonState();
+      persistBankForm();
+    });
+    reviewTimeInput.addEventListener('blur', () => {
+      let value = Number.parseInt(reviewTimeInput.value, 10);
+      if (reviewTimeInput.value === '' || !Number.isInteger(value) || value < 0) value = 0;
+      reviewTimeInput.value = String(Math.min(1440, value));
+      updateBankTimeButtonState();
+      persistBankForm();
+    });
+  };
+
+  for (const reviewId of ['review-chk-shuffle-q', 'review-chk-shuffle-a', 'review-chk-auto-check', 'review-chk-auto-advance', 'review-chk-sound', 'review-chk-vibration']) {
+    const element = $(reviewId);
+    if (!element) continue;
+    element.addEventListener('change', () => {
+      persistBankForm();
+      if (state.mode === 'review') {
+        const count = state.reviewSelectedIndices.size;
+        if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
+      };
+    });
+  };
+
+  $('review-btn-all')?.addEventListener('click', () => {
+    const input = $('review-input-count');
+    if (!input) return;
+    const selectedCount = state.reviewSelectedIndices.size;
+    if (selectedCount === 0) return;
+    const current = Number.parseInt(input.value, 10);
+    const isAll = Number.isInteger(current) && current === selectedCount;
+    if (isAll) {
+      const prev = state.lastBankCountBeforeAll;
+      input.value = String(Number.isInteger(prev) && prev >= 1 ? Math.min(prev, selectedCount) : Math.min(30, selectedCount));
+    } else {
+      state.lastBankCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 30;
+      input.value = String(selectedCount);
+    };
+    persistBankForm();
+    syncBankCountInput();
+  });
+
+  $('review-btn-time-unlimited')?.addEventListener('click', () => {
+    const timeInput = $('review-input-time-limit');
+    if (!timeInput) return;
+    let current = Number.parseInt(timeInput.value, 10);
+    if (!Number.isInteger(current) || current < 0) current = 0;
+    current = Math.min(1440, current);
+    const isUnlimited = current === 0;
+    if (isUnlimited) {
+      const prev = state.lastBankTimeBeforeUnlimited;
+      timeInput.value = String(Number.isInteger(prev) && prev > 0 ? Math.min(1440, prev) : 35);
+    } else {
+      state.lastBankTimeBeforeUnlimited = current > 0 ? current : 35;
+      timeInput.value = '0';
+    };
+    persistBankForm();
+    updateBankTimeButtonState();
+  });
 
   $('btn-exam-submit')?.addEventListener('click', () => onExamSubmit());
   $('btn-exam-pause')?.addEventListener('click', () => pauseSession());
