@@ -1412,7 +1412,11 @@ function renderQuestion() {
     nextButton.disabled = session.viewIndex >= session.maxReached;
   } else if (item.status === 'correct') {
     const isLastQuestion = session.viewIndex === session.items.length - 1;
-    const shouldFinish = isLastQuestion && session.mode !== 'practice-wrong';
+    let shouldFinish = isLastQuestion && session.mode !== 'practice-wrong';
+    if (isLastQuestion && session.mode === 'practice-wrong') {
+      const unresolved = session.items.filter((entry) => entry.status !== 'correct');
+      shouldFinish = unresolved.length === 0;
+    }
     nextButton.textContent = shouldFinish ? 'Kết thúc' : 'Câu tiếp';
     nextButton.dataset.icon = shouldFinish ? 'check' : 'chevron-right';
     nextButton.disabled = false;
