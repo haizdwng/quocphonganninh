@@ -1,6 +1,6 @@
 [
   {
-    "question": "Quá trình tiến hành chiến lược “DBHB”, BLLĐ kẻ thù thường thực hiện ở đâu?",
+    "question": "Quá trình tiến hành chiến lược DBHB, BLLĐ kẻ thù thường thực hiện ở đâu?",
     "options": [
       "Nơi yếu kém về mọi mặt",
       "Nơi trung tâm kinh tế",
@@ -10,7 +10,7 @@
     "correct": 0
   },
   {
-    "question": "Chiến lược “DBHB” và bạo loạn lật đổ giống nhau cơ bản về những điểm gì?",
+    "question": "Chiến lược DBHB và bạo loạn lật đổ giống nhau cơ bản về những điểm gì?",
     "options": [
       "Bản chất, mục tiêu, quy mô chống phá",
       "Mục tiêu, chủ thể, biện pháp thực hiện",
@@ -30,7 +30,7 @@
     "correct": 3
   },
   {
-    "question": "Phương châm chỉ đạo cơ bản trong phòng chống chiến lược “DBHB”, BLLĐ là gì?",
+    "question": "Phương châm chỉ đạo cơ bản trong phòng chống chiến lược DBHB, BLLĐ là gì?",
     "options": [
       "Phân hoá, tách rời các phần tử phản động",
       "Phân hoá các đối tượng chống đối",
@@ -40,28 +40,27 @@
     "correct": 2
   },
   {
-    "question": "Bạo loạn lật đổ có quan hệ với “DBHB” như thế nào?",
+    "question": "Bạo loạn lật đổ có quan hệ với DBHB như thế nào?",
     "options": [
-      "Làm cho “DBHB” phát triển nhanh hơn",
-      "Làm cho “DBHB” kém hiệu quả",
+      "Làm cho DBHB phát triển nhanh hơn",
+      "Làm cho DBHB kém hiệu quả",
       "Là điều kiện, cơ sở thúc đẩy cùng phát triển",
       "Làm cho BLLĐ phát triển nhanh hơn"
     ],
     "correct": 2
   },
   {
-    "question": "Mục đích chống phá trên lĩnh vực tư tưởng, văn hóa của chiến lược “DBHB” là gì?",
+    "question": "Mục đích chống phá trên lĩnh vực tư tưởng, văn hóa của chiến lược DBHB là gì?",
     "options": [
       "Truyền bá tư tưởng tư sản",
       "Phai mờ bản sắc, văn hóa dân tộc",
       "Bôi nhọ văn hóa cách mạng",
       "Các phương án đều đúng"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
-    "question": "Nắm vững mục tiêu, quan điểm, phương châm, nhiệm vụ phòng chống chiến lược “DBHB”, BLLĐ nhằm làm gì?",
+    "question": "Nắm vững mục tiêu, quan điểm, phương châm, nhiệm vụ phòng chống chiến lược DBHB, BLLĐ nhằm làm gì?",
     "options": [
       "Nâng cao nhận thức cách mạng",
       "Thống nhất về tư tưởng và hành động",
@@ -71,7 +70,7 @@
     "correct": 1
   },
   {
-    "question": "CNĐQ và các thế lực phản động thường mua chuộc, lôi kéo đối tượng nào khi tiến hành chiến lược “DBHB”?",
+    "question": "CNĐQ và các thế lực phản động thường mua chuộc, lôi kéo đối tượng nào khi tiến hành chiến lược DBHB?",
     "options": [
       "Quần chúng dao động",
       "Quần chúng hiếu kỳ",
@@ -81,7 +80,7 @@
     "correct": 2
   },
   {
-    "question": "Bạo loạn lật đổ có vị trí như thế nào trong chiến lược “DBHB”?",
+    "question": "Bạo loạn lật đổ có vị trí như thế nào trong chiến lược DBHB?",
     "options": [
       "Quan trọng",
       "Rất quan trọng",
@@ -91,7 +90,7 @@
     "correct": 3
   },
   {
-    "question": "Bản chất của chiến lược “DBHB” là gì?",
+    "question": "Bản chất của chiến lược DBHB là gì?",
     "options": [
       "Phản cách mạng",
       "Chiến tranh xâm lược",
@@ -101,18 +100,17 @@
     "correct": 0
   },
   {
-    "question": "Thủ đoạn chính nhằm chống phá cách mạng Việt Nam trong chiến lược “DBHB”, BLLĐ hiện nay là gì?",
+    "question": "Thủ đoạn chính nhằm chống phá cách mạng Việt Nam trong chiến lược DBHB, BLLĐ hiện nay là gì?",
     "options": [
       "Chiếm lĩnh thị trường",
       "Ngoại giao hữu nghị",
       "Khoét sâu mâu thuẫn nội bộ",
       "Tất cả các hoạt động trên"
     ],
-    "correct": 2,
-    "fixed": true
+    "correct": 2
   },
   {
-    "question": "Mục đích chống phá lực lượng vũ trang nhân dân của chiến lược “DBHB” là gì?",
+    "question": "Mục đích chống phá lực lượng vũ trang nhân dân của chiến lược DBHB là gì?",
     "options": [
       "Phân hóa lực lượng vũ trang",
       "Cô lập lực lượng vũ trang",
@@ -132,7 +130,7 @@
     "correct": 2
   },
   {
-    "question": "Một trong những nội dung chống phá về chính trị, tư tưởng trong chiến lược “DBHB” đối với Việt Nam là gì?",
+    "question": "Một trong những nội dung chống phá về chính trị, tư tưởng trong chiến lược DBHB đối với Việt Nam là gì?",
     "options": [
       "Tiêu tan nền tảng tư tưởng Nhà nước",
       "Tiêu tan nền tảng tư tưởng của lực lượng vũ trang",
@@ -142,7 +140,7 @@
     "correct": 3
   },
   {
-    "question": "Thủ đoạn chống phá trọng yếu trong chiến lược “DBHB” của CNĐQ đối với Việt Nam hiện nay là gì?",
+    "question": "Thủ đoạn chống phá trọng yếu trong chiến lược DBHB của CNĐQ đối với Việt Nam hiện nay là gì?",
     "options": [
       "Văn hoá",
       "Kinh tế",
@@ -152,7 +150,7 @@
     "correct": 3
   },
   {
-    "question": "Chiến lược “DBHB” được hình thành và phát triển theo mấy giai đoạn?",
+    "question": "Chiến lược DBHB được hình thành và phát triển theo mấy giai đoạn?",
     "options": [
       "Có 2 giai đoạn",
       "Có 3 giai đoạn",
@@ -162,15 +160,14 @@
     "correct": 1
   },
   {
-    "question": "Thực hiện đa nguyên về chính trị, đa đảng đối lập trong chiến lược “DBHB” của địch nhằm làm gì?",
+    "question": "Thực hiện đa nguyên về chính trị, đa đảng đối lập trong chiến lược DBHB của địch nhằm làm gì?",
     "options": [
       "Xóa bỏ vai trò lãnh đạo của Đảng",
       "Tạo sự đối lập về chính trị tư tưởng",
       "Tạo sự cạnh tranh các Đảng phái",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Nguyên tắc cơ bản trong đấu tranh chống BLLĐ là gì?",
@@ -193,7 +190,7 @@
     "correct": 2
   },
   {
-    "question": "Chiến lược “DBHB” được thực hiện theo hình thức nào?",
+    "question": "Chiến lược DBHB được thực hiện theo hình thức nào?",
     "options": [
       "Đánh nhanh thắng nhanh",
       "Đánh chậm tiến chắc",
@@ -203,17 +200,17 @@
     "correct": 2
   },
   {
-    "question": "Tại sao phòng chống chiến lược “DBHB” phải đồng thời với phòng chống BLLĐ?",
+    "question": "Tại sao phòng chống chiến lược DBHB phải đồng thời với phòng chống BLLĐ?",
     "options": [
-      "Vì “DBHB” và BLLĐ có cùng bản chất",
-      "Vì “DBHB” và BLLĐ cùng thúc đẩy nhau phát triển",
-      "Vì “DBHB” và BLLĐ có cùng đối tượng chống phá",
-      "Vì “DBHB” và BLLĐ có cùng về mục tiêu"
+      "Vì DBHB và BLLĐ có cùng bản chất",
+      "Vì DBHB và BLLĐ cùng thúc đẩy nhau phát triển",
+      "Vì DBHB và BLLĐ có cùng đối tượng chống phá",
+      "Vì DBHB và BLLĐ có cùng về mục tiêu"
     ],
     "correct": 1
   },
   {
-    "question": "Quan điểm chỉ đạo trong phòng chống chiến lược “DBHB”, BLLĐ của Đảng ta hiện nay?",
+    "question": "Quan điểm chỉ đạo trong phòng chống chiến lược DBHB, BLLĐ của Đảng ta hiện nay?",
     "options": [
       "Là nhiệm vụ chiến lược",
       "Là nhiệm vụ quan trọng hàng đầu",
@@ -223,7 +220,7 @@
     "correct": 2
   },
   {
-    "question": "Kẻ thù xác định lĩnh vực chống phá hàng đầu trong chiến lược “DBHB” là gì?",
+    "question": "Kẻ thù xác định lĩnh vực chống phá hàng đầu trong chiến lược DBHB là gì?",
     "options": [
       "Kinh tế",
       "Văn hoá",
@@ -243,18 +240,17 @@
     "correct": 1
   },
   {
-    "question": "Chiến lược “DBHB” thường được sử dụng đan xen với thủ đoạn nào?",
+    "question": "Chiến lược DBHB thường được sử dụng đan xen với thủ đoạn nào?",
     "options": [
       "Đe dọa quân sự và can thiệp vũ trang",
       "Bạo loạn lật đổ và can thiệp vũ trang",
       "Gây rối và bạo loạn lật đổ",
       "Các phương án trên"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
-    "question": "Chiến lược “DBHB” là chiến lược nhằm mục đích gì?",
+    "question": "Chiến lược DBHB là chiến lược nhằm mục đích gì?",
     "options": [
       "Lật đổ chế độ của các nước tiến bộ",
       "Thực hiện mưu đồ bá chủ thế giới",
@@ -264,7 +260,7 @@
     "correct": 0
   },
   {
-    "question": "Nội dung chính trong chiến lược “DBHB” của chủ nghĩa đế quốc là gì?",
+    "question": "Nội dung chính trong chiến lược DBHB của chủ nghĩa đế quốc là gì?",
     "options": [
       "Phá hoại kinh tế, chính trị, tư tưởng, văn hóa",
       "Làm suy yếu từ bên trong các nước XHCN",
@@ -274,7 +270,7 @@
     "correct": 0
   },
   {
-    "question": "Một trong những thủ đoạn của kẻ thù nhằm chống phá các nước XHCN trong chiến lược “DBHB” là gì?",
+    "question": "Một trong những thủ đoạn của kẻ thù nhằm chống phá các nước XHCN trong chiến lược DBHB là gì?",
     "options": [
       "Kích động các mâu thuẫn xã hội",
       "Chống phá bằng bạo lực có tổ chức",
@@ -294,7 +290,7 @@
     "correct": 0
   },
   {
-    "question": "Phương châm chống phá về chính trị, tư tưởng trong chiến lược “DBHB”, BLLĐ của địch là gì?",
+    "question": "Phương châm chống phá về chính trị, tư tưởng trong chiến lược DBHB, BLLĐ của địch là gì?",
     "options": [
       "Hàng đầu",
       "Mũi nhọn",
@@ -304,7 +300,7 @@
     "correct": 0
   },
   {
-    "question": "Phương châm chống phá về kinh tế trong chiến lược “DBHB”, BLLĐ của địch là gì?",
+    "question": "Phương châm chống phá về kinh tế trong chiến lược DBHB, BLLĐ của địch là gì?",
     "options": [
       "Mũi nhọn",
       "Hàng đầu",
@@ -314,7 +310,7 @@
     "correct": 0
   },
   {
-    "question": "Phương châm chống phá về dân tộc, tôn giáo trong chiến lược “DBHB”, BLLĐ của địch là gì?",
+    "question": "Phương châm chống phá về dân tộc, tôn giáo trong chiến lược DBHB, BLLĐ của địch là gì?",
     "options": [
       "Mũi nhọn",
       "Hàng đầu",
@@ -324,7 +320,7 @@
     "correct": 2
   },
   {
-    "question": "Phương châm chống phá về ngoại giao trong chiến lược “DBHB”, BLLĐ của địch là gì?",
+    "question": "Phương châm chống phá về ngoại giao trong chiến lược DBHB, BLLĐ của địch là gì?",
     "options": [
       "Mũi nhọn",
       "Hàng đầu",
@@ -334,7 +330,7 @@
     "correct": 3
   },
   {
-    "question": "Thủ đoạn, phương pháp cơ bản của chiến lược “DBHB”, BLLĐ là gì?",
+    "question": "Thủ đoạn, phương pháp cơ bản của chiến lược DBHB, BLLĐ là gì?",
     "options": [
       "Không đánh mà thắng",
       "Thay đổi chế độ bằng vũ lực",
@@ -407,8 +403,7 @@
       "Tất cả các phương án",
       "Mâu thuẫn dân tộc không thể giải quyết"
     ],
-    "correct": 1,
-    "fixed": true
+    "correct": 1
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lênin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -418,8 +413,7 @@
       "Mâu thuẫn dân tộc không thể giải quyết",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lênin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -429,8 +423,7 @@
       "Tất cả các phương án",
       "Mâu thuẫn dân tộc không thể giải quyết"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lênin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -440,8 +433,7 @@
       "Mâu thuẫn dân tộc không thể giải quyết",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lênin, vấn đề dân tộc còn tồn tại lâu dài do nguyên nhân nào?",
@@ -451,8 +443,7 @@
       "Tất cả các phương án",
       "Mâu thuẫn dân tộc không thể giải quyết"
     ],
-    "correct": 1,
-    "fixed": true
+    "correct": 1
   },
   {
     "question": "Theo quan điểm của chủ nghĩa Mác – Lênin, tư tưởng Hồ Chí Minh vấn đề dân tộc là vấn đề có vị trí như thế nào trong cách mạng XHCN?",
@@ -483,8 +474,7 @@
       "Cùng nhau thực hiện thắng lợi sự nghiệp XD và BVTQ",
       "Chăm lo đời sống vật chất tinh thần, phát huy bản sắc VH Dân tộc"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Quan điểm của Đảng ta về Dân tộc và đoàn kết Dân tộc hiện nay có vị trí như thế nào?",
@@ -494,8 +484,7 @@
       "Đặc biệt quan trọng trong xây dựng đại đoàn kết dân tộc",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Một trong những quan điểm chính sách của Đảng về quan hệ các dân tộc được đặt ra trong đại hội Đảng lần thứ X là gì?",
@@ -505,8 +494,7 @@
       "Không đối xử phân biệt địa vị chính trị giữa các dân tộc",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Đại hội Đảng lần thứ X đã đề ra quan điểm, chính sách trọng tâm đối với các Dân tộc ở Việt Nam như thế nào?",
@@ -516,8 +504,7 @@
       "Động viên trí thức là người Dân tộc thiểu số về công tác tại địa phương",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Đại hội Đảng lần thứ X đã đề ra quan điểm, chính sách trọng tâm đối với các Dân tộc ở Việt Nam như thế nào?",
@@ -538,8 +525,7 @@
       "Đầu tư vững mạnh cho y tế, giáo dục, giao thông miền núi",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách dân tộc là gì?",
@@ -549,8 +535,7 @@
       "Duy trì tất cả các chính sách về xây dựng kinh tế mới",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Nội dung văn kiện Đại hội Đảng lần thứ X chỉ ra quan điểm chính sách dân tộc là gì?",
@@ -624,8 +609,7 @@
       "Tổ chức tôn giáo",
       "Tất cả các phương án"
     ],
-    "correct": 3,
-    "fixed": true
+    "correct": 3
   },
   {
     "question": "Hoạt động xã hội tôn giáo bị chi phối bởi những yếu tố nào?",
@@ -646,8 +630,7 @@
       "Niềm tin nơi tôn giáo",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Hoạt động xã hội của tôn giáo không thể hoạt động khi thiếu yếu tố nào sau đây?",
@@ -688,8 +671,7 @@
       "Nguồn gốc nhận thức tôn giáo",
       "Nguồn gốc tâm lý tôn giáo"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Một trong những nguồn gốc hình thành tôn giáo trong xã hội là yếu tố nào?",
@@ -729,8 +711,7 @@
       "Tính quần chúng",
       "Tính chính trị"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Một trong những tính chất của tôn giáo được bộc lộ trong đời sống xã hội là gì?",
@@ -770,8 +751,7 @@
       "Tôn trọng và bảo đảm quyền tự do tín ngưỡng và không tín ngưỡng",
       "Quán triệt quan điểm lịch sử khi giải quyết vấn đề tôn giáo"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Nội dung cốt lõi trong công tác tôn giáo của Đảng là công tác vận động quần chúng như thế nào?",
@@ -781,8 +761,7 @@
       "Sống tự do tín ngưỡng",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Chính sách tôn giáo của Đảng khẳng định vị trí của đồng bào tôn giáo là một bộ phận như thế nào trong khối đại đoàn kết dân tộc?",
@@ -812,8 +791,7 @@
       "Xóa bỏ sự lãnh đạo của Đảng",
       "Vô hiệu hóa sự quản lý của nhà nước"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Địch nhằm vào mục tiêu nào để thực hiện âm mưu lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam?",
@@ -823,8 +801,7 @@
       "Xuyên tạc chủ nghĩa Mác-Lênin, tư tưởng Hồ Chí Minh",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam, địch thường nhằm vào mục tiêu nào?",
@@ -834,8 +811,7 @@
       "Xuyên tạc chủ nghĩa Mác-Lênin, tư tưởng Hồ Chí Minh",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Thực hiện âm mưu lợi dụng vấn đề dân tộc tôn giáo địch nhằm vào mục tiêu nào để chống phá cách mạng Việt Nam?",
@@ -845,8 +821,7 @@
       "Xuyên tạc CNML, tư tưởng HCM",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch là gì?",
@@ -856,8 +831,7 @@
       "Chúng lợi dụng dân tộc, tôn giáo để kích động",
       "Chúng tập trung phá hoại các cơ sở KT, XH"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Thủ đoạn nào là thủ đoạn lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam của địch?",
@@ -867,8 +841,7 @@
       "Xóa bỏ sự lãnh đạo của Đảng ta",
       "Tất cả các phương án"
     ],
-    "correct": 1,
-    "fixed": true
+    "correct": 1
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam?",
@@ -1010,8 +983,7 @@
       "Chủ động đập tan âm mưu chống phá của các tổ chức phản động",
       "Tất cả các phương án"
     ],
-    "correct": 0,
-    "fixed": true
+    "correct": 0
   },
   {
     "question": "Giải pháp nào là giải pháp đấu tranh phòng chống sự lợi dụng vấn đề dân tộc tôn giáo chống phá cách mạng Việt Nam?",

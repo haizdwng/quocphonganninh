@@ -1,11 +1,9 @@
 export function fingerprintQuestions(questions) {
-  const source = JSON.stringify(
-    questions.map((question) => ({
-      question: question.question,
-      options: question.options,
-      correct: question.correct
-    }))
-  );
+  const source = JSON.stringify(questions.map((question) => ({
+    question: question.question,
+    options: question.options,
+    correct: question.correct
+  })));
   let hash = 2166136261;
   for (let index = 0; index < source.length; index++) {
     hash ^= source.charCodeAt(index);
