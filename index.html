@@ -163,21 +163,17 @@
             <div class='field toggles experience-toggles'>
               <label class='toggle'>
                 <input type='checkbox' id='chk-auto-check' />
-                <span>Tự kiểm tra ngay khi chọn đáp án</span>
+                <span>Tự kiểm tra khi chọn đáp án</span>
               </label>
               <label class='toggle'>
                 <input type='checkbox' id='chk-vibration' />
-                <span>Bật rung</span>
+                <span>Bật chế độ rung</span>
               </label>
             </div>
             <div class='field experience-sliders'>
               <div class='field' id='field-auto-advance-delay'>
-                <label for='input-auto-advance-delay'>Độ trễ chuyển câu</label>
+                <label for='input-auto-advance-delay'>Tự chuyển câu khi trả lời đúng</label>
                 <div class='row experience-control-row'>
-                  <div class='slider-inline'>
-                    <input type='range' id='input-auto-advance-delay' min='0' max='10' step='1' value='0' />
-                    <span class='slider-value' id='label-auto-advance-delay'>0 giây</span>
-                  </div>
                   <button
                     type='button'
                     class='btn btn-ghost btn-icon-only experience-toggle-btn'
@@ -188,15 +184,15 @@
                     title='Tự sang câu tiếp'
                   ></button>
                   <input type='checkbox' id='chk-auto-advance' class='sr-only' tabindex='-1' />
+                  <div class='slider-inline'>
+                    <input type='range' id='input-auto-advance-delay' min='0' max='10' step='1' value='0' />
+                    <span class='slider-value' id='label-auto-advance-delay'>0 giây</span>
+                  </div>
                 </div>
               </div>
               <div class='field' id='field-sound-volume'>
                 <label for='input-sound-volume'>Âm lượng</label>
                 <div class='row experience-control-row'>
-                  <div class='slider-inline'>
-                    <input type='range' id='input-sound-volume' min='1' max='100' step='1' value='50' />
-                    <span class='slider-value' id='label-sound-volume'>50%</span>
-                  </div>
                   <button
                     type='button'
                     class='btn btn-ghost btn-icon-only experience-toggle-btn'
@@ -207,6 +203,10 @@
                     title='Bật âm thanh'
                   ></button>
                   <input type='checkbox' id='chk-sound' class='sr-only' tabindex='-1' />
+                  <div class='slider-inline'>
+                    <input type='range' id='input-sound-volume' min='1' max='100' step='1' value='50' />
+                    <span class='slider-value' id='label-sound-volume'>50%</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -465,21 +465,17 @@
               <div class='field toggles experience-toggles'>
                 <label class='toggle'>
                   <input type='checkbox' id='review-chk-auto-check' />
-                  <span>Tự kiểm tra ngay khi chọn đáp án</span>
+                  <span>Tự kiểm tra khi chọn đáp án</span>
                 </label>
                 <label class='toggle'>
                   <input type='checkbox' id='review-chk-vibration' />
-                  <span>Bật rung</span>
+                  <span>Bật chế độ rung</span>
                 </label>
               </div>
               <div class='field experience-sliders'>
                 <div class='field' id='review-field-auto-advance-delay'>
-                  <label for='review-input-auto-advance-delay'>Độ trễ chuyển câu</label>
+                  <label for='review-input-auto-advance-delay'>Tự chuyển câu khi trả lời đúng</label>
                   <div class='row experience-control-row'>
-                    <div class='slider-inline'>
-                      <input type='range' id='review-input-auto-advance-delay' min='0' max='10' step='1' value='0' />
-                      <span class='slider-value' id='review-label-auto-advance-delay'>0 giây</span>
-                    </div>
                     <button
                       type='button'
                       class='btn btn-ghost btn-icon-only experience-toggle-btn'
@@ -490,15 +486,15 @@
                       title='Tự sang câu tiếp'
                     ></button>
                     <input type='checkbox' id='review-chk-auto-advance' class='sr-only' tabindex='-1' />
+                    <div class='slider-inline'>
+                      <input type='range' id='review-input-auto-advance-delay' min='0' max='10' step='1' value='0' />
+                      <span class='slider-value' id='review-label-auto-advance-delay'>0 giây</span>
+                    </div>
                   </div>
                 </div>
                 <div class='field' id='review-field-sound-volume'>
                   <label for='review-input-sound-volume'>Âm lượng</label>
                   <div class='row experience-control-row'>
-                    <div class='slider-inline'>
-                      <input type='range' id='review-input-sound-volume' min='1' max='100' step='1' value='50' />
-                      <span class='slider-value' id='review-label-sound-volume'>50%</span>
-                    </div>
                     <button
                       type='button'
                       class='btn btn-ghost btn-icon-only experience-toggle-btn'
@@ -509,6 +505,10 @@
                       title='Bật âm thanh'
                     ></button>
                     <input type='checkbox' id='review-chk-sound' class='sr-only' tabindex='-1' />
+                    <div class='slider-inline'>
+                      <input type='range' id='review-input-sound-volume' min='1' max='100' step='1' value='50' />
+                      <span class='slider-value' id='review-label-sound-volume'>50%</span>
+                    </div>
                   </div>
                 </div>
               </div>
