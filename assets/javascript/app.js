@@ -1173,7 +1173,6 @@ function readBankForm() {
     practiceMode: state.bankPracticeMode === 'exam' ? 'exam' : 'practice',
     autoCheck: !!$('review-chk-auto-check')?.checked,
     autoAdvance: !!$('review-chk-auto-advance')?.checked,
-    soundEnabled: !!$('review-chk-sound')?.checked,
     vibrationEnabled: !!$('review-chk-vibration')?.checked,
     autoAdvanceDelay: (() => {
       const delay = Number.parseInt($('review-input-auto-advance-delay')?.value, 10);
@@ -1181,11 +1180,11 @@ function readBankForm() {
     })(),
     soundVolume: (() => {
       const volume = Number.parseInt($('review-input-sound-volume')?.value, 10);
-      return Number.isInteger(volume) && volume >= 1 ? Math.min(100, volume) : 80;
+      return Number.isInteger(volume) && volume >= 0 ? Math.min(100, volume) : 1;
     })(),
-    fontSize: (() => {
-      const size = Number.parseInt($('review-input-font-size')?.value, 10);
-      return Number.isInteger(size) && size >= 14 ? Math.min(24, size) : 16;
+    soundEnabled: (() => {
+      const volume = Number.parseInt($('review-input-sound-volume')?.value, 10);
+      return (Number.isInteger(volume) ? volume : 1) > 0;
     })()
   };
 };
@@ -1203,7 +1202,6 @@ function applyBankSettingsToForm(settings) {
   if ($('review-chk-auto-check')) {
     $('review-chk-auto-check').checked = settings.autoCheck === true;
     $('review-chk-auto-advance').checked = settings.autoAdvance === true;
-    $('review-chk-sound').checked = settings.soundEnabled === true;
     $('review-chk-vibration').checked = settings.vibrationEnabled === true;
   };
   if ($('review-input-auto-advance-delay')) {
@@ -1211,16 +1209,12 @@ function applyBankSettingsToForm(settings) {
     $('review-input-auto-advance-delay').value = String(delay);
     if ($('review-label-auto-advance-delay')) $('review-label-auto-advance-delay').textContent = delay + ' giây';
   };
+  const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 0 ? Math.min(100, settings.soundVolume) : 1;
   if ($('review-input-sound-volume')) {
-    const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 1 ? Math.min(100, settings.soundVolume) : 80;
     $('review-input-sound-volume').value = String(volume);
     if ($('review-label-sound-volume')) $('review-label-sound-volume').textContent = volume + '%';
   };
-  if ($('review-input-font-size')) {
-    const size = Number.isInteger(settings.fontSize) && settings.fontSize >= 14 ? Math.min(24, settings.fontSize) : 16;
-    $('review-input-font-size').value = String(size);
-    if ($('review-label-font-size')) $('review-label-font-size').textContent = size + 'px';
-  };
+  if ($('review-chk-sound')) $('review-chk-sound').checked = volume > 0;
   updateBankExperienceControls();
   state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
   document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode));
@@ -1233,7 +1227,6 @@ function persistBankForm() {
   const form = readBankForm();
   const saved = saveBankSettings(form);
   if (!saved) toast('Không thể lưu tuỳ chọn ngân hàng. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
-  if (state.session?.fromBank || state.mode === 'review') applyAppearanceSettings(form);
   return form;
 };
 
@@ -1243,12 +1236,6 @@ function updateSetupExperienceControls() {
   const delayField = $('field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-
-  const soundOn = !!$('chk-sound')?.checked;
-  const volumeInput = $('input-sound-volume');
-  const volumeField = $('field-sound-volume');
-  if (volumeInput) volumeInput.disabled = !soundOn;
-  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
 };
 
 function updateBankExperienceControls() {
@@ -1257,19 +1244,34 @@ function updateBankExperienceControls() {
   const delayField = $('review-field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-
-  const soundOn = !!$('review-chk-sound')?.checked;
-  const volumeInput = $('review-input-sound-volume');
-  const volumeField = $('review-field-sound-volume');
-  if (volumeInput) volumeInput.disabled = !soundOn;
-  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
 };
 
-function applyAppearanceSettings(settings) {
-  const prefs = settings || sessionPreferences(state.session?.deckId || state.currentDeck);
-  const size = Number.isInteger(prefs.fontSize) && prefs.fontSize >= 14 ? Math.min(24, prefs.fontSize) : 16;
-  document.documentElement.style.setProperty('--font-size-base', size + 'px');
-  document.getElementById('user-custom-css')?.remove();
+function syncSoundFromVolume(volumeInputId, checkboxId, labelId) {
+  const volumeInput = $(volumeInputId);
+  if (!volumeInput) return 1;
+  let volume = Number.parseInt(volumeInput.value, 10);
+  if (!Number.isInteger(volume) || volume < 0) volume = 0;
+  volume = Math.min(100, volume);
+  volumeInput.value = String(volume);
+  if ($(labelId)) $(labelId).textContent = volume + '%';
+  if ($(checkboxId)) $(checkboxId).checked = volume > 0;
+  return volume;
+};
+
+function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
+  const checkbox = $(checkboxId);
+  const volumeInput = $(volumeInputId);
+  if (!checkbox || !volumeInput) return;
+  if (checkbox.checked) {
+    let volume = Number.parseInt(volumeInput.value, 10);
+    if (!Number.isInteger(volume) || volume <= 0) volume = 1;
+    volume = Math.min(100, volume);
+    volumeInput.value = String(volume);
+    if ($(labelId)) $(labelId).textContent = volume + '%';
+  } else {
+    volumeInput.value = '0';
+    if ($(labelId)) $(labelId).textContent = '0%';
+  };
 };
 
 function setBankPracticeMode(mode) {
@@ -1362,7 +1364,6 @@ function persistSetupForm() {
     practiceMode: state.practiceMode,
     autoCheck: $('chk-auto-check').checked,
     autoAdvance: $('chk-auto-advance').checked,
-    soundEnabled: $('chk-sound').checked,
     vibrationEnabled: $('chk-vibration').checked,
     autoAdvanceDelay: (() => {
       const delay = Number.parseInt($('input-auto-advance-delay')?.value, 10);
@@ -1370,15 +1371,14 @@ function persistSetupForm() {
     })(),
     soundVolume: (() => {
       const volume = Number.parseInt($('input-sound-volume')?.value, 10);
-      return Number.isInteger(volume) && volume >= 1 ? Math.min(100, volume) : 80;
+      return Number.isInteger(volume) && volume >= 0 ? Math.min(100, volume) : 1;
     })(),
-    fontSize: (() => {
-      const size = Number.parseInt($('input-font-size')?.value, 10);
-      return Number.isInteger(size) && size >= 14 ? Math.min(24, size) : 16;
+    soundEnabled: (() => {
+      const volume = Number.parseInt($('input-sound-volume')?.value, 10);
+      return (Number.isInteger(volume) ? volume : 1) > 0;
     })()
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
-  applyAppearanceSettings(getSettings(state.currentDeck));
 };
 
 function applySettingsToForm(settings) {
@@ -1392,26 +1392,20 @@ function applySettingsToForm(settings) {
   $('chk-shuffle-a').checked = !!settings.shuffleAnswers;
   $('chk-auto-check').checked = settings.autoCheck === true;
   $('chk-auto-advance').checked = settings.autoAdvance === true;
-  $('chk-sound').checked = settings.soundEnabled === true;
   $('chk-vibration').checked = settings.vibrationEnabled === true;
   if ($('input-auto-advance-delay')) {
-    const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 0;
+    const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 5;
     $('input-auto-advance-delay').value = String(delay);
     if ($('label-auto-advance-delay')) $('label-auto-advance-delay').textContent = delay + ' giây';
   };
+  const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 0 ? Math.min(100, settings.soundVolume) : 10;
   if ($('input-sound-volume')) {
-    const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 1 ? Math.min(100, settings.soundVolume) : 80;
     $('input-sound-volume').value = String(volume);
     if ($('label-sound-volume')) $('label-sound-volume').textContent = volume + '%';
   };
-  if ($('input-font-size')) {
-    const size = Number.isInteger(settings.fontSize) && settings.fontSize >= 14 ? Math.min(24, settings.fontSize) : 16;
-    $('input-font-size').value = String(size);
-    if ($('label-font-size')) $('label-font-size').textContent = size + 'px';
-  };
+  if ($('chk-sound')) $('chk-sound').checked = volume > 0;
   updateSetupExperienceControls();
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
-  applyAppearanceSettings(settings);
 };
 
 function stopSessionTimer(freeze = true) {
@@ -1491,7 +1485,6 @@ function startSessionFromPool(pool, meta) {
   state.examFilter = 'all';
   state.examSubmitting = false;
   if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
-  applyAppearanceSettings(sessionPreferences(session.deckId));
   if (session.examMode) {
     showScreen('exam');
     renderExam();
@@ -2125,8 +2118,8 @@ for (const audio of Object.values(answerSounds)) {
 
 function playAnswerSound(isCorrect) {
   const preferences = sessionPreferences(state.session?.deckId || state.currentDeck);
-  if (preferences.soundEnabled !== true) return;
-  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume >= 1 ? Math.min(100, preferences.soundVolume) : 80;
+  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume >= 0 ? Math.min(100, preferences.soundVolume) : 1;
+  if (volumePct <= 0 || preferences.soundEnabled === false) return;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
@@ -2669,7 +2662,6 @@ function restoreSessionIfAny() {
   state.reviewMode = !!saved.reviewMode;
   state.examFilter = 'all';
   state.examSubmitting = false;
-  applyAppearanceSettings(sessionPreferences(saved.deckId));
   if (saved.examMode) {
     showScreen('exam');
     renderExam();
@@ -2962,7 +2954,7 @@ function bindEvents() {
     persistSetupForm();
   });
   $('chk-sound')?.addEventListener('change', () => {
-    updateSetupExperienceControls();
+    syncVolumeFromSoundCheckbox('input-sound-volume', 'chk-sound', 'label-sound-volume');
     persistSetupForm();
   });
   $('input-auto-advance-delay')?.addEventListener('input', () => {
@@ -2971,16 +2963,12 @@ function bindEvents() {
   });
   $('input-auto-advance-delay')?.addEventListener('change', persistSetupForm);
   $('input-sound-volume')?.addEventListener('input', () => {
-    const volume = Number.parseInt($('input-sound-volume').value, 10) || 80;
-    if ($('label-sound-volume')) $('label-sound-volume').textContent = volume + '%';
+    syncSoundFromVolume('input-sound-volume', 'chk-sound', 'label-sound-volume');
   });
-  $('input-sound-volume')?.addEventListener('change', persistSetupForm);
-  $('input-font-size')?.addEventListener('input', () => {
-    const size = Number.parseInt($('input-font-size').value, 10) || 16;
-    if ($('label-font-size')) $('label-font-size').textContent = size + 'px';
-    document.documentElement.style.setProperty('--font-size-base', size + 'px');
+  $('input-sound-volume')?.addEventListener('change', () => {
+    syncSoundFromVolume('input-sound-volume', 'chk-sound', 'label-sound-volume');
+    persistSetupForm();
   });
-  $('input-font-size')?.addEventListener('change', persistSetupForm);
 
   document.querySelectorAll('#screen-setup .mode-btn').forEach((btn) => btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode)));
   document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.addEventListener('click', () => setBankPracticeMode(btn.dataset.mode)));
@@ -3166,7 +3154,7 @@ function bindEvents() {
     };
   });
   $('review-chk-sound')?.addEventListener('change', () => {
-    updateBankExperienceControls();
+    syncVolumeFromSoundCheckbox('review-input-sound-volume', 'review-chk-sound', 'review-label-sound-volume');
     persistBankForm();
     if (state.mode === 'review') {
       const count = state.reviewSelectedIndices.size;
@@ -3179,16 +3167,12 @@ function bindEvents() {
   });
   $('review-input-auto-advance-delay')?.addEventListener('change', () => persistBankForm());
   $('review-input-sound-volume')?.addEventListener('input', () => {
-    const volume = Number.parseInt($('review-input-sound-volume').value, 10) || 80;
-    if ($('review-label-sound-volume')) $('review-label-sound-volume').textContent = volume + '%';
+    syncSoundFromVolume('review-input-sound-volume', 'review-chk-sound', 'review-label-sound-volume');
   });
-  $('review-input-sound-volume')?.addEventListener('change', () => persistBankForm());
-  $('review-input-font-size')?.addEventListener('input', () => {
-    const size = Number.parseInt($('review-input-font-size').value, 10) || 16;
-    if ($('review-label-font-size')) $('review-label-font-size').textContent = size + 'px';
-    document.documentElement.style.setProperty('--font-size-base', size + 'px');
+  $('review-input-sound-volume')?.addEventListener('change', () => {
+    syncSoundFromVolume('review-input-sound-volume', 'review-chk-sound', 'review-label-sound-volume');
+    persistBankForm();
   });
-  $('review-input-font-size')?.addEventListener('change', () => persistBankForm());
 
   $('review-btn-all')?.addEventListener('click', () => {
     const input = $('review-input-count');

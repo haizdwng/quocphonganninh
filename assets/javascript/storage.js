@@ -65,7 +65,6 @@ function normalizeSettingsEntry(raw, deckId) {
     practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice',
     autoCheck: settings.autoCheck === true,
     autoAdvance: settings.autoAdvance === true,
-    soundEnabled: settings.soundEnabled === true,
     vibrationEnabled: settings.vibrationEnabled === true,
     autoAdvanceDelay: (() => {
       const delay = Number(settings.autoAdvanceDelay);
@@ -73,11 +72,14 @@ function normalizeSettingsEntry(raw, deckId) {
     })(),
     soundVolume: (() => {
       const volume = Number(settings.soundVolume);
-      return Number.isInteger(volume) && volume >= 1 ? Math.min(100, volume) : 80;
+      if (Number.isInteger(volume) && volume >= 0) return Math.min(100, volume);
+      if (settings.soundEnabled === false) return 0;
+      return 1;
     })(),
-    fontSize: (() => {
-      const size = Number(settings.fontSize);
-      return Number.isInteger(size) && size >= 14 ? Math.min(24, size) : 16;
+    soundEnabled: (() => {
+      const volume = Number(settings.soundVolume);
+      if (Number.isInteger(volume) && volume >= 0) return volume > 0;
+      return settings.soundEnabled === true || settings.soundEnabled == null;
     })()
   };
 };
