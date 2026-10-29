@@ -1173,8 +1173,8 @@ function readBankForm() {
     practiceMode: state.bankPracticeMode === 'exam' ? 'exam' : 'practice',
     autoCheck: !!$('review-chk-auto-check')?.checked,
     autoAdvance: !!$('review-chk-auto-advance')?.checked,
-    soundEnabled: $('review-chk-sound') ? !!$('review-chk-sound').checked : true,
-    vibrationEnabled: $('review-chk-vibration') ? !!$('review-chk-vibration').checked : true
+    soundEnabled: !!$('review-chk-sound')?.checked,
+    vibrationEnabled: !!$('review-chk-vibration')?.checked
   };
 };
 
@@ -1191,8 +1191,8 @@ function applyBankSettingsToForm(settings) {
   if ($('review-chk-auto-check')) {
     $('review-chk-auto-check').checked = settings.autoCheck === true;
     $('review-chk-auto-advance').checked = settings.autoAdvance === true;
-    $('review-chk-sound').checked = settings.soundEnabled !== true;
-    $('review-chk-vibration').checked = settings.vibrationEnabled !== true;
+    $('review-chk-sound').checked = settings.soundEnabled === true;
+    $('review-chk-vibration').checked = settings.vibrationEnabled === true;
   };
   state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
   document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode));
@@ -1315,8 +1315,8 @@ function applySettingsToForm(settings) {
   $('chk-shuffle-a').checked = !!settings.shuffleAnswers;
   $('chk-auto-check').checked = settings.autoCheck === true;
   $('chk-auto-advance').checked = settings.autoAdvance === true;
-  $('chk-sound').checked = settings.soundEnabled !== true;
-  $('chk-vibration').checked = settings.vibrationEnabled !== true;
+  $('chk-sound').checked = settings.soundEnabled === true;
+  $('chk-vibration').checked = settings.vibrationEnabled === true;
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
 };
 
@@ -2029,7 +2029,7 @@ for (const audio of Object.values(answerSounds)) {
 };
 
 function playAnswerSound(isCorrect) {
-  if (sessionPreferences(state.session?.deckId || state.currentDeck).soundEnabled === false) return;
+  if (sessionPreferences(state.session?.deckId || state.currentDeck).soundEnabled !== true) return;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
@@ -2054,7 +2054,7 @@ function onCheck() {
   const isCorrect = isAnswerCorrect(item, question);
   const preferences = sessionPreferences(session.deckId);
   const vibrate = (pattern) => {
-    if (preferences.vibrationEnabled !== false && typeof navigator.vibrate === 'function') {
+    if (preferences.vibrationEnabled === true && typeof navigator.vibrate === 'function') {
       try {
         navigator.vibrate(pattern);
       } catch {};
@@ -2182,9 +2182,13 @@ function persistSession() {
   if (!saveSession(state.session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
 };
 
-function pauseSession() {
+async function pauseSession() {
   const session = state.session;
   if (!session || session.reviewMode || session.finishedAt || session.pausedAt) return;
+  const isExam = !!session.examMode || session.mode === 'exam';
+  const ok = await confirmModal('Tạm dừng?', isExam ? 'Bạn có thể tiếp tục bài thi sau từ thẻ phiên đang dở. Thời gian còn lại sẽ được giữ nguyên nếu có giới hạn thời gian.' : 'Bạn có thể tiếp tục ôn luyện sau từ thẻ phiên đang dở. Thời gian còn lại sẽ được giữ nguyên nếu có giới hạn thời gian.');
+  if (!ok) return;
+  if (!state.session || state.session !== session || session.finishedAt || session.pausedAt) return;
   session.pausedAt = Date.now();
   session.remainingMs = session.timeLimit > 0 && session.deadlineAt ? Math.max(0, session.deadlineAt - session.pausedAt) : null;
   clearInterval(state.timerInterval);

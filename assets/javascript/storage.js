@@ -4,7 +4,6 @@ const VERSION = 2;
 function emptyRoot() {
   return {
     version: VERSION,
-    settings: [],
     sharedSettings: null,
     activeDeck: 'quocphong1',
     bankSettings: null,
@@ -23,7 +22,7 @@ function readRoot() {
     if (!raw) return emptyRoot();
 
     const data = JSON.parse(raw);
-    const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && Array.isArray(data.settings) && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphong1', 'quocphong2'].every((id) => !Object.prototype.hasOwnProperty.call(data.decks, id) || (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights)));
+    const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphong1', 'quocphong2'].every((id) => !Object.prototype.hasOwnProperty.call(data.decks, id) || (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights)));
     if (valid) return data;
 
     localStorage.removeItem(NAME);
@@ -40,6 +39,7 @@ function writeRoot(data) {
   try {
     const root = data && typeof data === 'object' && !Array.isArray(data) ? data : emptyRoot();
     root.version = VERSION;
+    if (Object.prototype.hasOwnProperty.call(root, 'settings')) delete root.settings;
     localStorage.setItem(NAME, JSON.stringify(root));
     return true;
   } catch {
@@ -65,35 +65,32 @@ function normalizeSettingsEntry(raw, deckId) {
     practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice',
     autoCheck: settings.autoCheck === true,
     autoAdvance: settings.autoAdvance === true,
-    soundEnabled: settings.soundEnabled !== true,
-    vibrationEnabled: settings.vibrationEnabled !== true
+    soundEnabled: settings.soundEnabled === true,
+    vibrationEnabled: settings.vibrationEnabled === true
   };
 };
 
-function readSettingsList(root) {
+function legacySettingsFallback(root, activeDeck) {
   const raw = root.settings;
-  if (Array.isArray(raw)) return raw.filter((entry) => entry && typeof entry === 'object').map((entry) => normalizeSettingsEntry(entry, entry.deck));
-  if (raw && typeof raw === 'object') return [normalizeSettingsEntry(raw, raw.deck)];
-  return [];
+  if (Array.isArray(raw)) {
+    const list = raw.filter((entry) => entry && typeof entry === 'object');
+    return list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
+  };
+  if (raw && typeof raw === 'object') return raw;
+  return {};
 };
 
 export function getSettings(deckId) {
   const root = readRoot();
-  const settingsList = readSettingsList(root);
   const activeDeck = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
-  const sharedSettings = root.sharedSettings && typeof root.sharedSettings === 'object' ? root.sharedSettings : settingsList.find((entry) => entry.deck === activeDeck) || settingsList[0] || {};
-  return normalizeSettingsEntry(sharedSettings, activeDeck);
+  const shared = root.sharedSettings && typeof root.sharedSettings === 'object' ? root.sharedSettings : legacySettingsFallback(root, activeDeck);
+  return normalizeSettingsEntry(shared, activeDeck);
 };
 
 export function saveSettings(settings) {
   const root = readRoot();
   const activeDeck = normalizeDeckId(settings?.deck || root.activeDeck);
-  const sharedSettings = normalizeSettingsEntry(settings, activeDeck);
-  root.sharedSettings = sharedSettings;
-  root.settings = ['quocphong1', 'quocphong2'].map((deck) => ({
-    ...sharedSettings,
-    deck
-  }));
+  root.sharedSettings = normalizeSettingsEntry(settings, activeDeck);
   root.activeDeck = activeDeck;
   return writeRoot(root);
 };
@@ -330,13 +327,13 @@ export function saveQuestionHighlights(deckId, originalIndex, ranges) {
 
 export function exportBackup() {
   const root = readRoot();
-  const list = readSettingsList(root);
+  const activeDeck = normalizeDeckId(root.activeDeck || 'quocphong1');
+  const sharedSettings = root.sharedSettings && typeof root.sharedSettings === 'object' ? root.sharedSettings : legacySettingsFallback(root, activeDeck);
   return JSON.stringify({
     format: 'backup',
     version: 1,
     exportedAt: new Date().toISOString(),
-    settings: list.length ? list : [],
-    sharedSettings: root.sharedSettings || list.find((entry) => entry.deck === root.activeDeck) || list[0] || null,
+    sharedSettings: sharedSettings && typeof sharedSettings === 'object' ? sharedSettings : null,
     bankSettings: root.bankSettings || null,
     bankDeck: root.bankSettings?.deck || root.activeDeck || 'quocphong1',
     activeDeck: root.activeDeck || 'quocphong1',
@@ -357,19 +354,17 @@ export function importBackup(raw) {
   };
   if (!backup || backup.format !== 'backup' || backup.version !== 1 || !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) || !Object.keys(backup.decks).every((id) => ['quocphong1', 'quocphong2'].includes(id))) return false;
 
-  let settingsList = [];
-  if (Array.isArray(backup.settings)) settingsList = backup.settings.filter((entry) => entry && typeof entry === 'object').map((entry) => normalizeSettingsEntry(entry, entry.deck));
-  else if (backup.settings && typeof backup.settings === 'object') settingsList = [normalizeSettingsEntry(backup.settings, backup.settings.deck)];
-  for (const deck of ['quocphong1', 'quocphong2']) {
-    if (!settingsList.some((entry) => entry.deck === deck)) settingsList.push(normalizeSettingsEntry({}, deck));
-  };
-  const activeDeck = normalizeDeckId(backup.activeDeck || settingsList[0]?.deck || 'quocphong1');
-  const importedSharedSettings = normalizeSettingsEntry(backup.sharedSettings && typeof backup.sharedSettings === 'object' ? backup.sharedSettings : settingsList.find((entry) => entry.deck === activeDeck) || settingsList[0] || {}, activeDeck);
+  const activeDeck = normalizeDeckId(backup.activeDeck || 'quocphong1');
+  let legacyFromBackup = {};
+  if (Array.isArray(backup.settings)) {
+    const list = backup.settings.filter((entry) => entry && typeof entry === 'object');
+    legacyFromBackup = list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
+  } else if (backup.settings && typeof backup.settings === 'object') legacyFromBackup = backup.settings;
+  const importedSharedSettings = normalizeSettingsEntry(
+    backup.sharedSettings && typeof backup.sharedSettings === 'object' ? backup.sharedSettings : legacyFromBackup,
+    activeDeck
+  );
   const normalized = {
-    settings: ['quocphong1', 'quocphong2'].map((deck) => ({
-      ...importedSharedSettings,
-      deck
-    })),
     sharedSettings: importedSharedSettings,
     activeDeck,
     bankSettings: (() => {
