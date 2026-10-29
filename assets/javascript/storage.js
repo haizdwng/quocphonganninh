@@ -66,7 +66,19 @@ function normalizeSettingsEntry(raw, deckId) {
     autoCheck: settings.autoCheck === true,
     autoAdvance: settings.autoAdvance === true,
     soundEnabled: settings.soundEnabled === true,
-    vibrationEnabled: settings.vibrationEnabled === true
+    vibrationEnabled: settings.vibrationEnabled === true,
+    autoAdvanceDelay: (() => {
+      const delay = Number(settings.autoAdvanceDelay);
+      return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
+    })(),
+    soundVolume: (() => {
+      const volume = Number(settings.soundVolume);
+      return Number.isInteger(volume) && volume >= 1 ? Math.min(100, volume) : 80;
+    })(),
+    fontSize: (() => {
+      const size = Number(settings.fontSize);
+      return Number.isInteger(size) && size >= 14 ? Math.min(24, size) : 16;
+    })()
   };
 };
 

@@ -1174,7 +1174,19 @@ function readBankForm() {
     autoCheck: !!$('review-chk-auto-check')?.checked,
     autoAdvance: !!$('review-chk-auto-advance')?.checked,
     soundEnabled: !!$('review-chk-sound')?.checked,
-    vibrationEnabled: !!$('review-chk-vibration')?.checked
+    vibrationEnabled: !!$('review-chk-vibration')?.checked,
+    autoAdvanceDelay: (() => {
+      const delay = Number.parseInt($('review-input-auto-advance-delay')?.value, 10);
+      return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
+    })(),
+    soundVolume: (() => {
+      const volume = Number.parseInt($('review-input-sound-volume')?.value, 10);
+      return Number.isInteger(volume) && volume >= 1 ? Math.min(100, volume) : 80;
+    })(),
+    fontSize: (() => {
+      const size = Number.parseInt($('review-input-font-size')?.value, 10);
+      return Number.isInteger(size) && size >= 14 ? Math.min(24, size) : 16;
+    })()
   };
 };
 
@@ -1194,6 +1206,22 @@ function applyBankSettingsToForm(settings) {
     $('review-chk-sound').checked = settings.soundEnabled === true;
     $('review-chk-vibration').checked = settings.vibrationEnabled === true;
   };
+  if ($('review-input-auto-advance-delay')) {
+    const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 0;
+    $('review-input-auto-advance-delay').value = String(delay);
+    if ($('review-label-auto-advance-delay')) $('review-label-auto-advance-delay').textContent = delay + ' giây';
+  };
+  if ($('review-input-sound-volume')) {
+    const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 1 ? Math.min(100, settings.soundVolume) : 80;
+    $('review-input-sound-volume').value = String(volume);
+    if ($('review-label-sound-volume')) $('review-label-sound-volume').textContent = volume + '%';
+  };
+  if ($('review-input-font-size')) {
+    const size = Number.isInteger(settings.fontSize) && settings.fontSize >= 14 ? Math.min(24, settings.fontSize) : 16;
+    $('review-input-font-size').value = String(size);
+    if ($('review-label-font-size')) $('review-label-font-size').textContent = size + 'px';
+  };
+  updateBankExperienceControls();
   state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
   document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode));
   document.querySelectorAll('[data-bank-deck]').forEach((btn) => btn.classList.toggle('active', btn.dataset.bankDeck === state.bankDeck));
@@ -1205,7 +1233,43 @@ function persistBankForm() {
   const form = readBankForm();
   const saved = saveBankSettings(form);
   if (!saved) toast('Không thể lưu tuỳ chọn ngân hàng. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+  if (state.session?.fromBank || state.mode === 'review') applyAppearanceSettings(form);
   return form;
+};
+
+function updateSetupExperienceControls() {
+  const autoAdvanceOn = !!$('chk-auto-advance')?.checked;
+  const delayInput = $('input-auto-advance-delay');
+  const delayField = $('field-auto-advance-delay');
+  if (delayInput) delayInput.disabled = !autoAdvanceOn;
+  if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
+
+  const soundOn = !!$('chk-sound')?.checked;
+  const volumeInput = $('input-sound-volume');
+  const volumeField = $('field-sound-volume');
+  if (volumeInput) volumeInput.disabled = !soundOn;
+  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
+};
+
+function updateBankExperienceControls() {
+  const autoAdvanceOn = !!$('review-chk-auto-advance')?.checked;
+  const delayInput = $('review-input-auto-advance-delay');
+  const delayField = $('review-field-auto-advance-delay');
+  if (delayInput) delayInput.disabled = !autoAdvanceOn;
+  if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
+
+  const soundOn = !!$('review-chk-sound')?.checked;
+  const volumeInput = $('review-input-sound-volume');
+  const volumeField = $('review-field-sound-volume');
+  if (volumeInput) volumeInput.disabled = !soundOn;
+  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
+};
+
+function applyAppearanceSettings(settings) {
+  const prefs = settings || sessionPreferences(state.session?.deckId || state.currentDeck);
+  const size = Number.isInteger(prefs.fontSize) && prefs.fontSize >= 14 ? Math.min(24, prefs.fontSize) : 16;
+  document.documentElement.style.setProperty('--font-size-base', size + 'px');
+  document.getElementById('user-custom-css')?.remove();
 };
 
 function setBankPracticeMode(mode) {
@@ -1299,9 +1363,22 @@ function persistSetupForm() {
     autoCheck: $('chk-auto-check').checked,
     autoAdvance: $('chk-auto-advance').checked,
     soundEnabled: $('chk-sound').checked,
-    vibrationEnabled: $('chk-vibration').checked
+    vibrationEnabled: $('chk-vibration').checked,
+    autoAdvanceDelay: (() => {
+      const delay = Number.parseInt($('input-auto-advance-delay')?.value, 10);
+      return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
+    })(),
+    soundVolume: (() => {
+      const volume = Number.parseInt($('input-sound-volume')?.value, 10);
+      return Number.isInteger(volume) && volume >= 1 ? Math.min(100, volume) : 80;
+    })(),
+    fontSize: (() => {
+      const size = Number.parseInt($('input-font-size')?.value, 10);
+      return Number.isInteger(size) && size >= 14 ? Math.min(24, size) : 16;
+    })()
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+  applyAppearanceSettings(getSettings(state.currentDeck));
 };
 
 function applySettingsToForm(settings) {
@@ -1317,7 +1394,24 @@ function applySettingsToForm(settings) {
   $('chk-auto-advance').checked = settings.autoAdvance === true;
   $('chk-sound').checked = settings.soundEnabled === true;
   $('chk-vibration').checked = settings.vibrationEnabled === true;
+  if ($('input-auto-advance-delay')) {
+    const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 0;
+    $('input-auto-advance-delay').value = String(delay);
+    if ($('label-auto-advance-delay')) $('label-auto-advance-delay').textContent = delay + ' giây';
+  };
+  if ($('input-sound-volume')) {
+    const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 1 ? Math.min(100, settings.soundVolume) : 80;
+    $('input-sound-volume').value = String(volume);
+    if ($('label-sound-volume')) $('label-sound-volume').textContent = volume + '%';
+  };
+  if ($('input-font-size')) {
+    const size = Number.isInteger(settings.fontSize) && settings.fontSize >= 14 ? Math.min(24, settings.fontSize) : 16;
+    $('input-font-size').value = String(size);
+    if ($('label-font-size')) $('label-font-size').textContent = size + 'px';
+  };
+  updateSetupExperienceControls();
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
+  applyAppearanceSettings(settings);
 };
 
 function stopSessionTimer(freeze = true) {
@@ -1397,6 +1491,7 @@ function startSessionFromPool(pool, meta) {
   state.examFilter = 'all';
   state.examSubmitting = false;
   if (!saveSession(session)) toast('Không thể lưu phiên ôn. Nếu tải lại trang, tiến độ hiện tại có thể mất.');
+  applyAppearanceSettings(sessionPreferences(session.deckId));
   if (session.examMode) {
     showScreen('exam');
     renderExam();
@@ -2029,11 +2124,14 @@ for (const audio of Object.values(answerSounds)) {
 };
 
 function playAnswerSound(isCorrect) {
-  if (sessionPreferences(state.session?.deckId || state.currentDeck).soundEnabled !== true) return;
+  const preferences = sessionPreferences(state.session?.deckId || state.currentDeck);
+  if (preferences.soundEnabled !== true) return;
+  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume >= 1 ? Math.min(100, preferences.soundVolume) : 80;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
     audio.currentTime = 0;
+    audio.volume = volumePct / 100;
     const playback = audio.play();
     if (playback && typeof playback.catch === 'function') playback.catch(() => {});
   } catch (error) {
@@ -2104,9 +2202,13 @@ function onCheck() {
   };
   persistSession();
   renderQuestion();
-  if (isCorrect && preferences.autoAdvance === true && session.viewIndex < session.items.length - 1) setTimeout(() => {
-    if (state.session === session && currentItem() === item && item.status === 'correct' && session.viewIndex < session.items.length - 1) onNext();
-  }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 350);
+  if (isCorrect && preferences.autoAdvance === true && session.viewIndex < session.items.length - 1) {
+    const delaySec = Number.isInteger(preferences.autoAdvanceDelay) && preferences.autoAdvanceDelay >= 0 ? Math.min(10, preferences.autoAdvanceDelay) : 0;
+    const delayMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : delaySec * 1000;
+    setTimeout(() => {
+      if (state.session === session && currentItem() === item && item.status === 'correct' && session.viewIndex < session.items.length - 1) onNext();
+    }, delayMs);
+  };
 };
 
 function onNext() {
@@ -2567,6 +2669,7 @@ function restoreSessionIfAny() {
   state.reviewMode = !!saved.reviewMode;
   state.examFilter = 'all';
   state.examSubmitting = false;
+  applyAppearanceSettings(sessionPreferences(saved.deckId));
   if (saved.examMode) {
     showScreen('exam');
     renderExam();
@@ -2853,7 +2956,31 @@ function bindEvents() {
     persistSetupForm();
   });
 
-  for (const id of ['chk-auto-check', 'chk-auto-advance', 'chk-sound', 'chk-vibration']) $(id).addEventListener('change', persistSetupForm);
+  for (const id of ['chk-auto-check', 'chk-vibration']) $(id).addEventListener('change', persistSetupForm);
+  $('chk-auto-advance')?.addEventListener('change', () => {
+    updateSetupExperienceControls();
+    persistSetupForm();
+  });
+  $('chk-sound')?.addEventListener('change', () => {
+    updateSetupExperienceControls();
+    persistSetupForm();
+  });
+  $('input-auto-advance-delay')?.addEventListener('input', () => {
+    const delay = Number.parseInt($('input-auto-advance-delay').value, 10) || 0;
+    if ($('label-auto-advance-delay')) $('label-auto-advance-delay').textContent = delay + ' giây';
+  });
+  $('input-auto-advance-delay')?.addEventListener('change', persistSetupForm);
+  $('input-sound-volume')?.addEventListener('input', () => {
+    const volume = Number.parseInt($('input-sound-volume').value, 10) || 80;
+    if ($('label-sound-volume')) $('label-sound-volume').textContent = volume + '%';
+  });
+  $('input-sound-volume')?.addEventListener('change', persistSetupForm);
+  $('input-font-size')?.addEventListener('input', () => {
+    const size = Number.parseInt($('input-font-size').value, 10) || 16;
+    if ($('label-font-size')) $('label-font-size').textContent = size + 'px';
+    document.documentElement.style.setProperty('--font-size-base', size + 'px');
+  });
+  $('input-font-size')?.addEventListener('change', persistSetupForm);
 
   document.querySelectorAll('#screen-setup .mode-btn').forEach((btn) => btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode)));
   document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.addEventListener('click', () => setBankPracticeMode(btn.dataset.mode)));
@@ -3019,7 +3146,7 @@ function bindEvents() {
     });
   };
 
-  for (const reviewId of ['review-chk-shuffle-q', 'review-chk-shuffle-a', 'review-chk-auto-check', 'review-chk-auto-advance', 'review-chk-sound', 'review-chk-vibration']) {
+  for (const reviewId of ['review-chk-shuffle-q', 'review-chk-shuffle-a', 'review-chk-auto-check', 'review-chk-vibration']) {
     const element = $(reviewId);
     if (!element) continue;
     element.addEventListener('change', () => {
@@ -3030,6 +3157,38 @@ function bindEvents() {
       };
     });
   };
+  $('review-chk-auto-advance')?.addEventListener('change', () => {
+    updateBankExperienceControls();
+    persistBankForm();
+    if (state.mode === 'review') {
+      const count = state.reviewSelectedIndices.size;
+      if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
+    };
+  });
+  $('review-chk-sound')?.addEventListener('change', () => {
+    updateBankExperienceControls();
+    persistBankForm();
+    if (state.mode === 'review') {
+      const count = state.reviewSelectedIndices.size;
+      if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
+    };
+  });
+  $('review-input-auto-advance-delay')?.addEventListener('input', () => {
+    const delay = Number.parseInt($('review-input-auto-advance-delay').value, 10) || 0;
+    if ($('review-label-auto-advance-delay')) $('review-label-auto-advance-delay').textContent = delay + ' giây';
+  });
+  $('review-input-auto-advance-delay')?.addEventListener('change', () => persistBankForm());
+  $('review-input-sound-volume')?.addEventListener('input', () => {
+    const volume = Number.parseInt($('review-input-sound-volume').value, 10) || 80;
+    if ($('review-label-sound-volume')) $('review-label-sound-volume').textContent = volume + '%';
+  });
+  $('review-input-sound-volume')?.addEventListener('change', () => persistBankForm());
+  $('review-input-font-size')?.addEventListener('input', () => {
+    const size = Number.parseInt($('review-input-font-size').value, 10) || 16;
+    if ($('review-label-font-size')) $('review-label-font-size').textContent = size + 'px';
+    document.documentElement.style.setProperty('--font-size-base', size + 'px');
+  });
+  $('review-input-font-size')?.addEventListener('change', () => persistBankForm());
 
   $('review-btn-all')?.addEventListener('click', () => {
     const input = $('review-input-count');
