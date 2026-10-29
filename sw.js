@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.0.9';
+const VERSION = '1.1.0';
 const ASSETS = [
   './',
   './index.html',
@@ -34,6 +34,12 @@ const ASSETS = [
   './assets/icons/tabler/rotate-clockwise.svg',
   './assets/icons/tabler/player-pause.svg',
   './assets/icons/tabler/highlight.svg',
+  './assets/icons/tabler/note.svg',
+  './assets/icons/tabler/device-floppy.svg',
+  './assets/icons/tabler/volume.svg',
+  './assets/icons/tabler/volume-off.svg',
+  './assets/icons/tabler/toggle-right.svg',
+  './assets/icons/tabler/toggle-left.svg',
   './assets/icons/tabler/x.svg',
   './assets/icons/tabler/select-all.svg',
   './assets/icons/tabler/deselect.svg',

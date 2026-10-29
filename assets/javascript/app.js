@@ -1,6 +1,6 @@
 import { initEnhance } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
-import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights } from './storage.js';
+import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, getDeckNotes, resetDeckNotes } from './storage.js';
 
 const DECKS = {
   quocphong1: {
@@ -56,7 +56,9 @@ const state = {
   lastBankTimeBeforeUnlimited: null,
   bankSearchQuery: '',
   bankSearchMatchIndex: -1,
-  reviewFocusQuestionNumber: null
+  reviewFocusQuestionNumber: null,
+  reviewEditingNoteIndex: null,
+  reviewEditingNoteDraft: ''
 };
 
 const REVIEW_VIRTUAL_OVERSCAN = 3;
@@ -115,6 +117,7 @@ async function loadDeck(id) {
       progress.dataFingerprint = fingerprint;
       if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       if (!resetDeckHighlights(id)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
+      if (!resetDeckNotes(id)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
     };
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fingerprint;
@@ -179,7 +182,11 @@ function showScreen(name) {
   };
   state.mode = name;
   document.body.dataset.screen = name;
-  if (name !== 'review') updateBankSearchNavButtons();
+  if (name !== 'review') {
+    state.reviewEditingNoteIndex = null;
+    state.reviewEditingNoteDraft = '';
+    updateBankSearchNavButtons();
+  };
   if (screen) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
@@ -583,7 +590,15 @@ function createReviewBankCard() {
   prompt.className = 'review-q-text';
 
   const toolbar = document.createElement('div');
-  toolbar.className = 'highlight-toolbar';
+  toolbar.className = 'question-tools-row review-tools-row';
+
+  const noteEditBtn = document.createElement('button');
+  noteEditBtn.type = 'button';
+  noteEditBtn.className = 'note-btn btn-icon-only';
+  noteEditBtn.dataset.icon = 'note';
+  noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
+  noteEditBtn.title = 'Sửa ghi chú';
+
   const hlBtn = document.createElement('button');
   hlBtn.type = 'button';
   hlBtn.className = 'btn btn-ghost btn-icon-only highlight-toggle-btn';
@@ -605,7 +620,136 @@ function createReviewBankCard() {
     };
     toggleHighlightSelection(selection.deckId, qIndex, selection);
   });
-  toolbar.appendChild(hlBtn);
+  toolbar.append(noteEditBtn, hlBtn);
+
+  const noteBlock = document.createElement('div');
+  noteBlock.className = 'review-note-block is-empty';
+  const noteText = document.createElement('p');
+  noteText.className = 'review-note-text';
+  const noteInputEl = document.createElement('textarea');
+  noteInputEl.className = 'question-note-input';
+  noteInputEl.rows = 3;
+  noteInputEl.maxLength = 2000;
+  noteInputEl.placeholder = 'Nhập ghi chú cho câu hỏi này…';
+  noteInputEl.hidden = true;
+  const noteActions = document.createElement('div');
+  noteActions.className = 'review-note-actions note-actions-icons';
+  const noteSaveBtn = document.createElement('button');
+  noteSaveBtn.type = 'button';
+  noteSaveBtn.className = 'btn btn-primary btn-icon-only';
+  noteSaveBtn.dataset.icon = 'device-floppy';
+  noteSaveBtn.setAttribute('aria-label', 'Lưu ghi chú');
+  noteSaveBtn.title = 'Lưu';
+  noteSaveBtn.hidden = true;
+  const noteDeleteBtn = document.createElement('button');
+  noteDeleteBtn.type = 'button';
+  noteDeleteBtn.className = 'btn btn-ghost btn-icon-only';
+  noteDeleteBtn.dataset.icon = 'trash';
+  noteDeleteBtn.setAttribute('aria-label', 'Xóa ghi chú');
+  noteDeleteBtn.title = 'Xóa';
+  noteDeleteBtn.hidden = true;
+  const noteCancelBtn = document.createElement('button');
+  noteCancelBtn.type = 'button';
+  noteCancelBtn.className = 'btn btn-ghost btn-icon-only';
+  noteCancelBtn.dataset.icon = 'x';
+  noteCancelBtn.setAttribute('aria-label', 'Hủy');
+  noteCancelBtn.title = 'Hủy';
+  noteCancelBtn.hidden = true;
+  noteActions.append(noteSaveBtn, noteDeleteBtn, noteCancelBtn);
+  noteBlock.append(noteText, noteInputEl, noteActions);
+
+  function setReviewNoteViewMode(existing) {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (Number.isInteger(qIndex) && state.reviewEditingNoteIndex === qIndex) {
+      state.reviewEditingNoteIndex = null;
+      state.reviewEditingNoteDraft = '';
+    };
+    noteInputEl.hidden = true;
+    noteSaveBtn.hidden = true;
+    noteDeleteBtn.hidden = true;
+    noteCancelBtn.hidden = true;
+    noteEditBtn.hidden = false;
+    noteEditBtn.classList.toggle('has-note', !!existing);
+    if (existing) {
+      noteText.textContent = existing;
+      noteText.hidden = false;
+      noteBlock.classList.remove('is-empty');
+      noteBlock.hidden = false;
+      noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
+      noteEditBtn.title = 'Sửa ghi chú';
+    } else {
+      noteText.textContent = '';
+      noteText.hidden = true;
+      noteBlock.classList.add('is-empty');
+      noteBlock.hidden = true;
+      noteEditBtn.setAttribute('aria-label', 'Thêm ghi chú');
+      noteEditBtn.title = 'Thêm ghi chú';
+    };
+  };
+
+  function setReviewNoteEditMode(qIndex, draft) {
+    state.reviewEditingNoteIndex = qIndex;
+    const value = typeof draft === 'string' ? draft : getQuestionNote(state.bankDeck, qIndex);
+    state.reviewEditingNoteDraft = value;
+    noteInputEl.value = value;
+    noteText.hidden = true;
+    noteInputEl.hidden = false;
+    noteSaveBtn.hidden = false;
+    noteDeleteBtn.hidden = false;
+    noteCancelBtn.hidden = false;
+    noteBlock.classList.remove('is-empty');
+    noteBlock.hidden = false;
+    noteEditBtn.classList.add('has-note');
+    noteInputEl.focus();
+  };
+
+  noteInputEl.addEventListener('input', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    if (state.reviewEditingNoteIndex === qIndex) state.reviewEditingNoteDraft = noteInputEl.value;
+  });
+
+  noteEditBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    if (!noteInputEl.hidden) {
+      setReviewNoteViewMode(getQuestionNote(state.bankDeck, qIndex));
+      return;
+    };
+    setReviewNoteEditMode(qIndex);
+  });
+
+  noteCancelBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    setReviewNoteViewMode(getQuestionNote(state.bankDeck, qIndex));
+  });
+
+  noteSaveBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    const ok = saveQuestionNote(state.bankDeck, qIndex, noteInputEl.value);
+    if (!ok) {
+      toast('Không thể lưu ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    };
+    const existing = getQuestionNote(state.bankDeck, qIndex);
+    setReviewNoteViewMode(existing);
+    toast(existing ? 'Đã lưu ghi chú.' : 'Đã xóa ghi chú.');
+  });
+
+  noteDeleteBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    const ok = saveQuestionNote(state.bankDeck, qIndex, '');
+    if (!ok) {
+      toast('Không thể xóa ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    };
+    noteInputEl.value = '';
+    setReviewNoteViewMode('');
+    toast('Đã xóa ghi chú.');
+  });
 
   const options = document.createElement('ol');
   options.className = 'review-options';
@@ -640,13 +784,22 @@ function createReviewBankCard() {
     $('btn-review-start-selected').disabled = count === 0;
   });
 
-  card.append(selectLabel, heading, prompt, toolbar, options);
+  card.append(selectLabel, heading, prompt, toolbar, noteBlock, options);
   card._vs = {
     selectLabel,
     checkbox,
     heading,
     prompt,
     toolbar,
+    noteBlock,
+    noteText,
+    noteInput: noteInputEl,
+    noteEditBtn,
+    noteSaveBtn,
+    noteDeleteBtn,
+    noteCancelBtn,
+    setReviewNoteViewMode,
+    setReviewNoteEditMode,
     options,
     optionNodes
   };
@@ -665,6 +818,12 @@ function bindReviewBankCard(card, question, listIndex) {
   card.classList.toggle('review-q-highlight', state.reviewFocusQuestionNumber === question.originalIndex + 1);
 
   renderTextWithHighlights(parts.prompt, question.question, state.bankDeck, question.originalIndex, 'question');
+
+  const existingNote = getQuestionNote(state.bankDeck, question.originalIndex);
+  if (parts.noteBlock) {
+    if (state.reviewEditingNoteIndex === question.originalIndex && typeof parts.setReviewNoteEditMode === 'function') parts.setReviewNoteEditMode(question.originalIndex, state.reviewEditingNoteDraft);
+    else if (typeof parts.setReviewNoteViewMode === 'function') parts.setReviewNoteViewMode(existingNote);
+  };
 
   const optionCount = question.options.length;
   parts.optionNodes.forEach((node, index) => {
@@ -1179,13 +1338,10 @@ function readBankForm() {
       return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
     })(),
     soundVolume: (() => {
-      const volume = Number.parseInt($('review-input-sound-volume')?.value, 10);
-      return Number.isInteger(volume) && volume >= 0 ? Math.min(100, volume) : 1;
+      const input = $('review-input-sound-volume');
+      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 50);
     })(),
-    soundEnabled: (() => {
-      const volume = Number.parseInt($('review-input-sound-volume')?.value, 10);
-      return (Number.isInteger(volume) ? volume : 1) > 0;
-    })()
+    soundEnabled: !!$('review-chk-sound')?.checked
   };
 };
 
@@ -1209,12 +1365,13 @@ function applyBankSettingsToForm(settings) {
     $('review-input-auto-advance-delay').value = String(delay);
     if ($('review-label-auto-advance-delay')) $('review-label-auto-advance-delay').textContent = delay + ' giây';
   };
-  const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 0 ? Math.min(100, settings.soundVolume) : 1;
+  const volume = normalizeSoundVolume(settings.soundVolume, 50);
   if ($('review-input-sound-volume')) {
     $('review-input-sound-volume').value = String(volume);
+    $('review-input-sound-volume').dataset.lastVolume = String(volume);
     if ($('review-label-sound-volume')) $('review-label-sound-volume').textContent = volume + '%';
   };
-  if ($('review-chk-sound')) $('review-chk-sound').checked = volume > 0;
+  if ($('review-chk-sound')) $('review-chk-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
   updateBankExperienceControls();
   state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
   document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode));
@@ -1230,12 +1387,38 @@ function persistBankForm() {
   return form;
 };
 
+function normalizeSoundVolume(value, fallback = 50) {
+  const volume = Number.parseInt(value, 10);
+  if (!Number.isInteger(volume)) return fallback;
+  return Math.min(100, Math.max(1, volume));
+};
+
+function syncExperienceToggleButton(buttonId, checkboxId, onIcon, offIcon, onLabel, offLabel) {
+  const button = $(buttonId);
+  const checkbox = $(checkboxId);
+  if (!button || !checkbox) return;
+  const on = !!checkbox.checked;
+  button.classList.toggle('is-on', on);
+  button.setAttribute('aria-pressed', String(on));
+  button.dataset.icon = on ? onIcon : offIcon;
+  button.setAttribute('aria-label', on ? offLabel : onLabel);
+  button.title = on ? offLabel : onLabel;
+};
+
 function updateSetupExperienceControls() {
   const autoAdvanceOn = !!$('chk-auto-advance')?.checked;
   const delayInput = $('input-auto-advance-delay');
   const delayField = $('field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
+  syncExperienceToggleButton('btn-auto-advance', 'chk-auto-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
+
+  const soundOn = !!$('chk-sound')?.checked;
+  const volumeInput = $('input-sound-volume');
+  const volumeField = $('field-sound-volume');
+  if (volumeInput) volumeInput.disabled = !soundOn;
+  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
+  syncExperienceToggleButton('btn-sound', 'chk-sound', 'volume', 'volume-off', 'Bật âm thanh', 'Tắt âm thanh');
 };
 
 function updateBankExperienceControls() {
@@ -1244,17 +1427,24 @@ function updateBankExperienceControls() {
   const delayField = $('review-field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
+  syncExperienceToggleButton('review-btn-auto-advance', 'review-chk-auto-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
+
+  const soundOn = !!$('review-chk-sound')?.checked;
+  const volumeInput = $('review-input-sound-volume');
+  const volumeField = $('review-field-sound-volume');
+  if (volumeInput) volumeInput.disabled = !soundOn;
+  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
+  syncExperienceToggleButton('review-btn-sound', 'review-chk-sound', 'volume', 'volume-off', 'Bật âm thanh', 'Tắt âm thanh');
 };
 
 function syncSoundFromVolume(volumeInputId, checkboxId, labelId) {
   const volumeInput = $(volumeInputId);
-  if (!volumeInput) return 1;
-  let volume = Number.parseInt(volumeInput.value, 10);
-  if (!Number.isInteger(volume) || volume < 0) volume = 0;
-  volume = Math.min(100, volume);
+  if (!volumeInput) return 50;
+  const volume = normalizeSoundVolume(volumeInput.value, 50);
   volumeInput.value = String(volume);
   if ($(labelId)) $(labelId).textContent = volume + '%';
-  if ($(checkboxId)) $(checkboxId).checked = volume > 0;
+  volumeInput.dataset.lastVolume = String(volume);
+  if ($(checkboxId) && !$(checkboxId).checked) $(checkboxId).checked = true;
   return volume;
 };
 
@@ -1263,14 +1453,14 @@ function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
   const volumeInput = $(volumeInputId);
   if (!checkbox || !volumeInput) return;
   if (checkbox.checked) {
-    let volume = Number.parseInt(volumeInput.value, 10);
-    if (!Number.isInteger(volume) || volume <= 0) volume = 1;
-    volume = Math.min(100, volume);
-    volumeInput.value = String(volume);
-    if ($(labelId)) $(labelId).textContent = volume + '%';
+    const restored = normalizeSoundVolume(volumeInput.dataset.lastVolume || volumeInput.value, 50);
+    volumeInput.value = String(restored);
+    volumeInput.dataset.lastVolume = String(restored);
+    if ($(labelId)) $(labelId).textContent = restored + '%';
   } else {
-    volumeInput.value = '0';
-    if ($(labelId)) $(labelId).textContent = '0%';
+    const current = normalizeSoundVolume(volumeInput.value, 50);
+    volumeInput.dataset.lastVolume = String(current);
+    if ($(labelId)) $(labelId).textContent = current + '%';
   };
 };
 
@@ -1288,6 +1478,8 @@ function setBankDeck(deckId) {
   state.bankDeck = id;
   state.reviewSelectedIndices.clear();
   state.bankSearchMatchIndex = -1;
+  state.reviewEditingNoteIndex = null;
+  state.reviewEditingNoteDraft = '';
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
@@ -1370,13 +1562,10 @@ function persistSetupForm() {
       return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
     })(),
     soundVolume: (() => {
-      const volume = Number.parseInt($('input-sound-volume')?.value, 10);
-      return Number.isInteger(volume) && volume >= 0 ? Math.min(100, volume) : 1;
+      const input = $('input-sound-volume');
+      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 50);
     })(),
-    soundEnabled: (() => {
-      const volume = Number.parseInt($('input-sound-volume')?.value, 10);
-      return (Number.isInteger(volume) ? volume : 1) > 0;
-    })()
+    soundEnabled: !!$('chk-sound')?.checked
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 };
@@ -1398,12 +1587,13 @@ function applySettingsToForm(settings) {
     $('input-auto-advance-delay').value = String(delay);
     if ($('label-auto-advance-delay')) $('label-auto-advance-delay').textContent = delay + ' giây';
   };
-  const volume = Number.isInteger(settings.soundVolume) && settings.soundVolume >= 0 ? Math.min(100, settings.soundVolume) : 10;
+  const volume = normalizeSoundVolume(settings.soundVolume, 50);
   if ($('input-sound-volume')) {
     $('input-sound-volume').value = String(volume);
+    $('input-sound-volume').dataset.lastVolume = String(volume);
     if ($('label-sound-volume')) $('label-sound-volume').textContent = volume + '%';
   };
-  if ($('chk-sound')) $('chk-sound').checked = volume > 0;
+  if ($('chk-sound')) $('chk-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
   updateSetupExperienceControls();
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
 };
@@ -1673,9 +1863,46 @@ function renderQuestion() {
   setToggleIcon(bookmarkButton, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
   bookmarkButton.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
   bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
+  const noteButton = $('btn-note');
+  const existingNote = getQuestionNote(session.deckId, question.originalIndex);
+  const noteDisplay = $('question-note-display');
+  const noteTextEl = $('question-note-text');
+  const notePanel = $('question-note-panel');
+  const noteInput = $('question-note-input');
+  const noteWrap = $('question-note-wrap');
+  const editingNote = notePanel && !notePanel.hidden;
+  if (noteButton) {
+    noteButton.classList.toggle('has-note', !!existingNote);
+    noteButton.setAttribute('aria-pressed', String(!!existingNote || editingNote));
+    noteButton.setAttribute('aria-label', existingNote || editingNote ? 'Sửa ghi chú' : 'Thêm ghi chú');
+    noteButton.title = existingNote || editingNote ? 'Sửa ghi chú' : 'Thêm ghi chú';
+  };
+  if (noteWrap && session.examMode) {
+    noteWrap.hidden = true;
+    if (notePanel) notePanel.hidden = true;
+    if (noteDisplay) noteDisplay.hidden = true;
+  } else if (noteWrap) {
+    noteWrap.hidden = false;
+    if (editingNote && noteInput) {
+      noteInput.value = existingNote;
+      if (noteDisplay) noteDisplay.hidden = true;
+    } else {
+      if (notePanel) notePanel.hidden = true;
+      if (noteDisplay && noteTextEl) {
+        if (existingNote) {
+          noteTextEl.textContent = existingNote;
+          noteDisplay.hidden = false;
+        } else {
+          noteTextEl.textContent = '';
+          noteDisplay.hidden = true;
+        };
+      };
+    };
+  };
   renderTextWithHighlights($('q-text'), question.question, session.deckId, question.originalIndex, 'question');
   const highlightToolbar = $('quiz-highlight-toolbar');
   if (highlightToolbar) highlightToolbar.hidden = session.examMode === true;
+  if (noteButton) noteButton.hidden = session.examMode === true;
 
   const optsEl = $('options');
   optsEl.replaceChildren();
@@ -1754,7 +1981,7 @@ function renderQuestion() {
     if (isLastQuestion && session.mode === 'practice-wrong') {
       const unresolved = session.items.filter((entry) => entry.status !== 'correct');
       shouldFinish = unresolved.length === 0;
-    }
+    };
     nextButton.textContent = shouldFinish ? 'Kết thúc' : 'Câu tiếp';
     nextButton.dataset.icon = shouldFinish ? 'check' : 'chevron-right';
     nextButton.disabled = false;
@@ -2118,8 +2345,8 @@ for (const audio of Object.values(answerSounds)) {
 
 function playAnswerSound(isCorrect) {
   const preferences = sessionPreferences(state.session?.deckId || state.currentDeck);
-  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume >= 0 ? Math.min(100, preferences.soundVolume) : 1;
-  if (volumePct <= 0 || preferences.soundEnabled === false) return;
+  if (preferences.soundEnabled === false) return;
+  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume > 0 ? Math.min(100, preferences.soundVolume) : 50;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
@@ -2953,9 +3180,22 @@ function bindEvents() {
     updateSetupExperienceControls();
     persistSetupForm();
   });
+  $('btn-auto-advance')?.addEventListener('click', () => {
+    const checkbox = $('chk-auto-advance');
+    if (!checkbox) return;
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   $('chk-sound')?.addEventListener('change', () => {
     syncVolumeFromSoundCheckbox('input-sound-volume', 'chk-sound', 'label-sound-volume');
+    updateSetupExperienceControls();
     persistSetupForm();
+  });
+  $('btn-sound')?.addEventListener('click', () => {
+    const checkbox = $('chk-sound');
+    if (!checkbox) return;
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
   });
   $('input-auto-advance-delay')?.addEventListener('input', () => {
     const delay = Number.parseInt($('input-auto-advance-delay').value, 10) || 0;
@@ -3153,13 +3393,26 @@ function bindEvents() {
       if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
     };
   });
+  $('review-btn-auto-advance')?.addEventListener('click', () => {
+    const checkbox = $('review-chk-auto-advance');
+    if (!checkbox) return;
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   $('review-chk-sound')?.addEventListener('change', () => {
     syncVolumeFromSoundCheckbox('review-input-sound-volume', 'review-chk-sound', 'review-label-sound-volume');
+    updateBankExperienceControls();
     persistBankForm();
     if (state.mode === 'review') {
       const count = state.reviewSelectedIndices.size;
       if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
     };
+  });
+  $('review-btn-sound')?.addEventListener('click', () => {
+    const checkbox = $('review-chk-sound');
+    if (!checkbox) return;
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
   });
   $('review-input-auto-advance-delay')?.addEventListener('input', () => {
     const delay = Number.parseInt($('review-input-auto-advance-delay').value, 10) || 0;
@@ -3251,6 +3504,90 @@ function bindEvents() {
     };
     renderQuestion();
     toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
+  });
+
+  const notePanel = $('question-note-panel');
+  const noteInput = $('question-note-input');
+  const noteBtn = $('btn-note');
+  const noteDisplay = $('question-note-display');
+  const noteTextEl = $('question-note-text');
+
+  function syncQuizNoteUI(note) {
+    const has = !!note;
+    if (noteBtn) {
+      noteBtn.classList.toggle('has-note', has);
+      noteBtn.setAttribute('aria-pressed', String(has));
+      noteBtn.setAttribute('aria-label', has ? 'Sửa ghi chú' : 'Thêm ghi chú');
+      noteBtn.title = has ? 'Sửa ghi chú' : 'Thêm ghi chú';
+    };
+    if (notePanel) notePanel.hidden = true;
+    if (noteDisplay && noteTextEl) {
+      if (has) {
+        noteTextEl.textContent = note;
+        noteDisplay.hidden = false;
+      } else {
+        noteTextEl.textContent = '';
+        noteDisplay.hidden = true;
+      };
+    };
+  };
+
+  function openNoteEditor() {
+    const question = currentQ();
+    const session = state.session;
+    if (!question || !session || !notePanel || !noteInput) return;
+    noteInput.value = getQuestionNote(session.deckId, question.originalIndex);
+    if (noteDisplay) noteDisplay.hidden = true;
+    notePanel.hidden = false;
+    noteInput.focus();
+  };
+
+  function closeNoteEditor(refresh) {
+    if (notePanel) notePanel.hidden = true;
+    if (refresh !== false) {
+      const question = currentQ();
+      const session = state.session;
+      const note = question && session ? getQuestionNote(session.deckId, question.originalIndex) : '';
+      syncQuizNoteUI(note);
+    };
+  };
+
+  noteBtn?.addEventListener('click', () => {
+    if (!notePanel) return;
+    if (notePanel.hidden) openNoteEditor();
+    else closeNoteEditor();
+  });
+
+  $('btn-note-save')?.addEventListener('click', () => {
+    const question = currentQ();
+    const session = state.session;
+    if (!question || !session || !noteInput) return;
+    const ok = saveQuestionNote(session.deckId, question.originalIndex, noteInput.value);
+    if (!ok) {
+      toast('Không thể lưu ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    };
+    const note = getQuestionNote(session.deckId, question.originalIndex);
+    syncQuizNoteUI(note);
+    toast(note ? 'Đã lưu ghi chú.' : 'Đã xóa ghi chú.');
+  });
+
+  $('btn-note-delete')?.addEventListener('click', () => {
+    const question = currentQ();
+    const session = state.session;
+    if (!question || !session) return;
+    const ok = saveQuestionNote(session.deckId, question.originalIndex, '');
+    if (!ok) {
+      toast('Không thể xóa ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    };
+    if (noteInput) noteInput.value = '';
+    syncQuizNoteUI('');
+    toast('Đã xóa ghi chú.');
+  });
+
+  $('btn-note-close')?.addEventListener('click', () => {
+    closeNoteEditor();
   });
 
   $('btn-export-progress').addEventListener('click', () => {

@@ -166,32 +166,48 @@
                 <span>Tự kiểm tra ngay khi chọn đáp án</span>
               </label>
               <label class='toggle'>
-                <input type='checkbox' id='chk-auto-advance' />
-                <span>Tự sang câu tiếp sau khi trả lời đúng</span>
-              </label>
-              <label class='toggle'>
-                <input type='checkbox' id='chk-sound' />
-                <span>Bật âm thanh</span>
-              </label>
-              <label class='toggle'>
                 <input type='checkbox' id='chk-vibration' />
                 <span>Bật rung</span>
               </label>
             </div>
             <div class='field experience-sliders'>
-              <div class='slider-field' id='field-auto-advance-delay'>
-                <div class='slider-field-header'>
-                  <label for='input-auto-advance-delay'>Độ trễ chuyển câu</label>
-                  <span class='slider-value' id='label-auto-advance-delay'>0 giây</span>
+              <div class='field' id='field-auto-advance-delay'>
+                <label for='input-auto-advance-delay'>Độ trễ chuyển câu</label>
+                <div class='row experience-control-row'>
+                  <div class='slider-inline'>
+                    <input type='range' id='input-auto-advance-delay' min='0' max='10' step='1' value='0' />
+                    <span class='slider-value' id='label-auto-advance-delay'>0 giây</span>
+                  </div>
+                  <button
+                    type='button'
+                    class='btn btn-ghost btn-icon-only experience-toggle-btn'
+                    id='btn-auto-advance'
+                    data-icon='toggle-left'
+                    aria-pressed='false'
+                    aria-label='Bật tự sang câu tiếp'
+                    title='Tự sang câu tiếp'
+                  ></button>
+                  <input type='checkbox' id='chk-auto-advance' class='sr-only' tabindex='-1' />
                 </div>
-                <input type='range' id='input-auto-advance-delay' min='0' max='10' step='1' value='0' />
               </div>
-              <div class='slider-field' id='field-sound-volume'>
-                <div class='slider-field-header'>
-                  <label for='input-sound-volume'>Âm lượng</label>
-                  <span class='slider-value' id='label-sound-volume'>1%</span>
+              <div class='field' id='field-sound-volume'>
+                <label for='input-sound-volume'>Âm lượng</label>
+                <div class='row experience-control-row'>
+                  <div class='slider-inline'>
+                    <input type='range' id='input-sound-volume' min='1' max='100' step='1' value='50' />
+                    <span class='slider-value' id='label-sound-volume'>50%</span>
+                  </div>
+                  <button
+                    type='button'
+                    class='btn btn-ghost btn-icon-only experience-toggle-btn'
+                    id='btn-sound'
+                    data-icon='volume-off'
+                    aria-pressed='false'
+                    aria-label='Bật âm thanh'
+                    title='Bật âm thanh'
+                  ></button>
+                  <input type='checkbox' id='chk-sound' class='sr-only' tabindex='-1' />
                 </div>
-                <input type='range' id='input-sound-volume' min='0' max='100' step='1' value='1' />
               </div>
             </div>
           </div>
@@ -452,32 +468,48 @@
                   <span>Tự kiểm tra ngay khi chọn đáp án</span>
                 </label>
                 <label class='toggle'>
-                  <input type='checkbox' id='review-chk-auto-advance' />
-                  <span>Tự sang câu tiếp sau khi trả lời đúng</span>
-                </label>
-                <label class='toggle'>
-                  <input type='checkbox' id='review-chk-sound' />
-                  <span>Bật âm thanh</span>
-                </label>
-                <label class='toggle'>
                   <input type='checkbox' id='review-chk-vibration' />
                   <span>Bật rung</span>
                 </label>
               </div>
               <div class='field experience-sliders'>
-                <div class='slider-field' id='review-field-auto-advance-delay'>
-                  <div class='slider-field-header'>
-                    <label for='review-input-auto-advance-delay'>Độ trễ chuyển câu</label>
-                    <span class='slider-value' id='review-label-auto-advance-delay'>0 giây</span>
+                <div class='field' id='review-field-auto-advance-delay'>
+                  <label for='review-input-auto-advance-delay'>Độ trễ chuyển câu</label>
+                  <div class='row experience-control-row'>
+                    <div class='slider-inline'>
+                      <input type='range' id='review-input-auto-advance-delay' min='0' max='10' step='1' value='0' />
+                      <span class='slider-value' id='review-label-auto-advance-delay'>0 giây</span>
+                    </div>
+                    <button
+                      type='button'
+                      class='btn btn-ghost btn-icon-only experience-toggle-btn'
+                      id='review-btn-auto-advance'
+                      data-icon='toggle-left'
+                      aria-pressed='false'
+                      aria-label='Bật tự sang câu tiếp'
+                      title='Tự sang câu tiếp'
+                    ></button>
+                    <input type='checkbox' id='review-chk-auto-advance' class='sr-only' tabindex='-1' />
                   </div>
-                  <input type='range' id='review-input-auto-advance-delay' min='0' max='10' step='1' value='0' />
                 </div>
-                <div class='slider-field' id='review-field-sound-volume'>
-                  <div class='slider-field-header'>
-                    <label for='review-input-sound-volume'>Âm lượng</label>
-                    <span class='slider-value' id='review-label-sound-volume'>1%</span>
+                <div class='field' id='review-field-sound-volume'>
+                  <label for='review-input-sound-volume'>Âm lượng</label>
+                  <div class='row experience-control-row'>
+                    <div class='slider-inline'>
+                      <input type='range' id='review-input-sound-volume' min='1' max='100' step='1' value='50' />
+                      <span class='slider-value' id='review-label-sound-volume'>50%</span>
+                    </div>
+                    <button
+                      type='button'
+                      class='btn btn-ghost btn-icon-only experience-toggle-btn'
+                      id='review-btn-sound'
+                      data-icon='volume-off'
+                      aria-pressed='false'
+                      aria-label='Bật âm thanh'
+                      title='Bật âm thanh'
+                    ></button>
+                    <input type='checkbox' id='review-chk-sound' class='sr-only' tabindex='-1' />
                   </div>
-                  <input type='range' id='review-input-sound-volume' min='0' max='100' step='1' value='1' />
                 </div>
               </div>
             </div>
@@ -565,6 +597,15 @@
                 aria-label='Đánh dấu'
                 title='Đánh dấu'
               ></button>
+              <button
+                type='button'
+                class='note-btn btn-icon-only'
+                id='btn-note'
+                aria-pressed='false'
+                data-icon='note'
+                aria-label='Ghi chú'
+                title='Ghi chú'
+              ></button>
               <div class='highlight-toolbar' id='quiz-highlight-toolbar' hidden>
                 <button
                   type='button'
@@ -574,6 +615,48 @@
                   aria-label='Highlight hoặc bỏ highlight đoạn văn bản đã chọn'
                   title='Highlight'
                 ></button>
+              </div>
+            </div>
+            <div class='question-note-wrap' id='question-note-wrap'>
+              <div class='question-note-display' id='question-note-display' hidden>
+                <span class='note-chip'>Ghi chú</span>
+                <p class='question-note-text' id='question-note-text'></p>
+              </div>
+              <div class='question-note-panel' id='question-note-panel' hidden>
+                <label for='question-note-input' class='note-label'>Ghi chú</label>
+                <textarea
+                  id='question-note-input'
+                  class='question-note-input'
+                  rows='3'
+                  maxlength='2000'
+                  placeholder='Nhập ghi chú cho câu hỏi này…'
+                ></textarea>
+                <div class='note-actions note-actions-icons'>
+                  <button
+                    type='button'
+                    class='btn btn-primary btn-icon-only'
+                    id='btn-note-save'
+                    data-icon='device-floppy'
+                    aria-label='Lưu ghi chú'
+                    title='Lưu'
+                  ></button>
+                  <button
+                    type='button'
+                    class='btn btn-ghost btn-icon-only'
+                    id='btn-note-delete'
+                    data-icon='trash'
+                    aria-label='Xóa ghi chú'
+                    title='Xóa'
+                  ></button>
+                  <button
+                    type='button'
+                    class='btn btn-ghost btn-icon-only'
+                    id='btn-note-close'
+                    data-icon='x'
+                    aria-label='Hủy'
+                    title='Hủy'
+                  ></button>
+                </div>
               </div>
             </div>
             <div class='options' id='options' role='group' aria-label='Chọn một đáp án'></div>

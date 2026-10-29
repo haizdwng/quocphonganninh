@@ -12,6 +12,10 @@ function emptyRoot() {
     highlights: {
       quocphong1: {},
       quocphong2: {}
+    },
+    notes: {
+      quocphong1: {},
+      quocphong2: {}
     }
   };
 };
@@ -22,7 +26,7 @@ function readRoot() {
     if (!raw) return emptyRoot();
 
     const data = JSON.parse(raw);
-    const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphong1', 'quocphong2'].every((id) => !Object.prototype.hasOwnProperty.call(data.decks, id) || (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights)));
+    const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphong1', 'quocphong2'].every((id) => !Object.prototype.hasOwnProperty.call(data.decks, id) || (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights))) && (!data.notes || (typeof data.notes === 'object' && !Array.isArray(data.notes)));
     if (valid) return data;
 
     localStorage.removeItem(NAME);
@@ -72,14 +76,14 @@ function normalizeSettingsEntry(raw, deckId) {
     })(),
     soundVolume: (() => {
       const volume = Number(settings.soundVolume);
-      if (Number.isInteger(volume) && volume >= 0) return Math.min(100, volume);
-      if (settings.soundEnabled === false) return 0;
-      return 1;
+      if (Number.isInteger(volume) && volume > 0) return Math.min(100, volume);
+      return 50;
     })(),
     soundEnabled: (() => {
+      if (settings.soundEnabled === true) return true;
+      if (settings.soundEnabled === false) return false;
       const volume = Number(settings.soundVolume);
-      if (Number.isInteger(volume) && volume >= 0) return volume > 0;
-      return settings.soundEnabled === true || settings.soundEnabled == null;
+      return Number.isInteger(volume) && volume > 0;
     })()
   };
 };
@@ -339,6 +343,53 @@ export function saveQuestionHighlights(deckId, originalIndex, ranges) {
   return writeRoot(root);
 };
 
+function normalizeNoteText(value) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/\r\n/g, '\n').trim().slice(0, 2000);
+};
+
+export function getQuestionNote(deckId, originalIndex) {
+  if (!Number.isInteger(originalIndex) || originalIndex < 0) return '';
+  const root = readRoot();
+  const notes = root.notes && typeof root.notes === 'object' ? root.notes : {};
+  const deck = notes[normalizeDeckId(deckId)];
+  if (!deck || typeof deck !== 'object') return '';
+  return normalizeNoteText(deck[String(originalIndex)] || '');
+};
+
+export function saveQuestionNote(deckId, originalIndex, text) {
+  if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
+  const root = readRoot();
+  if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphong1: {}, quocphong2: {} };
+  const id = normalizeDeckId(deckId);
+  if (!root.notes[id] || typeof root.notes[id] !== 'object' || Array.isArray(root.notes[id])) root.notes[id] = {};
+  const normalized = normalizeNoteText(text);
+  if (normalized) root.notes[id][String(originalIndex)] = normalized;
+  else delete root.notes[id][String(originalIndex)];
+  return writeRoot(root);
+};
+
+export function getDeckNotes(deckId) {
+  const root = readRoot();
+  const notes = root.notes && typeof root.notes === 'object' ? root.notes : {};
+  const deck = notes[normalizeDeckId(deckId)];
+  if (!deck || typeof deck !== 'object') return {};
+  const result = {};
+  for (const [key, value] of Object.entries(deck)) {
+    const index = Number(key);
+    const text = normalizeNoteText(value);
+    if (Number.isInteger(index) && index >= 0 && text) result[index] = text;
+  };
+  return result;
+};
+
+export function resetDeckNotes(deckId) {
+  const root = readRoot();
+  if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphong1: {}, quocphong2: {} };
+  root.notes[normalizeDeckId(deckId)] = {};
+  return writeRoot(root);
+};
+
 export function exportBackup() {
   const root = readRoot();
   const activeDeck = normalizeDeckId(root.activeDeck || 'quocphong1');
@@ -353,6 +404,10 @@ export function exportBackup() {
     activeDeck: root.activeDeck || 'quocphong1',
     decks: root.decks || {},
     highlights: root.highlights || {
+      quocphong1: {},
+      quocphong2: {}
+    },
+    notes: root.notes || {
       quocphong1: {},
       quocphong2: {}
     }
@@ -397,6 +452,10 @@ export function importBackup(raw) {
     highlights: {
       quocphong1: {},
       quocphong2: {}
+    },
+    notes: {
+      quocphong1: {},
+      quocphong2: {}
     }
   };
 
@@ -409,6 +468,19 @@ export function importBackup(raw) {
         if (!Number.isInteger(index) || index < 0) continue;
         const valid = normalizeHighlightRanges(ranges);
         if (valid.length) normalized.highlights[id][String(index)] = valid;
+      };
+    };
+  };
+
+  if (backup.notes && typeof backup.notes === 'object' && !Array.isArray(backup.notes)) {
+    for (const id of ['quocphong1', 'quocphong2']) {
+      const deck = backup.notes[id];
+      if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
+      for (const [key, value] of Object.entries(deck)) {
+        const index = Number(key);
+        if (!Number.isInteger(index) || index < 0) continue;
+        const text = normalizeNoteText(value);
+        if (text) normalized.notes[id][String(index)] = text;
       };
     };
   };
