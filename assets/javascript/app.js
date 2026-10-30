@@ -1339,7 +1339,7 @@ function readBankForm() {
     })(),
     soundVolume: (() => {
       const input = $('review-input-sound-volume');
-      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 50);
+      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 1);
     })(),
     soundEnabled: !!$('review-chk-sound')?.checked
   };
@@ -1365,7 +1365,7 @@ function applyBankSettingsToForm(settings) {
     $('review-input-auto-advance-delay').value = String(delay);
     if ($('review-label-auto-advance-delay')) $('review-label-auto-advance-delay').textContent = delay + ' giây';
   };
-  const volume = normalizeSoundVolume(settings.soundVolume, 50);
+  const volume = normalizeSoundVolume(settings.soundVolume, 1);
   if ($('review-input-sound-volume')) {
     $('review-input-sound-volume').value = String(volume);
     $('review-input-sound-volume').dataset.lastVolume = String(volume);
@@ -1387,7 +1387,7 @@ function persistBankForm() {
   return form;
 };
 
-function normalizeSoundVolume(value, fallback = 50) {
+function normalizeSoundVolume(value, fallback = 1) {
   const volume = Number.parseInt(value, 10);
   if (!Number.isInteger(volume)) return fallback;
   return Math.min(100, Math.max(1, volume));
@@ -1418,7 +1418,7 @@ function updateSetupExperienceControls() {
   const volumeField = $('field-sound-volume');
   if (volumeInput) volumeInput.disabled = !soundOn;
   if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
-  syncExperienceToggleButton('btn-sound', 'chk-sound', 'volume', 'volume-off', 'Bật âm thanh', 'Tắt âm thanh');
+  syncExperienceToggleButton('btn-sound', 'chk-sound', 'volume-off', 'volume', 'Bật âm thanh', 'Tắt âm thanh');
 };
 
 function updateBankExperienceControls() {
@@ -1434,13 +1434,13 @@ function updateBankExperienceControls() {
   const volumeField = $('review-field-sound-volume');
   if (volumeInput) volumeInput.disabled = !soundOn;
   if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
-  syncExperienceToggleButton('review-btn-sound', 'review-chk-sound', 'volume', 'volume-off', 'Bật âm thanh', 'Tắt âm thanh');
+  syncExperienceToggleButton('review-btn-sound', 'review-chk-sound', 'volume-off', 'volume', 'Bật âm thanh', 'Tắt âm thanh');
 };
 
 function syncSoundFromVolume(volumeInputId, checkboxId, labelId) {
   const volumeInput = $(volumeInputId);
-  if (!volumeInput) return 50;
-  const volume = normalizeSoundVolume(volumeInput.value, 50);
+  if (!volumeInput) return 1;
+  const volume = normalizeSoundVolume(volumeInput.value, 1);
   volumeInput.value = String(volume);
   if ($(labelId)) $(labelId).textContent = volume + '%';
   volumeInput.dataset.lastVolume = String(volume);
@@ -1453,12 +1453,12 @@ function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
   const volumeInput = $(volumeInputId);
   if (!checkbox || !volumeInput) return;
   if (checkbox.checked) {
-    const restored = normalizeSoundVolume(volumeInput.dataset.lastVolume || volumeInput.value, 50);
+    const restored = normalizeSoundVolume(volumeInput.dataset.lastVolume || volumeInput.value, 1);
     volumeInput.value = String(restored);
     volumeInput.dataset.lastVolume = String(restored);
     if ($(labelId)) $(labelId).textContent = restored + '%';
   } else {
-    const current = normalizeSoundVolume(volumeInput.value, 50);
+    const current = normalizeSoundVolume(volumeInput.value, 1);
     volumeInput.dataset.lastVolume = String(current);
     if ($(labelId)) $(labelId).textContent = current + '%';
   };
@@ -1563,7 +1563,7 @@ function persistSetupForm() {
     })(),
     soundVolume: (() => {
       const input = $('input-sound-volume');
-      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 50);
+      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 1);
     })(),
     soundEnabled: !!$('chk-sound')?.checked
   });
@@ -1587,7 +1587,7 @@ function applySettingsToForm(settings) {
     $('input-auto-advance-delay').value = String(delay);
     if ($('label-auto-advance-delay')) $('label-auto-advance-delay').textContent = delay + ' giây';
   };
-  const volume = normalizeSoundVolume(settings.soundVolume, 50);
+  const volume = normalizeSoundVolume(settings.soundVolume, 1);
   if ($('input-sound-volume')) {
     $('input-sound-volume').value = String(volume);
     $('input-sound-volume').dataset.lastVolume = String(volume);
@@ -2346,7 +2346,7 @@ for (const audio of Object.values(answerSounds)) {
 function playAnswerSound(isCorrect) {
   const preferences = sessionPreferences(state.session?.deckId || state.currentDeck);
   if (preferences.soundEnabled === false) return;
-  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume > 0 ? Math.min(100, preferences.soundVolume) : 50;
+  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume > 0 ? Math.min(100, preferences.soundVolume) : 1;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
@@ -3053,7 +3053,7 @@ function bindEvents() {
     } else {
       state.lastCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 20;
       input.value = String(rangeTotal);
-    }
+    };
     persistSetupForm();
     refreshSetupUI();
   });
@@ -3071,7 +3071,7 @@ function bindEvents() {
     } else {
       state.lastTimeBeforeUnlimited = current > 0 ? current : 50;
       timeInput.value = '0';
-    }
+    };
     persistSetupForm();
     refreshSetupUI();
   });
@@ -3249,7 +3249,7 @@ function bindEvents() {
       clearTimeout(searchTimer);
       applyBankSearch();
     });
-  }
+  };
   $('btn-review-search-clear')?.addEventListener('click', () => {
     const input = $('input-review-search');
     if (input) input.value = '';

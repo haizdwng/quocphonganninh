@@ -77,7 +77,7 @@ function normalizeSettingsEntry(raw, deckId) {
     soundVolume: (() => {
       const volume = Number(settings.soundVolume);
       if (Number.isInteger(volume) && volume > 0) return Math.min(100, volume);
-      return 50;
+      return 1;
     })(),
     soundEnabled: (() => {
       if (settings.soundEnabled === true) return true;
