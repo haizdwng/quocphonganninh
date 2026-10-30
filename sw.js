@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.1.1';
+const VERSION = '1.1.2';
 const ASSETS = [
   './',
   './index.html',
@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
 
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
-  const isAssets = /\.(css|js|json|webmanifest|svg|woff2)$/i.test(url.pathname);
+  const isAssets = /\.(html|css|js|json|webmanifest|svg|woff2|mp3)$/i.test(url.pathname);
   if (!isHTML && !isAssets) return;
   if (isHTML || isJSON) event.respondWith(networkFirst(request));
   else event.respondWith(cacheFirst(request, event));
