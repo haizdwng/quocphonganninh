@@ -4103,7 +4103,85 @@ function registerSW() {
   });
 };
 
+
+function classifyToast(text) {
+  const rules = [
+    ['error', /^(Không|Tệp|Cần |Hãy |Nhập |Câu hỏi không|Đáp án đúng không|Trình duyệt hạn)/],
+    ['warning', /^(Hết giờ|Chỉ còn|Còn \\d|Đã hết|Đã tạm dừng|Trình duyệt này)/],
+    ['success', /^(Đã |Bạn đã chọn đủ)/]
+  ];
+  for (const [type, pattern] of rules) if (pattern.test(text)) return type;
+  return 'info';
+}
+
+function initInterfaceEnhancements() {
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.content = '#0c0f14';
+
+  const toastElement = $('toast');
+  if (toastElement) {
+    toastElement.addEventListener('click', () => {
+      toastElement.hidden = true;
+    });
+    new MutationObserver(() => {
+      if (toastElement.hidden) return;
+      toastElement.dataset.type = classifyToast((toastElement.textContent || '').trim());
+      toastElement.style.animation = 'none';
+      void toastElement.offsetWidth;
+      toastElement.style.animation = '';
+    }).observe(toastElement, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['hidden']
+    });
+  }
+
+  const modal = $('modal');
+  if (!modal) return;
+  const box = modal.querySelector('.modal-box');
+  const title = $('modal-title');
+  const confirmButton = $('modal-ok');
+  if (!box || !title || !confirmButton) return;
+
+  let icon = box.querySelector('.modal-icon');
+  if (!icon) {
+    icon = document.createElement('span');
+    icon.className = 'modal-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    box.prepend(icon);
+  }
+
+  const variants = [
+    ['danger', /^(Xóa|Bỏ phiên)/, 'trash'],
+    ['warning', /^(Thoát|Làm lại|Khôi phục|Còn câu|Tạm dừng)/, 'alert-circle']
+  ];
+
+  const applyVariant = () => {
+    const modalTitle = (title.textContent || '').trim();
+    const match = variants.find(([, pattern]) => pattern.test(modalTitle));
+    const variant = match ? match[0] : 'primary';
+    box.dataset.variant = variant;
+    icon.dataset.icon = match ? match[2] : 'check';
+    confirmButton.classList.toggle('btn-danger', variant === 'danger');
+    confirmButton.classList.toggle('btn-primary', variant !== 'danger');
+  };
+
+  new MutationObserver(() => {
+    if (!modal.hidden) applyVariant();
+  }).observe(modal, {
+    attributes: true,
+    attributeFilter: ['hidden', 'class']
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) $('modal-cancel')?.click();
+  });
+}
+
 function boot() {
+  initInterfaceEnhancements();
   initTheme();
   if (!storageAvailable()) toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
   bindEvents();
