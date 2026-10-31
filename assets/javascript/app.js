@@ -4107,7 +4107,7 @@ function registerSW() {
 function classifyToast(text) {
   const rules = [
     ['error', /^(Không|Tệp|Cần |Hãy |Nhập |Câu hỏi không|Đáp án đúng không|Trình duyệt hạn)/],
-    ['warning', /^(Hết giờ|Chỉ còn|Còn \\d|Đã hết|Đã tạm dừng|Trình duyệt này)/],
+    ['warning', /^(Hết giờ|Chỉ còn|Còn \d|Đã hết|Đã tạm dừng|Trình duyệt này)/],
     ['success', /^(Đã |Bạn đã chọn đủ)/]
   ];
   for (const [type, pattern] of rules) if (pattern.test(text)) return type;
