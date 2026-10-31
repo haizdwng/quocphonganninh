@@ -482,19 +482,19 @@ function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
 };
 
 function updateBankSearchNavButtons() {
-  const prevBtn = getElementById('button-search-previousValue');
+  const previousButton = getElementById('button-search-prev');
   const nextBtn = getElementById('button-search-next');
-  if (!prevBtn || !nextBtn) return;
+  if (!previousButton || !nextBtn) return;
   const matchCount = getBankSearchMatches().length;
   const showNav = state.mode === 'review' && matchCount >= 1;
   const showPrev = showNav && matchCount >= 2;
 
   if (showPrev) {
-    prevBtn.hidden = false;
-    prevBtn.classList.add('is-visible');
+    previousButton.hidden = false;
+    previousButton.classList.add('is-visible');
   } else {
-    prevBtn.classList.remove('is-visible');
-    prevBtn.hidden = true;
+    previousButton.classList.remove('is-visible');
+    previousButton.hidden = true;
   };
 
   if (showNav) {
@@ -2312,7 +2312,7 @@ function renderQuestion() {
     feedback.textContent = '';
   };
 
-  getElementById('button-previousValue').disabled = session.viewIndex <= 0;
+  getElementById('button-prev').disabled = session.viewIndex <= 0;
   const nextButton = getElementById('button-next');
   if (viewingHistory) {
     nextButton.textContent = 'Câu tiếp';
@@ -3341,9 +3341,9 @@ function bindKeyboardShortcuts() {
       if (!getElementById('button-next').disabled) getElementById('button-next').click();
       return;
     };
-    if (event.key === 'ArrowLeft' && !getElementById('button-previousValue').disabled) {
+    if (event.key === 'ArrowLeft' && !getElementById('button-prev').disabled) {
       event.preventDefault();
-      getElementById('button-previousValue').click();
+      getElementById('button-prev').click();
     } else if (event.key === 'ArrowRight' && !getElementById('button-next').disabled) {
       event.preventDefault();
       getElementById('button-next').click();
@@ -3600,7 +3600,7 @@ function bindEvents() {
     input?.focus();
   });
   updateReviewSearchClearButton();
-  getElementById('button-search-previousValue')?.addEventListener('click', () => scrollToBankSearchMatch(-1));
+  getElementById('button-search-prev')?.addEventListener('click', () => scrollToBankSearchMatch(-1));
   getElementById('button-search-next')?.addEventListener('click', () => scrollToBankSearchMatch(1));
 
   getElementById('button-review-back').addEventListener('click', () => {
@@ -3955,7 +3955,7 @@ function bindEvents() {
   });
 
   getElementById('button-next').addEventListener('click', onNext);
-  getElementById('button-previousValue').addEventListener('click', onPrev);
+  getElementById('button-prev').addEventListener('click', onPrev);
 
   getElementById('button-quit').addEventListener('click', async () => {
     const ok = await confirmModal('Thoát lượt ôn?', 'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.');
