@@ -35,14 +35,15 @@ function readRoot() {
     const data = JSON.parse(rawData);
     const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphong1', 'quocphong2'].every((deckIdentifier) => !Object.prototype.hasOwnProperty.call(data.decks, deckIdentifier) || (data.decks[deckIdentifier] && typeof data.decks[deckIdentifier] === 'object' && !Array.isArray(data.decks[deckIdentifier]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights))) && (!data.notes || (typeof data.notes === 'object' && !Array.isArray(data.notes)));
     if (valid) {
+      const hadLegacySettingsArray = Array.isArray(data.settings);
       const legacySettings = data.sharedSettings && typeof data.sharedSettings === 'object' && !Array.isArray(data.sharedSettings) ? data.sharedSettings : null;
-      if (Array.isArray(data.settings)) {
+      if (hadLegacySettingsArray) {
         const entries = data.settings.filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry));
         data.settings = entries.find((entry) => normalizeDeckId(entry.deck) === normalizeDeckId(data.activeDeck)) || entries[0] || null;
       } else if ((!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) && legacySettings) {
         data.settings = legacySettings;
       };
-      const requiresMigration = Object.prototype.hasOwnProperty.call(data, 'sharedSettings') || Object.prototype.hasOwnProperty.call(data, 'bankSettings') || Array.isArray(JSON.parse(rawData).settings);
+      const requiresMigration = Object.prototype.hasOwnProperty.call(data, 'sharedSettings') || Object.prototype.hasOwnProperty.call(data, 'bankSettings') || hadLegacySettingsArray;
       delete data.sharedSettings;
       delete data.bankSettings;
       if (requiresMigration) localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
