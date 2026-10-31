@@ -4,9 +4,8 @@ const VERSION = 2;
 function emptyRoot() {
   return {
     version: VERSION,
-    sharedSettings: null,
+    settings: null,
     activeDeck: 'quocphong1',
-    bankSettings: null,
     decks: {},
     sessions: {},
     highlights: {
@@ -51,7 +50,11 @@ function writeRoot(data) {
   try {
     const root = data && typeof data === 'object' && !Array.isArray(data) ? data : emptyRoot();
     root.version = VERSION;
-    if (Object.prototype.hasOwnProperty.call(root, 'settings')) delete root.settings;
+    if (!root.settings || typeof root.settings !== 'object' || Array.isArray(root.settings)) {
+      root.settings = root.sharedSettings && typeof root.sharedSettings === 'object' ? root.sharedSettings : null;
+    };
+    delete root.sharedSettings;
+    delete root.bankSettings;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(root));
     return true;
   } catch {
@@ -97,7 +100,7 @@ function normalizeSettingsEntry(rawData, deckId) {
 };
 
 function legacySettingsFallback(root, activeDeck) {
-  const rawData = root.settings;
+  const rawData = root.sharedSettings;
   if (Array.isArray(rawData)) {
     const list = rawData.filter((entry) => entry && typeof entry === 'object');
     return list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
@@ -109,41 +112,17 @@ function legacySettingsFallback(root, activeDeck) {
 export function getSettings(deckId) {
   const root = readRoot();
   const activeDeck = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
-  const shared = root.sharedSettings && typeof root.sharedSettings === 'object' ? root.sharedSettings : legacySettingsFallback(root, activeDeck);
-  return normalizeSettingsEntry(shared, activeDeck);
+  const settings = root.settings && typeof root.settings === 'object' ? root.settings : legacySettingsFallback(root, activeDeck);
+  return normalizeSettingsEntry(settings, activeDeck);
 };
 
 export function saveSettings(settings) {
   const root = readRoot();
   const activeDeck = normalizeDeckId(settings?.deck || root.activeDeck);
-  root.sharedSettings = normalizeSettingsEntry(settings, activeDeck);
+  root.settings = normalizeSettingsEntry(settings, activeDeck);
+  delete root.sharedSettings;
+  delete root.bankSettings;
   root.activeDeck = activeDeck;
-  return writeRoot(root);
-};
-
-export function getBankSettings() {
-  const root = readRoot();
-  const rawSettings = root.bankSettings && typeof root.bankSettings === 'object' && !Array.isArray(root.bankSettings) ? root.bankSettings : {};
-  const deck = normalizeDeckId(rawSettings.deck || root.activeDeck);
-  const settings = normalizeSettingsEntry(rawSettings, deck);
-  const count = Number(rawSettings.count);
-  return {
-    ...settings,
-    count: Number.isInteger(count) && count >= 0 ? count : 0,
-    deck
-  };
-};
-
-export function saveBankSettings(settings) {
-  const root = readRoot();
-  const deck = normalizeDeckId(settings?.deck || root.bankSettings?.deck || root.activeDeck);
-  const normalizedSettings = normalizeSettingsEntry(settings, deck);
-  const count = Number(settings?.count);
-  root.bankSettings = {
-    ...normalizedSettings,
-    count: Number.isInteger(count) && count >= 0 ? count : 0,
-    deck
-  };
   return writeRoot(root);
 };
 
@@ -455,14 +434,12 @@ export function isQuestionHidden(deckId, originalIndex) {
 export function exportBackup() {
   const root = readRoot();
   const activeDeck = normalizeDeckId(root.activeDeck || 'quocphong1');
-  const sharedSettings = root.sharedSettings && typeof root.sharedSettings === 'object' ? root.sharedSettings : legacySettingsFallback(root, activeDeck);
+  const settings = root.settings && typeof root.settings === 'object' ? root.settings : legacySettingsFallback(root, activeDeck);
   return JSON.stringify({
     format: 'backup',
     version: 1,
     exportedAt: new Date().toISOString(),
-    sharedSettings: sharedSettings && typeof sharedSettings === 'object' ? sharedSettings : null,
-    bankSettings: root.bankSettings || null,
-    bankDeck: root.bankSettings?.deck || root.activeDeck || 'quocphong1',
+    settings: settings && typeof settings === 'object' ? settings : null,
     activeDeck: root.activeDeck || 'quocphong1',
     decks: root.decks || {},
     highlights: root.highlights || {
@@ -499,24 +476,13 @@ export function importBackup(rawData) {
     const list = backup.settings.filter((entry) => entry && typeof entry === 'object');
     legacyFromBackup = list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
   } else if (backup.settings && typeof backup.settings === 'object') legacyFromBackup = backup.settings;
-  const importedSharedSettings = normalizeSettingsEntry(
-    backup.sharedSettings && typeof backup.sharedSettings === 'object' ? backup.sharedSettings : legacyFromBackup,
+  const importedSettings = normalizeSettingsEntry(
+    backup.settings && typeof backup.settings === 'object' ? backup.settings : backup.sharedSettings && typeof backup.sharedSettings === 'object' ? backup.sharedSettings : legacyFromBackup,
     activeDeck
   );
   const normalized = {
-    sharedSettings: importedSharedSettings,
+    settings: importedSettings,
     activeDeck,
-    bankSettings: (() => {
-      const rawBankSettings = backup.bankSettings && typeof backup.bankSettings === 'object' ? backup.bankSettings : { deck: backup.bankDeck || activeDeck };
-      const bankDeck = normalizeDeckId(rawBankSettings.deck || backup.bankDeck || activeDeck);
-      const normalizedBankSettings = normalizeSettingsEntry(rawBankSettings, bankDeck);
-      const bankCount = Number(rawBankSettings.count);
-      return {
-        ...normalizedBankSettings,
-        count: Number.isInteger(bankCount) && bankCount >= 0 ? bankCount : 0,
-        deck: bankDeck
-      };
-    })(),
     decks: {},
     sessions: {},
     highlights: {
