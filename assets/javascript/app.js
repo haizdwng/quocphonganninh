@@ -1779,7 +1779,9 @@ function persistSetupForm() {
       const input = getElementById('input-sound-volume');
       return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 1);
     })(),
-    soundEnabled: !!getElementById('checkbox-sound')?.checked
+    soundEnabled: !!getElementById('checkbox-sound')?.checked,
+    lastCountBeforeAll: state.lastCountBeforeAll,
+    lastTimeBeforeUnlimited: state.lastTimeBeforeUnlimited
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 };
@@ -1789,6 +1791,12 @@ function applySettingsToForm(settings) {
   const total = currentQuestions().length || settings.endQuestion || 1;
   getElementById('input-count').value = String(settings.count || 30);
   getElementById('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
+  state.lastCountBeforeAll = Number.isInteger(settings.lastCountBeforeAll) && settings.lastCountBeforeAll >= 1
+    ? settings.lastCountBeforeAll
+    : Math.min(20, Math.max(1, settings.count || 30));
+  state.lastTimeBeforeUnlimited = Number.isInteger(settings.lastTimeBeforeUnlimited) && settings.lastTimeBeforeUnlimited > 0
+    ? Math.min(1440, settings.lastTimeBeforeUnlimited)
+    : (settings.timeLimit > 0 ? settings.timeLimit : 50);
   getElementById('input-range-start').value = String(settings.startQuestion || 1);
   getElementById('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
   getElementById('checkbox-shuffle-questions').checked = !!settings.shuffleQuestions;
@@ -3283,12 +3291,11 @@ function bindEvents() {
     const current = Number.parseInt(input.value, 10);
     const isAll = current === rangeTotal;
     if (isAll) {
-      let previousValue = state.lastCountBeforeAll;
-      try { previousValue = Number.parseInt(localStorage.getItem('quocphonganninh:count-before-all'), 10) || previousValue; } catch {};
+      const previousValue = state.lastCountBeforeAll;
       input.value = String(Number.isInteger(previousValue) && previousValue >= 1 ? Math.min(previousValue, rangeTotal) : Math.min(20, rangeTotal));
     } else {
       state.lastCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 20;
-      try { localStorage.setItem('quocphonganninh:count-before-all', String(state.lastCountBeforeAll)); } catch {};
+
       input.value = String(rangeTotal);
     };
     persistSetupForm();
@@ -3303,12 +3310,11 @@ function bindEvents() {
     current = Math.min(1440, current);
     const isUnlimited = current === 0;
     if (isUnlimited) {
-      let previousValue = state.lastTimeBeforeUnlimited;
-      try { previousValue = Number.parseInt(localStorage.getItem('quocphonganninh:time-before-unlimited'), 10) || previousValue; } catch {};
+      const previousValue = state.lastTimeBeforeUnlimited;
       timeInput.value = String(Number.isInteger(previousValue) && previousValue > 0 ? Math.min(1440, previousValue) : 50);
     } else {
       state.lastTimeBeforeUnlimited = current > 0 ? current : 50;
-      try { localStorage.setItem('quocphonganninh:time-before-unlimited', String(state.lastTimeBeforeUnlimited)); } catch {};
+
       timeInput.value = '0';
     };
     persistSetupForm();
@@ -3357,7 +3363,7 @@ function bindEvents() {
     const count = Number.parseInt(getElementById('input-count').value, 10);
     if (Number.isInteger(count) && count >= 1 && count < rangeTotal) {
       state.lastCountBeforeAll = count;
-      try { localStorage.setItem('quocphonganninh:count-before-all', String(count)); } catch {};
+
     };
     updateCountButtonState();
     persistSetupForm();
