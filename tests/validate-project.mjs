@@ -23,7 +23,7 @@ for (const className of htmlClasses) {
 
 const declaredProperties = new Set([...css.matchAll(/(--[a-zA-Z0-9_-]+)\s*:/g)].map((match) => match[1]));
 const referencedProperties = new Set([...css.matchAll(/var\((--[a-zA-Z0-9_-]+)/g)].map((match) => match[1]));
-const dynamicallyAssignedProperties = new Set([...enhancements.matchAll(/setProperty\(['"](--[a-zA-Z0-9_-]+)/g)].map((match) => match[1]));
+const dynamicallyAssignedProperties = new Set([...enhancements.matchAll(/['"](--[a-zA-Z0-9_-]+)['"]/g)].map((match) => match[1]));
 for (const property of referencedProperties) {
   assert.ok(declaredProperties.has(property) || dynamicallyAssignedProperties.has(property), `CSS custom property has no definition: ${property}`);
 }
