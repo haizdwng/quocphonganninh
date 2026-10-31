@@ -1,6 +1,6 @@
 import { initializeEnhancements } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
-import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, getDeckNotes, resetDeckNotes, getQuestionOverride, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
+import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
 const DECKS = {
   quocphong1: {
