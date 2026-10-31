@@ -42,7 +42,7 @@ function readRoot() {
       } else if ((!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) && legacySettings) {
         data.settings = legacySettings;
       };
-      const requiresMigration = Object.prototype.hasOwnProperty.call(data, 'sharedSettings') || Object.prototype.hasOwnProperty.call(data, 'bankSettings');
+      const requiresMigration = Object.prototype.hasOwnProperty.call(data, 'sharedSettings') || Object.prototype.hasOwnProperty.call(data, 'bankSettings') || Array.isArray(JSON.parse(rawData).settings);
       delete data.sharedSettings;
       delete data.bankSettings;
       if (requiresMigration) localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
