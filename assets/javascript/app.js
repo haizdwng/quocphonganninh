@@ -1507,7 +1507,7 @@ function refreshSetupUI() {
 
   const countNum = Number.parseInt(input.value, 10);
   const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal && rangeTotal > 0;
-  const btnAll = getElementById('button-all');
+  const btnAll = getElementById('button-select-all');
   if (btnAll) {
     btnAll.classList.toggle('is-active', isAllCount);
     btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
@@ -1527,7 +1527,7 @@ function refreshSetupUI() {
       timeInput.value = String(timeVal);
     };
     const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-    const btnUnlimited = getElementById('button-time-unlimited');
+    const btnUnlimited = getElementById('button-unlimited-time');
     if (btnUnlimited) {
       btnUnlimited.classList.toggle('is-active', isUnlimited);
       btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
@@ -1545,10 +1545,10 @@ function refreshSetupUI() {
   getElementById('statistics-completed').textContent = String(completed.size);
   getElementById('statistics-remaining').textContent = String(remaining);
   getElementById('statistics-wrong').textContent = String(wrongs.length);
-  getElementById('statistics-practice').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
+  getElementById('statistics-practiced').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
   getElementById('statistics-bookmarked').textContent = String(progress.bookmarks.length);
-  if (progress.sequentialCursor >= total) getElementById('statistics-cursor').textContent = 'Đã làm hết bộ đề';
-  else getElementById('statistics-cursor').textContent = String(progress.sequentialCursor + 1);
+  if (progress.sequentialCursor >= total) getElementById('statistics-sequential-cursor').textContent = 'Đã làm hết bộ đề';
+  else getElementById('statistics-sequential-cursor').textContent = String(progress.sequentialCursor + 1);
 
   const hiddenSet = new Set(getHiddenIndices(state.currentDeck));
   const btnWrong = getElementById('button-practice-wrong');
@@ -1572,7 +1572,7 @@ function refreshSetupUI() {
   btnBookmarks.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
 
   const rangeQuestions = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
-  const shuffleQuestions = getElementById('checkbox-shuffle-q').checked;
+  const shuffleQuestions = getElementById('checkbox-shuffle-questions').checked;
   const btnContinue = getElementById('button-continue');
   const nextQuestion = findNextUncompletedQuestion(rangeQuestions, Math.max(progress.sequentialCursor, start - 1), completed);
   const nextIndex = nextQuestion?.originalIndex ?? end;
@@ -1611,7 +1611,7 @@ function refreshResumeCard() {
 
 function updateBankCountButtonState() {
   const input = getElementById('review-input-count');
-  const button = getElementById('review-button-all');
+  const button = getElementById('review-button-select-all');
   if (!input || !button) return;
   const selectedCount = state.reviewSelectedIndices.size;
   const countFocused = document.activeElement === input;
@@ -1627,7 +1627,7 @@ function updateBankCountButtonState() {
 
 function updateBankTimeButtonState() {
   const input = getElementById('review-input-time-limit');
-  const button = getElementById('review-button-time-unlimited');
+  const button = getElementById('review-button-unlimited-time');
   if (!input || !button) return;
   const timeFocused = document.activeElement === input;
   const timeVal = Number.parseInt(input.value, 10);
@@ -1670,11 +1670,11 @@ function readBankForm() {
     deck: state.bankDeck === 'quocphong2' ? 'quocphong2' : 'quocphong1',
     count,
     timeLimit,
-    shuffleQuestions: !!getElementById('review-checkbox-shuffle-q')?.checked,
-    shuffleAnswers: !!getElementById('review-checkbox-shuffle-a')?.checked,
+    shuffleQuestions: !!getElementById('review-checkbox-shuffle-questionsuestions')?.checked,
+    shuffleAnswers: !!getElementById('review-checkbox-shuffle-answersnswers')?.checked,
     practiceMode: state.bankPracticeMode === 'exam' ? 'exam' : 'practice',
-    autoCheck: !!getElementById('review-checkbox-auto-check')?.checked,
-    autoAdvance: !!getElementById('review-checkbox-auto-advance')?.checked,
+    autoCheck: !!getElementById('review-checkbox-automatic-check')?.checked,
+    autoAdvance: !!getElementById('review-checkbox-automatic-advance')?.checked,
     vibrationEnabled: !!getElementById('review-checkbox-vibration')?.checked,
     autoAdvanceDelay: (() => {
       const delay = Number.parseInt(getElementById('review-input-auto-advance-delay')?.value, 10);
@@ -1696,11 +1696,11 @@ function applyBankSettingsToForm(settings) {
   getElementById('review-input-count').min = selectedCount === 0 ? '0' : '1';
   getElementById('review-input-count').max = String(selectedCount);
   getElementById('review-input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
-  getElementById('review-checkbox-shuffle-q').checked = settings.shuffleQuestions !== false;
-  getElementById('review-checkbox-shuffle-a').checked = settings.shuffleAnswers !== false;
-  if (getElementById('review-checkbox-auto-check')) {
-    getElementById('review-checkbox-auto-check').checked = settings.autoCheck === true;
-    getElementById('review-checkbox-auto-advance').checked = settings.autoAdvance === true;
+  getElementById('review-checkbox-shuffle-questionsuestions').checked = settings.shuffleQuestions !== false;
+  getElementById('review-checkbox-shuffle-answersnswers').checked = settings.shuffleAnswers !== false;
+  if (getElementById('review-checkbox-automatic-check')) {
+    getElementById('review-checkbox-automatic-check').checked = settings.autoCheck === true;
+    getElementById('review-checkbox-automatic-advance').checked = settings.autoAdvance === true;
     getElementById('review-checkbox-vibration').checked = settings.vibrationEnabled === true;
   };
   if (getElementById('review-input-auto-advance-delay')) {
@@ -1749,12 +1749,12 @@ function syncExperienceToggleButton(buttonId, checkboxId, onIcon, offIcon, onLab
 };
 
 function updateSetupExperienceControls() {
-  const autoAdvanceOn = !!getElementById('checkbox-auto-advance')?.checked;
+  const autoAdvanceOn = !!getElementById('checkbox-automatic-advance')?.checked;
   const delayInput = getElementById('input-auto-advance-delay');
   const delayField = getElementById('field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-  syncExperienceToggleButton('button-auto-advance', 'checkbox-auto-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
+  syncExperienceToggleButton('button-auto-advance', 'checkbox-automatic-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
 
   const soundOn = !!getElementById('checkbox-sound')?.checked;
   const volumeInput = getElementById('input-sound-volume');
@@ -1765,12 +1765,12 @@ function updateSetupExperienceControls() {
 };
 
 function updateBankExperienceControls() {
-  const autoAdvanceOn = !!getElementById('review-checkbox-auto-advance')?.checked;
+  const autoAdvanceOn = !!getElementById('review-checkbox-automatic-advance')?.checked;
   const delayInput = getElementById('review-input-auto-advance-delay');
   const delayField = getElementById('review-field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-  syncExperienceToggleButton('review-button-auto-advance', 'review-checkbox-auto-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
+  syncExperienceToggleButton('review-button-automatic-advance', 'review-checkbox-automatic-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
 
   const soundOn = !!getElementById('review-checkbox-sound')?.checked;
   const volumeInput = getElementById('review-input-sound-volume');
@@ -1874,8 +1874,8 @@ function readSetupForm() {
   let timeLimit = Number.parseInt(getElementById('input-time-limit').value, 10);
   if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
   timeLimit = Math.min(1440, timeLimit);
-  const shuffleQuestions = getElementById('checkbox-shuffle-q').checked;
-  const shuffleAnswers = getElementById('checkbox-shuffle-a').checked;
+  const shuffleQuestions = getElementById('checkbox-shuffle-questions').checked;
+  const shuffleAnswers = getElementById('checkbox-shuffle-answers').checked;
   return {
     count,
     shuffleQuestions,
@@ -1897,8 +1897,8 @@ function persistSetupForm() {
     endQuestion: form.endQuestion,
     timeLimit: form.timeLimit,
     practiceMode: state.practiceMode,
-    autoCheck: getElementById('checkbox-auto-check').checked,
-    autoAdvance: getElementById('checkbox-auto-advance').checked,
+    autoCheck: getElementById('checkbox-automatic-check').checked,
+    autoAdvance: getElementById('checkbox-automatic-advance').checked,
     vibrationEnabled: getElementById('checkbox-vibration').checked,
     autoAdvanceDelay: (() => {
       const delay = Number.parseInt(getElementById('input-auto-advance-delay')?.value, 10);
@@ -1920,10 +1920,10 @@ function applySettingsToForm(settings) {
   getElementById('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
   getElementById('input-range-start').value = String(settings.startQuestion || 1);
   getElementById('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
-  getElementById('checkbox-shuffle-q').checked = !!settings.shuffleQuestions;
-  getElementById('checkbox-shuffle-a').checked = !!settings.shuffleAnswers;
-  getElementById('checkbox-auto-check').checked = settings.autoCheck === true;
-  getElementById('checkbox-auto-advance').checked = settings.autoAdvance === true;
+  getElementById('checkbox-shuffle-questions').checked = !!settings.shuffleQuestions;
+  getElementById('checkbox-shuffle-answers').checked = !!settings.shuffleAnswers;
+  getElementById('checkbox-automatic-check').checked = settings.autoCheck === true;
+  getElementById('checkbox-automatic-advance').checked = settings.autoAdvance === true;
   getElementById('checkbox-vibration').checked = settings.vibrationEnabled === true;
   if (getElementById('input-auto-advance-delay')) {
     const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 5;
@@ -2886,7 +2886,7 @@ function formatScore(correct, total) {
 };
 
 function animateScore(target, displayStr, circumference) {
-  const scoreBig = getElementById('summary-score-big');
+  const scoreBig = getElementById('summary-score-large');
   const ringFg = getElementById('score-ring-fg');
   if (!scoreBig || !ringFg) return;
 
@@ -3082,7 +3082,7 @@ function showSummary(summary, deckId, mode) {
   getElementById('summary-total').textContent = String(summary.total);
   getElementById('summary-score').textContent = scoreVal+ ' / 10';
 
-  const scoreBig = getElementById('summary-score-big');
+  const scoreBig = getElementById('summary-score-large');
   const ringFg = getElementById('score-ring-fg');
   const circumference = 2 * Math.PI * 52;
 
@@ -3101,10 +3101,10 @@ function showSummary(summary, deckId, mode) {
   requestAnimationFrame(() => requestAnimationFrame(() => animateScore(scoreNum, scoreVal, circumference)));
   getElementById('summary-time').textContent = formatTime(summary.elapsedSeconds || 0);
   getElementById('summary-correct').textContent = String(summary.correct);
-  getElementById('summary-wrong-q').textContent = String(summary.wrongQuestions);
-  getElementById('summary-wrong-times').textContent = String(summary.wrongAttempts);
-  getElementById('summary-practice').textContent = String(summary.practiceQuestions || 0);
-  getElementById('summary-first').textContent = summary.firstTryRate + '%';
+  getElementById('summary-wrong-question-count').textContent = String(summary.wrongQuestions);
+  getElementById('summary-wrong-attempt-count').textContent = String(summary.wrongAttempts);
+  getElementById('summary-practice-count').textContent = String(summary.practiceQuestions || 0);
+  getElementById('summary-first-try-rate').textContent = summary.firstTryRate + '%';
 
   const totalQuestions = (state.decks[deckId] || []).length;
   const progressAfterSession = getDeckProgress(deckId);
@@ -3133,7 +3133,7 @@ function showSummary(summary, deckId, mode) {
   retryButton.hidden = !['normal', 'exam'].includes(mode);
   retryButton.textContent = mode === 'exam' ? 'Thi lại lượt thi này' : 'Ôn lại lượt ôn này';
 
-  const btnPractice = getElementById('button-summary-practice');
+  const btnPractice = getElementById('button-summary-practice-count');
   const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.originalIndex))];
   state._lastSummaryWrongIndices = sessionWrong;
   btnPractice.hidden = sessionWrong.length === 0;
@@ -3384,7 +3384,7 @@ function bindEvents() {
     });
   });
 
-  getElementById('button-all').addEventListener('click', () => {
+  getElementById('button-select-all').addEventListener('click', () => {
     const form = readSetupForm();
     const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
     const input = getElementById('input-count');
@@ -3401,7 +3401,7 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  getElementById('button-time-unlimited')?.addEventListener('click', () => {
+  getElementById('button-unlimited-time')?.addEventListener('click', () => {
     const timeInput = getElementById('input-time-limit');
     if (!timeInput) return;
     let current = Number.parseInt(timeInput.value, 10);
@@ -3446,7 +3446,7 @@ function bindEvents() {
     const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
     const countNum = Number.parseInt(input.value, 10);
     const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal;
-    const btnAll = getElementById('button-all');
+    const btnAll = getElementById('button-select-all');
     if (btnAll) {
       btnAll.classList.toggle('is-active', isAllCount);
       btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
@@ -3469,7 +3469,7 @@ function bindEvents() {
     const timeInput = getElementById('input-time-limit');
     const timeVal = Number.parseInt(timeInput.value, 10);
     const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-    const btnUnlimited = getElementById('button-time-unlimited');
+    const btnUnlimited = getElementById('button-unlimited-time');
     if (btnUnlimited) {
       btnUnlimited.classList.toggle('is-active', isUnlimited);
       btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
@@ -3508,23 +3508,23 @@ function bindEvents() {
     persistSetupForm();
   });
 
-  getElementById('checkbox-shuffle-q').addEventListener('change', () => {
+  getElementById('checkbox-shuffle-questions').addEventListener('change', () => {
     persistSetupForm();
     refreshSetupUI();
   });
 
-  getElementById('checkbox-shuffle-a').addEventListener('change', () => {
-    getElementById('checkbox-shuffle-a').dataset.userTouched = '1';
+  getElementById('checkbox-shuffle-answers').addEventListener('change', () => {
+    getElementById('checkbox-shuffle-answers').dataset.userTouched = '1';
     persistSetupForm();
   });
 
-  for (const id of ['checkbox-auto-check', 'checkbox-vibration']) getElementById(id).addEventListener('change', persistSetupForm);
-  getElementById('checkbox-auto-advance')?.addEventListener('change', () => {
+  for (const id of ['checkbox-automatic-check', 'checkbox-vibration']) getElementById(id).addEventListener('change', persistSetupForm);
+  getElementById('checkbox-automatic-advance')?.addEventListener('change', () => {
     updateSetupExperienceControls();
     persistSetupForm();
   });
   getElementById('button-auto-advance')?.addEventListener('click', () => {
-    const checkbox = getElementById('checkbox-auto-advance');
+    const checkbox = getElementById('checkbox-automatic-advance');
     if (!checkbox) return;
     checkbox.checked = !checkbox.checked;
     checkbox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -3658,7 +3658,7 @@ function bindEvents() {
       persistBankForm();
       if (state.mode === 'review') {
         const count = state.reviewSelectedIndices.size;
-        if (getElementById('button-review-start-selected')) getElementById('button-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
+        if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
       };
     });
     reviewCountInput.addEventListener('blur', () => {
@@ -3685,27 +3685,27 @@ function bindEvents() {
     });
   };
 
-  for (const reviewId of ['review-checkbox-shuffle-q', 'review-checkbox-shuffle-a', 'review-checkbox-auto-check', 'review-checkbox-vibration']) {
+  for (const reviewId of ['review-checkbox-shuffle-questionsuestions', 'review-checkbox-shuffle-answersnswers', 'review-checkbox-automatic-check', 'review-checkbox-vibration']) {
     const element = getElementById(reviewId);
     if (!element) continue;
     element.addEventListener('change', () => {
       persistBankForm();
       if (state.mode === 'review') {
         const count = state.reviewSelectedIndices.size;
-        if (getElementById('button-review-start-selected')) getElementById('button-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
+        if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
       };
     });
   };
-  getElementById('review-checkbox-auto-advance')?.addEventListener('change', () => {
+  getElementById('review-checkbox-automatic-advance')?.addEventListener('change', () => {
     updateBankExperienceControls();
     persistBankForm();
     if (state.mode === 'review') {
       const count = state.reviewSelectedIndices.size;
-      if (getElementById('button-review-start-selected')) getElementById('button-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
+      if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
     };
   });
-  getElementById('review-button-auto-advance')?.addEventListener('click', () => {
-    const checkbox = getElementById('review-checkbox-auto-advance');
+  getElementById('review-button-automatic-advance')?.addEventListener('click', () => {
+    const checkbox = getElementById('review-checkbox-automatic-advance');
     if (!checkbox) return;
     checkbox.checked = !checkbox.checked;
     checkbox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -3716,7 +3716,7 @@ function bindEvents() {
     persistBankForm();
     if (state.mode === 'review') {
       const count = state.reviewSelectedIndices.size;
-      if (getElementById('button-review-start-selected')) getElementById('button-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
+      if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
     };
   });
   getElementById('review-button-sound')?.addEventListener('click', () => {
@@ -3738,7 +3738,7 @@ function bindEvents() {
     persistBankForm();
   });
 
-  getElementById('review-button-all')?.addEventListener('click', () => {
+  getElementById('review-button-select-all')?.addEventListener('click', () => {
     const input = getElementById('review-input-count');
     if (!input) return;
     const selectedCount = state.reviewSelectedIndices.size;
@@ -3756,7 +3756,7 @@ function bindEvents() {
     syncBankCountInput();
   });
 
-  getElementById('review-button-time-unlimited')?.addEventListener('click', () => {
+  getElementById('review-button-unlimited-time')?.addEventListener('click', () => {
     const timeInput = getElementById('review-input-time-limit');
     if (!timeInput) return;
     let current = Number.parseInt(timeInput.value, 10);
@@ -3987,8 +3987,8 @@ function bindEvents() {
     getElementById('input-range-end').value = String(previous.rangeEnd);
     getElementById('input-count').value = String(pool.length);
     getElementById('input-time-limit').value = String(previous.timeLimit);
-    getElementById('checkbox-shuffle-q').checked = true;
-    getElementById('checkbox-shuffle-a').checked = true;
+    getElementById('checkbox-shuffle-questions').checked = true;
+    getElementById('checkbox-shuffle-answers').checked = true;
     setPracticeMode(previous.mode === 'exam' ? 'exam' : 'practice');
     persistSetupForm();
     startSessionFromPool(pool, {
@@ -4024,7 +4024,7 @@ function bindEvents() {
       toast('Không thể đặt lại tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       return;
     };
-    getElementById('checkbox-shuffle-q').checked = false;
+    getElementById('checkbox-shuffle-questions').checked = false;
     persistSetupForm();
     showScreen('setup');
     refreshSetupUI();
@@ -4038,14 +4038,14 @@ function bindEvents() {
   });
 
   getElementById('button-summary-random').addEventListener('click', () => {
-    getElementById('checkbox-shuffle-q').checked = true;
+    getElementById('checkbox-shuffle-questions').checked = true;
     persistSetupForm();
     showScreen('setup');
     refreshSetupUI();
     startNormal({ sequential: false });
   });
 
-  getElementById('button-summary-practice').addEventListener('click', () => {
+  getElementById('button-summary-practice-count').addEventListener('click', () => {
     if (state._lastSummaryDeck) state.currentDeck = state._lastSummaryDeck;
     if (Number.isInteger(state._lastSummaryRangeStart) && Number.isInteger(state._lastSummaryRangeEnd)) {
       getElementById('input-range-start').value = String(state._lastSummaryRangeStart);
