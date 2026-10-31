@@ -4114,7 +4114,7 @@ function classifyToast(text) {
   return 'info';
 }
 
-function initInterfaceEnhancements() {
+function initializeInterfaceEnhancements() {
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.content = '#0c0f14';
 
@@ -4181,7 +4181,7 @@ function initInterfaceEnhancements() {
 }
 
 function boot() {
-  initInterfaceEnhancements();
+  initializeInterfaceEnhancements();
   initializeTheme();
   if (!storageAvailable()) toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
   bindEvents();
