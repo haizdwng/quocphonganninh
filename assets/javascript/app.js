@@ -832,7 +832,7 @@ function enterBankQuestionEdit(card, questionIndex) {
 
 function createReviewBankCard() {
   const card = document.createElement('article');
-  card.className = 'review-question-card review-virtual-scroll-item';
+  card.className = 'review-question-card review-virtual-scroll-entry';
   card.style.position = 'absolute';
   card.style.left = '0';
   card.style.right = '0';
@@ -956,7 +956,7 @@ function createReviewBankCard() {
   noteInputEl.placeholder = 'Nhập ghi chú cho câu hỏi này…';
   noteInputEl.hidden = true;
   const noteActions = document.createElement('div');
-  noteActions.className = 'review-note-actions note-actions-icons';
+  noteActions.className = 'review-note-action-buttons note-actions-icons';
   const noteSaveBtn = document.createElement('button');
   noteSaveBtn.type = 'button';
   noteSaveBtn.className = 'button button-primary button-icon-only';
@@ -2301,11 +2301,11 @@ function renderQuestion() {
   const feedback = getElementById('feedback');
   if (item.checked && item.status === 'correct') {
     feedback.hidden = false;
-    feedback.className = 'feedback ok';
+    feedback.className = 'feedback is-correct-answer';
     feedback.textContent = 'Chính xác!';
   } else if (item.checked && item.status === 'wrong') {
     feedback.hidden = false;
-    feedback.className = 'feedback bad';
+    feedback.className = 'feedback is-incorrect-answer';
     feedback.textContent = 'Chưa đúng. Hãy chọn lại đáp án khác.';
   } else {
     feedback.hidden = true;
@@ -2530,7 +2530,7 @@ function patchExamQuestion(questionIndex) {
     button.classList.toggle('selected', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
-  const dot = getElementById('exam-navigation')?.querySelector('.exam-navigation-dot[data-index="' + questionIndex + '"]');
+  const dot = getElementById('exam-navigation')?.querySelector('.exam-question-navigation-dot[data-index="' + questionIndex + '"]');
   if (dot) dot.classList.toggle('is-answered', item.userAnswer != null);
   updateExamProgressHeader();
   applyExamFilter();
