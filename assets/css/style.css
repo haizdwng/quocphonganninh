@@ -2042,7 +2042,8 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
   color: #fff;
 }
 
-.button-search-navigation[data-icon]::before {
+.button-search-navigation[data-icon]::before,
+.theme-toggle-button[data-icon]::before {
   width: 1.25em;
   height: 1.25em;
   margin: 0;
