@@ -1670,6 +1670,7 @@ function setBankDeck(deckId) {
   if (state.bankDeck === id) return;
   
   state.bankDeck = id;
+  saveBankSettings({ ...getBankSettings(), deck: id });
   
   state.bankSearchMatchIndex = -1;
   state.reviewEditingNoteIndex = null;
