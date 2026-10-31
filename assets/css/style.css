@@ -715,7 +715,8 @@ input[type='range']:disabled {
 }
 
 .note-actions-icons,
-.review-note-action-buttons {
+.review-note-action-buttons,
+.review-edit-action-buttons {
   justify-content: flex-end;
   margin-top: 10px;
 }
