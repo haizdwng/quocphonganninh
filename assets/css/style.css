@@ -414,12 +414,12 @@ input[type='range']:disabled {
 
 [data-icon='bookmark'],
 [data-icon='bookmark-off'] { --tone: var(--orange); }
-[data-icon='note'] { --tone: var(--sky); }
+[data-icon='notebook'] { --tone: var(--sky); }
 [data-icon='highlight'] { --tone: var(--yellow); }
 [data-icon='pencil'] { --tone: var(--blue); }
 [data-icon='eye'],
 [data-icon='eye-off'] { --tone: var(--slate); }
-[data-icon='pin'],
+[data-icon='pinned'],
 [data-icon='pinned-off'] { --tone: var(--violet); }
 [data-icon='trash'] { --tone: var(--red); }
 [data-icon='device-floppy'],
@@ -481,7 +481,7 @@ input[type='range']:disabled {
 [data-icon='rotate-clockwise']::before { -webkit-mask-image: url('../icons/tabler/rotate-clockwise.svg'); mask-image: url('../icons/tabler/rotate-clockwise.svg'); }
 [data-icon='x']::before { -webkit-mask-image: url('../icons/tabler/x.svg'); mask-image: url('../icons/tabler/x.svg'); }
 [data-icon='highlight']::before { -webkit-mask-image: url('../icons/tabler/highlight.svg'); mask-image: url('../icons/tabler/highlight.svg'); }
-[data-icon='note']::before { -webkit-mask-image: url('../icons/tabler/note.svg'); mask-image: url('../icons/tabler/note.svg'); }
+[data-icon='notebook']::before { -webkit-mask-image: url('../icons/tabler/notebook.svg'); mask-image: url('../icons/tabler/notebook.svg'); }
 [data-icon='device-floppy']::before { -webkit-mask-image: url('../icons/tabler/device-floppy.svg'); mask-image: url('../icons/tabler/device-floppy.svg'); }
 [data-icon='volume']::before { -webkit-mask-image: url('../icons/tabler/volume.svg'); mask-image: url('../icons/tabler/volume.svg'); }
 [data-icon='volume-off']::before { -webkit-mask-image: url('../icons/tabler/volume-off.svg'); mask-image: url('../icons/tabler/volume-off.svg'); }
@@ -490,7 +490,7 @@ input[type='range']:disabled {
 [data-icon='eye']::before { -webkit-mask-image: url('../icons/tabler/eye.svg'); mask-image: url('../icons/tabler/eye.svg'); }
 [data-icon='eye-off']::before { -webkit-mask-image: url('../icons/tabler/eye-off.svg'); mask-image: url('../icons/tabler/eye-off.svg'); }
 [data-icon='pencil']::before { -webkit-mask-image: url('../icons/tabler/pencil.svg'); mask-image: url('../icons/tabler/pencil.svg'); }
-[data-icon='pin']::before { -webkit-mask-image: url('../icons/tabler/pin.svg'); mask-image: url('../icons/tabler/pin.svg'); }
+[data-icon='pinned']::before { -webkit-mask-image: url('../icons/tabler/pinned.svg'); mask-image: url('../icons/tabler/pinned.svg'); }
 [data-icon='pinned-off']::before { -webkit-mask-image: url('../icons/tabler/pinned-off.svg'); mask-image: url('../icons/tabler/pinned-off.svg'); }
 
 .button,
@@ -1651,7 +1651,7 @@ input[type='range']:disabled {
 }
 
 .review-question-card.is-answer-fixed .review-question-heading::after {
-  content: ' · cố định đáp án';
+  content: ' · CỐ ĐỊNH ĐÁP ÁN';
   font-family: var(--font);
   font-weight: 500;
   color: var(--violet);

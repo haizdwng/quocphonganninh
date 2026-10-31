@@ -735,7 +735,7 @@ function enterBankQuestionEdit(card, questionIndex) {
   fixedQuestionButton.className = 'button button-ghost button-icon-only ';
   const syncFixedButton = () => {
     fixedQuestionButton.setAttribute('aria-pressed', String(editFixed));
-    setToggleIcon(fixedQuestionButton, editFixed, { on: 'pin', off: 'pinned-off' });
+    setToggleIcon(fixedQuestionButton, editFixed, { on: 'pinned-off', off: 'pinned' });
     fixedQuestionButton.setAttribute('aria-label', editFixed ? 'Bỏ cố định đáp án' : 'Cố định đáp án');
     fixedQuestionButton.title = editFixed ? 'Đáp án cố định' : 'Cố định đáp án';
     fixedQuestionButton.classList.toggle('is-on', editFixed);
@@ -864,7 +864,7 @@ function createReviewBankCard() {
   const noteEditBtn = document.createElement('button');
   noteEditBtn.type = 'button';
   noteEditBtn.className = 'button-icon-only';
-  noteEditBtn.dataset.icon = 'note';
+  noteEditBtn.dataset.icon = 'notebook';
   noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
   noteEditBtn.title = 'Sửa ghi chú';
 
