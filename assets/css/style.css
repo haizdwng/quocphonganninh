@@ -1914,16 +1914,18 @@ input[type='range']:disabled {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  width: max-content;
-  max-width: min(480px, calc(100vw - 24px));
-  padding: 11px 16px 11px 13px;
+  width: min(480px, calc(100vw - 24px));
+  min-width: 0;
+  padding: 12px 16px 12px 13px;
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--tone) 12%, var(--high));
   box-shadow: inset 3px 0 0 var(--tone), var(--shadow-pop);
   color: var(--text);
+  font-family: var(--font);
   font-size: 0.9rem;
-  line-height: 1.45;
+  line-height: 1.5;
   text-wrap: pretty;
+  overflow-wrap: anywhere;
   cursor: pointer;
   transform: translateX(-50%);
   animation: toast-in 0.2s var(--ease) both;
@@ -1979,6 +1981,8 @@ body[data-screen='exam'] .toast {
   place-items: center;
   padding: max(16px, var(--safe-t)) 16px max(16px, var(--safe-b));
   background: rgba(4, 6, 9, 0.72);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal.is-open {
@@ -1989,15 +1993,19 @@ body[data-screen='exam'] .toast {
 .modal-box {
   --tone: var(--blue);
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
   column-gap: 14px;
-  width: min(100%, 440px);
-  max-height: min(85dvh, 620px);
+  width: min(100%, 460px);
+  max-height: calc(100dvh - max(32px, var(--safe-t)) - max(32px, var(--safe-b)));
+  min-width: 0;
   padding: 20px;
   overflow-y: auto;
   border-radius: 18px;
   background: var(--surface);
   box-shadow: var(--shadow-pop), 0 0 0 1px var(--line);
+  font-family: var(--font);
   animation: modal-in 0.2s var(--ease) both;
 }
 
@@ -2023,13 +2031,16 @@ body[data-screen='exam'] .toast {
 }
 
 .modal-box h3 {
+  min-width: 0;
   margin: 2px 0 6px;
   font-size: 1.05rem;
   font-weight: 650;
 }
 
 .modal-box p {
+  min-width: 0;
   margin: 0 0 18px;
+  overflow-wrap: anywhere;
   color: var(--text-2);
   font-size: 0.92rem;
   white-space: pre-wrap;
@@ -2219,20 +2230,33 @@ body[data-screen='exam'] .fixed-fab-stack {
   }
 
   .modal {
-    place-items: end center;
-    padding: 0;
+    place-items: center;
+    padding: max(16px, var(--safe-t)) 12px max(16px, var(--safe-b));
   }
 
   .modal-box {
-    width: 100%;
-    max-height: 90dvh;
-    padding: 20px 16px max(20px, var(--safe-b));
-    border-radius: 18px 18px 0 0;
-    animation: sheet-in 0.24s var(--ease) both;
+    grid-template-columns: 36px minmax(0, 1fr);
+    column-gap: 10px;
+    width: min(100%, 460px);
+    max-height: calc(100dvh - max(32px, var(--safe-t)) - max(32px, var(--safe-b)));
+    padding: 18px 14px;
+    border-radius: 18px;
+  }
+
+  .modal-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .modal-actions {
+    gap: 8px;
   }
 
   .modal-actions .btn {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 10px;
   }
 }
 
