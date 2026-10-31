@@ -32,7 +32,6 @@ const state = {
   error: null,
   currentDeck: 'quocphong1',
   bankDeck: 'quocphong1',
-  bankPracticeMode: 'practice',
   setupDeckBeforeBank: 'quocphong1',
   mode: 'setup',
   practiceMode: 'practice',
@@ -41,7 +40,6 @@ const state = {
   timerInterval: null,
   examFilter: 'all',
   examSubmitting: false,
-  reviewSelectedIndices: new Set(),
   reviewVirtual: null,
   _lastSummarySession: null,
   _lastSummaryWrongIndices: [],
@@ -52,8 +50,6 @@ const state = {
   lastTextSelection: null,
   lastCountBeforeAll: null,
   lastTimeBeforeUnlimited: null,
-  lastBankCountBeforeAll: null,
-  lastBankTimeBeforeUnlimited: null,
   bankSearchQuery: '',
   bankSearchMatchIndex: -1,
   reviewFocusQuestionNumber: null,
@@ -459,11 +455,10 @@ function getBankSearchMatches(questions = bankQuestions()) {
 
 function getFilteredBankQuestions() {
   const questions = bankQuestions();
-  const form = readBankForm();
-  const query = normalizeSearchText(state.bankSearchQuery);
+    const query = normalizeSearchText(state.bankSearchQuery);
   const matches = query ? questions.filter((question) => questionMatchesSearch(question, query)) : [];
   const filtered = query ? matches : questions;
-  return { questions, form, filtered, query, matches };
+  return { questions, filtered, query, matches };
 };
 
 function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
@@ -1446,7 +1441,7 @@ function renderQuestionBank() {
 function openQuestionBank() {
   state.setupDeckBeforeBank = state.currentDeck;
   persistSetupForm();
-  state.reviewSelectedIndices.clear();
+  
   state.bankSearchQuery = '';
   state.bankSearchMatchIndex = -1;
   state.reviewFocusQuestionNumber = null;
@@ -1464,7 +1459,7 @@ function openQuestionBank() {
   if (getElementById('input-review-goto')) getElementById('input-review-goto').value = '';
   const bank = getBankSettings();
   state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
-  applyBankSettingsToForm(bank);
+  
   renderQuestionBank();
   showScreen('review');
   updateBankSearchNavButtons();
@@ -1609,127 +1604,6 @@ function refreshResumeCard() {
   getElementById('resume-hint').textContent = isExam ? `${deckLabel} · ${answered} / ${saved.items.length} câu đã chọn${saved.reviewMode ? ' · Đã chấm' : ''}` : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1} / ${saved.items.length}`;
 };
 
-function updateBankCountButtonState() {
-  const input = getElementById('review-input-count');
-  const button = getElementById('review-button-select-all');
-  if (!input || !button) return;
-  const selectedCount = state.reviewSelectedIndices.size;
-  const countFocused = document.activeElement === input;
-  const value = Number.parseInt(input.value, 10);
-  const isAll = selectedCount > 0 && Number.isInteger(value) && value === selectedCount;
-  button.classList.toggle('is-active', isAll);
-  button.setAttribute('aria-pressed', isAll ? 'true' : 'false');
-  setToggleIcon(button, isAll, { on: 'deselect', off: 'select-all' });
-  button.title = isAll ? 'Bỏ chọn toàn bộ đã chọn' : 'Toàn bộ đã chọn';
-  button.setAttribute('aria-label', button.title);
-  input.disabled = isAll && !countFocused;
-};
-
-function updateBankTimeButtonState() {
-  const input = getElementById('review-input-time-limit');
-  const button = getElementById('review-button-unlimited-time');
-  if (!input || !button) return;
-  const timeFocused = document.activeElement === input;
-  const timeVal = Number.parseInt(input.value, 10);
-  const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-  button.classList.toggle('is-active', isUnlimited);
-  button.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
-  setToggleIcon(button, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-  button.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
-  button.setAttribute('aria-label', button.title);
-  input.disabled = isUnlimited && !timeFocused;
-};
-
-function syncBankCountInput() {
-  const input = getElementById('review-input-count');
-  if (!input) return;
-  const selectedCount = state.reviewSelectedIndices.size;
-  const countFocused = document.activeElement === input;
-  input.min = selectedCount === 0 ? '0' : '1';
-  input.max = String(selectedCount);
-  if (selectedCount === 0) input.value = '0';
-  else if (!countFocused) {
-    const value = Number.parseInt(input.value, 10);
-    if (!Number.isInteger(value) || value < 1) input.value = '1';
-    else if (value > selectedCount) input.value = String(selectedCount);
-  };
-  updateBankCountButtonState();
-  updateBankTimeButtonState();
-};
-
-function readBankForm() {
-  const selectedCount = state.reviewSelectedIndices.size;
-  let count = Number.parseInt(getElementById('review-input-count')?.value, 10);
-  if (selectedCount === 0) count = 0;
-  else if (!Number.isInteger(count) || count < 1) count = 1;
-  if (count > selectedCount) count = selectedCount;
-  let timeLimit = Number.parseInt(getElementById('review-input-time-limit')?.value, 10);
-  if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
-  timeLimit = Math.min(1440, timeLimit);
-  return {
-    deck: state.bankDeck === 'quocphong2' ? 'quocphong2' : 'quocphong1',
-    count,
-    timeLimit,
-    shuffleQuestions: !!getElementById('review-checkbox-shuffle-questions')?.checked,
-    shuffleAnswers: !!getElementById('review-checkbox-shuffle-answers')?.checked,
-    practiceMode: state.bankPracticeMode === 'exam' ? 'exam' : 'practice',
-    autoCheck: !!getElementById('review-checkbox-automatic-check')?.checked,
-    autoAdvance: !!getElementById('review-checkbox-automatic-advance')?.checked,
-    vibrationEnabled: !!getElementById('review-checkbox-vibration')?.checked,
-    autoAdvanceDelay: (() => {
-      const delay = Number.parseInt(getElementById('review-input-auto-advance-delay')?.value, 10);
-      return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
-    })(),
-    soundVolume: (() => {
-      const input = getElementById('review-input-sound-volume');
-      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 1);
-    })(),
-    soundEnabled: !!getElementById('review-checkbox-sound')?.checked
-  };
-};
-
-function applyBankSettingsToForm(settings) {
-  if (!settings || !getElementById('review-input-count')) return;
-  const selectedCount = state.reviewSelectedIndices.size;
-  const savedCount = Number(settings.count);
-  getElementById('review-input-count').value = String(selectedCount === 0 ? 0 : Math.min(selectedCount, Number.isInteger(savedCount) && savedCount >= 1 ? savedCount : 1));
-  getElementById('review-input-count').min = selectedCount === 0 ? '0' : '1';
-  getElementById('review-input-count').max = String(selectedCount);
-  getElementById('review-input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
-  getElementById('review-checkbox-shuffle-questions').checked = settings.shuffleQuestions !== false;
-  getElementById('review-checkbox-shuffle-answers').checked = settings.shuffleAnswers !== false;
-  if (getElementById('review-checkbox-automatic-check')) {
-    getElementById('review-checkbox-automatic-check').checked = settings.autoCheck === true;
-    getElementById('review-checkbox-automatic-advance').checked = settings.autoAdvance === true;
-    getElementById('review-checkbox-vibration').checked = settings.vibrationEnabled === true;
-  };
-  if (getElementById('review-input-auto-advance-delay')) {
-    const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 0;
-    getElementById('review-input-auto-advance-delay').value = String(delay);
-    if (getElementById('review-label-auto-advance-delay')) getElementById('review-label-auto-advance-delay').textContent = delay + ' giây';
-  };
-  const volume = normalizeSoundVolume(settings.soundVolume, 1);
-  if (getElementById('review-input-sound-volume')) {
-    getElementById('review-input-sound-volume').value = String(volume);
-    getElementById('review-input-sound-volume').dataset.lastVolume = String(volume);
-    if (getElementById('review-label-sound-volume')) getElementById('review-label-sound-volume').textContent = volume + '%';
-  };
-  if (getElementById('review-checkbox-sound')) getElementById('review-checkbox-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
-  updateBankExperienceControls();
-  state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-review .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.bankPracticeMode));
-  document.querySelectorAll('[data-bank-deck]').forEach((button) => button.classList.toggle('active', button.dataset.bankDeck === state.bankDeck));
-  updateBankCountButtonState();
-  updateBankTimeButtonState();
-};
-
-function persistBankForm() {
-  const form = readBankForm();
-  const saved = saveBankSettings(form);
-  if (!saved) toast('Không thể lưu tuỳ chọn ngân hàng. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
-  return form;
-};
-
 function normalizeSoundVolume(value, fallback = 1) {
   const volume = Number.parseInt(value, 10);
   if (!Number.isInteger(volume)) return fallback;
@@ -1764,22 +1638,6 @@ function updateSetupExperienceControls() {
   syncExperienceToggleButton('button-sound', 'checkbox-sound', 'volume-off', 'volume', 'Bật âm thanh', 'Tắt âm thanh');
 };
 
-function updateBankExperienceControls() {
-  const autoAdvanceOn = !!getElementById('review-checkbox-automatic-advance')?.checked;
-  const delayInput = getElementById('review-input-auto-advance-delay');
-  const delayField = getElementById('review-field-auto-advance-delay');
-  if (delayInput) delayInput.disabled = !autoAdvanceOn;
-  if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-  syncExperienceToggleButton('review-button-automatic-advance', 'review-checkbox-automatic-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
-
-  const soundOn = !!getElementById('review-checkbox-sound')?.checked;
-  const volumeInput = getElementById('review-input-sound-volume');
-  const volumeField = getElementById('review-field-sound-volume');
-  if (volumeInput) volumeInput.disabled = !soundOn;
-  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
-  syncExperienceToggleButton('review-button-sound', 'review-checkbox-sound', 'volume-off', 'volume', 'Bật âm thanh', 'Tắt âm thanh');
-};
-
 function syncSoundFromVolume(volumeInputId, checkboxId, labelId) {
   const volumeInput = getElementById(volumeInputId);
   if (!volumeInput) return 1;
@@ -1807,28 +1665,19 @@ function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
   };
 };
 
-function setBankPracticeMode(mode) {
-  state.bankPracticeMode = mode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-review .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.bankPracticeMode));
-  persistBankForm();
-  renderQuestionBank();
-};
-
 function setBankDeck(deckId) {
   const id = deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   if (state.bankDeck === id) return;
-  persistBankForm();
+  
   state.bankDeck = id;
-  state.reviewSelectedIndices.clear();
+  
   state.bankSearchMatchIndex = -1;
   state.reviewEditingNoteIndex = null;
   state.reviewEditingNoteDraft = '';
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
-  const settings = getBankSettings();
-  applyBankSettingsToForm({ ...settings, deck: id, count: 0 });
-  persistBankForm();
+  
   renderQuestionBank();
   if (getElementById('bank-count-quocphong1')) {
     getElementById('bank-count-quocphong1').textContent = (state.decks.quocphong1?.length ?? 479) + ' câu';
@@ -1958,11 +1807,7 @@ function selectedQuestions(form = readSetupForm()) {
 
 function startSessionFromPool(pool, meta) {
   const fromBank = !!meta.fromBank;
-  const form = fromBank ? {
-    ...readBankForm(),
-    shuffleAnswers: meta.shuffleAnswers != null ? meta.shuffleAnswers : readBankForm().shuffleAnswers,
-    timeLimit: meta.timeLimit != null ? meta.timeLimit : readBankForm().timeLimit
-  } : readSetupForm();
+  const form = readSetupForm();
   const shuffleAnswers = meta.shuffleAnswers != null ? meta.shuffleAnswers : form.shuffleAnswers;
   const shuffleQuestions = meta.forceShuffleQuestions != null ? meta.forceShuffleQuestions : form.shuffleQuestions;
   const shouldShuffleQuestions = meta.alreadyShuffled ? false : !!shuffleQuestions;
@@ -2008,7 +1853,7 @@ function startSessionFromPool(pool, meta) {
     remainingMs: null,
     timeExpired: false
   };
-  const examRequested = meta.examMode != null ? !!meta.examMode : fromBank ? state.bankPracticeMode === 'exam' : state.practiceMode === 'exam';
+  const examRequested = meta.examMode != null ? !!meta.examMode : state.practiceMode === 'exam';
   if (examRequested) {
     session.examMode = true;
     session.mode = session.mode === 'normal' ? 'exam' : session.mode;
@@ -3274,7 +3119,7 @@ function initializeInterface() {
   applySettingsToForm(settings);
   const bank = getBankSettings();
   state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
-  applyBankSettingsToForm(bank);
+  
   showScreen('setup');
   refreshSetupUI();
 };
@@ -3554,7 +3399,7 @@ function bindEvents() {
   });
 
   document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.addEventListener('click', () => setPracticeMode(button.dataset.mode)));
-  document.querySelectorAll('#screen-review .mode-button').forEach((button) => button.addEventListener('click', () => setBankPracticeMode(button.dataset.mode)));
+  
   document.querySelectorAll('[data-bank-deck]').forEach((button) => button.addEventListener('click', () => setBankDeck(button.dataset.bankDeck)));
 
   getElementById('button-view-bank').addEventListener('click', openQuestionBank);
@@ -3644,134 +3489,6 @@ function bindEvents() {
   getElementById('button-practice-bookmarks').addEventListener('click', () => {
     setPracticeMode('practice');
     startPracticeBookmarks();
-  });
-
-  const reviewCountInput = getElementById('review-input-count');
-  const reviewTimeInput = getElementById('review-input-time-limit');
-
-  if (reviewCountInput) {
-    reviewCountInput.addEventListener('input', () => {
-      updateBankCountButtonState();
-    });
-    reviewCountInput.addEventListener('change', () => {
-      syncBankCountInput();
-      persistBankForm();
-      if (state.mode === 'review') {
-        const count = state.reviewSelectedIndices.size;
-        if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-      };
-    });
-    reviewCountInput.addEventListener('blur', () => {
-      syncBankCountInput();
-      persistBankForm();
-    });
-  };
-
-  if (reviewTimeInput) {
-    reviewTimeInput.addEventListener('input', () => updateBankTimeButtonState());
-    reviewTimeInput.addEventListener('change', () => {
-      let value = Number.parseInt(reviewTimeInput.value, 10);
-      if (!Number.isInteger(value) || value < 0) value = 0;
-      reviewTimeInput.value = String(Math.min(1440, value));
-      updateBankTimeButtonState();
-      persistBankForm();
-    });
-    reviewTimeInput.addEventListener('blur', () => {
-      let value = Number.parseInt(reviewTimeInput.value, 10);
-      if (reviewTimeInput.value === '' || !Number.isInteger(value) || value < 0) value = 0;
-      reviewTimeInput.value = String(Math.min(1440, value));
-      updateBankTimeButtonState();
-      persistBankForm();
-    });
-  };
-
-  for (const reviewId of ['review-checkbox-shuffle-questions', 'review-checkbox-shuffle-answers', 'review-checkbox-automatic-check', 'review-checkbox-vibration']) {
-    const element = getElementById(reviewId);
-    if (!element) continue;
-    element.addEventListener('change', () => {
-      persistBankForm();
-      if (state.mode === 'review') {
-        const count = state.reviewSelectedIndices.size;
-        if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-      };
-    });
-  };
-  getElementById('review-checkbox-automatic-advance')?.addEventListener('change', () => {
-    updateBankExperienceControls();
-    persistBankForm();
-    if (state.mode === 'review') {
-      const count = state.reviewSelectedIndices.size;
-      if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-    };
-  });
-  getElementById('review-button-automatic-advance')?.addEventListener('click', () => {
-    const checkbox = getElementById('review-checkbox-automatic-advance');
-    if (!checkbox) return;
-    checkbox.checked = !checkbox.checked;
-    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  getElementById('review-checkbox-sound')?.addEventListener('change', () => {
-    syncVolumeFromSoundCheckbox('review-input-sound-volume', 'review-checkbox-sound', 'review-label-sound-volume');
-    updateBankExperienceControls();
-    persistBankForm();
-    if (state.mode === 'review') {
-      const count = state.reviewSelectedIndices.size;
-      if (getElementById('review-button-start-selected')) getElementById('review-button-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-    };
-  });
-  getElementById('review-button-sound')?.addEventListener('click', () => {
-    const checkbox = getElementById('review-checkbox-sound');
-    if (!checkbox) return;
-    checkbox.checked = !checkbox.checked;
-    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  getElementById('review-input-auto-advance-delay')?.addEventListener('input', () => {
-    const delay = Number.parseInt(getElementById('review-input-auto-advance-delay').value, 10) || 0;
-    if (getElementById('review-label-auto-advance-delay')) getElementById('review-label-auto-advance-delay').textContent = delay + ' giây';
-  });
-  getElementById('review-input-auto-advance-delay')?.addEventListener('change', () => persistBankForm());
-  getElementById('review-input-sound-volume')?.addEventListener('input', () => {
-    syncSoundFromVolume('review-input-sound-volume', 'review-checkbox-sound', 'review-label-sound-volume');
-  });
-  getElementById('review-input-sound-volume')?.addEventListener('change', () => {
-    syncSoundFromVolume('review-input-sound-volume', 'review-checkbox-sound', 'review-label-sound-volume');
-    persistBankForm();
-  });
-
-  getElementById('review-button-select-all')?.addEventListener('click', () => {
-    const input = getElementById('review-input-count');
-    if (!input) return;
-    const selectedCount = state.reviewSelectedIndices.size;
-    if (selectedCount === 0) return;
-    const current = Number.parseInt(input.value, 10);
-    const isAll = Number.isInteger(current) && current === selectedCount;
-    if (isAll) {
-      const previousValue = state.lastBankCountBeforeAll;
-      input.value = String(Number.isInteger(previousValue) && previousValue >= 1 ? Math.min(previousValue, selectedCount) : Math.min(30, selectedCount));
-    } else {
-      state.lastBankCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 30;
-      input.value = String(selectedCount);
-    };
-    persistBankForm();
-    syncBankCountInput();
-  });
-
-  getElementById('review-button-unlimited-time')?.addEventListener('click', () => {
-    const timeInput = getElementById('review-input-time-limit');
-    if (!timeInput) return;
-    let current = Number.parseInt(timeInput.value, 10);
-    if (!Number.isInteger(current) || current < 0) current = 0;
-    current = Math.min(1440, current);
-    const isUnlimited = current === 0;
-    if (isUnlimited) {
-      const previousValue = state.lastBankTimeBeforeUnlimited;
-      timeInput.value = String(Number.isInteger(previousValue) && previousValue > 0 ? Math.min(1440, previousValue) : 35);
-    } else {
-      state.lastBankTimeBeforeUnlimited = current > 0 ? current : 35;
-      timeInput.value = '0';
-    };
-    persistBankForm();
-    updateBankTimeButtonState();
   });
 
   getElementById('button-exam-submit')?.addEventListener('click', () => onExamSubmit());
