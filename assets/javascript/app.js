@@ -1480,7 +1480,7 @@ function refreshSetupUI() {
   const total = questions.length;
   updateDeckCountLabels();
 
-  document.querySelectorAll('.deck-btn').forEach((button) => button.classList.toggle('active', button.dataset.deck === state.currentDeck));
+  document.querySelectorAll('.deck-button').forEach((button) => button.classList.toggle('active', button.dataset.deck === state.currentDeck));
 
   const startInput = getElementById('input-range-start');
   const endInput = getElementById('input-range-end');
@@ -1717,7 +1717,7 @@ function applyBankSettingsToForm(settings) {
   if (getElementById('review-checkbox-sound')) getElementById('review-checkbox-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
   updateBankExperienceControls();
   state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-review .mode-btn').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.bankPracticeMode));
+  document.querySelectorAll('#screen-review .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.bankPracticeMode));
   document.querySelectorAll('[data-bank-deck]').forEach((button) => button.classList.toggle('active', button.dataset.bankDeck === state.bankDeck));
   updateBankCountButtonState();
   updateBankTimeButtonState();
@@ -1809,7 +1809,7 @@ function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
 
 function setBankPracticeMode(mode) {
   state.bankPracticeMode = mode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-review .mode-btn').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.bankPracticeMode));
+  document.querySelectorAll('#screen-review .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.bankPracticeMode));
   persistBankForm();
   renderQuestionBank();
 };
@@ -2341,7 +2341,7 @@ function renderQuestion() {
 
 function setPracticeMode(mode) {
   state.practiceMode = mode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-setup .mode-btn').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.practiceMode));
+  document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.practiceMode));
   const startBtn = getElementById('button-start');
   if (startBtn) startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn luyện';
   persistSetupForm();
@@ -3358,7 +3358,7 @@ function bindEvents() {
   bindKeyboardShortcuts();
   initializeEnhancements({ onPrev, onNext });
 
-  document.querySelectorAll('#screen-setup .deck-btn[data-deck]').forEach((button) => {
+  document.querySelectorAll('#screen-setup .deck-button[data-deck]').forEach((button) => {
     button.addEventListener('click', () => {
       const nextDeck = button.dataset.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
       if (state.currentDeck === nextDeck) return;
@@ -3553,8 +3553,8 @@ function bindEvents() {
     persistSetupForm();
   });
 
-  document.querySelectorAll('#screen-setup .mode-btn').forEach((button) => button.addEventListener('click', () => setPracticeMode(button.dataset.mode)));
-  document.querySelectorAll('#screen-review .mode-btn').forEach((button) => button.addEventListener('click', () => setBankPracticeMode(button.dataset.mode)));
+  document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.addEventListener('click', () => setPracticeMode(button.dataset.mode)));
+  document.querySelectorAll('#screen-review .mode-button').forEach((button) => button.addEventListener('click', () => setBankPracticeMode(button.dataset.mode)));
   document.querySelectorAll('[data-bank-deck]').forEach((button) => button.addEventListener('click', () => setBankDeck(button.dataset.bankDeck)));
 
   getElementById('button-view-bank').addEventListener('click', openQuestionBank);
