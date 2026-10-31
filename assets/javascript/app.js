@@ -626,9 +626,9 @@ function enterBankQuestionEdit(card, questionIndex) {
   const question = deck.find((item) => item.originalIndex === questionIndex) || deck[questionIndex];
   if (!question) return;
 
-  if (state.reviewEditingNoteIndex === questionIndex) {
-    const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.originalIndex) === questionIndex);
-    if (activeCard?._vs?.setReviewNoteViewMode) activeCard._vs.setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
+  if (Number.isInteger(state.reviewEditingNoteIndex)) {
+    const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.originalIndex) === state.reviewEditingNoteIndex);
+    if (activeCard?._vs?.setReviewNoteViewMode) activeCard._vs.setReviewNoteViewMode(getQuestionNote(state.bankDeck, state.reviewEditingNoteIndex));
     else {
       state.reviewEditingNoteIndex = null;
       state.reviewEditingNoteDraft = '';
@@ -1039,7 +1039,11 @@ function createReviewBankCard() {
       setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
       return;
     };
-    if (state.reviewEditingQuestionIndex === questionIndex) exitBankQuestionEdit(card);
+    if (Number.isInteger(state.reviewEditingQuestionIndex)) {
+      const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.originalIndex) === state.reviewEditingQuestionIndex);
+      if (activeCard) exitBankQuestionEdit(activeCard);
+      else state.reviewEditingQuestionIndex = null;
+    };
     setReviewNoteEditMode(questionIndex);
   });
 
