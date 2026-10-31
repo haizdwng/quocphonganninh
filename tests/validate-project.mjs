@@ -68,5 +68,13 @@ for (const [deckName, questions] of [['first question set', firstDeck], ['second
 }
 assert.ok(manifest.name && manifest.start_url, 'The web app manifest must contain its name and start URL');
 assert.ok(application.includes('initializeEnhancements'), 'The application must initialize its enhancement module');
+assert.ok(storage.includes('settings: null'), 'The storage root must use the settings key');
+assert.ok(!storage.includes('export function getBankSettings') && !storage.includes('export function saveBankSettings'), 'Obsolete bank settings APIs must be removed');
+assert.ok(!application.includes('getBankSettings') && !application.includes('saveBankSettings'), 'The application must not depend on bank settings');
+assert.ok(storage.includes('delete data.bankSettings'), 'Legacy bank settings must be removed during migration');
+assert.ok(application.includes("persistSetupForm();\n  });\n  getElementById('input-auto-advance-delay')?.addEventListener('change', persistSetupForm)"), 'Auto-advance delay changes must be persisted while adjusting the slider');
+assert.ok(application.includes("syncSoundFromVolume('input-sound-volume', 'checkbox-sound', 'label-sound-volume');\n    persistSetupForm();\n  });"), 'Sound volume changes must be persisted while adjusting the slider');
+assert.ok(application.includes('actions.append(saveBtn, resetBtn, fixedQuestionButton, cancelBtn)'), 'Question edit cancel action must be last');
+assert.ok(css.includes('.note-actions-icons,\n.review-note-action-buttons,\n.review-edit-action-buttons'), 'Question edit actions must share note action alignment styles');
 
 process.stdout.write('Project validation passed.\n');
