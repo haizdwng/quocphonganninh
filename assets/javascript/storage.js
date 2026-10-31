@@ -16,6 +16,14 @@ function emptyRoot() {
     notes: {
       quocphong1: {},
       quocphong2: {}
+    },
+    overrides: {
+      quocphong1: {},
+      quocphong2: {}
+    },
+    hidden: {
+      quocphong1: [],
+      quocphong2: []
     }
   };
 };
@@ -390,6 +398,83 @@ export function resetDeckNotes(deckId) {
   return writeRoot(root);
 };
 
+
+function normalizeOverrideEntry(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const question = typeof value.question === 'string' ? value.question.trim() : '';
+  if (!question) return null;
+  if (!Array.isArray(value.options) || value.options.length < 2) return null;
+  const options = value.options.map((option) => typeof option === 'string' ? option.trim() : '').filter(Boolean);
+  if (options.length < 2) return null;
+  const correct = Number(value.correct);
+  if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) return null;
+  return { question, options, correct, fixed: value.fixed === true };
+}
+
+export function getQuestionOverride(deckId, originalIndex) {
+  if (!Number.isInteger(originalIndex) || originalIndex < 0) return null;
+  const root = readRoot();
+  const overrides = root.overrides && typeof root.overrides === 'object' ? root.overrides : {};
+  const deck = overrides[normalizeDeckId(deckId)];
+  if (!deck || typeof deck !== 'object') return null;
+  return normalizeOverrideEntry(deck[String(originalIndex)]);
+}
+
+export function saveQuestionOverride(deckId, originalIndex, payload) {
+  if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
+  const root = readRoot();
+  if (!root.overrides || typeof root.overrides !== 'object' || Array.isArray(root.overrides)) root.overrides = { quocphong1: {}, quocphong2: {} };
+  const id = normalizeDeckId(deckId);
+  if (!root.overrides[id] || typeof root.overrides[id] !== 'object' || Array.isArray(root.overrides[id])) root.overrides[id] = {};
+  if (payload === null) {
+    delete root.overrides[id][String(originalIndex)];
+    return writeRoot(root);
+  }
+  const normalized = normalizeOverrideEntry(payload);
+  if (!normalized) return false;
+  root.overrides[id][String(originalIndex)] = normalized;
+  return writeRoot(root);
+}
+
+export function getDeckOverrides(deckId) {
+  const root = readRoot();
+  const overrides = root.overrides && typeof root.overrides === 'object' ? root.overrides : {};
+  const deck = overrides[normalizeDeckId(deckId)];
+  if (!deck || typeof deck !== 'object') return {};
+  const result = {};
+  for (const [key, value] of Object.entries(deck)) {
+    const index = Number(key);
+    const entry = normalizeOverrideEntry(value);
+    if (Number.isInteger(index) && index >= 0 && entry) result[index] = entry;
+  }
+  return result;
+}
+
+export function getHiddenIndices(deckId) {
+  const root = readRoot();
+  const hidden = root.hidden && typeof root.hidden === 'object' ? root.hidden : {};
+  const list = hidden[normalizeDeckId(deckId)];
+  if (!Array.isArray(list)) return [];
+  return [...new Set(list.filter((value) => Number.isInteger(value) && value >= 0))].sort((a, b) => a - b);
+}
+
+export function toggleHiddenQuestion(deckId, originalIndex) {
+  if (!Number.isInteger(originalIndex) || originalIndex < 0) return null;
+  const root = readRoot();
+  if (!root.hidden || typeof root.hidden !== 'object' || Array.isArray(root.hidden)) root.hidden = { quocphong1: [], quocphong2: [] };
+  const id = normalizeDeckId(deckId);
+  const set = new Set(Array.isArray(root.hidden[id]) ? root.hidden[id].filter((v) => Number.isInteger(v) && v >= 0) : []);
+  if (set.has(originalIndex)) set.delete(originalIndex);
+  else set.add(originalIndex);
+  root.hidden[id] = [...set].sort((a, b) => a - b);
+  if (!writeRoot(root)) return null;
+  return set.has(originalIndex);
+}
+
+export function isQuestionHidden(deckId, originalIndex) {
+  return getHiddenIndices(deckId).includes(originalIndex);
+}
+
 export function exportBackup() {
   const root = readRoot();
   const activeDeck = normalizeDeckId(root.activeDeck || 'quocphong1');
@@ -410,6 +495,14 @@ export function exportBackup() {
     notes: root.notes || {
       quocphong1: {},
       quocphong2: {}
+    },
+    overrides: root.overrides || {
+      quocphong1: {},
+      quocphong2: {}
+    },
+    hidden: root.hidden || {
+      quocphong1: [],
+      quocphong2: []
     }
   }, null, 2);
 };
@@ -456,6 +549,14 @@ export function importBackup(raw) {
     notes: {
       quocphong1: {},
       quocphong2: {}
+    },
+    overrides: {
+      quocphong1: {},
+      quocphong2: {}
+    },
+    hidden: {
+      quocphong1: [],
+      quocphong2: []
     }
   };
 
@@ -484,6 +585,29 @@ export function importBackup(raw) {
       };
     };
   };
+
+  normalized.overrides = { quocphong1: {}, quocphong2: {} };
+  if (backup.overrides && typeof backup.overrides === 'object' && !Array.isArray(backup.overrides)) {
+    for (const id of ['quocphong1', 'quocphong2']) {
+      const deck = backup.overrides[id];
+      if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
+      for (const [key, value] of Object.entries(deck)) {
+        const index = Number(key);
+        if (!Number.isInteger(index) || index < 0) continue;
+        const entry = normalizeOverrideEntry(value);
+        if (entry) normalized.overrides[id][String(index)] = entry;
+      }
+    }
+  }
+
+  normalized.hidden = { quocphong1: [], quocphong2: [] };
+  if (backup.hidden && typeof backup.hidden === 'object' && !Array.isArray(backup.hidden)) {
+    for (const id of ['quocphong1', 'quocphong2']) {
+      const list = backup.hidden[id];
+      if (!Array.isArray(list)) continue;
+      normalized.hidden[id] = [...new Set(list.filter((v) => Number.isInteger(v) && v >= 0))].sort((a, b) => a - b);
+    }
+  }
 
   for (const id of ['quocphong1', 'quocphong2']) {
     const deckData = backup.decks[id];

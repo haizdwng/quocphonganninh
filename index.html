@@ -9,7 +9,7 @@
     <title>Trắc nghiệm Quốc Phòng An Ninh</title>
     <link rel='manifest' href='manifest.webmanifest' />
     <link rel='icon' href='assets/icons/icon.svg' type='image/svg+xml' />
-    <link rel='preload' href='assets/fonts/InterVariable.woff2' as='font' type='font/woff2' crossorigin />
+    <link rel='preload' href='assets/fonts/Inter.woff2' as='font' type='font/woff2' crossorigin />
     <link rel='stylesheet' href='assets/css/style.css' />
   </head>
   <body>
@@ -355,12 +355,12 @@
           <div class='card review-header'>
             <button
               type='button'
-              class='btn btn-ghost'
+              class='btn btn-ghost btn-icon-only'
               id='btn-review-back'
               data-icon='arrow-left'
-            >
-              Quay lại thiết lập
-            </button>
+              aria-label='Quay lại thiết lập'
+              title='Quay lại thiết lập'
+            ></button>
             <h2 id='review-title'>Ngân hàng câu hỏi</h2>
             <div class='deck-switch review-deck-switch' role='group' aria-label='Bộ đề ngân hàng'>
               <button
@@ -381,137 +381,6 @@
                 <span class='deck-name'>Quốc Phòng 2</span>
                 <span class='deck-count' id='bank-count-quocphong2'>262 câu</span>
               </button>
-            </div>
-            <div class='review-practice-settings'>
-              <h3>Chế độ bài làm</h3>
-              <div class='mode-switch' role='group' aria-label='Chế độ làm bài'>
-                <button
-                  type='button'
-                  class='mode-btn is-active'
-                  data-mode='practice'
-                  id='review-btn-mode-practice'
-                >
-                  <span class='mode-icon' data-icon='book-2' aria-hidden='true'></span>
-                  <span class='mode-name'>Ôn luyện</span>
-                  <span class='mode-desc'>Từng câu</span>
-                </button>
-                <button
-                  type='button'
-                  class='mode-btn'
-                  data-mode='exam'
-                  id='review-btn-mode-exam'
-                >
-                  <span class='mode-icon' data-icon='list-check' aria-hidden='true'></span>
-                  <span class='mode-name'>Thi thử</span>
-                  <span class='mode-desc'>Tất cả câu</span>
-                </button>
-              </div>
-              <div class='review-practice-fields'>
-                <div class='field'>
-                  <label for='review-input-count'>Số câu trong lượt</label>
-                  <div class='row'>
-                    <input
-                      type='number'
-                      id='review-input-count'
-                      min='1'
-                      value='30'
-                      inputmode='numeric'
-                    />
-                    <button
-                      type='button'
-                      class='btn btn-ghost btn-icon-only'
-                      id='review-btn-all'
-                      data-icon='select-all'
-                      aria-label='Toàn bộ đã chọn'
-                      title='Toàn bộ đã chọn'
-                    ></button>
-                  </div>
-                </div>
-                <div class='field'>
-                  <label for='review-input-time-limit'>Thời gian làm bài</label>
-                  <div class='row'>
-                    <input
-                      type='number'
-                      id='review-input-time-limit'
-                      min='0'
-                      max='1440'
-                      value='35'
-                      inputmode='numeric'
-                    />
-                    <button
-                      type='button'
-                      class='btn btn-ghost btn-icon-only'
-                      id='review-btn-time-unlimited'
-                      data-icon='infinity'
-                      aria-label='Không giới hạn thời gian'
-                      title='Không giới hạn thời gian'
-                    ></button>
-                  </div>
-                </div>
-              </div>
-              <div class='field toggles'>
-                <label class='toggle'>
-                  <input type='checkbox' id='review-chk-shuffle-q' checked />
-                  <span>Đảo thứ tự câu hỏi</span>
-                </label>
-                <label class='toggle'>
-                  <input type='checkbox' id='review-chk-shuffle-a' checked />
-                  <span>Đảo thứ tự đáp án</span>
-                </label>
-              </div>
-            </div>
-            <div class='review-experience-settings'>
-              <h3>Trải nghiệm làm bài</h3>
-              <div class='field toggles experience-toggles'>
-                <label class='toggle'>
-                  <input type='checkbox' id='review-chk-auto-check' />
-                  <span>Tự kiểm tra khi chọn đáp án</span>
-                </label>
-                <label class='toggle'>
-                  <input type='checkbox' id='review-chk-vibration' />
-                  <span>Bật chế độ rung</span>
-                </label>
-              </div>
-              <div class='field experience-sliders'>
-                <div class='field' id='review-field-auto-advance-delay'>
-                  <label for='review-input-auto-advance-delay'>Tự chuyển câu khi trả lời đúng</label>
-                  <div class='row experience-control-row'>
-                    <button
-                      type='button'
-                      class='btn btn-ghost btn-icon-only experience-toggle-btn'
-                      id='review-btn-auto-advance'
-                      data-icon='toggle-left'
-                      aria-pressed='false'
-                      aria-label='Bật tự sang câu tiếp'
-                      title='Tự sang câu tiếp'
-                    ></button>
-                    <input type='checkbox' id='review-chk-auto-advance' class='sr-only' tabindex='-1' />
-                    <div class='slider-inline'>
-                      <input type='range' id='review-input-auto-advance-delay' min='0' max='10' step='1' value='0' />
-                      <span class='slider-value' id='review-label-auto-advance-delay'>0 giây</span>
-                    </div>
-                  </div>
-                </div>
-                <div class='field' id='review-field-sound-volume'>
-                  <label for='review-input-sound-volume'>Âm thanh</label>
-                  <div class='row experience-control-row'>
-                    <button
-                      type='button'
-                      class='btn btn-ghost btn-icon-only experience-toggle-btn'
-                      id='review-btn-sound'
-                      data-icon='volume'
-                      aria-pressed='false'
-                      aria-label='Bật âm thanh'
-                      title='Bật âm thanh'
-                    ></button>
-                    <input type='checkbox' id='review-chk-sound' class='sr-only' tabindex='-1' />
-                    <div class='slider-inline'>
-                      <input type='range' id='review-input-sound-volume' min='1' max='100' step='1' value='1' />
-                      <span class='slider-value' id='review-label-sound-volume'>1%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
             <div class='review-search'>
               <label for='input-review-search'>Tìm kiếm</label>
@@ -554,17 +423,6 @@
                   title='Đi đến câu'
                 ></button>
               </div>
-            </div>
-            <div class='review-selection-actions'>
-              <button
-                type='button'
-                class='btn btn-primary btn-block'
-                id='btn-review-start-selected'
-                data-icon='player-play'
-                disabled
-              >
-                Bắt đầu ôn 0 câu đã chọn
-              </button>
             </div>
           </div>
           <div class='review-list' id='review-list' aria-live='polite'></div>

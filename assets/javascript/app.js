@@ -1,6 +1,6 @@
 import { initEnhance } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
-import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, getDeckNotes, resetDeckNotes } from './storage.js';
+import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, getDeckNotes, resetDeckNotes, getQuestionOverride, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
 const DECKS = {
   quocphong1: {
@@ -58,7 +58,8 @@ const state = {
   bankSearchMatchIndex: -1,
   reviewFocusQuestionNumber: null,
   reviewEditingNoteIndex: null,
-  reviewEditingNoteDraft: ''
+  reviewEditingNoteDraft: '',
+  reviewEditingQuestionIndex: null
 };
 
 const REVIEW_VIRTUAL_OVERSCAN = 3;
@@ -95,6 +96,18 @@ async function loadDeck(id) {
     throw new Error('Tệp dữ liệu ' + meta.file + ' không hợp lệ.');
   };
   const questions = normalizeQuestions(raw);
+  const overrides = getDeckOverrides(id);
+  for (const [key, entry] of Object.entries(overrides)) {
+    const index = Number(key);
+    if (!Number.isInteger(index) || index < 0 || index >= questions.length || !entry) continue;
+    questions[index] = {
+      ...questions[index],
+      question: entry.question,
+      options: entry.options.slice(),
+      correct: entry.correct,
+      fixed: entry.fixed === true
+    };
+  }
   const fingerprint = fingerprintQuestions(questions);
   state.decks[id] = questions;
   state.fingerprints[id] = fingerprint;
@@ -259,11 +272,39 @@ function confirmModal(title, body) {
 };
 
 function currentQuestions() {
-  return state.decks[state.currentDeck] || [];
+  return visibleDeckQuestions(state.currentDeck);
 };
 
 function bankQuestions() {
   return state.decks[state.bankDeck] || [];
+};
+
+function allDeckQuestions(deckId) {
+  return state.decks[deckId] || [];
+};
+
+function visibleDeckQuestions(deckId) {
+  const questions = allDeckQuestions(deckId);
+  const hidden = new Set(getHiddenIndices(deckId));
+  if (!hidden.size) return questions;
+  return questions.filter((question) => !hidden.has(question.originalIndex));
+};
+
+function formatDeckCountLabel(deckId) {
+  const all = allDeckQuestions(deckId);
+  const full = all.length;
+  if (!full) return '0 câu';
+  const visible = visibleDeckQuestions(deckId).length;
+  const hidden = full - visible;
+  if (hidden > 0) return visible + ' câu · ' + hidden + ' ẩn';
+  return visible + ' câu';
+};
+
+function updateDeckCountLabels() {
+  if ($('count-quocphong1')) $('count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
+  if ($('count-quocphong2')) $('count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
+  if ($('bank-count-quocphong1')) $('bank-count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
+  if ($('bank-count-quocphong2')) $('bank-count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
 };
 
 function sessionPreferences(deckId) {
@@ -421,7 +462,8 @@ function getFilteredBankQuestions() {
   const form = readBankForm();
   const query = normalizeSearchText(state.bankSearchQuery);
   const matches = query ? questions.filter((question) => questionMatchesSearch(question, query)) : [];
-  return { questions, form, filtered: questions, query, matches };
+  const filtered = query ? matches : questions;
+  return { questions, form, filtered, query, matches };
 };
 
 function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
@@ -543,13 +585,14 @@ function syncReviewHeightsFromCache(virtualScrollState) {
 function rebuildReviewVirtualMetrics(virtualScrollState) {
   const n = virtualScrollState.filtered.length;
   if (virtualScrollState.heights.length !== n) syncReviewHeightsFromCache(virtualScrollState);
+    const REVIEW_CARD_GAP = 12;
   virtualScrollState.positions = new Array(n);
   let y = 0;
   for (let i = 0; i < n; i++) {
     virtualScrollState.positions[i] = y;
-    y += virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT;
+    y += (virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT) + REVIEW_CARD_GAP;
   };
-  virtualScrollState.totalHeight = y;
+  virtualScrollState.totalHeight = Math.max(0, y - (n ? REVIEW_CARD_GAP : 0));
   if (virtualScrollState.phantom) virtualScrollState.phantom.style.height = Math.max(y, 0) + 'px';
 };
 
@@ -566,6 +609,227 @@ function findReviewVirtualIndex(virtualScrollState, offsetY) {
   return lowerBound;
 };
 
+
+function exitBankQuestionEdit(card) {
+  const parts = card && card._vs;
+  if (!parts || !parts.editBlock) return;
+  parts.editBlock.hidden = true;
+  parts.editBlock.innerHTML = '';
+  parts.prompt.hidden = false;
+  parts.options.hidden = false;
+  state.reviewEditingQuestionIndex = null;
+  if (parts.editBtn) {
+    parts.editBtn.classList.remove('is-active');
+    parts.editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
+    parts.editBtn.title = 'Chỉnh sửa';
+  }
+}
+
+function enterBankQuestionEdit(card, qIndex) {
+  const parts = card._vs;
+  if (!parts) return;
+  const deck = state.decks[state.bankDeck] || [];
+  const question = deck.find((item) => item.originalIndex === qIndex) || deck[qIndex];
+  if (!question) return;
+
+  if (Number.isInteger(state.reviewEditingQuestionIndex) && state.reviewEditingQuestionIndex !== qIndex) {
+    // close previous if still in pool
+    for (const other of (getReviewVirtualState().pool || [])) {
+      if (Number(other.dataset.originalIndex) === state.reviewEditingQuestionIndex) exitBankQuestionEdit(other);
+    }
+  }
+
+  state.reviewEditingQuestionIndex = qIndex;
+  parts.prompt.hidden = true;
+  parts.options.hidden = true;
+  parts.editBlock.hidden = false;
+  parts.editBlock.innerHTML = '';
+  if (parts.editBtn) {
+    parts.editBtn.classList.add('is-active');
+    parts.editBtn.setAttribute('aria-label', 'Đóng chỉnh sửa');
+    parts.editBtn.title = 'Đóng chỉnh sửa';
+  }
+
+  const qLabel = document.createElement('label');
+  qLabel.className = 'review-edit-label';
+  qLabel.textContent = 'Câu hỏi';
+  const qInput = document.createElement('textarea');
+  qInput.className = 'review-edit-question';
+  qInput.rows = 3;
+  qInput.value = question.question;
+
+  const optLabel = document.createElement('div');
+  optLabel.className = 'review-edit-label';
+  optLabel.textContent = 'Đáp án — bấm chữ cái để chọn đáp án đúng';
+
+  const optList = document.createElement('div');
+  optList.className = 'review-edit-options';
+  const optionInputs = [];
+  const radios = [];
+  const letterBtns = [];
+  const optionCount = Math.max(4, question.options.length);
+  for (let i = 0; i < optionCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'review-edit-option-row';
+    const letter = String.fromCharCode(65 + i);
+
+    const letterBtn = document.createElement('button');
+    letterBtn.type = 'button';
+    letterBtn.className = 'review-edit-correct-btn';
+    letterBtn.textContent = letter;
+    letterBtn.setAttribute('aria-label', 'Chọn đáp án đúng ' + letter);
+    letterBtn.title = 'Đáp án đúng: ' + letter;
+    letterBtn.setAttribute('aria-pressed', String(question.correct === i));
+    if (question.correct === i) letterBtn.classList.add('is-correct');
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'bank-edit-correct-' + qIndex;
+    radio.value = String(i);
+    radio.checked = question.correct === i;
+    radio.className = 'sr-only';
+    radio.tabIndex = -1;
+    radio.setAttribute('aria-hidden', 'true');
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'review-edit-option-input';
+    input.placeholder = 'Đáp án ' + letter;
+    input.value = question.options[i] || '';
+
+    letterBtn.addEventListener('click', () => {
+      radios.forEach((r, idx) => {
+        r.checked = idx === i;
+        letterBtns[idx].classList.toggle('is-correct', idx === i);
+        letterBtns[idx].setAttribute('aria-pressed', String(idx === i));
+      });
+    });
+
+    row.append(letterBtn, radio, input);
+    optList.appendChild(row);
+    optionInputs.push(input);
+    radios.push(radio);
+    letterBtns.push(letterBtn);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'review-edit-actions';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'btn btn-primary btn-icon-only';
+  saveBtn.dataset.icon = 'device-floppy';
+  saveBtn.setAttribute('aria-label', 'Lưu');
+  saveBtn.title = 'Lưu';
+
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'btn btn-ghost btn-icon-only';
+  resetBtn.dataset.icon = 'rotate-clockwise';
+  resetBtn.setAttribute('aria-label', 'Khôi phục gốc');
+  resetBtn.title = 'Khôi phục gốc';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'btn btn-ghost btn-icon-only';
+  cancelBtn.dataset.icon = 'x';
+  cancelBtn.setAttribute('aria-label', 'Hủy');
+  cancelBtn.title = 'Hủy';
+
+  // fixed = giữ nguyên thứ tự đáp án (không xáo) khi làm bài
+  let editFixed = question.fixed === true;
+  const fixedBtn = document.createElement('button');
+  fixedBtn.type = 'button';
+  fixedBtn.className = 'btn btn-ghost btn-icon-only review-edit-fixed-toggle';
+  const syncFixedBtn = () => {
+    fixedBtn.setAttribute('aria-pressed', String(editFixed));
+    setToggleIcon(fixedBtn, editFixed, { on: 'pin', off: 'pinned-off' });
+    fixedBtn.setAttribute('aria-label', editFixed ? 'Bỏ cố định đáp án (cho phép xáo)' : 'Cố định đáp án (không xáo)');
+    fixedBtn.title = editFixed ? 'Đáp án cố định — bấm để cho phép xáo' : 'Cố định đáp án — không xáo khi làm bài';
+    fixedBtn.classList.toggle('is-on', editFixed);
+  };
+  syncFixedBtn();
+
+  actions.append(saveBtn, resetBtn, cancelBtn, fixedBtn);
+
+  parts.editBlock.append(qLabel, qInput, optLabel, optList, actions);
+
+  fixedBtn.addEventListener('click', () => {
+    editFixed = !editFixed;
+    syncFixedBtn();
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    exitBankQuestionEdit(card);
+    bindReviewBankCard(card, question, Number(card.dataset.listIndex));
+  });
+
+  resetBtn.addEventListener('click', async () => {
+    const ok = saveQuestionOverride(state.bankDeck, qIndex, null);
+    if (!ok) {
+      toast('Không thể khôi phục. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    }
+    try {
+      await loadDeck(state.bankDeck);
+    } catch {
+      toast('Không thể tải lại dữ liệu gốc.');
+      return;
+    }
+    toast('Đã khôi phục câu hỏi gốc.');
+    state.reviewEditingQuestionIndex = null;
+    renderQuestionBank();
+  });
+
+  saveBtn.addEventListener('click', () => {
+    const questionText = qInput.value.trim();
+    if (!questionText) {
+      toast('Câu hỏi không được để trống.');
+      return;
+    }
+    const options = optionInputs.map((el) => el.value.trim()).filter(Boolean);
+    if (options.length < 2) {
+      toast('Cần ít nhất 2 đáp án.');
+      return;
+    }
+    let correct = radios.findIndex((r) => r.checked);
+    // map radio index to filtered options: use non-empty only in order
+    const filledIndices = [];
+    optionInputs.forEach((el, i) => { if (el.value.trim()) filledIndices.push(i); });
+    if (correct < 0 || !optionInputs[correct] || !optionInputs[correct].value.trim()) {
+      toast('Hãy chọn đáp án đúng trong các đáp án đã nhập.');
+      return;
+    }
+    correct = filledIndices.indexOf(correct);
+    if (correct < 0) {
+      toast('Đáp án đúng không hợp lệ.');
+      return;
+    }
+    const payload = { question: questionText, options, correct, fixed: editFixed === true };
+    const ok = saveQuestionOverride(state.bankDeck, qIndex, payload);
+    if (!ok) {
+      toast('Không thể lưu chỉnh sửa. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    }
+    const deck = state.decks[state.bankDeck];
+    if (deck && deck[qIndex]) {
+      deck[qIndex] = {
+        ...deck[qIndex],
+        question: questionText,
+        options: options.slice(),
+        correct,
+        fixed: editFixed === true
+      };
+      state.fingerprints[state.bankDeck] = fingerprintQuestions(deck);
+    }
+    toast('Đã lưu chỉnh sửa câu hỏi.');
+    state.reviewEditingQuestionIndex = null;
+    renderQuestionBank();
+  });
+
+  qInput.focus();
+}
+
 function createReviewBankCard() {
   const card = document.createElement('article');
   card.className = 'review-q-card review-vs-item';
@@ -575,14 +839,6 @@ function createReviewBankCard() {
   card.style.top = '0';
   card.style.willChange = 'transform';
 
-  const selectLabel = document.createElement('label');
-  selectLabel.className = 'review-select-label';
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  const selectSpan = document.createElement('span');
-  selectSpan.setAttribute('aria-hidden', 'true');
-  selectLabel.append(checkbox, selectSpan);
-
   const heading = document.createElement('h3');
   heading.className = 'review-q-heading';
 
@@ -591,6 +847,28 @@ function createReviewBankCard() {
 
   const toolbar = document.createElement('div');
   toolbar.className = 'question-tools-row review-tools-row';
+
+  const bookmarkBtn = document.createElement('button');
+  bookmarkBtn.type = 'button';
+  bookmarkBtn.className = 'btn btn-ghost btn-icon-only bank-bookmark-btn';
+  bookmarkBtn.dataset.icon = 'bookmark';
+  bookmarkBtn.setAttribute('aria-label', 'Đánh dấu');
+  bookmarkBtn.title = 'Đánh dấu';
+
+  const editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'btn btn-ghost btn-icon-only bank-edit-btn';
+  editBtn.dataset.icon = 'pencil';
+  editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
+  editBtn.title = 'Chỉnh sửa';
+
+  const hideBtn = document.createElement('button');
+  hideBtn.type = 'button';
+  hideBtn.className = 'btn btn-ghost btn-icon-only bank-hide-btn';
+  hideBtn.dataset.icon = 'eye';
+  hideBtn.setAttribute('aria-label', 'Ẩn câu hỏi');
+  hideBtn.title = 'Ẩn câu hỏi';
+  hideBtn.setAttribute('aria-pressed', 'false');
 
   const noteEditBtn = document.createElement('button');
   noteEditBtn.type = 'button';
@@ -620,7 +898,52 @@ function createReviewBankCard() {
     };
     toggleHighlightSelection(selection.deckId, qIndex, selection);
   });
-  toolbar.append(noteEditBtn, hlBtn);
+
+  bookmarkBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    const result = toggleBookmark(state.bankDeck, qIndex);
+    if (result === null) {
+      toast('Không thể cập nhật đánh dấu. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    }
+    bookmarkBtn.classList.toggle('is-bookmarked', result);
+    bookmarkBtn.setAttribute('aria-pressed', String(result));
+    setToggleIcon(bookmarkBtn, result, { on: 'bookmark-off', off: 'bookmark' });
+    bookmarkBtn.setAttribute('aria-label', result ? 'Bỏ đánh dấu' : 'Đánh dấu');
+    bookmarkBtn.title = result ? 'Bỏ đánh dấu' : 'Đánh dấu';
+    toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
+  });
+
+  hideBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    const result = toggleHiddenQuestion(state.bankDeck, qIndex);
+    if (result === null) {
+      toast('Không thể cập nhật trạng thái ẩn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+      return;
+    }
+    card.classList.toggle('is-hidden-question', result);
+    hideBtn.classList.toggle('is-hidden-active', result);
+    hideBtn.setAttribute('aria-pressed', String(result));
+    setToggleIcon(hideBtn, result, { on: 'eye-off', off: 'eye' });
+    hideBtn.setAttribute('aria-label', result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
+    hideBtn.title = result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
+    updateDeckCountLabels();
+    toast(result ? 'Đã ẩn câu hỏi (làm mờ).' : 'Đã hiện lại câu hỏi.');
+  });
+
+  editBtn.addEventListener('click', () => {
+    const qIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(qIndex)) return;
+    if (state.reviewEditingQuestionIndex === qIndex) {
+      exitBankQuestionEdit(card);
+      return;
+    }
+    enterBankQuestionEdit(card, qIndex);
+  });
+
+  toolbar.append(bookmarkBtn, editBtn, hideBtn, noteEditBtn, hlBtn);
 
   const noteBlock = document.createElement('div');
   noteBlock.className = 'review-note-block is-empty';
@@ -773,24 +1096,19 @@ function createReviewBankCard() {
     optionNodes.push({ item, label, text, badge });
   };
 
-  checkbox.addEventListener('change', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    if (checkbox.checked) state.reviewSelectedIndices.add(qIndex);
-    else state.reviewSelectedIndices.delete(qIndex);
-    const count = state.reviewSelectedIndices.size;
-    syncBankCountInput();
-    $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-    $('btn-review-start-selected').disabled = count === 0;
-  });
 
-  card.append(selectLabel, heading, prompt, toolbar, noteBlock, options);
+  const editBlock = document.createElement('div');
+  editBlock.className = 'review-edit-block';
+  editBlock.hidden = true;
+
+  card.append(heading, prompt, toolbar, noteBlock, editBlock, options);
   card._vs = {
-    selectLabel,
-    checkbox,
     heading,
     prompt,
     toolbar,
+    bookmarkBtn,
+    editBtn,
+    hideBtn,
     noteBlock,
     noteText,
     noteInput: noteInputEl,
@@ -800,6 +1118,7 @@ function createReviewBankCard() {
     noteCancelBtn,
     setReviewNoteViewMode,
     setReviewNoteEditMode,
+    editBlock,
     options,
     optionNodes
   };
@@ -813,9 +1132,41 @@ function bindReviewBankCard(card, question, listIndex) {
   card.dataset.originalIndex = String(question.originalIndex);
   card.id = 'review-question-' + (question.originalIndex + 1);
   parts.heading.textContent = 'Câu ' + (question.originalIndex + 1);
-  parts.checkbox.checked = state.reviewSelectedIndices.has(question.originalIndex);
-  parts.checkbox.setAttribute('aria-label', 'Chọn câu ' + (question.originalIndex + 1));
   card.classList.toggle('review-q-highlight', state.reviewFocusQuestionNumber === question.originalIndex + 1);
+  card.classList.toggle('is-answer-fixed', question.fixed === true);
+
+  const isBookmarked = getBookmarkedIndices(state.bankDeck).includes(question.originalIndex);
+  if (parts.bookmarkBtn) {
+    parts.bookmarkBtn.classList.toggle('is-bookmarked', isBookmarked);
+    parts.bookmarkBtn.setAttribute('aria-pressed', String(isBookmarked));
+    setToggleIcon(parts.bookmarkBtn, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
+    parts.bookmarkBtn.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
+    parts.bookmarkBtn.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
+  }
+
+  const hidden = isQuestionHidden(state.bankDeck, question.originalIndex);
+  card.classList.toggle('is-hidden-question', hidden);
+  if (parts.hideBtn) {
+    parts.hideBtn.classList.toggle('is-hidden-active', hidden);
+    parts.hideBtn.setAttribute('aria-pressed', String(hidden));
+    setToggleIcon(parts.hideBtn, hidden, { on: 'eye-off', off: 'eye' });
+    parts.hideBtn.setAttribute('aria-label', hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
+    parts.hideBtn.title = hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
+  }
+
+  if (state.reviewEditingQuestionIndex === question.originalIndex) {
+    if (parts.editBlock.hidden || !parts.editBlock.childElementCount) {
+      enterBankQuestionEdit(card, question.originalIndex);
+    } else {
+      parts.prompt.hidden = true;
+      parts.options.hidden = true;
+      parts.editBlock.hidden = false;
+    }
+  } else {
+    if (!parts.editBlock.hidden) exitBankQuestionEdit(card);
+    parts.prompt.hidden = false;
+    parts.options.hidden = false;
+  }
 
   renderTextWithHighlights(parts.prompt, question.question, state.bankDeck, question.originalIndex, 'question');
 
@@ -1044,19 +1395,9 @@ function renderQuestionBank() {
   };
   const searchInput = $('input-review-search');
   if (searchInput && searchInput.value !== state.bankSearchQuery) searchInput.value = state.bankSearchQuery;
-  const selectedCount = state.reviewSelectedIndices.size;
-  syncBankCountInput();
-  const startSelectedButton = $('btn-review-start-selected');
-  if (startSelectedButton) {
-    startSelectedButton.textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + selectedCount + ' câu đã chọn';
-    startSelectedButton.disabled = selectedCount === 0;
-  };
   $('review-title').textContent = DECKS[state.bankDeck]?.label || 'Ngân hàng câu hỏi';
   document.querySelectorAll('[data-bank-deck]').forEach((btn) => btn.classList.toggle('active', btn.dataset.bankDeck === state.bankDeck));
-  if ($('bank-count-quocphong1')) {
-    $('bank-count-quocphong1').textContent = (state.decks.quocphong1?.length ?? 479) + ' câu';
-    $('bank-count-quocphong2').textContent = (state.decks.quocphong2?.length ?? 262) + ' câu';
-  };
+  updateDeckCountLabels();
 
   const list = $('review-list');
   const virtualScrollState = getReviewVirtualState();
@@ -1135,22 +1476,23 @@ function openQuestionBank() {
 
 function refreshSetupUI() {
   const questions = currentQuestions();
+  const fullTotal = allDeckQuestions(state.currentDeck).length;
   const total = questions.length;
-  $('count-quocphong1').textContent = (state.decks.quocphong1?.length ?? '479') + ' câu';
-  $('count-quocphong2').textContent = (state.decks.quocphong2?.length ?? '262') + ' câu';
+  updateDeckCountLabels();
 
   document.querySelectorAll('.deck-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.deck === state.currentDeck));
 
   const startInput = $('input-range-start');
   const endInput = $('input-range-end');
-  startInput.max = String(Math.max(1, total));
-  endInput.max = String(Math.max(1, total));
+  // Vùng câu hỏi theo số gốc (1..fullTotal); câu ẩn bị loại khi tạo pool
+  startInput.max = String(Math.max(1, fullTotal));
+  endInput.max = String(Math.max(1, fullTotal));
   let start = Number.parseInt(startInput.value, 10);
   let end = Number.parseInt(endInput.value, 10);
   if (!Number.isInteger(start)) start = 1;
-  if (!Number.isInteger(end)) end = total;
-  start = Math.max(1, Math.min(start, Math.max(1, total)));
-  end = Math.max(start, Math.min(end, Math.max(1, total)));
+  if (!Number.isInteger(end)) end = fullTotal;
+  start = Math.max(1, Math.min(start, Math.max(1, fullTotal)));
+  end = Math.max(start, Math.min(end, Math.max(1, fullTotal)));
   startInput.value = String(start);
   endInput.value = String(end);
 
@@ -1208,22 +1550,23 @@ function refreshSetupUI() {
   if (progress.sequentialCursor >= total) $('stat-cursor').textContent = 'Đã làm hết bộ đề';
   else $('stat-cursor').textContent = String(progress.sequentialCursor + 1);
 
+  const hiddenSet = new Set(getHiddenIndices(state.currentDeck));
   const btnWrong = $('btn-practice-wrong');
   const rangeWrongCount = getRangeWrongIndices(
     state.currentDeck,
     start,
     end
-  ).length;
+  ).filter((index) => !hiddenSet.has(index)).length;
   btnWrong.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
   btnWrong.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
 
-  const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < total).length;
+  const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < fullTotal && !hiddenSet.has(index)).length;
   const btnAllWrong = $('btn-practice-all-wrong');
   btnAllWrong.disabled = state.practiceMode === 'exam' || allWrongCount === 0;
   btnAllWrong.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
-  const rangeBookmarkCount = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex)).length;
+  const rangeBookmarkCount = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex) && !hiddenSet.has(question.originalIndex)).length;
   const btnBookmarks = $('btn-practice-bookmarks');
   btnBookmarks.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
   btnBookmarks.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
@@ -3267,38 +3610,6 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  $('btn-review-start-selected').addEventListener('click', () => {
-    const form = persistBankForm();
-    const selected = bankQuestions().filter((question) => state.reviewSelectedIndices.has(question.originalIndex));
-    if (!selected.length) {
-      toast('Hãy chọn ít nhất một câu hỏi.');
-      return;
-    };
-    let pool = selected.slice();
-    if (form.shuffleQuestions) {
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      };
-    };
-    const take = Math.min(pool.length, Math.max(1, form.count));
-    pool = pool.slice(0, take);
-    const selectedIndices = pool.map((question) => question.originalIndex);
-    state.reviewSelectedIndices.clear();
-    startSessionFromPool(pool, {
-      mode: 'normal',
-      sequential: false,
-      rangeStart: Math.min(...selectedIndices) + 1,
-      rangeEnd: Math.max(...selectedIndices) + 1,
-      requestedCount: pool.length,
-      examMode: form.practiceMode === 'exam',
-      forceShuffleQuestions: form.shuffleQuestions,
-      alreadyShuffled: true,
-      fromBank: true,
-      timeLimit: form.timeLimit,
-      shuffleAnswers: form.shuffleAnswers
-    });
-  });
   $('btn-review-goto').addEventListener('click', () => {
     const n = Number.parseInt($('input-review-goto').value, 10);
     const total = bankQuestions().length;

@@ -3,7 +3,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('../fonts/InterVariable.woff2') format('woff2');
+  src: url('../fonts/Inter.woff2') format('woff2');
 }
 
 :root {
@@ -619,6 +619,27 @@ input[type='search']:focus {
 [data-icon='toggle-left']::before {
   -webkit-mask-image: url('../icons/tabler/toggle-left.svg');
   mask-image: url('../icons/tabler/toggle-left.svg');
+}
+
+[data-icon='eye']::before {
+  -webkit-mask-image: url('../icons/tabler/eye.svg');
+  mask-image: url('../icons/tabler/eye.svg');
+}
+[data-icon='eye-off']::before {
+  -webkit-mask-image: url('../icons/tabler/eye-off.svg');
+  mask-image: url('../icons/tabler/eye-off.svg');
+}
+[data-icon='pencil']::before {
+  -webkit-mask-image: url('../icons/tabler/pencil.svg');
+  mask-image: url('../icons/tabler/pencil.svg');
+}
+[data-icon='pin']::before {
+  -webkit-mask-image: url('../icons/tabler/pin.svg');
+  mask-image: url('../icons/tabler/pin.svg');
+}
+[data-icon='pinned-off']::before {
+  -webkit-mask-image: url('../icons/tabler/pinned-off.svg');
+  mask-image: url('../icons/tabler/pinned-off.svg');
 }
 
 .loading-card {
@@ -1829,6 +1850,10 @@ input[type='search']:focus {
   width: 100%;
 }
 
+#screen-review > .review-list {
+  margin-top: 12px;
+}
+
 .review-q-card {
   min-width: 0;
   padding: 18px;
@@ -2688,4 +2713,151 @@ body[data-screen='exam'] .toast {
 
 .review-deck-switch {
   margin: 0.75rem 0 1rem;
+}
+
+.review-tools-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.bank-bookmark-btn.is-bookmarked,
+.bookmark-btn.is-bookmarked {
+  color: var(--accent, #2563eb);
+}
+
+.bank-hide-btn.is-hidden-active {
+  color: var(--danger, #dc2626);
+}
+
+.bank-edit-btn.is-active {
+  color: var(--accent, #2563eb);
+}
+
+.review-q-card.is-hidden-question {
+  opacity: 0.38;
+  filter: grayscale(0.35);
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.review-q-card.is-hidden-question * {
+  pointer-events: auto;
+}
+
+.review-hidden-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.review-edit-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.75rem;
+  background: var(--surface-2, #f8fafc);
+}
+
+.review-edit-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+}
+
+.review-edit-question,
+.review-edit-option-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: var(--surface, #fff);
+  color: inherit;
+}
+
+.review-edit-question {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.review-edit-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.review-edit-option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.review-edit-option-row input[type='radio'] {
+  flex: 0 0 auto;
+}
+
+.review-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  align-items: center;
+}
+
+.review-edit-fixed-toggle.is-on {
+  color: var(--accent, #60a5fa);
+}
+
+.review-q-card.is-answer-fixed .review-q-heading::after {
+  content: ' · cố định đáp án';
+  font-weight: 500;
+  font-size: 0.78em;
+  opacity: 0.7;
+}
+
+
+.review-edit-correct-btn {
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.review-edit-correct-btn.is-correct {
+  background: color-mix(in srgb, #22c55e 28%, transparent);
+  border-color: color-mix(in srgb, #22c55e 55%, transparent);
+  color: #86efac;
+}
+
+.review-edit-option-row .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.review-header #btn-review-back {
+  margin-bottom: 0.35rem;
 }

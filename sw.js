@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.1.2';
+const VERSION = '1.1.9';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,7 @@ const ASSETS = [
   './manifest.webmanifest',
   './data/quocphong1.json',
   './data/quocphong2.json',
-  './assets/fonts/InterVariable.woff2',
+  './assets/fonts/Inter.woff2',
   './assets/css/style.css',
   './assets/javascript/app.js',
   './assets/javascript/enhance.js',
@@ -18,6 +18,11 @@ const ASSETS = [
   './assets/icons/icon.svg',
   './assets/icons/tabler/bookmark.svg',
   './assets/icons/tabler/bookmark-off.svg',
+  './assets/icons/tabler/pencil.svg',
+  './assets/icons/tabler/pinned-off.svg',
+  './assets/icons/tabler/pin.svg',
+  './assets/icons/tabler/eye-off.svg',
+  './assets/icons/tabler/eye.svg',
   './assets/icons/tabler/check.svg',
   './assets/icons/tabler/chevron-left.svg',
   './assets/icons/tabler/chevron-right.svg',
