@@ -1,0 +1,80 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const read = (path) => readFile(new URL('../' + path, import.meta.url), 'utf8');
+const [html, css, application, enhancements, quiz, storage, serviceWorker, firstDeckText, secondDeckText, manifestText] = await Promise.all([
+  read('index.html'),
+  read('assets/css/style.css'),
+  read('assets/javascript/app.js'),
+  read('assets/javascript/enhance.js'),
+  read('assets/javascript/quiz.js'),
+  read('assets/javascript/storage.js'),
+  read('sw.js'),
+  read('data/quocphong1.json'),
+  read('data/quocphong2.json'),
+  read('manifest.webmanifest')
+]);
+
+const htmlIdentifiers = [...html.matchAll(/\bid=['"]([^'"]+)['"]/g)].map((match) => match[1]);
+assert.equal(new Set(htmlIdentifiers).size, htmlIdentifiers.length, 'HTML identifiers must be unique');
+
+const allJavaScript = [application, enhancements, quiz, storage, serviceWorker].join('\n');
+const referencedIdentifiers = new Set([...allJavaScript.matchAll(/getElementById\(['"]([^'"]+)['"]\)/g)].map((match) => match[1]));
+for (const identifier of referencedIdentifiers) {
+  assert.ok(htmlIdentifiers.includes(identifier), 'JavaScript references a missing HTML identifier: ' + identifier);
+}
+
+const styleClasses = new Set([...css.matchAll(/\.([a-zA-Z_-][\w-]*)/g)].map((match) => match[1]));
+const htmlClasses = [...html.matchAll(/\bclass=['"]([^'"]+)['"]/g)].flatMap((match) => match[1].split(/\s+/).filter(Boolean));
+for (const className of htmlClasses) {
+  assert.ok(styleClasses.has(className), 'HTML class has no CSS rule: ' + className);
+}
+
+const javascriptClasses = [...allJavaScript.matchAll(/(?:className\s*=\s*|classList\.(?:add|remove|toggle)\()\s*['"]([^'"]+)['"]/g)]
+  .flatMap((match) => match[1].split(/\s+/).filter(Boolean));
+for (const className of javascriptClasses) {
+  assert.ok(styleClasses.has(className), 'JavaScript assigns a class with no CSS rule: ' + className);
+}
+
+const declaredProperties = new Set([...css.matchAll(/(--[a-zA-Z0-9_-]+)\s*:/g)].map((match) => match[1]));
+const referencedProperties = new Set([...css.matchAll(/var\((--[a-zA-Z0-9_-]+)/g)].map((match) => match[1]));
+const dynamicallyAssignedProperties = new Set([...enhancements.matchAll(/['"](--[a-zA-Z0-9_-]+)['"]/g)].map((match) => match[1]));
+for (const property of referencedProperties) {
+  assert.ok(declaredProperties.has(property) || dynamicallyAssignedProperties.has(property), 'CSS custom property has no definition: ' + property);
+}
+
+const firstDeck = JSON.parse(firstDeckText);
+const secondDeck = JSON.parse(secondDeckText);
+const manifest = JSON.parse(manifestText);
+
+const quizModule = await import('data:text/javascript;charset=utf-8,' + encodeURIComponent(quiz));
+const normalizedFirstDeck = quizModule.normalizeQuestions(firstDeck);
+assert.equal(normalizedFirstDeck.length, firstDeck.length, 'Question normalization must preserve the first set length');
+const fixedQuestion = { originalIndex: 0, question: 'Fixed answer order', options: ['A', 'B', 'C'], correct: 1, fixed: true };
+const fixedSession = quizModule.createSessionItems([fixedQuestion], { shuffleQuestions: false, shuffleAnswers: true });
+assert.deepEqual(fixedSession[0].optionOrder, [0, 1, 2], 'Fixed questions must never shuffle their answer order');
+assert.equal(quizModule.getEndQuestionForDeckSwitch(479, 479, 262), 262, 'Switching from the end of the first set must clamp to the second set');
+assert.equal(quizModule.getEndQuestionForDeckSwitch(173, 479, 262), 173, 'Switching decks must preserve a non-maximum question range');
+assert.equal(firstDeck.length, 479, 'The first question set must contain 479 questions');
+assert.equal(secondDeck.length, 262, 'The second question set must contain 262 questions');
+for (const [deckName, questions] of [['first question set', firstDeck], ['second question set', secondDeck]]) {
+  for (const [index, question] of questions.entries()) {
+    assert.equal(typeof question.question, 'string', deckName + ', question ' + (index + 1) + ': question text must be a string');
+    assert.ok(question.question.trim(), deckName + ', question ' + (index + 1) + ': question text must not be empty');
+    assert.ok(Array.isArray(question.options) && question.options.length >= 2, deckName + ', question ' + (index + 1) + ': at least two answers are required');
+    assert.ok(Number.isInteger(question.correct) && question.correct >= 0 && question.correct < question.options.length, deckName + ', question ' + (index + 1) + ': correct answer index is invalid');
+    if (Object.hasOwn(question, 'fixed')) assert.equal(typeof question.fixed, 'boolean', deckName + ', question ' + (index + 1) + ': fixed must be boolean');
+  }
+}
+assert.ok(manifest.name && manifest.start_url, 'The web app manifest must contain its name and start URL');
+assert.ok(application.includes('initializeEnhancements'), 'The application must initialize its enhancement module');
+assert.ok(storage.includes('settings: null'), 'The storage root must use the settings key');
+assert.ok(!storage.includes('export function getBankSettings') && !storage.includes('export function saveBankSettings'), 'Obsolete bank settings APIs must be removed');
+assert.ok(!application.includes('getBankSettings') && !application.includes('saveBankSettings'), 'The application must not depend on bank settings');
+assert.ok(storage.includes('delete data.bankSettings'), 'Legacy bank settings must be removed during migration');
+assert.ok(application.includes("persistSetupForm();\n  });\n  getElementById('input-auto-advance-delay')?.addEventListener('change', persistSetupForm)"), 'Auto-advance delay changes must be persisted while adjusting the slider');
+assert.ok(application.includes("syncSoundFromVolume('input-sound-volume', 'checkbox-sound', 'label-sound-volume');\n    persistSetupForm();\n  });"), 'Sound volume changes must be persisted while adjusting the slider');
+assert.ok(application.includes('actions.append(saveBtn, resetBtn, fixedQuestionButton, cancelBtn)'), 'Question edit cancel action must be last');
+assert.ok(css.includes('.note-actions-icons,\n.review-note-action-buttons,\n.review-edit-action-buttons'), 'Question edit actions must share note action alignment styles');
+
+process.stdout.write('Project validation passed.\n');

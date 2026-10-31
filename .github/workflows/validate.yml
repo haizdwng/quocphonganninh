@@ -1,0 +1,36 @@
+name: Validate project
+
+on:
+  push:
+    branches:
+      - main
+      - refactor/remove-unused-and-normalize-names
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check JavaScript syntax
+        run: |
+          for file in assets/javascript/*.js sw.js; do
+            node --input-type=module --check < "$file"
+          done
+      - name: Check JSON data and manifest
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; for (const file of ['data/quocphong1.json', 'data/quocphong2.json', 'manifest.webmanifest']) JSON.parse(fs.readFileSync(file, 'utf8'));"
+      - name: Validate HTML, CSS, manifest, and question data
+        run: node tests/validate-project.mjs
+      - name: Check unused variables and suspicious JavaScript
+        run: npx --yes eslint@9 --no-config-lookup --config eslint.config.js assets/javascript/*.js sw.js
