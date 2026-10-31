@@ -2544,7 +2544,7 @@ function onSelectOption(displayIdx) {
     const delay = Number.isInteger(preferences.autoCheckDelay) ? Math.min(10, Math.max(0, preferences.autoCheckDelay)) : 0;
     if (delay === 0) onCheck();
     else setTimeout(() => {
-      if (state.session === session && currentSessionItem() === item && item.status !== 'correct') onCheck();
+      if (state.session === session && currentSessionItem() === item && item.userAnswer === displayIdx && item.status !== 'correct') onCheck();
     }, delay * 1000);
   };
 };
