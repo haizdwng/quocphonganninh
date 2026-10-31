@@ -1,4 +1,4 @@
-import { initEnhance } from './enhance.js';
+import { initializeEnhancements } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
 import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, getDeckNotes, resetDeckNotes, getQuestionOverride, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
@@ -687,7 +687,7 @@ function enterBankQuestionEdit(card, questionIndex) {
     radio.name = 'bank-edit-correct-' + questionIndex;
     radio.value = String(i);
     radio.checked = question.correct === i;
-    radio.className = 'sr-only';
+    radio.className = 'screen-reader-only';
     radio.tabIndex = -1;
     radio.setAttribute('aria-hidden', 'true');
 
@@ -832,7 +832,7 @@ function enterBankQuestionEdit(card, questionIndex) {
 
 function createReviewBankCard() {
   const card = document.createElement('article');
-  card.className = 'review-question-card review-vs-item';
+  card.className = 'review-question-card review-virtual-scroll-item';
   card.style.position = 'absolute';
   card.style.left = '0';
   card.style.right = '0';
@@ -1404,7 +1404,7 @@ function renderQuestionBank() {
   virtualScrollState.filtered = filtered;
   syncReviewHeightsFromCache(virtualScrollState);
 
-  list.classList.add('review-list-virtual');
+  list.classList.add('review-list-virtualized');
   const keep = new Set(virtualScrollState.pool);
   if (virtualScrollState.phantom) keep.add(virtualScrollState.phantom);
   for (const child of [...list.children]) {
@@ -1412,7 +1412,7 @@ function renderQuestionBank() {
   };
   if (!virtualScrollState.phantom) {
     virtualScrollState.phantom = document.createElement('div');
-    virtualScrollState.phantom.className = 'review-vs-phantom';
+    virtualScrollState.phantom.className = 'review-virtual-scroll-phantom';
     virtualScrollState.phantom.setAttribute('aria-hidden', 'true');
   };
   if (!virtualScrollState.phantom.parentNode) list.insertBefore(virtualScrollState.phantom, list.firstChild);
@@ -2425,7 +2425,7 @@ function renderExam() {
   const session = state.session;
   if (!session || !session.examMode) return;
   const list = getElementById('exam-list');
-  const nav = getElementById('exam-nav');
+  const nav = getElementById('exam-navigation');
   if (!list || !nav) return;
   const scrollY = window.scrollY;
   list.replaceChildren();
@@ -2497,7 +2497,7 @@ function renderExam() {
 
     const dot = document.createElement('button');
     dot.type = 'button';
-    dot.className = 'exam-nav-dot';
+    dot.className = 'exam-navigation-dot';
     dot.textContent = String(index + 1);
     dot.title = 'Câu ' + (index + 1);
     dot.dataset.index = String(index);
@@ -2530,7 +2530,7 @@ function patchExamQuestion(questionIndex) {
     button.classList.toggle('selected', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
-  const dot = getElementById('exam-nav')?.querySelector('.exam-nav-dot[data-index="' + questionIndex + '"]');
+  const dot = getElementById('exam-navigation')?.querySelector('.exam-navigation-dot[data-index="' + questionIndex + '"]');
   if (dot) dot.classList.toggle('is-answered', item.userAnswer != null);
   updateExamProgressHeader();
   applyExamFilter();
@@ -3356,7 +3356,7 @@ function bindKeyboardShortcuts() {
 
 function bindEvents() {
   bindKeyboardShortcuts();
-  initEnhance({ onPrev, onNext });
+  initializeEnhancements({ onPrev, onNext });
 
   document.querySelectorAll('#screen-setup .deck-btn[data-deck]').forEach((button) => {
     button.addEventListener('click', () => {
