@@ -1670,8 +1670,8 @@ function readBankForm() {
     deck: state.bankDeck === 'quocphong2' ? 'quocphong2' : 'quocphong1',
     count,
     timeLimit,
-    shuffleQuestions: !!getElementById('review-checkbox-shuffle-questionsuestions')?.checked,
-    shuffleAnswers: !!getElementById('review-checkbox-shuffle-answersnswers')?.checked,
+    shuffleQuestions: !!getElementById('review-checkbox-shuffle-questions')?.checked,
+    shuffleAnswers: !!getElementById('review-checkbox-shuffle-answers')?.checked,
     practiceMode: state.bankPracticeMode === 'exam' ? 'exam' : 'practice',
     autoCheck: !!getElementById('review-checkbox-automatic-check')?.checked,
     autoAdvance: !!getElementById('review-checkbox-automatic-advance')?.checked,
@@ -1696,8 +1696,8 @@ function applyBankSettingsToForm(settings) {
   getElementById('review-input-count').min = selectedCount === 0 ? '0' : '1';
   getElementById('review-input-count').max = String(selectedCount);
   getElementById('review-input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
-  getElementById('review-checkbox-shuffle-questionsuestions').checked = settings.shuffleQuestions !== false;
-  getElementById('review-checkbox-shuffle-answersnswers').checked = settings.shuffleAnswers !== false;
+  getElementById('review-checkbox-shuffle-questions').checked = settings.shuffleQuestions !== false;
+  getElementById('review-checkbox-shuffle-answers').checked = settings.shuffleAnswers !== false;
   if (getElementById('review-checkbox-automatic-check')) {
     getElementById('review-checkbox-automatic-check').checked = settings.autoCheck === true;
     getElementById('review-checkbox-automatic-advance').checked = settings.autoAdvance === true;
@@ -3685,7 +3685,7 @@ function bindEvents() {
     });
   };
 
-  for (const reviewId of ['review-checkbox-shuffle-questionsuestions', 'review-checkbox-shuffle-answersnswers', 'review-checkbox-automatic-check', 'review-checkbox-vibration']) {
+  for (const reviewId of ['review-checkbox-shuffle-questions', 'review-checkbox-shuffle-answers', 'review-checkbox-automatic-check', 'review-checkbox-vibration']) {
     const element = getElementById(reviewId);
     if (!element) continue;
     element.addEventListener('change', () => {
