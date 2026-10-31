@@ -377,20 +377,6 @@ export function saveQuestionNote(deckId, originalIndex, text) {
   return writeRoot(root);
 };
 
-export function getDeckNotes(deckId) {
-  const root = readRoot();
-  const notes = root.notes && typeof root.notes === 'object' ? root.notes : {};
-  const deck = notes[normalizeDeckId(deckId)];
-  if (!deck || typeof deck !== 'object') return {};
-  const result = {};
-  for (const [key, value] of Object.entries(deck)) {
-    const index = Number(key);
-    const text = normalizeNoteText(value);
-    if (Number.isInteger(index) && index >= 0 && text) result[index] = text;
-  };
-  return result;
-};
-
 export function resetDeckNotes(deckId) {
   const root = readRoot();
   if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphong1: {}, quocphong2: {} };
@@ -409,15 +395,6 @@ function normalizeOverrideEntry(value) {
   const correct = Number(value.correct);
   if (!Number.isInteger(correct) || correct < 0 || correct >= options.length) return null;
   return { question, options, correct, fixed: value.fixed === true };
-}
-
-export function getQuestionOverride(deckId, originalIndex) {
-  if (!Number.isInteger(originalIndex) || originalIndex < 0) return null;
-  const root = readRoot();
-  const overrides = root.overrides && typeof root.overrides === 'object' ? root.overrides : {};
-  const deck = overrides[normalizeDeckId(deckId)];
-  if (!deck || typeof deck !== 'object') return null;
-  return normalizeOverrideEntry(deck[String(originalIndex)]);
 }
 
 export function saveQuestionOverride(deckId, originalIndex, payload) {
