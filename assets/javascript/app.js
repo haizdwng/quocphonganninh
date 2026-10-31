@@ -331,7 +331,7 @@ function renderTextWithHighlights(element, text, deckId, originalIndex, target) 
   for (const range of merged) {
     if (range.start > cursor) element.appendChild(document.createTextNode(text.slice(cursor, range.start)));
     const mark = document.createElement('span');
-    mark.className = 'text-highlight';
+    mark.className = 'highlighted-text';
     mark.textContent = text.slice(range.start, range.end);
     element.appendChild(mark);
     cursor = range.end;
@@ -713,7 +713,7 @@ function enterBankQuestionEdit(card, questionIndex) {
   }
 
   const actions = document.createElement('div');
-  actions.className = 'review-edit-actions';
+  actions.className = 'review-edit-action-buttons';
 
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
@@ -1412,7 +1412,7 @@ function renderQuestionBank() {
   };
   if (!virtualScrollState.phantom) {
     virtualScrollState.phantom = document.createElement('div');
-    virtualScrollState.phantom.className = 'review-virtual-scroll-phantom';
+    virtualScrollState.phantom.className = 'review-virtual-scroll-placeholder';
     virtualScrollState.phantom.setAttribute('aria-hidden', 'true');
   };
   if (!virtualScrollState.phantom.parentNode) list.insertBefore(virtualScrollState.phantom, list.firstChild);
@@ -2253,7 +2253,7 @@ function renderQuestion() {
   item.optionOrder.forEach((origIdx, displayIdx) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'option';
+    button.className = 'answer-option';
     button.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
     button.dataset.display = String(displayIdx);
 
@@ -2275,10 +2275,10 @@ function renderQuestion() {
     };
 
     const key = document.createElement('span');
-    key.className = 'option-key';
+    key.className = 'answer-option-key';
     key.textContent = labels[displayIdx] || String(displayIdx + 1);
     const text = document.createElement('span');
-    text.className = 'option-text';
+    text.className = 'answer-option-text';
     renderTextWithHighlights(text, question.options[origIdx], session.deckId, question.originalIndex, 'option:' + origIdx);
     button.append(key, text);
 
@@ -2452,7 +2452,7 @@ function renderExam() {
     head.appendChild(num);
     if (session.reviewMode) {
       const badge = document.createElement('span');
-      badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'ok' : 'bad');
+      badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'is-correct-answer' : 'is-incorrect-answer');
       badge.textContent = item.status === 'correct' ? 'Đúng' : item.userAnswer == null ? 'Bỏ trống' : 'Sai';
       head.appendChild(badge);
     };
@@ -2471,7 +2471,7 @@ function renderExam() {
     item.optionOrder.forEach((origIdx, displayIdx) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'option';
+      button.className = 'answer-option';
       button.dataset.q = String(index);
       button.dataset.display = String(displayIdx);
       button.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
@@ -2483,10 +2483,10 @@ function renderExam() {
         if (item.userAnswer === displayIdx && item.status === 'wrong') button.classList.add('incorrect');
       };
       const label = document.createElement('span');
-      label.className = 'option-key';
+      label.className = 'answer-option-key';
       label.textContent = labels[displayIdx] || String(displayIdx + 1);
       const body = document.createElement('span');
-      body.className = 'option-text';
+      body.className = 'answer-option-text';
       body.textContent = question.options[origIdx];
       button.append(label, body);
       if (!session.reviewMode) button.addEventListener('click', () => onExamSelect(index, displayIdx));
@@ -2497,7 +2497,7 @@ function renderExam() {
 
     const dot = document.createElement('button');
     dot.type = 'button';
-    dot.className = 'exam-navigation-dot';
+    dot.className = 'exam-question-navigation-dot';
     dot.textContent = String(index + 1);
     dot.title = 'Câu ' + (index + 1);
     dot.dataset.index = String(index);
@@ -3119,7 +3119,7 @@ function showSummary(summary, deckId, mode) {
     for (const wrongQuestion of summary.wrongList) {
       const listItemElement = document.createElement('li');
       const index = document.createElement('span');
-      index.className = 'index';
+      index.className = 'question-index';
       index.textContent = `#${wrongQuestion.originalIndex + 1}`;
       listItemElement.append(index, document.createTextNode(wrongQuestion.question));
       list.appendChild(listItemElement);
