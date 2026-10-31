@@ -2212,3 +2212,24 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
     transition-duration: 0.01ms !important;
   }
 }
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --raised-surface-color: #f0f3f7;
+  --high-surface-color: #ffffff;
+  --highest-surface-color: #e8edf3;
+  --inset-background-color: #edf1f6;
+  --text: #182230;
+  --secondary-text-color: #526071;
+  --muted: #6b7788;
+  --border-color: #d8dee8;
+  --border: #d8dee8;
+  --text-on-accent-color: #ffffff;
+}
+
+:root[data-theme='light'] body { background: var(--bg); color: var(--text); }
+:root[data-theme='light'] .card,
+:root[data-theme='light'] .review-question-card { background: var(--surface); }
+:root[data-theme='light'] .button-scroll-to-top { box-shadow: 0 6px 18px rgba(20, 30, 45, 0.16); }
