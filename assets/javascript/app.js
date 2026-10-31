@@ -872,14 +872,14 @@ function createReviewBankCard() {
 
   const noteEditBtn = document.createElement('button');
   noteEditBtn.type = 'button';
-  noteEditBtn.className = 'note-btn button-icon-only';
+  noteEditBtn.className = 'button-icon-only';
   noteEditBtn.dataset.icon = 'note';
   noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
   noteEditBtn.title = 'Sửa ghi chú';
 
   const hlBtn = document.createElement('button');
   hlBtn.type = 'button';
-  hlBtn.className = 'button button-ghost button-icon-only highlight-toggle-btn';
+  hlBtn.className = 'button button-ghost button-icon-only';
   hlBtn.dataset.icon = 'highlight';
   hlBtn.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
   hlBtn.title = 'Highlight';
@@ -2464,7 +2464,7 @@ function renderExam() {
     card.appendChild(text);
 
     const opts = document.createElement('div');
-    opts.className = 'exam-options options';
+    opts.className = 'exam-options answer-options';
     opts.setAttribute('role', 'group');
     opts.setAttribute('aria-label', 'Đáp án câu ' + (index + 1));
 
@@ -2524,7 +2524,7 @@ function patchExamQuestion(questionIndex) {
     return;
   };
   card.classList.toggle('is-answered', item.userAnswer != null);
-  card.querySelectorAll('.option').forEach((button) => {
+  card.querySelectorAll('.answer-option').forEach((button) => {
     const displayIdx = Number(button.dataset.display);
     const selected = item.userAnswer === displayIdx;
     button.classList.toggle('selected', selected);
@@ -3320,7 +3320,7 @@ function bindKeyboardShortcuts() {
     if (!quizActive) return;
 
     if (/^[1-6]$/.test(event.key)) {
-      const option = getElementById('options').querySelectorAll('.option')[Number(event.key) - 1];
+      const option = getElementById('options').querySelectorAll('.answer-option')[Number(event.key) - 1];
       if (option && !option.disabled) {
         event.preventDefault();
         option.click();
@@ -3329,7 +3329,7 @@ function bindKeyboardShortcuts() {
     };
     if (/^[a-f]$/i.test(event.key)) {
       const index = event.key.toUpperCase().charCodeAt(0) - 65;
-      const option = getElementById('options').querySelectorAll('.option')[index];
+      const option = getElementById('options').querySelectorAll('.answer-option')[index];
       if (option && !option.disabled) {
         event.preventDefault();
         option.click();
