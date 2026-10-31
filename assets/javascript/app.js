@@ -626,6 +626,15 @@ function enterBankQuestionEdit(card, questionIndex) {
   const question = deck.find((item) => item.originalIndex === questionIndex) || deck[questionIndex];
   if (!question) return;
 
+  if (state.reviewEditingNoteIndex === questionIndex) {
+    const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.originalIndex) === questionIndex);
+    if (activeCard?._vs?.setReviewNoteViewMode) activeCard._vs.setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
+    else {
+      state.reviewEditingNoteIndex = null;
+      state.reviewEditingNoteDraft = '';
+    };
+  };
+
   if (Number.isInteger(state.reviewEditingQuestionIndex) && state.reviewEditingQuestionIndex !== questionIndex) {
     for (const other of (getReviewVirtualState().pool || [])) {
       if (Number(other.dataset.originalIndex) === state.reviewEditingQuestionIndex) exitBankQuestionEdit(other);
@@ -1030,6 +1039,7 @@ function createReviewBankCard() {
       setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
       return;
     };
+    if (state.reviewEditingQuestionIndex === questionIndex) exitBankQuestionEdit(card);
     setReviewNoteEditMode(questionIndex);
   });
 
@@ -1617,6 +1627,13 @@ function syncExperienceToggleButton(buttonId, checkboxId, onIcon, offIcon, onLab
 };
 
 function updateSetupExperienceControls() {
+  const autoCheckOn = !!getElementById('checkbox-automatic-check')?.checked;
+  const autoCheckDelayInput = getElementById('input-auto-check-delay');
+  const autoCheckDelayField = getElementById('field-auto-check-delay');
+  if (autoCheckDelayInput) autoCheckDelayInput.disabled = !autoCheckOn;
+  if (autoCheckDelayField) autoCheckDelayField.classList.toggle('is-disabled', !autoCheckOn);
+  syncExperienceToggleButton('button-auto-check', 'checkbox-automatic-check', 'toggle-right', 'toggle-left', 'Bật tự kiểm tra', 'Tắt tự kiểm tra');
+
   const autoAdvanceOn = !!getElementById('checkbox-automatic-advance')?.checked;
   const delayInput = getElementById('input-auto-advance-delay');
   const delayField = getElementById('field-auto-advance-delay');
@@ -1686,7 +1703,7 @@ function startPracticeBookmarks() {
   const form = readSetupForm();
   persistSetupForm();
   const questions = selectedQuestions(form);
-  const bookmarked = getBookmarkedIndices(state.currentDeck);
+  const bookmarked = getBookmarkedIndices(state.currentDeck).filter((questionIndex) => !isQuestionHidden(state.currentDeck, questionIndex));
   const pool = pickWrong(questions, bookmarked, form.count, form.shuffleQuestions);
   if (!pool.length) {
     toast('Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.');
@@ -1742,6 +1759,10 @@ function persistSetupForm() {
     timeLimit: form.timeLimit,
     practiceMode: state.practiceMode,
     autoCheck: getElementById('checkbox-automatic-check').checked,
+    autoCheckDelay: (() => {
+      const delay = Number.parseInt(getElementById('input-auto-check-delay')?.value, 10);
+      return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
+    })(),
     autoAdvance: getElementById('checkbox-automatic-advance').checked,
     vibrationEnabled: getElementById('checkbox-vibration').checked,
     autoAdvanceDelay: (() => {
@@ -1768,6 +1789,11 @@ function applySettingsToForm(settings) {
   getElementById('checkbox-shuffle-answers').checked = !!settings.shuffleAnswers;
   getElementById('checkbox-automatic-check').checked = settings.autoCheck === true;
   getElementById('checkbox-automatic-advance').checked = settings.autoAdvance === true;
+  if (getElementById('input-auto-check-delay')) {
+    const delay = Number.isInteger(settings.autoCheckDelay) && settings.autoCheckDelay >= 0 ? Math.min(10, settings.autoCheckDelay) : 0;
+    getElementById('input-auto-check-delay').value = String(delay);
+    if (getElementById('label-auto-check-delay')) getElementById('label-auto-check-delay').textContent = delay + ' giây';
+  };
   getElementById('checkbox-vibration').checked = settings.vibrationEnabled === true;
   if (getElementById('input-auto-advance-delay')) {
     const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 5;
@@ -2513,7 +2539,14 @@ function onSelectOption(displayIdx) {
   };
   persistSession();
   renderQuestion();
-  if (sessionPreferences(session.deckId).autoCheck) onCheck();
+  const preferences = sessionPreferences(session.deckId);
+  if (preferences.autoCheck) {
+    const delay = Number.isInteger(preferences.autoCheckDelay) ? Math.min(10, Math.max(0, preferences.autoCheckDelay)) : 0;
+    if (delay === 0) onCheck();
+    else setTimeout(() => {
+      if (state.session === session && currentSessionItem() === item && item.status !== 'correct') onCheck();
+    }, delay * 1000);
+  };
 };
 
 const answerSounds = {
@@ -3357,7 +3390,17 @@ function bindEvents() {
     persistSetupForm();
   });
 
-  for (const id of ['checkbox-automatic-check', 'checkbox-vibration']) getElementById(id).addEventListener('change', persistSetupForm);
+  getElementById('checkbox-automatic-check')?.addEventListener('change', () => {
+    updateSetupExperienceControls();
+    persistSetupForm();
+  });
+  getElementById('button-auto-check')?.addEventListener('click', () => {
+    const checkbox = getElementById('checkbox-automatic-check');
+    if (!checkbox) return;
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  getElementById('checkbox-vibration')?.addEventListener('change', persistSetupForm);
   getElementById('checkbox-automatic-advance')?.addEventListener('change', () => {
     updateSetupExperienceControls();
     persistSetupForm();
@@ -3379,12 +3422,22 @@ function bindEvents() {
     checkbox.checked = !checkbox.checked;
     checkbox.dispatchEvent(new Event('change', { bubbles: true }));
   });
+  getElementById('input-count')?.addEventListener('input', persistSetupForm);
+  getElementById('input-count')?.addEventListener('change', persistSetupForm);
+  getElementById('input-time-limit')?.addEventListener('input', persistSetupForm);
+  getElementById('input-time-limit')?.addEventListener('change', persistSetupForm);
   getElementById('input-auto-advance-delay')?.addEventListener('input', () => {
     const delay = Number.parseInt(getElementById('input-auto-advance-delay').value, 10) || 0;
     if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' giây';
     persistSetupForm();
   });
   getElementById('input-auto-advance-delay')?.addEventListener('change', persistSetupForm);
+  getElementById('input-auto-check-delay')?.addEventListener('input', () => {
+    const delay = Number.parseInt(getElementById('input-auto-check-delay').value, 10) || 0;
+    if (getElementById('label-auto-check-delay')) getElementById('label-auto-check-delay').textContent = delay + ' giây';
+    persistSetupForm();
+  });
+  getElementById('input-auto-check-delay')?.addEventListener('change', persistSetupForm);
   getElementById('input-sound-volume')?.addEventListener('input', () => {
     syncSoundFromVolume('input-sound-volume', 'checkbox-sound', 'label-sound-volume');
     persistSetupForm();
