@@ -111,9 +111,28 @@
           <div class='card'>
             <h2>Trải nghiệm làm bài</h2>
             <div class='field toggles experience-toggles'>
+              <div class='field' id='field-auto-check-delay'>
+                <label for='input-auto-check-delay'>Tự kiểm tra khi chọn đáp án</label>
+                <div class='row experience-control-row'>
+                  <button
+                    type='button'
+                    class='button button-ghost button-icon-only'
+                    id='button-auto-check'
+                    data-icon='toggle-left'
+                    aria-pressed='false'
+                    aria-label='Bật tự kiểm tra'
+                    title='Tự kiểm tra'
+                  ></button>
+                  <input type='checkbox' id='checkbox-automatic-check' class='screen-reader-only' tabindex='-1' />
+                  <div class='slider-inline'>
+                    <input type='range' id='input-auto-check-delay' min='0' max='10' step='1' value='0' />
+                    <span class='slider-value' id='label-auto-check-delay'>0 giây</span>
+                  </div>
+                </div>
+              </div>
               <label class='toggle'>
-                <input type='checkbox' id='checkbox-automatic-check' />
-                <span>Tự kiểm tra khi chọn đáp án</span>
+                <input type='checkbox' id='checkbox-vibration' />
+                <span>Bật chế độ rung</span>
               </label>
               <label class='toggle'>
                 <input type='checkbox' id='checkbox-vibration' />
