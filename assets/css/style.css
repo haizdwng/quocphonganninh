@@ -593,19 +593,13 @@ input[type='range']:disabled {
   background: #ff7373;
 }
 
-.btn-success {
-  background: var(--green);
-  color: var(--ink);
-}
-
 .btn-secondary[data-icon]::before,
 .btn-ghost[data-icon]::before {
   background-color: var(--tone);
 }
 
 .btn-primary[data-icon]::before,
-.btn-danger[data-icon]::before,
-.btn-success[data-icon]::before {
+.btn-danger[data-icon]::before {
   background-color: currentColor;
 }
 
