@@ -1,6 +1,6 @@
-import { initEnhance } from './enhance.js';
+import { initializeEnhancements } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
-import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, getDeckNotes, resetDeckNotes, getQuestionOverride, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
+import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
 const DECKS = {
   quocphong1: {
@@ -32,7 +32,6 @@ const state = {
   error: null,
   currentDeck: 'quocphong1',
   bankDeck: 'quocphong1',
-  bankPracticeMode: 'practice',
   setupDeckBeforeBank: 'quocphong1',
   mode: 'setup',
   practiceMode: 'practice',
@@ -41,7 +40,6 @@ const state = {
   timerInterval: null,
   examFilter: 'all',
   examSubmitting: false,
-  reviewSelectedIndices: new Set(),
   reviewVirtual: null,
   _lastSummarySession: null,
   _lastSummaryWrongIndices: [],
@@ -52,8 +50,6 @@ const state = {
   lastTextSelection: null,
   lastCountBeforeAll: null,
   lastTimeBeforeUnlimited: null,
-  lastBankCountBeforeAll: null,
-  lastBankTimeBeforeUnlimited: null,
   bankSearchQuery: '',
   bankSearchMatchIndex: -1,
   reviewFocusQuestionNumber: null,
@@ -66,7 +62,7 @@ const REVIEW_VIRTUAL_OVERSCAN = 3;
 const REVIEW_VIRTUAL_ESTIMATED_HEIGHT = 240;
 const REVIEW_VIRTUAL_POOL_SIZE = 14;
 
-const $ = (id) => document.getElementById(id);
+const getElementById = (elementIdentifier) => document.getElementById(elementIdentifier);
 
 function setToggleIcon(button, active, icons) {
   if (!button) return;
@@ -75,28 +71,28 @@ function setToggleIcon(button, active, icons) {
   if (onIcon && offIcon) button.dataset.icon = active ? onIcon : offIcon;
 };
 
-function dataUrl(rel) {
-  return new URL(rel, document.baseURI).href;
+function createDataFileUrl(relativePath) {
+  return new URL(relativePath, document.baseURI).href;
 };
 
-async function loadDeck(id) {
-  const meta = DECKS[id];
-  const url = dataUrl(meta.file);
+async function loadDeck(deckIdentifier) {
+  const deckMetadata = DECKS[deckIdentifier];
+  const dataFileUrl = createDataFileUrl(deckMetadata.file);
   let response;
   try {
-    response = await fetch(url, { cache: 'no-cache' });
+    response = await fetch(dataFileUrl, { cache: 'no-cache' });
   } catch {
-    throw new Error('Không thể tải ' + meta.label + '. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.');
+    throw new Error('Không thể tải ' + deckMetadata.label + '. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.');
   };
-  if (!response.ok) throw new Error('Không tải được ' + meta.label + ' (' + response.status + '). Hãy kiểm tra vị trí tệp dữ liệu.');
-  let raw;
+  if (!response.ok) throw new Error('Không tải được ' + deckMetadata.label + ' (' + response.status + '). Hãy kiểm tra vị trí tệp dữ liệu.');
+  let rawData;
   try {
-    raw = await response.json();
+    rawData = await response.json();
   } catch {
-    throw new Error('Tệp dữ liệu ' + meta.file + ' không hợp lệ.');
+    throw new Error('Tệp dữ liệu ' + deckMetadata.file + ' không hợp lệ.');
   };
-  const questions = normalizeQuestions(raw);
-  const overrides = getDeckOverrides(id);
+  const questions = normalizeQuestions(rawData);
+  const overrides = getDeckOverrides(deckIdentifier);
   for (const [key, entry] of Object.entries(overrides)) {
     const index = Number(key);
     if (!Number.isInteger(index) || index < 0 || index >= questions.length || !entry) continue;
@@ -107,19 +103,19 @@ async function loadDeck(id) {
       correct: entry.correct,
       fixed: entry.fixed === true
     };
-  }
+  };
   const fingerprint = fingerprintQuestions(questions);
-  state.decks[id] = questions;
-  state.fingerprints[id] = fingerprint;
-  const progress = getDeckProgress(id);
+  state.decks[deckIdentifier] = questions;
+  state.fingerprints[deckIdentifier] = fingerprint;
+  const progress = getDeckProgress(deckIdentifier);
   const first = questions[0]?.question?.trim().slice(0, 40) || '';
   const last = questions[questions.length - 1]?.question?.trim().slice(0, 40) || '';
-  const legacyFingerprint = `${questions.length}|${first}|${last}`;
+  const legacyFingerprint = questions.length + '|' + first + '|' + last;
   if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
     if (progress.dataFingerprint === legacyFingerprint) {
-      state.legacyFingerprintMatched[id] = true;
+      state.legacyFingerprintMatched[deckIdentifier] = true;
       progress.dataFingerprint = fingerprint;
-      if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
+      if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
     } else {
       progress.completed = [];
       progress.sequentialCursor = 0;
@@ -128,13 +124,13 @@ async function loadDeck(id) {
       progress.practiceMap = {};
       progress.bookmarks = [];
       progress.dataFingerprint = fingerprint;
-      if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
-      if (!resetDeckHighlights(id)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
-      if (!resetDeckNotes(id)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
+      if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+      if (!resetDeckHighlights(deckIdentifier)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
+      if (!resetDeckNotes(deckIdentifier)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
     };
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fingerprint;
-    if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
+    if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
   };
 
   const progressBeforeSanitize = JSON.stringify(progress);
@@ -144,7 +140,7 @@ async function loadDeck(id) {
   progress.sequentialCursor = Math.min(progress.sequentialCursor, questions.length);
   progress.wrongMap = Object.fromEntries(Object.entries(progress.wrongMap).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
   progress.practiceMap = Object.fromEntries(Object.entries(progress.practiceMap).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
-  if (JSON.stringify(progress) !== progressBeforeSanitize && !saveDeckProgress(id, progress)) toast('Không thể làm sạch tiến độ cũ trong trình duyệt.');
+  if (JSON.stringify(progress) !== progressBeforeSanitize && !saveDeckProgress(deckIdentifier, progress)) toast('Không thể làm sạch tiến độ cũ trong trình duyệt.');
   return questions;
 };
 
@@ -157,19 +153,19 @@ async function loadAll() {
     await Promise.all([loadDeck('quocphong1'), loadDeck('quocphong2')]);
     state.loading = false;
     stage = 'khởi tạo giao diện';
-    initUI();
+    initializeInterface();
   } catch (e) {
     state.loading = false;
     state.error = e?.message || String(e);
     console.error('Lỗi khi ' + stage + ':', e);
     showScreen('error');
-    let errorMessage = $('error-message');
+    let errorMessage = getElementById('error-message');
     if (!errorMessage) {
-      const screen = $('screen-error');
+      const screen = getElementById('screen-error');
       if (screen) {
         errorMessage = document.createElement('pre');
         errorMessage.id = 'error-message';
-        errorMessage.className = 'error-message';
+        
         screen.append(errorMessage);
       };
     };
@@ -188,7 +184,7 @@ function showScreen(name) {
     element.classList.remove('active');
     element.hidden = true;
   };
-  const screen = $('screen-' + name);
+  const screen = getElementById('screen-' + name);
   if (screen) {
     screen.hidden = false;
     screen.classList.add('active');
@@ -208,13 +204,13 @@ function showScreen(name) {
 };
 
 function updateScrollTopButton() {
-  const btn = $('btn-scroll-top');
-  if (!btn) return;
+  const button = getElementById('button-scroll-to-top');
+  if (!button) return;
   const threshold = Math.max(360, Math.floor(window.innerHeight * 0.75));
   const show = window.scrollY > threshold;
-  btn.hidden = false;
-  btn.classList.toggle('is-visible', show);
-  if (!show) btn.hidden = true;
+  button.hidden = false;
+  button.classList.toggle('is-visible', show);
+  if (!show) button.hidden = true;
 };
 
 function scrollToPageTop() {
@@ -223,7 +219,7 @@ function scrollToPageTop() {
 };
 
 function toast(message, durationMs = 2800) {
-  const toastElement = $('toast');
+  const toastElement = getElementById('toast');
   if (!toastElement) {
     console.warn('Không tìm thấy phần tử #toast:', message);
     return;
@@ -238,15 +234,15 @@ function toast(message, durationMs = 2800) {
 
 function confirmModal(title, body) {
   return new Promise((resolve) => {
-    $('modal-title').textContent = title;
-    $('modal-body').textContent = body;
-    $('modal').hidden = false;
-    $('modal').classList.add('is-open');
-    const ok = $('modal-ok');
-    const cancel = $('modal-cancel');
+    getElementById('modal-title').textContent = title;
+    getElementById('modal-body').textContent = body;
+    getElementById('modal').hidden = false;
+    getElementById('modal').classList.add('is-open');
+    const ok = getElementById('modal-ok');
+    const cancel = getElementById('modal-cancel');
     const cleanup = (val) => {
-      $('modal').hidden = true;
-      $('modal').classList.remove('is-open');
+      getElementById('modal').hidden = true;
+      getElementById('modal').classList.remove('is-open');
       ok.onclick = null;
       cancel.onclick = null;
       resolve(val);
@@ -301,14 +297,13 @@ function formatDeckCountLabel(deckId) {
 };
 
 function updateDeckCountLabels() {
-  if ($('count-quocphong1')) $('count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
-  if ($('count-quocphong2')) $('count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
-  if ($('bank-count-quocphong1')) $('bank-count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
-  if ($('bank-count-quocphong2')) $('bank-count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
+  if (getElementById('count-quocphong1')) getElementById('count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
+  if (getElementById('count-quocphong2')) getElementById('count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
+  if (getElementById('bank-count-quocphong1')) getElementById('bank-count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
+  if (getElementById('bank-count-quocphong2')) getElementById('bank-count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
 };
 
 function sessionPreferences(deckId) {
-  if (state.session?.fromBank) return getBankSettings();
   return getSettings(deckId || state.session?.deckId || state.currentDeck);
 };
 
@@ -331,7 +326,7 @@ function renderTextWithHighlights(element, text, deckId, originalIndex, target) 
   for (const range of merged) {
     if (range.start > cursor) element.appendChild(document.createTextNode(text.slice(cursor, range.start)));
     const mark = document.createElement('span');
-    mark.className = 'text-highlight';
+    mark.className = 'highlighted-text';
     mark.textContent = text.slice(range.start, range.end);
     element.appendChild(mark);
     cursor = range.end;
@@ -459,15 +454,14 @@ function getBankSearchMatches(questions = bankQuestions()) {
 
 function getFilteredBankQuestions() {
   const questions = bankQuestions();
-  const form = readBankForm();
-  const query = normalizeSearchText(state.bankSearchQuery);
+    const query = normalizeSearchText(state.bankSearchQuery);
   const matches = query ? questions.filter((question) => questionMatchesSearch(question, query)) : [];
   const filtered = query ? matches : questions;
-  return { questions, form, filtered, query, matches };
+  return { questions, filtered, query, matches };
 };
 
 function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
-  const hint = $('review-search-hint');
+  const hint = getElementById('review-search-hint');
   if (!hint) return;
   const query = normalizeSearchText(state.bankSearchQuery);
   if (!query) {
@@ -482,19 +476,19 @@ function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
 };
 
 function updateBankSearchNavButtons() {
-  const prevBtn = $('btn-search-prev');
-  const nextBtn = $('btn-search-next');
-  if (!prevBtn || !nextBtn) return;
+  const previousButton = getElementById('button-search-prev');
+  const nextBtn = getElementById('button-search-next');
+  if (!previousButton || !nextBtn) return;
   const matchCount = getBankSearchMatches().length;
   const showNav = state.mode === 'review' && matchCount >= 1;
   const showPrev = showNav && matchCount >= 2;
 
   if (showPrev) {
-    prevBtn.hidden = false;
-    prevBtn.classList.add('is-visible');
+    previousButton.hidden = false;
+    previousButton.classList.add('is-visible');
   } else {
-    prevBtn.classList.remove('is-visible');
-    prevBtn.hidden = true;
+    previousButton.classList.remove('is-visible');
+    previousButton.hidden = true;
   };
 
   if (showNav) {
@@ -519,14 +513,14 @@ function scrollToBankSearchMatch(direction) {
 };
 
 function updateReviewSearchClearButton() {
-  const clearBtn = $('btn-review-search-clear');
-  const input = $('input-review-search');
+  const clearBtn = getElementById('button-review-search-clear');
+  const input = getElementById('input-review-search');
   if (!clearBtn || !input) return;
   clearBtn.hidden = !String(input.value || '').length;
 };
 
 function applyBankSearch(options = {}) {
-  const input = $('input-review-search');
+  const input = getElementById('input-review-search');
   const raw = input ? input.value : state.bankSearchQuery;
   state.bankSearchQuery = String(raw || '');
   state.bankSearchMatchIndex = -1;
@@ -618,37 +612,36 @@ function exitBankQuestionEdit(card) {
   parts.prompt.hidden = false;
   parts.options.hidden = false;
   state.reviewEditingQuestionIndex = null;
-  if (parts.editBtn) {
-    parts.editBtn.classList.remove('is-active');
-    parts.editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
-    parts.editBtn.title = 'Chỉnh sửa';
-  }
-}
+  if (parts.editQuestionButton) {
+    parts.editQuestionButton.classList.remove('is-active');
+    parts.editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
+    parts.editQuestionButton.title = 'Chỉnh sửa';
+  };
+};
 
-function enterBankQuestionEdit(card, qIndex) {
+function enterBankQuestionEdit(card, questionIndex) {
   const parts = card._vs;
   if (!parts) return;
   const deck = state.decks[state.bankDeck] || [];
-  const question = deck.find((item) => item.originalIndex === qIndex) || deck[qIndex];
+  const question = deck.find((item) => item.originalIndex === questionIndex) || deck[questionIndex];
   if (!question) return;
 
-  if (Number.isInteger(state.reviewEditingQuestionIndex) && state.reviewEditingQuestionIndex !== qIndex) {
-    // close previous if still in pool
+  if (Number.isInteger(state.reviewEditingQuestionIndex) && state.reviewEditingQuestionIndex !== questionIndex) {
     for (const other of (getReviewVirtualState().pool || [])) {
       if (Number(other.dataset.originalIndex) === state.reviewEditingQuestionIndex) exitBankQuestionEdit(other);
-    }
-  }
+    };
+  };
 
-  state.reviewEditingQuestionIndex = qIndex;
+  state.reviewEditingQuestionIndex = questionIndex;
   parts.prompt.hidden = true;
   parts.options.hidden = true;
   parts.editBlock.hidden = false;
   parts.editBlock.innerHTML = '';
-  if (parts.editBtn) {
-    parts.editBtn.classList.add('is-active');
-    parts.editBtn.setAttribute('aria-label', 'Đóng chỉnh sửa');
-    parts.editBtn.title = 'Đóng chỉnh sửa';
-  }
+  if (parts.editQuestionButton) {
+    parts.editQuestionButton.classList.add('is-active');
+    parts.editQuestionButton.setAttribute('aria-label', 'Đóng chỉnh sửa');
+    parts.editQuestionButton.title = 'Đóng chỉnh sửa';
+  };
 
   const qLabel = document.createElement('label');
   qLabel.className = 'review-edit-label';
@@ -660,10 +653,10 @@ function enterBankQuestionEdit(card, qIndex) {
 
   const optLabel = document.createElement('div');
   optLabel.className = 'review-edit-label';
-  optLabel.textContent = 'Đáp án — bấm chữ cái để chọn đáp án đúng';
+  optLabel.textContent = 'Đáp án';
 
-  const optList = document.createElement('div');
-  optList.className = 'review-edit-options';
+  const answerOptionList = document.createElement('div');
+  answerOptionList.className = 'review-edit-options';
   const optionInputs = [];
   const radios = [];
   const letterBtns = [];
@@ -684,10 +677,10 @@ function enterBankQuestionEdit(card, qIndex) {
 
     const radio = document.createElement('input');
     radio.type = 'radio';
-    radio.name = 'bank-edit-correct-' + qIndex;
+    radio.name = 'bank-edit-correct-' + questionIndex;
     radio.value = String(i);
     radio.checked = question.correct === i;
-    radio.className = 'sr-only';
+    radio.className = 'screen-reader-only';
     radio.tabIndex = -1;
     radio.setAttribute('aria-hidden', 'true');
 
@@ -706,57 +699,56 @@ function enterBankQuestionEdit(card, qIndex) {
     });
 
     row.append(letterBtn, radio, input);
-    optList.appendChild(row);
+    answerOptionList.appendChild(row);
     optionInputs.push(input);
     radios.push(radio);
     letterBtns.push(letterBtn);
-  }
+  };
 
   const actions = document.createElement('div');
-  actions.className = 'review-edit-actions';
+  actions.className = 'review-edit-action-buttons';
 
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
-  saveBtn.className = 'btn btn-primary btn-icon-only';
+  saveBtn.className = 'button button-primary button-icon-only';
   saveBtn.dataset.icon = 'device-floppy';
   saveBtn.setAttribute('aria-label', 'Lưu');
   saveBtn.title = 'Lưu';
 
   const resetBtn = document.createElement('button');
   resetBtn.type = 'button';
-  resetBtn.className = 'btn btn-ghost btn-icon-only';
+  resetBtn.className = 'button button-ghost button-icon-only';
   resetBtn.dataset.icon = 'rotate-clockwise';
   resetBtn.setAttribute('aria-label', 'Khôi phục gốc');
   resetBtn.title = 'Khôi phục gốc';
 
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
-  cancelBtn.className = 'btn btn-ghost btn-icon-only';
+  cancelBtn.className = 'button button-ghost button-icon-only';
   cancelBtn.dataset.icon = 'x';
   cancelBtn.setAttribute('aria-label', 'Hủy');
   cancelBtn.title = 'Hủy';
 
-  // fixed = giữ nguyên thứ tự đáp án (không xáo) khi làm bài
   let editFixed = question.fixed === true;
-  const fixedBtn = document.createElement('button');
-  fixedBtn.type = 'button';
-  fixedBtn.className = 'btn btn-ghost btn-icon-only review-edit-fixed-toggle';
-  const syncFixedBtn = () => {
-    fixedBtn.setAttribute('aria-pressed', String(editFixed));
-    setToggleIcon(fixedBtn, editFixed, { on: 'pin', off: 'pinned-off' });
-    fixedBtn.setAttribute('aria-label', editFixed ? 'Bỏ cố định đáp án (cho phép xáo)' : 'Cố định đáp án (không xáo)');
-    fixedBtn.title = editFixed ? 'Đáp án cố định — bấm để cho phép xáo' : 'Cố định đáp án — không xáo khi làm bài';
-    fixedBtn.classList.toggle('is-on', editFixed);
+  const fixedQuestionButton = document.createElement('button');
+  fixedQuestionButton.type = 'button';
+  fixedQuestionButton.className = 'button button-ghost button-icon-only ';
+  const syncFixedButton = () => {
+    fixedQuestionButton.setAttribute('aria-pressed', String(editFixed));
+    setToggleIcon(fixedQuestionButton, editFixed, { on: 'pin', off: 'pinned-off' });
+    fixedQuestionButton.setAttribute('aria-label', editFixed ? 'Bỏ cố định đáp án' : 'Cố định đáp án');
+    fixedQuestionButton.title = editFixed ? 'Đáp án cố định' : 'Cố định đáp án';
+    fixedQuestionButton.classList.toggle('is-on', editFixed);
   };
-  syncFixedBtn();
+  syncFixedButton();
 
-  actions.append(saveBtn, resetBtn, cancelBtn, fixedBtn);
+  actions.append(saveBtn, resetBtn, fixedQuestionButton, cancelBtn);
 
-  parts.editBlock.append(qLabel, qInput, optLabel, optList, actions);
+  parts.editBlock.append(qLabel, qInput, optLabel, answerOptionList, actions);
 
-  fixedBtn.addEventListener('click', () => {
+  fixedQuestionButton.addEventListener('click', () => {
     editFixed = !editFixed;
-    syncFixedBtn();
+    syncFixedButton();
   });
 
   cancelBtn.addEventListener('click', () => {
@@ -765,17 +757,17 @@ function enterBankQuestionEdit(card, qIndex) {
   });
 
   resetBtn.addEventListener('click', async () => {
-    const ok = saveQuestionOverride(state.bankDeck, qIndex, null);
+    const ok = saveQuestionOverride(state.bankDeck, questionIndex, null);
     if (!ok) {
       toast('Không thể khôi phục. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
-    }
+    };
     try {
       await loadDeck(state.bankDeck);
     } catch {
       toast('Không thể tải lại dữ liệu gốc.');
       return;
-    }
+    };
     toast('Đã khôi phục câu hỏi gốc.');
     state.reviewEditingQuestionIndex = null;
     renderQuestionBank();
@@ -786,53 +778,52 @@ function enterBankQuestionEdit(card, qIndex) {
     if (!questionText) {
       toast('Câu hỏi không được để trống.');
       return;
-    }
+    };
     const options = optionInputs.map((el) => el.value.trim()).filter(Boolean);
     if (options.length < 2) {
       toast('Cần ít nhất 2 đáp án.');
       return;
-    }
+    };
     let correct = radios.findIndex((r) => r.checked);
-    // map radio index to filtered options: use non-empty only in order
     const filledIndices = [];
     optionInputs.forEach((el, i) => { if (el.value.trim()) filledIndices.push(i); });
     if (correct < 0 || !optionInputs[correct] || !optionInputs[correct].value.trim()) {
       toast('Hãy chọn đáp án đúng trong các đáp án đã nhập.');
       return;
-    }
+    };
     correct = filledIndices.indexOf(correct);
     if (correct < 0) {
       toast('Đáp án đúng không hợp lệ.');
       return;
-    }
+    };
     const payload = { question: questionText, options, correct, fixed: editFixed === true };
-    const ok = saveQuestionOverride(state.bankDeck, qIndex, payload);
+    const ok = saveQuestionOverride(state.bankDeck, questionIndex, payload);
     if (!ok) {
       toast('Không thể lưu chỉnh sửa. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
-    }
+    };
     const deck = state.decks[state.bankDeck];
-    if (deck && deck[qIndex]) {
-      deck[qIndex] = {
-        ...deck[qIndex],
+    if (deck && deck[questionIndex]) {
+      deck[questionIndex] = {
+        ...deck[questionIndex],
         question: questionText,
         options: options.slice(),
         correct,
         fixed: editFixed === true
       };
       state.fingerprints[state.bankDeck] = fingerprintQuestions(deck);
-    }
+    };
     toast('Đã lưu chỉnh sửa câu hỏi.');
     state.reviewEditingQuestionIndex = null;
     renderQuestionBank();
   });
 
   qInput.focus();
-}
+};
 
 function createReviewBankCard() {
   const card = document.createElement('article');
-  card.className = 'review-q-card review-vs-item';
+  card.className = 'review-question-card review-virtual-scroll-entry';
   card.style.position = 'absolute';
   card.style.left = '0';
   card.style.right = '0';
@@ -840,110 +831,110 @@ function createReviewBankCard() {
   card.style.willChange = 'transform';
 
   const heading = document.createElement('h3');
-  heading.className = 'review-q-heading';
+  heading.className = 'review-question-heading';
 
   const prompt = document.createElement('p');
-  prompt.className = 'review-q-text';
+  prompt.className = 'review-question-text';
 
   const toolbar = document.createElement('div');
   toolbar.className = 'question-tools-row review-tools-row';
 
-  const bookmarkBtn = document.createElement('button');
-  bookmarkBtn.type = 'button';
-  bookmarkBtn.className = 'btn btn-ghost btn-icon-only bank-bookmark-btn';
-  bookmarkBtn.dataset.icon = 'bookmark';
-  bookmarkBtn.setAttribute('aria-label', 'Đánh dấu');
-  bookmarkBtn.title = 'Đánh dấu';
+  const bookmarkButton = document.createElement('button');
+  bookmarkButton.type = 'button';
+  bookmarkButton.className = 'button button-ghost button-icon-only ';
+  bookmarkButton.dataset.icon = 'bookmark';
+  bookmarkButton.setAttribute('aria-label', 'Đánh dấu');
+  bookmarkButton.title = 'Đánh dấu';
 
-  const editBtn = document.createElement('button');
-  editBtn.type = 'button';
-  editBtn.className = 'btn btn-ghost btn-icon-only bank-edit-btn';
-  editBtn.dataset.icon = 'pencil';
-  editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
-  editBtn.title = 'Chỉnh sửa';
+  const editQuestionButton = document.createElement('button');
+  editQuestionButton.type = 'button';
+  editQuestionButton.className = 'button button-ghost button-icon-only ';
+  editQuestionButton.dataset.icon = 'pencil';
+  editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
+  editQuestionButton.title = 'Chỉnh sửa';
 
-  const hideBtn = document.createElement('button');
-  hideBtn.type = 'button';
-  hideBtn.className = 'btn btn-ghost btn-icon-only bank-hide-btn';
-  hideBtn.dataset.icon = 'eye';
-  hideBtn.setAttribute('aria-label', 'Ẩn câu hỏi');
-  hideBtn.title = 'Ẩn câu hỏi';
-  hideBtn.setAttribute('aria-pressed', 'false');
+  const hideQuestionButton = document.createElement('button');
+  hideQuestionButton.type = 'button';
+  hideQuestionButton.className = 'button button-ghost button-icon-only ';
+  hideQuestionButton.dataset.icon = 'eye';
+  hideQuestionButton.setAttribute('aria-label', 'Ẩn câu hỏi');
+  hideQuestionButton.title = 'Ẩn câu hỏi';
+  hideQuestionButton.setAttribute('aria-pressed', 'false');
 
   const noteEditBtn = document.createElement('button');
   noteEditBtn.type = 'button';
-  noteEditBtn.className = 'note-btn btn-icon-only';
+  noteEditBtn.className = 'button-icon-only';
   noteEditBtn.dataset.icon = 'note';
   noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
   noteEditBtn.title = 'Sửa ghi chú';
 
-  const hlBtn = document.createElement('button');
-  hlBtn.type = 'button';
-  hlBtn.className = 'btn btn-ghost btn-icon-only highlight-toggle-btn';
-  hlBtn.dataset.icon = 'highlight';
-  hlBtn.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
-  hlBtn.title = 'Highlight';
-  hlBtn.addEventListener('pointerdown', (event) => {
+  const highlightButton = document.createElement('button');
+  highlightButton.type = 'button';
+  highlightButton.className = 'button button-ghost button-icon-only';
+  highlightButton.dataset.icon = 'highlight';
+  highlightButton.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
+  highlightButton.title = 'Highlight';
+  highlightButton.addEventListener('pointerdown', (event) => {
     if (event.pointerType !== 'touch') event.preventDefault();
   });
-  hlBtn.addEventListener('mousedown', (event) => event.preventDefault());
-  hlBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
+  highlightButton.addEventListener('mousedown', (event) => event.preventDefault());
+  highlightButton.addEventListener('click', () => {
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
     captureHighlightSelection();
     const selection = state.lastTextSelection;
-    if (!selection || selection.questionIndex !== qIndex || selection.deckId !== state.bankDeck) {
+    if (!selection || selection.questionIndex !== questionIndex || selection.deckId !== state.bankDeck) {
       toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
     };
-    toggleHighlightSelection(selection.deckId, qIndex, selection);
+    toggleHighlightSelection(selection.deckId, questionIndex, selection);
   });
 
-  bookmarkBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    const result = toggleBookmark(state.bankDeck, qIndex);
+  bookmarkButton.addEventListener('click', () => {
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
+    const result = toggleBookmark(state.bankDeck, questionIndex);
     if (result === null) {
       toast('Không thể cập nhật đánh dấu. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
-    }
-    bookmarkBtn.classList.toggle('is-bookmarked', result);
-    bookmarkBtn.setAttribute('aria-pressed', String(result));
-    setToggleIcon(bookmarkBtn, result, { on: 'bookmark-off', off: 'bookmark' });
-    bookmarkBtn.setAttribute('aria-label', result ? 'Bỏ đánh dấu' : 'Đánh dấu');
-    bookmarkBtn.title = result ? 'Bỏ đánh dấu' : 'Đánh dấu';
+    };
+    bookmarkButton.classList.toggle('is-bookmarked', result);
+    bookmarkButton.setAttribute('aria-pressed', String(result));
+    setToggleIcon(bookmarkButton, result, { on: 'bookmark-off', off: 'bookmark' });
+    bookmarkButton.setAttribute('aria-label', result ? 'Bỏ đánh dấu' : 'Đánh dấu');
+    bookmarkButton.title = result ? 'Bỏ đánh dấu' : 'Đánh dấu';
     toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
   });
 
-  hideBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    const result = toggleHiddenQuestion(state.bankDeck, qIndex);
+  hideQuestionButton.addEventListener('click', () => {
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
+    const result = toggleHiddenQuestion(state.bankDeck, questionIndex);
     if (result === null) {
       toast('Không thể cập nhật trạng thái ẩn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
-    }
+    };
     card.classList.toggle('is-hidden-question', result);
-    hideBtn.classList.toggle('is-hidden-active', result);
-    hideBtn.setAttribute('aria-pressed', String(result));
-    setToggleIcon(hideBtn, result, { on: 'eye-off', off: 'eye' });
-    hideBtn.setAttribute('aria-label', result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
-    hideBtn.title = result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
+    hideQuestionButton.classList.toggle('is-hidden-active', result);
+    hideQuestionButton.setAttribute('aria-pressed', String(result));
+    setToggleIcon(hideQuestionButton, result, { on: 'eye-off', off: 'eye' });
+    hideQuestionButton.setAttribute('aria-label', result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
+    hideQuestionButton.title = result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
     updateDeckCountLabels();
-    toast(result ? 'Đã ẩn câu hỏi (làm mờ).' : 'Đã hiện lại câu hỏi.');
+    toast(result ? 'Đã ẩn câu hỏi.' : 'Đã hiện lại câu hỏi.');
   });
 
-  editBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    if (state.reviewEditingQuestionIndex === qIndex) {
+  editQuestionButton.addEventListener('click', () => {
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
+    if (state.reviewEditingQuestionIndex === questionIndex) {
       exitBankQuestionEdit(card);
       return;
-    }
-    enterBankQuestionEdit(card, qIndex);
+    };
+    enterBankQuestionEdit(card, questionIndex);
   });
 
-  toolbar.append(bookmarkBtn, editBtn, hideBtn, noteEditBtn, hlBtn);
+  toolbar.append(bookmarkButton, editQuestionButton, hideQuestionButton, noteEditBtn, highlightButton);
 
   const noteBlock = document.createElement('div');
   noteBlock.className = 'review-note-block is-empty';
@@ -956,24 +947,24 @@ function createReviewBankCard() {
   noteInputEl.placeholder = 'Nhập ghi chú cho câu hỏi này…';
   noteInputEl.hidden = true;
   const noteActions = document.createElement('div');
-  noteActions.className = 'review-note-actions note-actions-icons';
+  noteActions.className = 'review-note-action-buttons note-actions-icons';
   const noteSaveBtn = document.createElement('button');
   noteSaveBtn.type = 'button';
-  noteSaveBtn.className = 'btn btn-primary btn-icon-only';
+  noteSaveBtn.className = 'button button-primary button-icon-only';
   noteSaveBtn.dataset.icon = 'device-floppy';
   noteSaveBtn.setAttribute('aria-label', 'Lưu ghi chú');
   noteSaveBtn.title = 'Lưu';
   noteSaveBtn.hidden = true;
   const noteDeleteBtn = document.createElement('button');
   noteDeleteBtn.type = 'button';
-  noteDeleteBtn.className = 'btn btn-ghost btn-icon-only';
+  noteDeleteBtn.className = 'button button-ghost button-icon-only';
   noteDeleteBtn.dataset.icon = 'trash';
   noteDeleteBtn.setAttribute('aria-label', 'Xóa ghi chú');
   noteDeleteBtn.title = 'Xóa';
   noteDeleteBtn.hidden = true;
   const noteCancelBtn = document.createElement('button');
   noteCancelBtn.type = 'button';
-  noteCancelBtn.className = 'btn btn-ghost btn-icon-only';
+  noteCancelBtn.className = 'button button-ghost button-icon-only';
   noteCancelBtn.dataset.icon = 'x';
   noteCancelBtn.setAttribute('aria-label', 'Hủy');
   noteCancelBtn.title = 'Hủy';
@@ -982,8 +973,8 @@ function createReviewBankCard() {
   noteBlock.append(noteText, noteInputEl, noteActions);
 
   function setReviewNoteViewMode(existing) {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (Number.isInteger(qIndex) && state.reviewEditingNoteIndex === qIndex) {
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (Number.isInteger(questionIndex) && state.reviewEditingNoteIndex === questionIndex) {
       state.reviewEditingNoteIndex = null;
       state.reviewEditingNoteDraft = '';
     };
@@ -1010,9 +1001,9 @@ function createReviewBankCard() {
     };
   };
 
-  function setReviewNoteEditMode(qIndex, draft) {
-    state.reviewEditingNoteIndex = qIndex;
-    const value = typeof draft === 'string' ? draft : getQuestionNote(state.bankDeck, qIndex);
+  function setReviewNoteEditMode(questionIndex, draft) {
+    state.reviewEditingNoteIndex = questionIndex;
+    const value = typeof draft === 'string' ? draft : getQuestionNote(state.bankDeck, questionIndex);
     state.reviewEditingNoteDraft = value;
     noteInputEl.value = value;
     noteText.hidden = true;
@@ -1027,44 +1018,44 @@ function createReviewBankCard() {
   };
 
   noteInputEl.addEventListener('input', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    if (state.reviewEditingNoteIndex === qIndex) state.reviewEditingNoteDraft = noteInputEl.value;
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
+    if (state.reviewEditingNoteIndex === questionIndex) state.reviewEditingNoteDraft = noteInputEl.value;
   });
 
   noteEditBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
     if (!noteInputEl.hidden) {
-      setReviewNoteViewMode(getQuestionNote(state.bankDeck, qIndex));
+      setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
       return;
     };
-    setReviewNoteEditMode(qIndex);
+    setReviewNoteEditMode(questionIndex);
   });
 
   noteCancelBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    setReviewNoteViewMode(getQuestionNote(state.bankDeck, qIndex));
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
+    setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
   });
 
   noteSaveBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    const ok = saveQuestionNote(state.bankDeck, qIndex, noteInputEl.value);
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
+    const ok = saveQuestionNote(state.bankDeck, questionIndex, noteInputEl.value);
     if (!ok) {
       toast('Không thể lưu ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
     };
-    const existing = getQuestionNote(state.bankDeck, qIndex);
+    const existing = getQuestionNote(state.bankDeck, questionIndex);
     setReviewNoteViewMode(existing);
     toast(existing ? 'Đã lưu ghi chú.' : 'Đã xóa ghi chú.');
   });
 
   noteDeleteBtn.addEventListener('click', () => {
-    const qIndex = Number(card.dataset.originalIndex);
-    if (!Number.isInteger(qIndex)) return;
-    const ok = saveQuestionNote(state.bankDeck, qIndex, '');
+    const questionIndex = Number(card.dataset.originalIndex);
+    if (!Number.isInteger(questionIndex)) return;
+    const ok = saveQuestionNote(state.bankDeck, questionIndex, '');
     if (!ok) {
       toast('Không thể xóa ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
@@ -1106,9 +1097,9 @@ function createReviewBankCard() {
     heading,
     prompt,
     toolbar,
-    bookmarkBtn,
-    editBtn,
-    hideBtn,
+    bookmarkButton,
+    editQuestionButton,
+    hideQuestionButton,
     noteBlock,
     noteText,
     noteInput: noteInputEl,
@@ -1132,27 +1123,27 @@ function bindReviewBankCard(card, question, listIndex) {
   card.dataset.originalIndex = String(question.originalIndex);
   card.id = 'review-question-' + (question.originalIndex + 1);
   parts.heading.textContent = 'Câu ' + (question.originalIndex + 1);
-  card.classList.toggle('review-q-highlight', state.reviewFocusQuestionNumber === question.originalIndex + 1);
+  card.classList.toggle('review-question-highlight', state.reviewFocusQuestionNumber === question.originalIndex + 1);
   card.classList.toggle('is-answer-fixed', question.fixed === true);
 
   const isBookmarked = getBookmarkedIndices(state.bankDeck).includes(question.originalIndex);
-  if (parts.bookmarkBtn) {
-    parts.bookmarkBtn.classList.toggle('is-bookmarked', isBookmarked);
-    parts.bookmarkBtn.setAttribute('aria-pressed', String(isBookmarked));
-    setToggleIcon(parts.bookmarkBtn, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
-    parts.bookmarkBtn.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
-    parts.bookmarkBtn.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
-  }
+  if (parts.bookmarkButton) {
+    parts.bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
+    parts.bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
+    setToggleIcon(parts.bookmarkButton, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
+    parts.bookmarkButton.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
+    parts.bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
+  };
 
   const hidden = isQuestionHidden(state.bankDeck, question.originalIndex);
   card.classList.toggle('is-hidden-question', hidden);
-  if (parts.hideBtn) {
-    parts.hideBtn.classList.toggle('is-hidden-active', hidden);
-    parts.hideBtn.setAttribute('aria-pressed', String(hidden));
-    setToggleIcon(parts.hideBtn, hidden, { on: 'eye-off', off: 'eye' });
-    parts.hideBtn.setAttribute('aria-label', hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
-    parts.hideBtn.title = hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
-  }
+  if (parts.hideQuestionButton) {
+    parts.hideQuestionButton.classList.toggle('is-hidden-active', hidden);
+    parts.hideQuestionButton.setAttribute('aria-pressed', String(hidden));
+    setToggleIcon(parts.hideQuestionButton, hidden, { on: 'eye-off', off: 'eye' });
+    parts.hideQuestionButton.setAttribute('aria-label', hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
+    parts.hideQuestionButton.title = hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
+  };
 
   if (state.reviewEditingQuestionIndex === question.originalIndex) {
     if (parts.editBlock.hidden || !parts.editBlock.childElementCount) {
@@ -1161,12 +1152,12 @@ function bindReviewBankCard(card, question, listIndex) {
       parts.prompt.hidden = true;
       parts.options.hidden = true;
       parts.editBlock.hidden = false;
-    }
+    };
   } else {
     if (!parts.editBlock.hidden) exitBankQuestionEdit(card);
     parts.prompt.hidden = false;
     parts.options.hidden = false;
-  }
+  };
 
   renderTextWithHighlights(parts.prompt, question.question, state.bankDeck, question.originalIndex, 'question');
 
@@ -1223,7 +1214,7 @@ function measureReviewVirtualVisible(virtualScrollState) {
 
 function syncReviewVirtualWindow() {
   if (state.mode !== 'review') return;
-  const list = $('review-list');
+  const list = getElementById('review-list');
   const virtualScrollState = getReviewVirtualState();
   if (!list || !virtualScrollState.filtered.length) return;
 
@@ -1316,21 +1307,21 @@ function setReviewFocusQuestion(questionNumber) {
   for (const card of virtualScrollState.pool || []) {
     const originalIndex = Number(card.dataset.originalIndex);
     const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(originalIndex) && state.reviewFocusQuestionNumber === originalIndex + 1;
-    card.classList.toggle('review-q-highlight', shouldHighlight);
+    card.classList.toggle('review-question-highlight', shouldHighlight);
   };
-  const list = $('review-list');
+  const list = getElementById('review-list');
   if (list) {
-    list.querySelectorAll('.review-q-highlight').forEach((element) => {
+    list.querySelectorAll('.review-question-highlight').forEach((element) => {
       const originalIndex = Number(element.dataset.originalIndex);
       const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(originalIndex) && state.reviewFocusQuestionNumber === originalIndex + 1;
-      if (!shouldHighlight) element.classList.remove('review-q-highlight');
+      if (!shouldHighlight) element.classList.remove('review-question-highlight');
     });
   };
 };
 
 function scrollReviewToListIndex(index, behavior = 'auto') {
   const virtualScrollState = getReviewVirtualState();
-  const list = $('review-list');
+  const list = getElementById('review-list');
   if (!list || index < 0 || index >= virtualScrollState.filtered.length) return;
   rebuildReviewVirtualMetrics(virtualScrollState);
   const listTop = list.getBoundingClientRect().top + window.scrollY;
@@ -1342,7 +1333,7 @@ function scrollReviewToQuestionNumber(questionNumber) {
   const virtualScrollState = getReviewVirtualState();
   const index = virtualScrollState.filtered.findIndex((question) => question.originalIndex + 1 === questionNumber);
   if (index < 0) return false;
-  const list = $('review-list');
+  const list = getElementById('review-list');
   if (!list) return false;
 
   setReviewFocusQuestion(questionNumber);
@@ -1386,25 +1377,25 @@ function scrollReviewToQuestionNumber(questionNumber) {
 
 function renderQuestionBank() {
   const { questions, filtered } = getFilteredBankQuestions();
-  const gotoInput = $('input-review-goto');
+  const gotoInput = getElementById('input-review-goto');
   if (gotoInput) {
     gotoInput.min = '1';
     gotoInput.max = String(Math.max(1, questions.length));
-    gotoInput.placeholder = `1–${questions.length}`;
+    gotoInput.placeholder = '1–' + questions.length;
     gotoInput.setAttribute('aria-label', 'Đi đến câu số từ 1 đến ' + questions.length);
   };
-  const searchInput = $('input-review-search');
+  const searchInput = getElementById('input-review-search');
   if (searchInput && searchInput.value !== state.bankSearchQuery) searchInput.value = state.bankSearchQuery;
-  $('review-title').textContent = DECKS[state.bankDeck]?.label || 'Ngân hàng câu hỏi';
-  document.querySelectorAll('[data-bank-deck]').forEach((btn) => btn.classList.toggle('active', btn.dataset.bankDeck === state.bankDeck));
+  getElementById('review-title').textContent = 'Ngân hàng câu hỏi';
+  document.querySelectorAll('[data-bank-deck]').forEach((button) => button.classList.toggle('active', button.dataset.bankDeck === state.bankDeck));
   updateDeckCountLabels();
 
-  const list = $('review-list');
+  const list = getElementById('review-list');
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.filtered = filtered;
   syncReviewHeightsFromCache(virtualScrollState);
 
-  list.classList.add('review-list-virtual');
+  list.classList.add('review-list-virtualized');
   const keep = new Set(virtualScrollState.pool);
   if (virtualScrollState.phantom) keep.add(virtualScrollState.phantom);
   for (const child of [...list.children]) {
@@ -1412,7 +1403,7 @@ function renderQuestionBank() {
   };
   if (!virtualScrollState.phantom) {
     virtualScrollState.phantom = document.createElement('div');
-    virtualScrollState.phantom.className = 'review-vs-phantom';
+    virtualScrollState.phantom.className = 'review-virtual-scroll-placeholder';
     virtualScrollState.phantom.setAttribute('aria-hidden', 'true');
   };
   if (!virtualScrollState.phantom.parentNode) list.insertBefore(virtualScrollState.phantom, list.firstChild);
@@ -1446,25 +1437,24 @@ function renderQuestionBank() {
 function openQuestionBank() {
   state.setupDeckBeforeBank = state.currentDeck;
   persistSetupForm();
-  state.reviewSelectedIndices.clear();
+  
   state.bankSearchQuery = '';
   state.bankSearchMatchIndex = -1;
   state.reviewFocusQuestionNumber = null;
-  if ($('input-review-search')) $('input-review-search').value = '';
-  if ($('btn-review-search-clear')) $('btn-review-search-clear').hidden = true;
-  if ($('review-search-hint')) {
-    $('review-search-hint').hidden = true;
-    $('review-search-hint').textContent = '';
+  if (getElementById('input-review-search')) getElementById('input-review-search').value = '';
+  if (getElementById('button-review-search-clear')) getElementById('button-review-search-clear').hidden = true;
+  if (getElementById('review-search-hint')) {
+    getElementById('review-search-hint').hidden = true;
+    getElementById('review-search-hint').textContent = '';
   };
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
   virtualScrollState.rangeStart = 0;
   virtualScrollState.rangeEnd = -1;
-  if ($('input-review-goto')) $('input-review-goto').value = '';
-  const bank = getBankSettings();
-  state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
-  applyBankSettingsToForm(bank);
+  if (getElementById('input-review-goto')) getElementById('input-review-goto').value = '';
+  state.bankDeck = state.currentDeck;
+  
   renderQuestionBank();
   showScreen('review');
   updateBankSearchNavButtons();
@@ -1480,11 +1470,10 @@ function refreshSetupUI() {
   const total = questions.length;
   updateDeckCountLabels();
 
-  document.querySelectorAll('.deck-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.deck === state.currentDeck));
+  document.querySelectorAll('.deck-button').forEach((button) => button.classList.toggle('active', button.dataset.deck === state.currentDeck));
 
-  const startInput = $('input-range-start');
-  const endInput = $('input-range-end');
-  // Vùng câu hỏi theo số gốc (1..fullTotal); câu ẩn bị loại khi tạo pool
+  const startInput = getElementById('input-range-start');
+  const endInput = getElementById('input-range-end');
   startInput.max = String(Math.max(1, fullTotal));
   endInput.max = String(Math.max(1, fullTotal));
   let start = Number.parseInt(startInput.value, 10);
@@ -1497,7 +1486,7 @@ function refreshSetupUI() {
   endInput.value = String(end);
 
   const rangeTotal = Math.max(0, end - start + 1);
-  const input = $('input-count');
+  const input = getElementById('input-count');
   input.max = String(Math.max(1, rangeTotal));
   const countFocused = document.activeElement === input;
   if (!countFocused) {
@@ -1507,17 +1496,17 @@ function refreshSetupUI() {
 
   const countNum = Number.parseInt(input.value, 10);
   const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal && rangeTotal > 0;
-  const btnAll = $('btn-all');
-  if (btnAll) {
-    btnAll.classList.toggle('is-active', isAllCount);
-    btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
-    setToggleIcon(btnAll, isAllCount, { on: 'deselect', off: 'select-all' });
-    btnAll.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
-    btnAll.setAttribute('aria-label', btnAll.title);
+  const selectAllButton = getElementById('button-select-all');
+  if (selectAllButton) {
+    selectAllButton.classList.toggle('is-active', isAllCount);
+    selectAllButton.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+    setToggleIcon(selectAllButton, isAllCount, { on: 'deselect', off: 'select-all' });
+    selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+    selectAllButton.setAttribute('aria-label', selectAllButton.title);
   };
   input.disabled = isAllCount && !countFocused;
 
-  const timeInput = $('input-time-limit');
+  const timeInput = getElementById('input-time-limit');
   if (timeInput) {
     const timeFocused = document.activeElement === timeInput;
     let timeVal = Number.parseInt(timeInput.value, 10);
@@ -1527,13 +1516,13 @@ function refreshSetupUI() {
       timeInput.value = String(timeVal);
     };
     const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-    const btnUnlimited = $('btn-time-unlimited');
-    if (btnUnlimited) {
-      btnUnlimited.classList.toggle('is-active', isUnlimited);
-      btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
-      setToggleIcon(btnUnlimited, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-      btnUnlimited.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
-      btnUnlimited.setAttribute('aria-label', btnUnlimited.title);
+    const unlimitedTimeButton = getElementById('button-unlimited-time');
+    if (unlimitedTimeButton) {
+      unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
+      unlimitedTimeButton.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+      setToggleIcon(unlimitedTimeButton, isUnlimited, { on: 'infinity-off', off: 'infinity' });
+      unlimitedTimeButton.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      unlimitedTimeButton.setAttribute('aria-label', unlimitedTimeButton.title);
     };
     timeInput.disabled = isUnlimited && !timeFocused;
   };
@@ -1542,59 +1531,59 @@ function refreshSetupUI() {
   const completed = new Set(progress.completed);
   const remaining = questions.filter((question) => !completed.has(question.originalIndex)).length;
   const wrongs = getWrongIndices(state.currentDeck);
-  $('stat-completed').textContent = String(completed.size);
-  $('stat-remaining').textContent = String(remaining);
-  $('stat-wrong').textContent = String(wrongs.length);
-  $('stat-practice').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
-  $('stat-bookmarked').textContent = String(progress.bookmarks.length);
-  if (progress.sequentialCursor >= total) $('stat-cursor').textContent = 'Đã làm hết bộ đề';
-  else $('stat-cursor').textContent = String(progress.sequentialCursor + 1);
+  getElementById('statistics-completed').textContent = String(completed.size);
+  getElementById('statistics-remaining').textContent = String(remaining);
+  getElementById('statistics-wrong').textContent = String(wrongs.length);
+  getElementById('statistics-practiced').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
+  getElementById('statistics-bookmarked').textContent = String(progress.bookmarks.length);
+  if (progress.sequentialCursor >= total) getElementById('statistics-sequential-cursor').textContent = 'Đã làm hết bộ đề';
+  else getElementById('statistics-sequential-cursor').textContent = String(progress.sequentialCursor + 1);
 
   const hiddenSet = new Set(getHiddenIndices(state.currentDeck));
-  const btnWrong = $('btn-practice-wrong');
+  const practiceWrongButton = getElementById('button-practice-wrong');
   const rangeWrongCount = getRangeWrongIndices(
     state.currentDeck,
     start,
     end
   ).filter((index) => !hiddenSet.has(index)).length;
-  btnWrong.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
-  btnWrong.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
+  practiceWrongButton.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
+  practiceWrongButton.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
 
   const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < fullTotal && !hiddenSet.has(index)).length;
-  const btnAllWrong = $('btn-practice-all-wrong');
-  btnAllWrong.disabled = state.practiceMode === 'exam' || allWrongCount === 0;
-  btnAllWrong.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
+  const practiceAllWrongButton = getElementById('button-practice-all-wrong');
+  practiceAllWrongButton.disabled = state.practiceMode === 'exam' || allWrongCount === 0;
+  practiceAllWrongButton.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
   const rangeBookmarkCount = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex) && !hiddenSet.has(question.originalIndex)).length;
-  const btnBookmarks = $('btn-practice-bookmarks');
-  btnBookmarks.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
-  btnBookmarks.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
+  const practiceBookmarksButton = getElementById('button-practice-bookmarks');
+  practiceBookmarksButton.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
+  practiceBookmarksButton.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
 
   const rangeQuestions = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
-  const shuffleQuestions = $('chk-shuffle-q').checked;
-  const btnContinue = $('btn-continue');
+  const shuffleQuestions = getElementById('checkbox-shuffle-questions').checked;
+  const continueButton = getElementById('button-continue');
   const nextQuestion = findNextUncompletedQuestion(rangeQuestions, Math.max(progress.sequentialCursor, start - 1), completed);
   const nextIndex = nextQuestion?.originalIndex ?? end;
   const canContinue = state.practiceMode !== 'exam' && !shuffleQuestions && !!nextQuestion;
-  btnContinue.hidden = !canContinue;
+  continueButton.hidden = !canContinue;
   if (canContinue) {
     const left = end - nextIndex;
     const n = Math.min(Number(input.value) || 20, left);
-    btnContinue.textContent = 'Tiếp tục tuần tự ' + n + ' câu từ câu ' + (nextIndex + 1);
+    continueButton.textContent = 'Tiếp tục tuần tự ' + n + ' câu từ câu ' + (nextIndex + 1);
   };
 
-  document.querySelectorAll('.preset-btn').forEach((btn) => {
-    const n = Number(btn.dataset.count);
-    btn.classList.toggle('is-active', Number(input.value) === n);
-    btn.disabled = n > rangeTotal;
+  document.querySelectorAll('.preset-btn').forEach((button) => {
+    const n = Number(button.dataset.count);
+    button.classList.toggle('is-active', Number(input.value) === n);
+    button.disabled = n > rangeTotal;
   });
 
   refreshResumeCard();
 };
 
 function refreshResumeCard() {
-  const card = $('resume-card');
+  const card = getElementById('resume-card');
   if (!card) return;
   const saved = getSession(state.currentDeck);
   if (!saved || !Array.isArray(saved.items) || !saved.items.length) {
@@ -1605,129 +1594,8 @@ function refreshResumeCard() {
   const isExam = !!saved.examMode || saved.mode === 'exam';
   const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
   card.hidden = false;
-  $('resume-title').textContent = isExam ? saved.reviewMode ? 'Có lượt thi đã chấm' : 'Có lượt thi thử đang dở' : 'Có lượt ôn đang dở';
-  $('resume-hint').textContent = isExam ? `${deckLabel} · ${answered} / ${saved.items.length} câu đã chọn${saved.reviewMode ? ' · Đã chấm' : ''}` : `${deckLabel} · Câu ${(saved.viewIndex || 0) + 1} / ${saved.items.length}`;
-};
-
-function updateBankCountButtonState() {
-  const input = $('review-input-count');
-  const btn = $('review-btn-all');
-  if (!input || !btn) return;
-  const selectedCount = state.reviewSelectedIndices.size;
-  const countFocused = document.activeElement === input;
-  const value = Number.parseInt(input.value, 10);
-  const isAll = selectedCount > 0 && Number.isInteger(value) && value === selectedCount;
-  btn.classList.toggle('is-active', isAll);
-  btn.setAttribute('aria-pressed', isAll ? 'true' : 'false');
-  setToggleIcon(btn, isAll, { on: 'deselect', off: 'select-all' });
-  btn.title = isAll ? 'Bỏ chọn toàn bộ đã chọn' : 'Toàn bộ đã chọn';
-  btn.setAttribute('aria-label', btn.title);
-  input.disabled = isAll && !countFocused;
-};
-
-function updateBankTimeButtonState() {
-  const input = $('review-input-time-limit');
-  const btn = $('review-btn-time-unlimited');
-  if (!input || !btn) return;
-  const timeFocused = document.activeElement === input;
-  const timeVal = Number.parseInt(input.value, 10);
-  const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-  btn.classList.toggle('is-active', isUnlimited);
-  btn.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
-  setToggleIcon(btn, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-  btn.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
-  btn.setAttribute('aria-label', btn.title);
-  input.disabled = isUnlimited && !timeFocused;
-};
-
-function syncBankCountInput() {
-  const input = $('review-input-count');
-  if (!input) return;
-  const selectedCount = state.reviewSelectedIndices.size;
-  const countFocused = document.activeElement === input;
-  input.min = selectedCount === 0 ? '0' : '1';
-  input.max = String(selectedCount);
-  if (selectedCount === 0) input.value = '0';
-  else if (!countFocused) {
-    const value = Number.parseInt(input.value, 10);
-    if (!Number.isInteger(value) || value < 1) input.value = '1';
-    else if (value > selectedCount) input.value = String(selectedCount);
-  };
-  updateBankCountButtonState();
-  updateBankTimeButtonState();
-};
-
-function readBankForm() {
-  const selectedCount = state.reviewSelectedIndices.size;
-  let count = Number.parseInt($('review-input-count')?.value, 10);
-  if (selectedCount === 0) count = 0;
-  else if (!Number.isInteger(count) || count < 1) count = 1;
-  if (count > selectedCount) count = selectedCount;
-  let timeLimit = Number.parseInt($('review-input-time-limit')?.value, 10);
-  if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
-  timeLimit = Math.min(1440, timeLimit);
-  return {
-    deck: state.bankDeck === 'quocphong2' ? 'quocphong2' : 'quocphong1',
-    count,
-    timeLimit,
-    shuffleQuestions: !!$('review-chk-shuffle-q')?.checked,
-    shuffleAnswers: !!$('review-chk-shuffle-a')?.checked,
-    practiceMode: state.bankPracticeMode === 'exam' ? 'exam' : 'practice',
-    autoCheck: !!$('review-chk-auto-check')?.checked,
-    autoAdvance: !!$('review-chk-auto-advance')?.checked,
-    vibrationEnabled: !!$('review-chk-vibration')?.checked,
-    autoAdvanceDelay: (() => {
-      const delay = Number.parseInt($('review-input-auto-advance-delay')?.value, 10);
-      return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
-    })(),
-    soundVolume: (() => {
-      const input = $('review-input-sound-volume');
-      return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 1);
-    })(),
-    soundEnabled: !!$('review-chk-sound')?.checked
-  };
-};
-
-function applyBankSettingsToForm(settings) {
-  if (!settings || !$('review-input-count')) return;
-  const selectedCount = state.reviewSelectedIndices.size;
-  const savedCount = Number(settings.count);
-  $('review-input-count').value = String(selectedCount === 0 ? 0 : Math.min(selectedCount, Number.isInteger(savedCount) && savedCount >= 1 ? savedCount : 1));
-  $('review-input-count').min = selectedCount === 0 ? '0' : '1';
-  $('review-input-count').max = String(selectedCount);
-  $('review-input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
-  $('review-chk-shuffle-q').checked = settings.shuffleQuestions !== false;
-  $('review-chk-shuffle-a').checked = settings.shuffleAnswers !== false;
-  if ($('review-chk-auto-check')) {
-    $('review-chk-auto-check').checked = settings.autoCheck === true;
-    $('review-chk-auto-advance').checked = settings.autoAdvance === true;
-    $('review-chk-vibration').checked = settings.vibrationEnabled === true;
-  };
-  if ($('review-input-auto-advance-delay')) {
-    const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 0;
-    $('review-input-auto-advance-delay').value = String(delay);
-    if ($('review-label-auto-advance-delay')) $('review-label-auto-advance-delay').textContent = delay + ' giây';
-  };
-  const volume = normalizeSoundVolume(settings.soundVolume, 1);
-  if ($('review-input-sound-volume')) {
-    $('review-input-sound-volume').value = String(volume);
-    $('review-input-sound-volume').dataset.lastVolume = String(volume);
-    if ($('review-label-sound-volume')) $('review-label-sound-volume').textContent = volume + '%';
-  };
-  if ($('review-chk-sound')) $('review-chk-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
-  updateBankExperienceControls();
-  state.bankPracticeMode = settings.practiceMode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode));
-  document.querySelectorAll('[data-bank-deck]').forEach((btn) => btn.classList.toggle('active', btn.dataset.bankDeck === state.bankDeck));
-  updateBankCountButtonState();
-  updateBankTimeButtonState();
-};
-
-function persistBankForm() {
-  const form = readBankForm();
-  const saved = saveBankSettings(form);
-  if (!saved) toast('Không thể lưu tuỳ chọn ngân hàng. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
-  return form;
+  getElementById('resume-title').textContent = isExam ? saved.reviewMode ? 'Có lượt thi đã chấm' : 'Có lượt thi thử đang dở' : 'Có lượt ôn đang dở';
+  getElementById('resume-hint').textContent = isExam ? deckLabel + ' · ' + answered + ' / ' + saved.items.length + ' câu đã chọn' + (saved.reviewMode ? ' · Đã chấm' : '') : deckLabel + ' · Câu ' + ((saved.viewIndex || 0) + 1) + ' / ' + saved.items.length;
 };
 
 function normalizeSoundVolume(value, fallback = 1) {
@@ -1737,8 +1605,8 @@ function normalizeSoundVolume(value, fallback = 1) {
 };
 
 function syncExperienceToggleButton(buttonId, checkboxId, onIcon, offIcon, onLabel, offLabel) {
-  const button = $(buttonId);
-  const checkbox = $(checkboxId);
+  const button = getElementById(buttonId);
+  const checkbox = getElementById(checkboxId);
   if (!button || !checkbox) return;
   const on = !!checkbox.checked;
   button.classList.toggle('is-on', on);
@@ -1749,90 +1617,66 @@ function syncExperienceToggleButton(buttonId, checkboxId, onIcon, offIcon, onLab
 };
 
 function updateSetupExperienceControls() {
-  const autoAdvanceOn = !!$('chk-auto-advance')?.checked;
-  const delayInput = $('input-auto-advance-delay');
-  const delayField = $('field-auto-advance-delay');
+  const autoAdvanceOn = !!getElementById('checkbox-automatic-advance')?.checked;
+  const delayInput = getElementById('input-auto-advance-delay');
+  const delayField = getElementById('field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-  syncExperienceToggleButton('btn-auto-advance', 'chk-auto-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
+  syncExperienceToggleButton('button-auto-advance', 'checkbox-automatic-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
 
-  const soundOn = !!$('chk-sound')?.checked;
-  const volumeInput = $('input-sound-volume');
-  const volumeField = $('field-sound-volume');
+  const soundOn = !!getElementById('checkbox-sound')?.checked;
+  const volumeInput = getElementById('input-sound-volume');
+  const volumeField = getElementById('field-sound-volume');
   if (volumeInput) volumeInput.disabled = !soundOn;
   if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
-  syncExperienceToggleButton('btn-sound', 'chk-sound', 'volume-off', 'volume', 'Bật âm thanh', 'Tắt âm thanh');
-};
-
-function updateBankExperienceControls() {
-  const autoAdvanceOn = !!$('review-chk-auto-advance')?.checked;
-  const delayInput = $('review-input-auto-advance-delay');
-  const delayField = $('review-field-auto-advance-delay');
-  if (delayInput) delayInput.disabled = !autoAdvanceOn;
-  if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-  syncExperienceToggleButton('review-btn-auto-advance', 'review-chk-auto-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
-
-  const soundOn = !!$('review-chk-sound')?.checked;
-  const volumeInput = $('review-input-sound-volume');
-  const volumeField = $('review-field-sound-volume');
-  if (volumeInput) volumeInput.disabled = !soundOn;
-  if (volumeField) volumeField.classList.toggle('is-disabled', !soundOn);
-  syncExperienceToggleButton('review-btn-sound', 'review-chk-sound', 'volume-off', 'volume', 'Bật âm thanh', 'Tắt âm thanh');
+  syncExperienceToggleButton('button-sound', 'checkbox-sound', 'volume-off', 'volume', 'Bật âm thanh', 'Tắt âm thanh');
 };
 
 function syncSoundFromVolume(volumeInputId, checkboxId, labelId) {
-  const volumeInput = $(volumeInputId);
+  const volumeInput = getElementById(volumeInputId);
   if (!volumeInput) return 1;
   const volume = normalizeSoundVolume(volumeInput.value, 1);
   volumeInput.value = String(volume);
-  if ($(labelId)) $(labelId).textContent = volume + '%';
+  if (getElementById(labelId)) getElementById(labelId).textContent = volume + '%';
   volumeInput.dataset.lastVolume = String(volume);
-  if ($(checkboxId) && !$(checkboxId).checked) $(checkboxId).checked = true;
+  if (getElementById(checkboxId) && !getElementById(checkboxId).checked) getElementById(checkboxId).checked = true;
   return volume;
 };
 
 function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
-  const checkbox = $(checkboxId);
-  const volumeInput = $(volumeInputId);
+  const checkbox = getElementById(checkboxId);
+  const volumeInput = getElementById(volumeInputId);
   if (!checkbox || !volumeInput) return;
   if (checkbox.checked) {
     const restored = normalizeSoundVolume(volumeInput.dataset.lastVolume || volumeInput.value, 1);
     volumeInput.value = String(restored);
     volumeInput.dataset.lastVolume = String(restored);
-    if ($(labelId)) $(labelId).textContent = restored + '%';
+    if (getElementById(labelId)) getElementById(labelId).textContent = restored + '%';
   } else {
     const current = normalizeSoundVolume(volumeInput.value, 1);
     volumeInput.dataset.lastVolume = String(current);
-    if ($(labelId)) $(labelId).textContent = current + '%';
+    if (getElementById(labelId)) getElementById(labelId).textContent = current + '%';
   };
-};
-
-function setBankPracticeMode(mode) {
-  state.bankPracticeMode = mode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.bankPracticeMode));
-  persistBankForm();
-  renderQuestionBank();
 };
 
 function setBankDeck(deckId) {
   const id = deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   if (state.bankDeck === id) return;
-  persistBankForm();
+  
   state.bankDeck = id;
-  state.reviewSelectedIndices.clear();
+
+  
   state.bankSearchMatchIndex = -1;
   state.reviewEditingNoteIndex = null;
   state.reviewEditingNoteDraft = '';
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
-  const settings = getBankSettings();
-  applyBankSettingsToForm({ ...settings, deck: id, count: 0 });
-  persistBankForm();
+  
   renderQuestionBank();
-  if ($('bank-count-quocphong1')) {
-    $('bank-count-quocphong1').textContent = (state.decks.quocphong1?.length ?? 479) + ' câu';
-    $('bank-count-quocphong2').textContent = (state.decks.quocphong2?.length ?? 262) + ' câu';
+  if (getElementById('bank-count-quocphong1')) {
+    getElementById('bank-count-quocphong1').textContent = (state.decks.quocphong1?.length ?? 479) + ' câu';
+    getElementById('bank-count-quocphong2').textContent = (state.decks.quocphong2?.length ?? 262) + ' câu';
   };
   updateBankSearchHint();
   updateBankSearchNavButtons();
@@ -1860,22 +1704,22 @@ function startPracticeBookmarks() {
 
 function readSetupForm() {
   const total = currentQuestions().length;
-  let startQuestion = Number.parseInt($('input-range-start').value, 10);
-  let endQuestion = Number.parseInt($('input-range-end').value, 10);
+  let startQuestion = Number.parseInt(getElementById('input-range-start').value, 10);
+  let endQuestion = Number.parseInt(getElementById('input-range-end').value, 10);
   if (!Number.isInteger(startQuestion)) startQuestion = 1;
   if (!Number.isInteger(endQuestion)) endQuestion = total;
   startQuestion = Math.max(1, Math.min(startQuestion, Math.max(1, total)));
   endQuestion = Math.max(startQuestion, Math.min(endQuestion, Math.max(1, total)));
 
-  let count = Number.parseInt($('input-count').value, 10);
+  let count = Number.parseInt(getElementById('input-count').value, 10);
   const rangeCount = Math.max(1, endQuestion - startQuestion + 1);
   if (!Number.isFinite(count) || count < 1) count = 1;
   if (count > rangeCount) count = rangeCount;
-  let timeLimit = Number.parseInt($('input-time-limit').value, 10);
+  let timeLimit = Number.parseInt(getElementById('input-time-limit').value, 10);
   if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
   timeLimit = Math.min(1440, timeLimit);
-  const shuffleQuestions = $('chk-shuffle-q').checked;
-  const shuffleAnswers = $('chk-shuffle-a').checked;
+  const shuffleQuestions = getElementById('checkbox-shuffle-questions').checked;
+  const shuffleAnswers = getElementById('checkbox-shuffle-answers').checked;
   return {
     count,
     shuffleQuestions,
@@ -1897,18 +1741,18 @@ function persistSetupForm() {
     endQuestion: form.endQuestion,
     timeLimit: form.timeLimit,
     practiceMode: state.practiceMode,
-    autoCheck: $('chk-auto-check').checked,
-    autoAdvance: $('chk-auto-advance').checked,
-    vibrationEnabled: $('chk-vibration').checked,
+    autoCheck: getElementById('checkbox-automatic-check').checked,
+    autoAdvance: getElementById('checkbox-automatic-advance').checked,
+    vibrationEnabled: getElementById('checkbox-vibration').checked,
     autoAdvanceDelay: (() => {
-      const delay = Number.parseInt($('input-auto-advance-delay')?.value, 10);
+      const delay = Number.parseInt(getElementById('input-auto-advance-delay')?.value, 10);
       return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
     })(),
     soundVolume: (() => {
-      const input = $('input-sound-volume');
+      const input = getElementById('input-sound-volume');
       return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 1);
     })(),
-    soundEnabled: !!$('chk-sound')?.checked
+    soundEnabled: !!getElementById('checkbox-sound')?.checked
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 };
@@ -1916,27 +1760,27 @@ function persistSetupForm() {
 function applySettingsToForm(settings) {
   if (!settings) return;
   const total = currentQuestions().length || settings.endQuestion || 1;
-  $('input-count').value = String(settings.count || 30);
-  $('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
-  $('input-range-start').value = String(settings.startQuestion || 1);
-  $('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
-  $('chk-shuffle-q').checked = !!settings.shuffleQuestions;
-  $('chk-shuffle-a').checked = !!settings.shuffleAnswers;
-  $('chk-auto-check').checked = settings.autoCheck === true;
-  $('chk-auto-advance').checked = settings.autoAdvance === true;
-  $('chk-vibration').checked = settings.vibrationEnabled === true;
-  if ($('input-auto-advance-delay')) {
+  getElementById('input-count').value = String(settings.count || 30);
+  getElementById('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
+  getElementById('input-range-start').value = String(settings.startQuestion || 1);
+  getElementById('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
+  getElementById('checkbox-shuffle-questions').checked = !!settings.shuffleQuestions;
+  getElementById('checkbox-shuffle-answers').checked = !!settings.shuffleAnswers;
+  getElementById('checkbox-automatic-check').checked = settings.autoCheck === true;
+  getElementById('checkbox-automatic-advance').checked = settings.autoAdvance === true;
+  getElementById('checkbox-vibration').checked = settings.vibrationEnabled === true;
+  if (getElementById('input-auto-advance-delay')) {
     const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 5;
-    $('input-auto-advance-delay').value = String(delay);
-    if ($('label-auto-advance-delay')) $('label-auto-advance-delay').textContent = delay + ' giây';
+    getElementById('input-auto-advance-delay').value = String(delay);
+    if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' giây';
   };
   const volume = normalizeSoundVolume(settings.soundVolume, 1);
-  if ($('input-sound-volume')) {
-    $('input-sound-volume').value = String(volume);
-    $('input-sound-volume').dataset.lastVolume = String(volume);
-    if ($('label-sound-volume')) $('label-sound-volume').textContent = volume + '%';
+  if (getElementById('input-sound-volume')) {
+    getElementById('input-sound-volume').value = String(volume);
+    getElementById('input-sound-volume').dataset.lastVolume = String(volume);
+    if (getElementById('label-sound-volume')) getElementById('label-sound-volume').textContent = volume + '%';
   };
-  if ($('chk-sound')) $('chk-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
+  if (getElementById('checkbox-sound')) getElementById('checkbox-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
   updateSetupExperienceControls();
   setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
 };
@@ -1958,11 +1802,7 @@ function selectedQuestions(form = readSetupForm()) {
 
 function startSessionFromPool(pool, meta) {
   const fromBank = !!meta.fromBank;
-  const form = fromBank ? {
-    ...readBankForm(),
-    shuffleAnswers: meta.shuffleAnswers != null ? meta.shuffleAnswers : readBankForm().shuffleAnswers,
-    timeLimit: meta.timeLimit != null ? meta.timeLimit : readBankForm().timeLimit
-  } : readSetupForm();
+  const form = readSetupForm();
   const shuffleAnswers = meta.shuffleAnswers != null ? meta.shuffleAnswers : form.shuffleAnswers;
   const shuffleQuestions = meta.forceShuffleQuestions != null ? meta.forceShuffleQuestions : form.shuffleQuestions;
   const shouldShuffleQuestions = meta.alreadyShuffled ? false : !!shuffleQuestions;
@@ -2008,7 +1848,7 @@ function startSessionFromPool(pool, meta) {
     remainingMs: null,
     timeExpired: false
   };
-  const examRequested = meta.examMode != null ? !!meta.examMode : fromBank ? state.bankPracticeMode === 'exam' : state.practiceMode === 'exam';
+  const examRequested = meta.examMode != null ? !!meta.examMode : state.practiceMode === 'exam';
   if (examRequested) {
     session.examMode = true;
     session.mode = session.mode === 'normal' ? 'exam' : session.mode;
@@ -2028,7 +1868,7 @@ function startSessionFromPool(pool, meta) {
   startSessionTimer();
 };
 
-function startNormal(opts = {}) {
+function startNormal(answerOptionsElement = {}) {
   const allQuestions = currentQuestions();
   if (!allQuestions.length) {
     toast('Bộ đề trống.');
@@ -2046,7 +1886,7 @@ function startNormal(opts = {}) {
   const rangeStart = form.startQuestion - 1;
   const rangeEnd = form.endQuestion;
 
-  if (opts.restart) {
+  if (answerOptionsElement.restart) {
     const { items, nextCursor } = pickSequential(questions, 0, form.count, new Set());
     const globalNextCursor = nextCursor > 0 ? questions[Math.min(nextCursor, questions.length) - 1].originalIndex + 1 : rangeStart;
     startSessionFromPool(items, {
@@ -2060,7 +1900,7 @@ function startNormal(opts = {}) {
     return;
   };
 
-  if (opts.sequential) {
+  if (answerOptionsElement.sequential) {
     const nextQuestion = findNextUncompletedQuestion(questions, Math.max(progress.sequentialCursor, rangeStart), completedSet);
     if (!nextQuestion) {
       toast('Đã hoàn thành toàn bộ câu trong vùng đã chọn.');
@@ -2168,15 +2008,15 @@ function recordWrongAnswer(session, originalIndex) {
   if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) && !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [originalIndex])) toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
 };
 
-function currentItem() {
+function currentSessionItem() {
   const session = state.session;
   if (!session) return null;
   return session.items[session.viewIndex];
 };
 
-function currentQ() {
+function currentQuestion() {
   const session = state.session;
-  const item = currentItem();
+  const item = currentSessionItem();
   if (!session || !item) return null;
   return session.pool[item.poolIndex];
 };
@@ -2184,35 +2024,35 @@ function currentQ() {
 function renderQuestion() {
   const session = state.session;
   if (!session) return;
-  const item = currentItem();
-  const question = currentQ();
+  const item = currentSessionItem();
+  const question = currentQuestion();
   if (!item || !question) return;
 
   const viewingHistory = session.viewIndex < session.maxReached;
 
-  $('progress-label').textContent = 'Câu ' + (session.viewIndex + 1) + ' / ' + session.items.length;
+  getElementById('progress-label').textContent = 'Câu ' + (session.viewIndex + 1) + ' / ' + session.items.length;
   const progressTotal = session.mode === 'practice-wrong' ? session.practiceInitialCount || session.items.length : session.items.length;
-  $('progress-score').textContent = 'Điểm ' + formatScore(session.firstTryCorrect || 0, progressTotal) + ' / 10';
+  getElementById('progress-score').textContent = 'Điểm ' + formatScore(session.firstTryCorrect || 0, progressTotal) + ' / 10';
   updateTimerDisplay();
-  const pct = progressTotal ? Math.round((session.completedInSession / progressTotal) * 100) : 0;
-  $('progress-fill').style.width = pct + '%';
-  $('progress-fill').parentElement.setAttribute('aria-valuenow', String(pct));
+  const percentage = progressTotal ? Math.round((session.completedInSession / progressTotal) * 100) : 0;
+  getElementById('progress-fill').style.width = percentage + '%';
+  getElementById('progress-fill').parentElement.setAttribute('aria-valuenow', String(percentage));
 
-  $('q-badge').textContent = session.mode === 'practice-wrong' ? 'Ôn câu sai · Gốc #' + (question.originalIndex + 1) : session.mode === 'practice-bookmarks' ? 'Ôn câu đã đánh dấu · Gốc #' + (question.originalIndex + 1) : 'Câu hỏi · Gốc #' + (question.originalIndex + 1);
-  const bookmarkButton = $('btn-bookmark');
+  getElementById('question-badge').textContent = session.mode === 'practice-wrong' ? 'Ôn câu sai · Gốc #' + (question.originalIndex + 1) : session.mode === 'practice-bookmarks' ? 'Ôn câu đã đánh dấu · Gốc #' + (question.originalIndex + 1) : 'Câu hỏi · Gốc #' + (question.originalIndex + 1);
+  const bookmarkButton = getElementById('button-bookmark');
   const isBookmarked = getBookmarkedIndices(session.deckId).includes(question.originalIndex);
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
   setToggleIcon(bookmarkButton, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
   bookmarkButton.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
   bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
-  const noteButton = $('btn-note');
+  const noteButton = getElementById('button-note');
   const existingNote = getQuestionNote(session.deckId, question.originalIndex);
-  const noteDisplay = $('question-note-display');
-  const noteTextEl = $('question-note-text');
-  const notePanel = $('question-note-panel');
-  const noteInput = $('question-note-input');
-  const noteWrap = $('question-note-wrap');
+  const noteDisplay = getElementById('question-note-display');
+  const noteTextEl = getElementById('question-note-text');
+  const notePanel = getElementById('question-note-panel');
+  const noteInput = getElementById('question-note-input');
+  const noteWrap = getElementById('question-note-wrap');
   const editingNote = notePanel && !notePanel.hidden;
   if (noteButton) {
     noteButton.classList.toggle('has-note', !!existingNote);
@@ -2242,78 +2082,78 @@ function renderQuestion() {
       };
     };
   };
-  renderTextWithHighlights($('q-text'), question.question, session.deckId, question.originalIndex, 'question');
-  const highlightToolbar = $('quiz-highlight-toolbar');
+  renderTextWithHighlights(getElementById('question-text'), question.question, session.deckId, question.originalIndex, 'question');
+  const highlightToolbar = getElementById('quiz-highlight-toolbar');
   if (highlightToolbar) highlightToolbar.hidden = session.examMode === true;
   if (noteButton) noteButton.hidden = session.examMode === true;
 
-  const optsEl = $('options');
-  optsEl.replaceChildren();
+  const answerOptionsElement = getElementById('options');
+  answerOptionsElement.replaceChildren();
   const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
   item.optionOrder.forEach((origIdx, displayIdx) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'option';
-    btn.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
-    btn.dataset.display = String(displayIdx);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'answer-option';
+    button.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
+    button.dataset.display = String(displayIdx);
 
-    if (item.userAnswer === displayIdx) btn.classList.add('selected');
-    if (item.checked && item.status === 'correct' && displayIdx === item.userAnswer) btn.classList.add('correct', 'answer-bounce');
-    if (item.checked && item.status === 'wrong' && displayIdx === item.userAnswer) btn.classList.add('incorrect', 'answer-shake');
+    if (item.userAnswer === displayIdx) button.classList.add('selected');
+    if (item.checked && item.status === 'correct' && displayIdx === item.userAnswer) button.classList.add('correct', 'answer-bounce');
+    if (item.checked && item.status === 'wrong' && displayIdx === item.userAnswer) button.classList.add('incorrect', 'answer-shake');
     const wrongOptions = Array.isArray(item.wrongOptions) ? item.wrongOptions : [];
     if (wrongOptions.includes(origIdx)) {
-      btn.classList.add('incorrect', 'locked');
-      btn.disabled = true;
+      button.classList.add('incorrect', 'locked');
+      button.disabled = true;
     };
     if (item.status === 'correct') {
-      btn.classList.add('locked');
-      btn.disabled = true;
-      if (displayIdx === displayedCorrectIndex(item, question)) btn.classList.add('correct');
+      button.classList.add('locked');
+      button.disabled = true;
+      if (displayIdx === displayedCorrectIndex(item, question)) button.classList.add('correct');
     } else if (viewingHistory) {
-      btn.disabled = true;
-      btn.classList.add('locked');
+      button.disabled = true;
+      button.classList.add('locked');
     };
 
     const key = document.createElement('span');
-    key.className = 'option-key';
+    key.className = 'answer-option-key';
     key.textContent = labels[displayIdx] || String(displayIdx + 1);
     const text = document.createElement('span');
-    text.className = 'option-text';
+    text.className = 'answer-option-text';
     renderTextWithHighlights(text, question.options[origIdx], session.deckId, question.originalIndex, 'option:' + origIdx);
-    btn.append(key, text);
+    button.append(key, text);
 
-    if (!btn.disabled) btn.addEventListener('click', () => {
+    if (!button.disabled) button.addEventListener('click', () => {
       const selection = window.getSelection();
       if (selection && !selection.isCollapsed && selection.toString().trim()) {
         const range = selection.getRangeAt(0);
         const startNode = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
         const endNode = range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement;
-        if (btn.contains(startNode) && btn.contains(endNode)) {
+        if (button.contains(startNode) && button.contains(endNode)) {
           captureHighlightSelection();
           return;
         };
       };
       onSelectOption(displayIdx);
     });
-    optsEl.appendChild(btn);
+    answerOptionsElement.appendChild(button);
   });
 
-  const feedback = $('feedback');
+  const feedback = getElementById('feedback');
   if (item.checked && item.status === 'correct') {
     feedback.hidden = false;
-    feedback.className = 'feedback ok';
+    feedback.className = 'feedback is-correct-answer';
     feedback.textContent = 'Chính xác!';
   } else if (item.checked && item.status === 'wrong') {
     feedback.hidden = false;
-    feedback.className = 'feedback bad';
+    feedback.className = 'feedback is-incorrect-answer';
     feedback.textContent = 'Chưa đúng. Hãy chọn lại đáp án khác.';
   } else {
     feedback.hidden = true;
     feedback.textContent = '';
   };
 
-  $('btn-prev').disabled = session.viewIndex <= 0;
-  const nextButton = $('btn-next');
+  getElementById('button-prev').disabled = session.viewIndex <= 0;
+  const nextButton = getElementById('button-next');
   if (viewingHistory) {
     nextButton.textContent = 'Câu tiếp';
     nextButton.dataset.icon = 'chevron-right';
@@ -2341,8 +2181,8 @@ function renderQuestion() {
 
 function setPracticeMode(mode) {
   state.practiceMode = mode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-setup .mode-btn').forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === state.practiceMode));
-  const startBtn = $('btn-start');
+  document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.practiceMode));
+  const startBtn = getElementById('button-start');
   if (startBtn) startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn luyện';
   persistSetupForm();
   if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
@@ -2353,26 +2193,26 @@ function updateExamProgressHeader() {
   if (!session || !session.examMode) return;
   const answered = session.items.filter((item) => item.userAnswer != null).length;
   const unanswered = session.items.length - answered;
-  $('exam-progress-label').textContent = session.reviewMode ? 'Kết quả · ' + (session.firstTryCorrect || 0) + ' / ' + session.items.length + ' câu đúng' : 'Đã chọn ' + answered + ' / ' + session.items.length + ' câu';
-  const pct = session.items.length ? Math.round((answered / session.items.length) * 100) : 0;
-  const fill = $('exam-progress-fill');
+  getElementById('exam-progress-label').textContent = session.reviewMode ? 'Kết quả · ' + (session.firstTryCorrect || 0) + ' / ' + session.items.length + ' câu đúng' : 'Đã chọn ' + answered + ' / ' + session.items.length + ' câu';
+  const percentage = session.items.length ? Math.round((answered / session.items.length) * 100) : 0;
+  const fill = getElementById('exam-progress-fill');
   if (fill) {
-    fill.style.width = pct + '%';
-    fill.parentElement?.setAttribute('aria-valuenow', String(pct));
+    fill.style.width = percentage + '%';
+    fill.parentElement?.setAttribute('aria-valuenow', String(percentage));
   };
   updateTimerDisplay();
-  const filterWrong = $('exam-filter-wrong');
-  const filterCorrect = $('exam-filter-correct');
+  const filterWrong = getElementById('exam-filter-wrong');
+  const filterCorrect = getElementById('exam-filter-correct');
   if (filterWrong) filterWrong.hidden = !session.reviewMode;
   if (filterCorrect) filterCorrect.hidden = !session.reviewMode;
-  const nextEmpty = $('btn-exam-next-empty');
+  const nextEmpty = getElementById('button-exam-next-empty');
   if (nextEmpty) {
     nextEmpty.hidden = session.reviewMode || unanswered === 0;
     nextEmpty.textContent = unanswered ? 'Còn ' + unanswered + ' câu' : 'Đủ đáp án';
   };
-  const pauseBtn = $('btn-exam-pause');
+  const pauseBtn = getElementById('button-exam-pause');
   if (pauseBtn) pauseBtn.hidden = !!session.reviewMode;
-  const submitBtn = $('btn-exam-submit');
+  const submitBtn = getElementById('button-exam-submit');
   if (submitBtn) {
     if (session.reviewMode) {
       submitBtn.textContent = 'Xem tổng kết';
@@ -2392,7 +2232,7 @@ function applyExamFilter() {
   if (!session?.examMode) return;
   const filter = state.examFilter || 'all';
   session.items.forEach((item, index) => {
-    const card = $('exam-q-' + index);
+    const card = getElementById('exam-q-' + index);
     if (!card) return;
     let show = true;
     if (filter === 'unanswered') show = item.userAnswer == null;
@@ -2403,7 +2243,7 @@ function applyExamFilter() {
 };
 
 function scrollToExamQuestion(index) {
-  const card = $('exam-q-' + index);
+  const card = getElementById('exam-q-' + index);
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
@@ -2424,8 +2264,8 @@ function jumpToNextUnanswered(fromIdx = -1) {
 function renderExam() {
   const session = state.session;
   if (!session || !session.examMode) return;
-  const list = $('exam-list');
-  const nav = $('exam-nav');
+  const list = getElementById('exam-list');
+  const nav = getElementById('exam-navigation');
   if (!list || !nav) return;
   const scrollY = window.scrollY;
   list.replaceChildren();
@@ -2436,7 +2276,7 @@ function renderExam() {
   session.items.forEach((item, index) => {
     const question = session.pool[item.poolIndex];
     const card = document.createElement('article');
-    card.className = 'exam-q-card';
+    card.className = 'exam-question-card';
     card.id = 'exam-q-' + index;
     if (item.userAnswer != null) card.classList.add('is-answered');
     if (session.reviewMode) {
@@ -2445,59 +2285,59 @@ function renderExam() {
     };
 
     const head = document.createElement('div');
-    head.className = 'exam-q-head';
+    head.className = 'exam-question-header';
     const num = document.createElement('span');
-    num.className = 'exam-q-num';
+    num.className = 'exam-question-number';
     num.textContent = 'Câu ' + (index + 1) + ' · Gốc #' + (question.originalIndex + 1);
     head.appendChild(num);
     if (session.reviewMode) {
       const badge = document.createElement('span');
-      badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'ok' : 'bad');
+      badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'is-correct-answer' : 'is-incorrect-answer');
       badge.textContent = item.status === 'correct' ? 'Đúng' : item.userAnswer == null ? 'Bỏ trống' : 'Sai';
       head.appendChild(badge);
     };
     card.appendChild(head);
 
     const text = document.createElement('h3');
-    text.className = 'exam-q-text';
+    text.className = 'exam-question-text';
     text.textContent = question.question;
     card.appendChild(text);
 
-    const opts = document.createElement('div');
-    opts.className = 'exam-options options';
-    opts.setAttribute('role', 'group');
-    opts.setAttribute('aria-label', 'Đáp án câu ' + (index + 1));
+    const answerOptionsElement = document.createElement('div');
+    answerOptionsElement.className = 'exam-options answer-options';
+    answerOptionsElement.setAttribute('role', 'group');
+    answerOptionsElement.setAttribute('aria-label', 'Đáp án câu ' + (index + 1));
 
     item.optionOrder.forEach((origIdx, displayIdx) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'option';
-      btn.dataset.q = String(index);
-      btn.dataset.display = String(displayIdx);
-      btn.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
-      if (item.userAnswer === displayIdx) btn.classList.add('selected');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'answer-option';
+      button.dataset.q = String(index);
+      button.dataset.display = String(displayIdx);
+      button.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
+      if (item.userAnswer === displayIdx) button.classList.add('selected');
       if (session.reviewMode) {
-        btn.disabled = true;
+        button.disabled = true;
         const correctDisplay = item.optionOrder.indexOf(question.correct);
-        if (displayIdx === correctDisplay) btn.classList.add('correct');
-        if (item.userAnswer === displayIdx && item.status === 'wrong') btn.classList.add('incorrect');
+        if (displayIdx === correctDisplay) button.classList.add('correct');
+        if (item.userAnswer === displayIdx && item.status === 'wrong') button.classList.add('incorrect');
       };
       const label = document.createElement('span');
-      label.className = 'option-key';
+      label.className = 'answer-option-key';
       label.textContent = labels[displayIdx] || String(displayIdx + 1);
       const body = document.createElement('span');
-      body.className = 'option-text';
+      body.className = 'answer-option-text';
       body.textContent = question.options[origIdx];
-      btn.append(label, body);
-      if (!session.reviewMode) btn.addEventListener('click', () => onExamSelect(index, displayIdx));
-      opts.appendChild(btn);
+      button.append(label, body);
+      if (!session.reviewMode) button.addEventListener('click', () => onExamSelect(index, displayIdx));
+      answerOptionsElement.appendChild(button);
     });
-    card.appendChild(opts);
+    card.appendChild(answerOptionsElement);
     list.appendChild(card);
 
     const dot = document.createElement('button');
     dot.type = 'button';
-    dot.className = 'exam-nav-dot';
+    dot.className = 'exam-question-navigation-dot';
     dot.textContent = String(index + 1);
     dot.title = 'Câu ' + (index + 1);
     dot.dataset.index = String(index);
@@ -2514,39 +2354,39 @@ function renderExam() {
   requestAnimationFrame(() => window.scrollTo(0, scrollY));
 };
 
-function patchExamQuestion(qIdx) {
+function patchExamQuestion(questionIndex) {
   const session = state.session;
   if (!session?.examMode) return;
-  const item = session.items[qIdx];
-  const card = $('exam-q-' + qIdx);
+  const item = session.items[questionIndex];
+  const card = getElementById('exam-q-' + questionIndex);
   if (!item || !card) {
     renderExam();
     return;
   };
   card.classList.toggle('is-answered', item.userAnswer != null);
-  card.querySelectorAll('.option').forEach((btn) => {
-    const displayIdx = Number(btn.dataset.display);
+  card.querySelectorAll('.answer-option').forEach((button) => {
+    const displayIdx = Number(button.dataset.display);
     const selected = item.userAnswer === displayIdx;
-    btn.classList.toggle('selected', selected);
-    btn.setAttribute('aria-pressed', String(selected));
+    button.classList.toggle('selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
   });
-  const dot = $('exam-nav')?.querySelector('.exam-nav-dot[data-index="' + qIdx + '"]');
+  const dot = getElementById('exam-navigation')?.querySelector('.exam-question-navigation-dot[data-index="' + questionIndex + '"]');
   if (dot) dot.classList.toggle('is-answered', item.userAnswer != null);
   updateExamProgressHeader();
   applyExamFilter();
 };
 
-function onExamSelect(qIdx, displayIdx) {
+function onExamSelect(questionIndex, displayIdx) {
   if (enforceSessionDeadline()) return;
   const session = state.session;
   if (!session || session.reviewMode || !session.examMode || state.examSubmitting) return;
-  const item = session.items[qIdx];
+  const item = session.items[questionIndex];
   if (!item) return;
   item.userAnswer = displayIdx;
   item.checked = false;
   item.status = 'pending';
   persistSession();
-  patchExamQuestion(qIdx);
+  patchExamQuestion(questionIndex);
 };
 
 async function onExamSubmit() {
@@ -2660,10 +2500,10 @@ function enforceSessionDeadline() {
 function onSelectOption(displayIdx) {
   if (enforceSessionDeadline()) return;
   const session = state.session;
-  const item = currentItem();
+  const item = currentSessionItem();
   if (!session || !item) return;
   if (item.status === 'correct' || session.viewIndex < session.maxReached) return;
-  const question = currentQ();
+  const question = currentQuestion();
   if (!question || (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))) return;
 
   item.userAnswer = displayIdx;
@@ -2677,8 +2517,8 @@ function onSelectOption(displayIdx) {
 };
 
 const answerSounds = {
-  correct: new Audio(dataUrl('assets/sounds/correct.mp3')),
-  incorrect: new Audio(dataUrl('assets/sounds/incorrect.mp3'))
+  correct: new Audio(createDataFileUrl('assets/sounds/correct.mp3')),
+  incorrect: new Audio(createDataFileUrl('assets/sounds/incorrect.mp3'))
 };
 
 for (const audio of Object.values(answerSounds)) {
@@ -2705,8 +2545,8 @@ function playAnswerSound(isCorrect) {
 function onCheck() {
   if (enforceSessionDeadline()) return;
   const session = state.session;
-  const item = currentItem();
-  const question = currentQ();
+  const item = currentSessionItem();
+  const question = currentQuestion();
   if (!session || !item || !question || item.userAnswer == null) return;
   if (item.status === 'correct' || item.checked || session.viewIndex < session.maxReached) return;
 
@@ -2769,7 +2609,7 @@ function onCheck() {
     const delaySec = Number.isInteger(preferences.autoAdvanceDelay) && preferences.autoAdvanceDelay >= 0 ? Math.min(10, preferences.autoAdvanceDelay) : 0;
     const delayMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : delaySec * 1000;
     setTimeout(() => {
-      if (state.session === session && currentItem() === item && item.status === 'correct' && session.viewIndex < session.items.length - 1) onNext();
+      if (state.session === session && currentSessionItem() === item && item.status === 'correct' && session.viewIndex < session.items.length - 1) onNext();
     }, delayMs);
   };
 };
@@ -2778,7 +2618,7 @@ function onNext() {
   if (enforceSessionDeadline()) return;
   const session = state.session;
   if (!session) return;
-  const item = currentItem();
+  const item = currentSessionItem();
   if (!item) return;
 
   if (session.viewIndex >= session.maxReached && item.status !== 'correct' && !(session.mode === 'practice-wrong' && item.status === 'wrong' && item.checked)) {
@@ -2886,9 +2726,9 @@ function formatScore(correct, total) {
 };
 
 function animateScore(target, displayStr, circumference) {
-  const scoreBig = $('sum-score-big');
-  const ringFg = $('score-ring-fg');
-  if (!scoreBig || !ringFg) return;
+  const summaryScoreElement = getElementById('summary-score-large');
+  const ringFg = getElementById('score-ring-fg');
+  if (!summaryScoreElement || !ringFg) return;
 
   const duration = 1100;
   const start = performance.now();
@@ -2899,7 +2739,7 @@ function animateScore(target, displayStr, circumference) {
   else color = '#ef4444';
 
   ringFg.style.stroke = color;
-  scoreBig.style.color = color;
+  summaryScoreElement.style.color = color;
   ringFg.style.transition = 'stroke-dashoffset ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
 
   function frame(now) {
@@ -2908,20 +2748,20 @@ function animateScore(target, displayStr, circumference) {
     const current = target * eased;
 
     const shown = Math.round(current * 10) / 10;
-    scoreBig.textContent = shown.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+    summaryScoreElement.textContent = shown.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
 
-    const pct = Math.max(0, Math.min(1, current / 10));
-    ringFg.style.strokeDashoffset = String(circumference * (1 - pct));
+    const percentage = Math.max(0, Math.min(1, current / 10));
+    ringFg.style.strokeDashoffset = String(circumference * (1 - percentage));
 
     if (progressRatio < 1) requestAnimationFrame(frame);
     else {
-      scoreBig.textContent = displayStr;
+      summaryScoreElement.textContent = displayStr;
       ringFg.style.strokeDashoffset = String(circumference * (1 - target / 10));
 
-      scoreBig.style.transition = 'transform 0.25s ease';
-      scoreBig.style.transform = 'scale(1.08)';
+      summaryScoreElement.style.transition = 'transform 0.25s ease';
+      summaryScoreElement.style.transform = 'scale(1.08)';
       setTimeout(() => {
-        scoreBig.style.transform = 'scale(1)';
+        summaryScoreElement.style.transform = 'scale(1)';
       }, 220);
     };
   };
@@ -2942,7 +2782,7 @@ function getElapsedSeconds(session = state.session) {
 
 function updateTimerDisplay() {
   const session = state.session;
-  const element = session?.examMode ? $('exam-progress-time') : $('progress-time');
+  const element = session?.examMode ? getElementById('exam-progress-time') : getElementById('progress-time');
   if (!element) return;
   if (!session) {
     element.hidden = true;
@@ -3075,15 +2915,15 @@ function finishSession() {
 
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
-  $('summary-title').textContent = mode === 'practice-wrong' ? 'Kết thúc ôn câu sai' : mode === 'practice-bookmarks' ? 'Hoàn thành ôn câu đã đánh dấu' : mode === 'exam' ? 'Kết quả thi thử' : 'Hoàn thành lượt ôn';
+  getElementById('summary-title').textContent = mode === 'practice-wrong' ? 'Kết thúc ôn câu sai' : mode === 'practice-bookmarks' ? 'Hoàn thành ôn câu đã đánh dấu' : mode === 'exam' ? 'Kết quả thi thử' : 'Hoàn thành lượt ôn';
   const scoreVal = summary.score ?? formatScore(summary.correct, summary.total);
   const scoreNum = Number(String(scoreVal).replace(',', '.')) || 0;
 
-  $('sum-total').textContent = String(summary.total);
-  $('sum-score').textContent = scoreVal+ ' / 10';
+  getElementById('summary-total').textContent = String(summary.total);
+  getElementById('summary-score').textContent = scoreVal+ ' / 10';
 
-  const scoreBig = $('sum-score-big');
-  const ringFg = $('score-ring-fg');
+  const summaryScoreElement = getElementById('summary-score-large');
+  const ringFg = getElementById('score-ring-fg');
   const circumference = 2 * Math.PI * 52;
 
   if (ringFg) {
@@ -3092,35 +2932,35 @@ function showSummary(summary, deckId, mode) {
     ringFg.style.transition = 'none';
     ringFg.style.stroke = 'var(--primary)';
   };
-  if (scoreBig) {
-    scoreBig.textContent = '0';
-    scoreBig.style.transform = 'scale(1)';
-    scoreBig.style.color = 'var(--primary)';
+  if (summaryScoreElement) {
+    summaryScoreElement.textContent = '0';
+    summaryScoreElement.style.transform = 'scale(1)';
+    summaryScoreElement.style.color = 'var(--primary)';
   };
 
   requestAnimationFrame(() => requestAnimationFrame(() => animateScore(scoreNum, scoreVal, circumference)));
-  $('sum-time').textContent = formatTime(summary.elapsedSeconds || 0);
-  $('sum-correct').textContent = String(summary.correct);
-  $('sum-wrong-q').textContent = String(summary.wrongQuestions);
-  $('sum-wrong-times').textContent = String(summary.wrongAttempts);
-  $('sum-practice').textContent = String(summary.practiceQuestions || 0);
-  $('sum-first').textContent = summary.firstTryRate + '%';
+  getElementById('summary-time').textContent = formatTime(summary.elapsedSeconds || 0);
+  getElementById('summary-correct').textContent = String(summary.correct);
+  getElementById('summary-wrong-question-count').textContent = String(summary.wrongQuestions);
+  getElementById('summary-wrong-attempt-count').textContent = String(summary.wrongAttempts);
+  getElementById('summary-practice-count').textContent = String(summary.practiceQuestions || 0);
+  getElementById('summary-first-try-rate').textContent = summary.firstTryRate + '%';
 
   const totalQuestions = (state.decks[deckId] || []).length;
   const progressAfterSession = getDeckProgress(deckId);
   const completedAfterSession = new Set(progressAfterSession.completed).size;
-  $('summary-note').textContent = summary.timeExpired ? 'Đã hết giờ. Bài làm được tự động kết thúc.' : completedAfterSession >= totalQuestions ? 'Bạn đã hoàn thành toàn bộ bộ đề ' + DECKS[deckId].label + '.' : summary.wrongQuestions === 0 ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.' : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
+  getElementById('summary-note').textContent = summary.timeExpired ? 'Đã hết giờ. Bài làm được tự động kết thúc.' : completedAfterSession >= totalQuestions ? 'Bạn đã hoàn thành toàn bộ bộ đề ' + DECKS[deckId].label + '.' : summary.wrongQuestions === 0 ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.' : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
 
-  const listCard = $('wrong-list-card');
-  const list = $('wrong-list');
+  const listCard = getElementById('wrong-list-card');
+  const list = getElementById('wrong-list');
   list.replaceChildren();
   if (summary.wrongList.length) {
     listCard.hidden = false;
     for (const wrongQuestion of summary.wrongList) {
       const listItemElement = document.createElement('li');
       const index = document.createElement('span');
-      index.className = 'index';
-      index.textContent = `#${wrongQuestion.originalIndex + 1}`;
+      index.className = 'question-index';
+      index.textContent = '#' + (wrongQuestion.originalIndex + 1);
       listItemElement.append(index, document.createTextNode(wrongQuestion.question));
       list.appendChild(listItemElement);
     };
@@ -3129,28 +2969,28 @@ function showSummary(summary, deckId, mode) {
   };
 
   state.currentDeck = deckId;
-  const retryButton = $('btn-sum-retry-session');
+  const retryButton = getElementById('button-summary-retry-session');
   retryButton.hidden = !['normal', 'exam'].includes(mode);
   retryButton.textContent = mode === 'exam' ? 'Thi lại lượt thi này' : 'Ôn lại lượt ôn này';
 
-  const btnPractice = $('btn-sum-practice');
+  const btnPractice = getElementById('button-summary-practice');
   const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.originalIndex))];
   state._lastSummaryWrongIndices = sessionWrong;
   btnPractice.hidden = sessionWrong.length === 0;
   btnPractice.textContent ='Ôn lại ' + sessionWrong.length + ' câu sai trong lượt này';
 
   const progress = getDeckProgress(deckId);
-  const btnContinue = $('btn-sum-continue');
+  const continueButton = getElementById('button-summary-continue');
   const form = readSetupForm();
   const rangeEnd = form.endQuestion;
   const nextIndex = Math.max(progress.sequentialCursor, form.startQuestion - 1);
   const canSeq = summary.sequential && nextIndex < rangeEnd;
-  btnContinue.hidden = !canSeq;
+  continueButton.hidden = !canSeq;
   if (canSeq) {
     const left = rangeEnd - nextIndex;
     const settings = getSettings(deckId);
     const n = Math.min(settings.count || 20, left);
-    btnContinue.textContent = 'Tiếp tục tuần tự ' + n + ' câu trong vùng';
+    continueButton.textContent = 'Tiếp tục tuần tự ' + n + ' câu trong vùng';
   };
 
   state._lastSummaryDeck = deckId;
@@ -3244,7 +3084,7 @@ function restoreSessionIfAny() {
   return true;
 };
 
-function initUI() {
+function initializeInterface() {
   document.addEventListener('selectionchange', captureHighlightSelection);
   const captureAfterSelectionGesture = () => {
     captureHighlightSelection();
@@ -3253,13 +3093,13 @@ function initUI() {
   document.addEventListener('pointerup', captureAfterSelectionGesture, true);
   document.addEventListener('mouseup', captureAfterSelectionGesture, true);
   document.addEventListener('touchend', captureAfterSelectionGesture, true);
-  $('btn-highlight-toggle')?.addEventListener('pointerdown', (event) => {
+  getElementById('button-highlight-toggle')?.addEventListener('pointerdown', (event) => {
     if (event.pointerType !== 'touch') event.preventDefault();
   });
-  $('btn-highlight-toggle')?.addEventListener('mousedown', (event) => event.preventDefault());
-  $('btn-highlight-toggle')?.addEventListener('click', () => {
+  getElementById('button-highlight-toggle')?.addEventListener('mousedown', (event) => event.preventDefault());
+  getElementById('button-highlight-toggle')?.addEventListener('click', () => {
     captureHighlightSelection();
-    const question = currentQ();
+    const question = currentQuestion();
     const session = state.session;
     const selection = state.lastTextSelection;
     if (!question || !session || session.examMode || !selection || selection.questionIndex !== question.originalIndex || selection.deckId !== session.deckId) {
@@ -3272,9 +3112,8 @@ function initUI() {
   state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
-  const bank = getBankSettings();
-  state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
-  applyBankSettingsToForm(bank);
+  state.bankDeck = state.currentDeck;
+  
   showScreen('setup');
   refreshSetupUI();
 };
@@ -3285,29 +3124,29 @@ function applyTheme() {
   if (themeColor) themeColor.content = '#111113';
 };
 
-function initTheme() {
+function initializeTheme() {
   applyTheme();
 };
 
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (!$('modal').hidden) return;
+    if (!getElementById('modal').hidden) return;
     const target = event.target;
     if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable="true"]')) return;
 
-    const quizActive = $('screen-quiz') && !$('screen-quiz').hidden;
-    const examActive = $('screen-exam') && !$('screen-exam').hidden;
+    const quizActive = getElementById('screen-quiz') && !getElementById('screen-quiz').hidden;
+    const examActive = getElementById('screen-exam') && !getElementById('screen-exam').hidden;
 
     if (examActive) {
       if (event.key === 'Escape') {
         event.preventDefault();
-        $('btn-exam-quit')?.click();
+        getElementById('button-exam-quit')?.click();
         return;
       };
       if ((event.key === 'Enter' || event.key === 's') && !state.session?.reviewMode) {
         event.preventDefault();
-        $('btn-exam-submit')?.click();
+        getElementById('button-exam-submit')?.click();
         return;
       };
       if (event.key === 'n' || event.key === 'N') {
@@ -3320,7 +3159,7 @@ function bindKeyboardShortcuts() {
     if (!quizActive) return;
 
     if (/^[1-6]$/.test(event.key)) {
-      const option = $('options').querySelectorAll('.option')[Number(event.key) - 1];
+      const option = getElementById('options').querySelectorAll('.answer-option')[Number(event.key) - 1];
       if (option && !option.disabled) {
         event.preventDefault();
         option.click();
@@ -3329,7 +3168,7 @@ function bindKeyboardShortcuts() {
     };
     if (/^[a-f]$/i.test(event.key)) {
       const index = event.key.toUpperCase().charCodeAt(0) - 65;
-      const option = $('options').querySelectorAll('.option')[index];
+      const option = getElementById('options').querySelectorAll('.answer-option')[index];
       if (option && !option.disabled) {
         event.preventDefault();
         option.click();
@@ -3338,35 +3177,35 @@ function bindKeyboardShortcuts() {
     };
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (!$('btn-next').disabled) $('btn-next').click();
+      if (!getElementById('button-next').disabled) getElementById('button-next').click();
       return;
     };
-    if (event.key === 'ArrowLeft' && !$('btn-prev').disabled) {
+    if (event.key === 'ArrowLeft' && !getElementById('button-prev').disabled) {
       event.preventDefault();
-      $('btn-prev').click();
-    } else if (event.key === 'ArrowRight' && !$('btn-next').disabled) {
+      getElementById('button-prev').click();
+    } else if (event.key === 'ArrowRight' && !getElementById('button-next').disabled) {
       event.preventDefault();
-      $('btn-next').click();
+      getElementById('button-next').click();
     } else if (event.key === 'Escape') {
       event.preventDefault();
-      $('btn-quit').click();
+      getElementById('button-quit').click();
     };
   });
 };
 
 function bindEvents() {
   bindKeyboardShortcuts();
-  initEnhance({ onPrev, onNext });
+  initializeEnhancements({ onPrev, onNext });
 
-  document.querySelectorAll('#screen-setup .deck-btn[data-deck]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const nextDeck = btn.dataset.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  document.querySelectorAll('#screen-setup .deck-button[data-deck]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const nextDeck = button.dataset.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
       if (state.currentDeck === nextDeck) return;
       const previousTotal = currentQuestions().length;
-      const previousStart = Number.parseInt($('input-range-start').value, 10) || 1;
-      const previousEnd = Number.parseInt($('input-range-end').value, 10);
+      const previousStart = Number.parseInt(getElementById('input-range-start').value, 10) || 1;
+      const previousEnd = Number.parseInt(getElementById('input-range-end').value, 10);
       const previousRangeTotal = Math.max(1, (Number.isInteger(previousEnd) ? previousEnd : previousTotal) - previousStart + 1);
-      const previousCount = Number.parseInt($('input-count').value, 10);
+      const previousCount = Number.parseInt(getElementById('input-count').value, 10);
       const countWasMaximum = Number.isInteger(previousCount) && previousCount >= previousRangeTotal;
       persistSetupForm();
       state.currentDeck = nextDeck;
@@ -3384,15 +3223,15 @@ function bindEvents() {
     });
   });
 
-  $('btn-all').addEventListener('click', () => {
+  getElementById('button-select-all').addEventListener('click', () => {
     const form = readSetupForm();
     const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
-    const input = $('input-count');
+    const input = getElementById('input-count');
     const current = Number.parseInt(input.value, 10);
     const isAll = current === rangeTotal;
     if (isAll) {
-      const prev = state.lastCountBeforeAll;
-      input.value = String(Number.isInteger(prev) && prev >= 1 ? Math.min(prev, rangeTotal) : Math.min(20, rangeTotal));
+      const previousValue = state.lastCountBeforeAll;
+      input.value = String(Number.isInteger(previousValue) && previousValue >= 1 ? Math.min(previousValue, rangeTotal) : Math.min(20, rangeTotal));
     } else {
       state.lastCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 20;
       input.value = String(rangeTotal);
@@ -3401,16 +3240,16 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  $('btn-time-unlimited')?.addEventListener('click', () => {
-    const timeInput = $('input-time-limit');
+  getElementById('button-unlimited-time')?.addEventListener('click', () => {
+    const timeInput = getElementById('input-time-limit');
     if (!timeInput) return;
     let current = Number.parseInt(timeInput.value, 10);
     if (!Number.isInteger(current) || current < 0) current = 0;
     current = Math.min(1440, current);
     const isUnlimited = current === 0;
     if (isUnlimited) {
-      const prev = state.lastTimeBeforeUnlimited;
-      timeInput.value = String(Number.isInteger(prev) && prev > 0 ? Math.min(1440, prev) : 50);
+      const previousValue = state.lastTimeBeforeUnlimited;
+      timeInput.value = String(Number.isInteger(previousValue) && previousValue > 0 ? Math.min(1440, previousValue) : 50);
     } else {
       state.lastTimeBeforeUnlimited = current > 0 ? current : 50;
       timeInput.value = '0';
@@ -3419,12 +3258,12 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  document.querySelectorAll('.preset-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
+  document.querySelectorAll('.preset-btn').forEach((button) => {
+    button.addEventListener('click', () => {
       const form = readSetupForm();
       const max = Math.max(1, form.endQuestion - form.startQuestion + 1);
-      const n = Math.min(Number(btn.dataset.count) || 20, max);
-      $('input-count').value = String(n);
+      const n = Math.min(Number(button.dataset.count) || 20, max);
+      getElementById('input-count').value = String(n);
       persistSetupForm();
       refreshSetupUI();
     });
@@ -3438,128 +3277,130 @@ function bindEvents() {
     });
   });
 
-  $('btn-exam-next-empty')?.addEventListener('click', () => jumpToNextUnanswered());
+  getElementById('button-exam-next-empty')?.addEventListener('click', () => jumpToNextUnanswered());
 
   const updateCountButtonState = () => {
-    const input = $('input-count');
+    const input = getElementById('input-count');
     const form = readSetupForm();
     const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
     const countNum = Number.parseInt(input.value, 10);
     const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal;
-    const btnAll = $('btn-all');
-    if (btnAll) {
-      btnAll.classList.toggle('is-active', isAllCount);
-      btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
-      setToggleIcon(btnAll, isAllCount, { on: 'deselect', off: 'select-all' });
-      btnAll.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
-      btnAll.setAttribute('aria-label', btnAll.title);
+    const selectAllButton = getElementById('button-select-all');
+    if (selectAllButton) {
+      selectAllButton.classList.toggle('is-active', isAllCount);
+      selectAllButton.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+      setToggleIcon(selectAllButton, isAllCount, { on: 'deselect', off: 'select-all' });
+      selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+      selectAllButton.setAttribute('aria-label', selectAllButton.title);
     };
   };
-  $('input-count').addEventListener('input', updateCountButtonState);
-  $('input-count').addEventListener('change', () => {
+  getElementById('input-count').addEventListener('input', updateCountButtonState);
+  getElementById('input-count').addEventListener('change', () => {
     persistSetupForm();
     refreshSetupUI();
   });
-  $('input-count').addEventListener('blur', () => {
+  getElementById('input-count').addEventListener('blur', () => {
     persistSetupForm();
     refreshSetupUI();
   });
 
   const updateTimeButtonState = () => {
-    const timeInput = $('input-time-limit');
+    const timeInput = getElementById('input-time-limit');
     const timeVal = Number.parseInt(timeInput.value, 10);
     const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-    const btnUnlimited = $('btn-time-unlimited');
-    if (btnUnlimited) {
-      btnUnlimited.classList.toggle('is-active', isUnlimited);
-      btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
-      setToggleIcon(btnUnlimited, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-      btnUnlimited.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
-      btnUnlimited.setAttribute('aria-label', btnUnlimited.title);
+    const unlimitedTimeButton = getElementById('button-unlimited-time');
+    if (unlimitedTimeButton) {
+      unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
+      unlimitedTimeButton.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+      setToggleIcon(unlimitedTimeButton, isUnlimited, { on: 'infinity-off', off: 'infinity' });
+      unlimitedTimeButton.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      unlimitedTimeButton.setAttribute('aria-label', unlimitedTimeButton.title);
     };
   };
-  $('input-time-limit').addEventListener('input', updateTimeButtonState);
-  $('input-time-limit').addEventListener('change', () => {
-    const timeInput = $('input-time-limit');
+  getElementById('input-time-limit').addEventListener('input', updateTimeButtonState);
+  getElementById('input-time-limit').addEventListener('change', () => {
+    const timeInput = getElementById('input-time-limit');
     const value = Number.parseInt(timeInput.value, 10);
     timeInput.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
     persistSetupForm();
     refreshSetupUI();
   });
-  $('input-time-limit').addEventListener('blur', () => {
-    const timeInput = $('input-time-limit');
+  getElementById('input-time-limit').addEventListener('blur', () => {
+    const timeInput = getElementById('input-time-limit');
     const value = Number.parseInt(timeInput.value, 10);
     timeInput.value = String(Number.isInteger(value) && value >= 0 ? Math.min(1440, value) : 0);
     persistSetupForm();
     refreshSetupUI();
   });
 
-  for (const id of ['input-range-start', 'input-range-end']) $(id).addEventListener('change', () => {
+  for (const id of ['input-range-start', 'input-range-end']) getElementById(id).addEventListener('change', () => {
     const total = currentQuestions().length;
-    let start = Number.parseInt($('input-range-start').value, 10);
-    let end = Number.parseInt($('input-range-end').value, 10);
+    let start = Number.parseInt(getElementById('input-range-start').value, 10);
+    let end = Number.parseInt(getElementById('input-range-end').value, 10);
     if (!Number.isInteger(start)) start = 1;
     if (!Number.isInteger(end)) end = total;
     start = Math.max(1, Math.min(start, Math.max(1, total)));
     end = Math.max(start, Math.min(end, Math.max(1, total)));
-    $('input-range-start').value = String(start);
-    $('input-range-end').value = String(end);
+    getElementById('input-range-start').value = String(start);
+    getElementById('input-range-end').value = String(end);
     refreshSetupUI();
     persistSetupForm();
   });
 
-  $('chk-shuffle-q').addEventListener('change', () => {
+  getElementById('checkbox-shuffle-questions').addEventListener('change', () => {
     persistSetupForm();
     refreshSetupUI();
   });
 
-  $('chk-shuffle-a').addEventListener('change', () => {
-    $('chk-shuffle-a').dataset.userTouched = '1';
+  getElementById('checkbox-shuffle-answers').addEventListener('change', () => {
+    getElementById('checkbox-shuffle-answers').dataset.userTouched = '1';
     persistSetupForm();
   });
 
-  for (const id of ['chk-auto-check', 'chk-vibration']) $(id).addEventListener('change', persistSetupForm);
-  $('chk-auto-advance')?.addEventListener('change', () => {
+  for (const id of ['checkbox-automatic-check', 'checkbox-vibration']) getElementById(id).addEventListener('change', persistSetupForm);
+  getElementById('checkbox-automatic-advance')?.addEventListener('change', () => {
     updateSetupExperienceControls();
     persistSetupForm();
   });
-  $('btn-auto-advance')?.addEventListener('click', () => {
-    const checkbox = $('chk-auto-advance');
+  getElementById('button-auto-advance')?.addEventListener('click', () => {
+    const checkbox = getElementById('checkbox-automatic-advance');
     if (!checkbox) return;
     checkbox.checked = !checkbox.checked;
     checkbox.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  $('chk-sound')?.addEventListener('change', () => {
-    syncVolumeFromSoundCheckbox('input-sound-volume', 'chk-sound', 'label-sound-volume');
+  getElementById('checkbox-sound')?.addEventListener('change', () => {
+    syncVolumeFromSoundCheckbox('input-sound-volume', 'checkbox-sound', 'label-sound-volume');
     updateSetupExperienceControls();
     persistSetupForm();
   });
-  $('btn-sound')?.addEventListener('click', () => {
-    const checkbox = $('chk-sound');
+  getElementById('button-sound')?.addEventListener('click', () => {
+    const checkbox = getElementById('checkbox-sound');
     if (!checkbox) return;
     checkbox.checked = !checkbox.checked;
     checkbox.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  $('input-auto-advance-delay')?.addEventListener('input', () => {
-    const delay = Number.parseInt($('input-auto-advance-delay').value, 10) || 0;
-    if ($('label-auto-advance-delay')) $('label-auto-advance-delay').textContent = delay + ' giây';
+  getElementById('input-auto-advance-delay')?.addEventListener('input', () => {
+    const delay = Number.parseInt(getElementById('input-auto-advance-delay').value, 10) || 0;
+    if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' giây';
+    persistSetupForm();
   });
-  $('input-auto-advance-delay')?.addEventListener('change', persistSetupForm);
-  $('input-sound-volume')?.addEventListener('input', () => {
-    syncSoundFromVolume('input-sound-volume', 'chk-sound', 'label-sound-volume');
+  getElementById('input-auto-advance-delay')?.addEventListener('change', persistSetupForm);
+  getElementById('input-sound-volume')?.addEventListener('input', () => {
+    syncSoundFromVolume('input-sound-volume', 'checkbox-sound', 'label-sound-volume');
+    persistSetupForm();
   });
-  $('input-sound-volume')?.addEventListener('change', () => {
-    syncSoundFromVolume('input-sound-volume', 'chk-sound', 'label-sound-volume');
+  getElementById('input-sound-volume')?.addEventListener('change', () => {
+    syncSoundFromVolume('input-sound-volume', 'checkbox-sound', 'label-sound-volume');
     persistSetupForm();
   });
 
-  document.querySelectorAll('#screen-setup .mode-btn').forEach((btn) => btn.addEventListener('click', () => setPracticeMode(btn.dataset.mode)));
-  document.querySelectorAll('#screen-review .mode-btn').forEach((btn) => btn.addEventListener('click', () => setBankPracticeMode(btn.dataset.mode)));
-  document.querySelectorAll('[data-bank-deck]').forEach((btn) => btn.addEventListener('click', () => setBankDeck(btn.dataset.bankDeck)));
+  document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.addEventListener('click', () => setPracticeMode(button.dataset.mode)));
+  
+  document.querySelectorAll('[data-bank-deck]').forEach((button) => button.addEventListener('click', () => setBankDeck(button.dataset.bankDeck)));
 
-  $('btn-view-bank').addEventListener('click', openQuestionBank);
+  getElementById('button-view-bank').addEventListener('click', openQuestionBank);
 
-  const scrollTopBtn = $('btn-scroll-top');
+  const scrollTopBtn = getElementById('button-scroll-to-top');
   if (scrollTopBtn) {
     scrollTopBtn.addEventListener('click', scrollToPageTop);
     window.addEventListener('scroll', () => {
@@ -3573,7 +3414,7 @@ function bindEvents() {
     updateScrollTopButton();
   };
 
-  const searchInput = $('input-review-search');
+  const searchInput = getElementById('input-review-search');
   if (searchInput) {
     let searchTimer = 0;
     searchInput.addEventListener('input', () => {
@@ -3593,25 +3434,25 @@ function bindEvents() {
       applyBankSearch();
     });
   };
-  $('btn-review-search-clear')?.addEventListener('click', () => {
-    const input = $('input-review-search');
+  getElementById('button-review-search-clear')?.addEventListener('click', () => {
+    const input = getElementById('input-review-search');
     if (input) input.value = '';
     applyBankSearch();
     input?.focus();
   });
   updateReviewSearchClearButton();
-  $('btn-search-prev')?.addEventListener('click', () => scrollToBankSearchMatch(-1));
-  $('btn-search-next')?.addEventListener('click', () => scrollToBankSearchMatch(1));
+  getElementById('button-search-prev')?.addEventListener('click', () => scrollToBankSearchMatch(-1));
+  getElementById('button-search-next')?.addEventListener('click', () => scrollToBankSearchMatch(1));
 
-  $('btn-review-back').addEventListener('click', () => {
+  getElementById('button-review-back').addEventListener('click', () => {
     state.currentDeck = state.setupDeckBeforeBank;
     applySettingsToForm(getSettings(state.currentDeck));
     showScreen('setup');
     refreshSetupUI();
   });
 
-  $('btn-review-goto').addEventListener('click', () => {
-    const n = Number.parseInt($('input-review-goto').value, 10);
+  getElementById('button-review-goto').addEventListener('click', () => {
+    const n = Number.parseInt(getElementById('input-review-goto').value, 10);
     const total = bankQuestions().length;
     if (!Number.isInteger(n) || n < 1 || n > total) {
       toast('Nhập số câu từ 1 đến ' + total + '.');
@@ -3619,7 +3460,7 @@ function bindEvents() {
     };
     if (!scrollReviewToQuestionNumber(n)) toast('Không tìm thấy câu ' + n + ' trong danh sách hiện tại.');
   });
-  $('input-review-goto').addEventListener('input', (event) => {
+  getElementById('input-review-goto').addEventListener('input', (event) => {
     const input = event.currentTarget;
     if (input.value === '') return;
     const total = bankQuestions().length;
@@ -3627,161 +3468,33 @@ function bindEvents() {
     if (!Number.isFinite(value)) return;
     input.value = String(Math.min(Math.max(value, 1), Math.max(1, total)));
   });
-  $('input-review-goto').addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') $('btn-review-goto').click();
+  getElementById('input-review-goto').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') getElementById('button-review-goto').click();
   });
 
-  $('btn-start').addEventListener('click', () => startNormal({ sequential: false }));
-  $('btn-continue').addEventListener('click', () => startNormal({ sequential: true }));
-  $('btn-practice-wrong').addEventListener('click', () => {
+  getElementById('button-start').addEventListener('click', () => startNormal({ sequential: false }));
+  getElementById('button-continue').addEventListener('click', () => startNormal({ sequential: true }));
+  getElementById('button-practice-wrong').addEventListener('click', () => {
     setPracticeMode('practice');
     startPracticeWrong();
   });
-  $('btn-practice-all-wrong').addEventListener('click', () => {
+  getElementById('button-practice-all-wrong').addEventListener('click', () => {
     setPracticeMode('practice');
     startPracticeWrong({ allDeck: true });
   });
-  $('btn-practice-bookmarks').addEventListener('click', () => {
+  getElementById('button-practice-bookmarks').addEventListener('click', () => {
     setPracticeMode('practice');
     startPracticeBookmarks();
   });
 
-  const reviewCountInput = $('review-input-count');
-  const reviewTimeInput = $('review-input-time-limit');
-
-  if (reviewCountInput) {
-    reviewCountInput.addEventListener('input', () => {
-      updateBankCountButtonState();
-    });
-    reviewCountInput.addEventListener('change', () => {
-      syncBankCountInput();
-      persistBankForm();
-      if (state.mode === 'review') {
-        const count = state.reviewSelectedIndices.size;
-        if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-      };
-    });
-    reviewCountInput.addEventListener('blur', () => {
-      syncBankCountInput();
-      persistBankForm();
-    });
-  };
-
-  if (reviewTimeInput) {
-    reviewTimeInput.addEventListener('input', () => updateBankTimeButtonState());
-    reviewTimeInput.addEventListener('change', () => {
-      let value = Number.parseInt(reviewTimeInput.value, 10);
-      if (!Number.isInteger(value) || value < 0) value = 0;
-      reviewTimeInput.value = String(Math.min(1440, value));
-      updateBankTimeButtonState();
-      persistBankForm();
-    });
-    reviewTimeInput.addEventListener('blur', () => {
-      let value = Number.parseInt(reviewTimeInput.value, 10);
-      if (reviewTimeInput.value === '' || !Number.isInteger(value) || value < 0) value = 0;
-      reviewTimeInput.value = String(Math.min(1440, value));
-      updateBankTimeButtonState();
-      persistBankForm();
-    });
-  };
-
-  for (const reviewId of ['review-chk-shuffle-q', 'review-chk-shuffle-a', 'review-chk-auto-check', 'review-chk-vibration']) {
-    const element = $(reviewId);
-    if (!element) continue;
-    element.addEventListener('change', () => {
-      persistBankForm();
-      if (state.mode === 'review') {
-        const count = state.reviewSelectedIndices.size;
-        if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-      };
-    });
-  };
-  $('review-chk-auto-advance')?.addEventListener('change', () => {
-    updateBankExperienceControls();
-    persistBankForm();
-    if (state.mode === 'review') {
-      const count = state.reviewSelectedIndices.size;
-      if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-    };
-  });
-  $('review-btn-auto-advance')?.addEventListener('click', () => {
-    const checkbox = $('review-chk-auto-advance');
-    if (!checkbox) return;
-    checkbox.checked = !checkbox.checked;
-    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  $('review-chk-sound')?.addEventListener('change', () => {
-    syncVolumeFromSoundCheckbox('review-input-sound-volume', 'review-chk-sound', 'review-label-sound-volume');
-    updateBankExperienceControls();
-    persistBankForm();
-    if (state.mode === 'review') {
-      const count = state.reviewSelectedIndices.size;
-      if ($('btn-review-start-selected')) $('btn-review-start-selected').textContent = state.bankPracticeMode === 'exam' ? 'Thi' : 'Ôn ' + count + ' câu đã chọn';
-    };
-  });
-  $('review-btn-sound')?.addEventListener('click', () => {
-    const checkbox = $('review-chk-sound');
-    if (!checkbox) return;
-    checkbox.checked = !checkbox.checked;
-    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  $('review-input-auto-advance-delay')?.addEventListener('input', () => {
-    const delay = Number.parseInt($('review-input-auto-advance-delay').value, 10) || 0;
-    if ($('review-label-auto-advance-delay')) $('review-label-auto-advance-delay').textContent = delay + ' giây';
-  });
-  $('review-input-auto-advance-delay')?.addEventListener('change', () => persistBankForm());
-  $('review-input-sound-volume')?.addEventListener('input', () => {
-    syncSoundFromVolume('review-input-sound-volume', 'review-chk-sound', 'review-label-sound-volume');
-  });
-  $('review-input-sound-volume')?.addEventListener('change', () => {
-    syncSoundFromVolume('review-input-sound-volume', 'review-chk-sound', 'review-label-sound-volume');
-    persistBankForm();
-  });
-
-  $('review-btn-all')?.addEventListener('click', () => {
-    const input = $('review-input-count');
-    if (!input) return;
-    const selectedCount = state.reviewSelectedIndices.size;
-    if (selectedCount === 0) return;
-    const current = Number.parseInt(input.value, 10);
-    const isAll = Number.isInteger(current) && current === selectedCount;
-    if (isAll) {
-      const prev = state.lastBankCountBeforeAll;
-      input.value = String(Number.isInteger(prev) && prev >= 1 ? Math.min(prev, selectedCount) : Math.min(30, selectedCount));
-    } else {
-      state.lastBankCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 30;
-      input.value = String(selectedCount);
-    };
-    persistBankForm();
-    syncBankCountInput();
-  });
-
-  $('review-btn-time-unlimited')?.addEventListener('click', () => {
-    const timeInput = $('review-input-time-limit');
-    if (!timeInput) return;
-    let current = Number.parseInt(timeInput.value, 10);
-    if (!Number.isInteger(current) || current < 0) current = 0;
-    current = Math.min(1440, current);
-    const isUnlimited = current === 0;
-    if (isUnlimited) {
-      const prev = state.lastBankTimeBeforeUnlimited;
-      timeInput.value = String(Number.isInteger(prev) && prev > 0 ? Math.min(1440, prev) : 35);
-    } else {
-      state.lastBankTimeBeforeUnlimited = current > 0 ? current : 35;
-      timeInput.value = '0';
-    };
-    persistBankForm();
-    updateBankTimeButtonState();
-  });
-
-  $('btn-exam-submit')?.addEventListener('click', () => onExamSubmit());
-  $('btn-exam-pause')?.addEventListener('click', () => pauseSession());
-  $('btn-quiz-pause')?.addEventListener('click', () => pauseSession());
-  $('btn-resume-session')?.addEventListener('click', () => {
+  getElementById('button-exam-submit')?.addEventListener('click', () => onExamSubmit());
+  getElementById('button-exam-pause')?.addEventListener('click', () => pauseSession());
+  getElementById('button-quiz-pause')?.addEventListener('click', () => pauseSession());
+  getElementById('button-resume-session')?.addEventListener('click', () => {
     if (!restoreSessionIfAny()) toast('Không còn phiên để tiếp tục.');
     else refreshSetupUI();
   });
-  $('btn-discard-session')?.addEventListener('click', async () => {
+  getElementById('button-discard-session')?.addEventListener('click', async () => {
     const ok = await confirmModal('Bỏ phiên đang dở?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
     if (!ok) return;
     clearSession(state.currentDeck);
@@ -3790,7 +3503,7 @@ function bindEvents() {
     refreshResumeCard();
     toast('Đã bỏ phiên cũ.');
   });
-  $('btn-exam-quit')?.addEventListener('click', async () => {
+  getElementById('button-exam-quit')?.addEventListener('click', async () => {
     const session = state.session;
     const reviewing = session?.reviewMode;
     const ok = await confirmModal(reviewing ? 'Thoát kết quả thi?' : 'Thoát bài thi?', reviewing ? 'Bạn sẽ quay về màn hình thiết lập. Kết quả lần thi này không lưu lại phiên đang mở.' : 'Phiên thi hiện tại sẽ bị đóng. Tiến độ bộ đề (câu đã hoàn thành, câu sai) vẫn được giữ nếu bạn đã nộp bài.');
@@ -3804,8 +3517,8 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  $('btn-bookmark').addEventListener('click', () => {
-    const question = currentQ();
+  getElementById('button-bookmark').addEventListener('click', () => {
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session) return;
     const result = toggleBookmark(session.deckId, question.originalIndex);
@@ -3817,19 +3530,19 @@ function bindEvents() {
     toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
   });
 
-  const notePanel = $('question-note-panel');
-  const noteInput = $('question-note-input');
-  const noteBtn = $('btn-note');
-  const noteDisplay = $('question-note-display');
-  const noteTextEl = $('question-note-text');
+  const notePanel = getElementById('question-note-panel');
+  const noteInput = getElementById('question-note-input');
+  const noteButton = getElementById('button-note');
+  const noteDisplay = getElementById('question-note-display');
+  const noteTextEl = getElementById('question-note-text');
 
   function syncQuizNoteUI(note) {
     const has = !!note;
-    if (noteBtn) {
-      noteBtn.classList.toggle('has-note', has);
-      noteBtn.setAttribute('aria-pressed', String(has));
-      noteBtn.setAttribute('aria-label', has ? 'Sửa ghi chú' : 'Thêm ghi chú');
-      noteBtn.title = has ? 'Sửa ghi chú' : 'Thêm ghi chú';
+    if (noteButton) {
+      noteButton.classList.toggle('has-note', has);
+      noteButton.setAttribute('aria-pressed', String(has));
+      noteButton.setAttribute('aria-label', has ? 'Sửa ghi chú' : 'Thêm ghi chú');
+      noteButton.title = has ? 'Sửa ghi chú' : 'Thêm ghi chú';
     };
     if (notePanel) notePanel.hidden = true;
     if (noteDisplay && noteTextEl) {
@@ -3844,7 +3557,7 @@ function bindEvents() {
   };
 
   function openNoteEditor() {
-    const question = currentQ();
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session || !notePanel || !noteInput) return;
     noteInput.value = getQuestionNote(session.deckId, question.originalIndex);
@@ -3856,21 +3569,21 @@ function bindEvents() {
   function closeNoteEditor(refresh) {
     if (notePanel) notePanel.hidden = true;
     if (refresh !== false) {
-      const question = currentQ();
+      const question = currentQuestion();
       const session = state.session;
       const note = question && session ? getQuestionNote(session.deckId, question.originalIndex) : '';
       syncQuizNoteUI(note);
     };
   };
 
-  noteBtn?.addEventListener('click', () => {
+  noteButton?.addEventListener('click', () => {
     if (!notePanel) return;
     if (notePanel.hidden) openNoteEditor();
     else closeNoteEditor();
   });
 
-  $('btn-note-save')?.addEventListener('click', () => {
-    const question = currentQ();
+  getElementById('button-note-save')?.addEventListener('click', () => {
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session || !noteInput) return;
     const ok = saveQuestionNote(session.deckId, question.originalIndex, noteInput.value);
@@ -3883,8 +3596,8 @@ function bindEvents() {
     toast(note ? 'Đã lưu ghi chú.' : 'Đã xóa ghi chú.');
   });
 
-  $('btn-note-delete')?.addEventListener('click', () => {
-    const question = currentQ();
+  getElementById('button-note-delete')?.addEventListener('click', () => {
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session) return;
     const ok = saveQuestionNote(session.deckId, question.originalIndex, '');
@@ -3897,11 +3610,11 @@ function bindEvents() {
     toast('Đã xóa ghi chú.');
   });
 
-  $('btn-note-close')?.addEventListener('click', () => {
+  getElementById('button-note-close')?.addEventListener('click', () => {
     closeNoteEditor();
   });
 
-  $('btn-export-progress').addEventListener('click', () => {
+  getElementById('button-export-progress').addEventListener('click', () => {
     try {
       const content = exportBackup();
       const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
@@ -3917,8 +3630,8 @@ function bindEvents() {
     };
   });
 
-  $('btn-import-progress').addEventListener('click', () => $('input-import-progress').click());
-  $('input-import-progress').addEventListener('change', async (event) => {
+  getElementById('button-import-progress').addEventListener('click', () => getElementById('input-import-progress').click());
+  getElementById('input-import-progress').addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -3943,7 +3656,7 @@ function bindEvents() {
     if (!state.error) toast('Đã khôi phục tiến độ từ tệp sao lưu.');
   });
 
-  $('btn-reset-progress').addEventListener('click', async () => {
+  getElementById('button-reset-progress').addEventListener('click', async () => {
     const ok = await confirmModal('Xóa tiến độ?', 'Xóa toàn bộ tiến độ, câu đã hoàn thành và lịch sử câu sai của bộ ' + DECKS[state.currentDeck].label + ' trên trình duyệt này.');
     if (!ok) return;
     if (!resetDeckProgress(state.currentDeck)) {
@@ -3954,10 +3667,10 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  $('btn-next').addEventListener('click', onNext);
-  $('btn-prev').addEventListener('click', onPrev);
+  getElementById('button-next').addEventListener('click', onNext);
+  getElementById('button-prev').addEventListener('click', onPrev);
 
-  $('btn-quit').addEventListener('click', async () => {
+  getElementById('button-quit').addEventListener('click', async () => {
     const ok = await confirmModal('Thoát lượt ôn?', 'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.');
     if (!ok) return;
     clearInterval(state.timerInterval);
@@ -3970,7 +3683,7 @@ function bindEvents() {
     refreshSetupUI();
   });
 
-  $('btn-sum-retry-session').addEventListener('click', () => {
+  getElementById('button-summary-retry-session').addEventListener('click', () => {
     const previous = state._lastSummarySession;
     if (!previous || !state.decks[previous.deckId]) {
       toast('Không tìm thấy dữ liệu lượt vừa hoàn thành.');
@@ -3983,12 +3696,12 @@ function bindEvents() {
       toast('Không còn câu hỏi phù hợp để làm lại.');
       return;
     };
-    $('input-range-start').value = String(previous.rangeStart);
-    $('input-range-end').value = String(previous.rangeEnd);
-    $('input-count').value = String(pool.length);
-    $('input-time-limit').value = String(previous.timeLimit);
-    $('chk-shuffle-q').checked = true;
-    $('chk-shuffle-a').checked = true;
+    getElementById('input-range-start').value = String(previous.rangeStart);
+    getElementById('input-range-end').value = String(previous.rangeEnd);
+    getElementById('input-count').value = String(pool.length);
+    getElementById('input-time-limit').value = String(previous.timeLimit);
+    getElementById('checkbox-shuffle-questions').checked = true;
+    getElementById('checkbox-shuffle-answers').checked = true;
     setPracticeMode(previous.mode === 'exam' ? 'exam' : 'practice');
     persistSetupForm();
     startSessionFromPool(pool, {
@@ -4003,18 +3716,18 @@ function bindEvents() {
     });
   });
 
-  $('btn-sum-home').addEventListener('click', () => {
+  getElementById('button-summary-home').addEventListener('click', () => {
     showScreen('setup');
     refreshSetupUI();
   });
 
-  $('btn-sum-again').addEventListener('click', () => {
+  getElementById('button-summary-again').addEventListener('click', () => {
     showScreen('setup');
     refreshSetupUI();
-    $('input-count').focus();
+    getElementById('input-count').focus();
   });
 
-  $('btn-sum-restart').addEventListener('click', async () => {
+  getElementById('button-summary-restart').addEventListener('click', async () => {
     const ok = await confirmModal('Làm lại từ đầu?', 'Tiến độ hoàn thành của bộ đề sẽ được đặt lại để bạn ôn tuần tự từ câu đầu. Lịch sử câu sai vẫn được giữ.');
     if (!ok) return;
     const progress = getDeckProgress(state.currentDeck);
@@ -4024,46 +3737,46 @@ function bindEvents() {
       toast('Không thể đặt lại tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       return;
     };
-    $('chk-shuffle-q').checked = false;
+    getElementById('checkbox-shuffle-questions').checked = false;
     persistSetupForm();
     showScreen('setup');
     refreshSetupUI();
     startNormal({ restart: true });
   });
 
-  $('btn-sum-continue').addEventListener('click', () => {
+  getElementById('button-summary-continue').addEventListener('click', () => {
     showScreen('setup');
     refreshSetupUI();
     startNormal({ sequential: true });
   });
 
-  $('btn-sum-random').addEventListener('click', () => {
-    $('chk-shuffle-q').checked = true;
+  getElementById('button-summary-random').addEventListener('click', () => {
+    getElementById('checkbox-shuffle-questions').checked = true;
     persistSetupForm();
     showScreen('setup');
     refreshSetupUI();
     startNormal({ sequential: false });
   });
 
-  $('btn-sum-practice').addEventListener('click', () => {
+  getElementById('button-summary-practice').addEventListener('click', () => {
     if (state._lastSummaryDeck) state.currentDeck = state._lastSummaryDeck;
     if (Number.isInteger(state._lastSummaryRangeStart) && Number.isInteger(state._lastSummaryRangeEnd)) {
-      $('input-range-start').value = String(state._lastSummaryRangeStart);
-      $('input-range-end').value = String(state._lastSummaryRangeEnd);
+      getElementById('input-range-start').value = String(state._lastSummaryRangeStart);
+      getElementById('input-range-end').value = String(state._lastSummaryRangeEnd);
     };
-    if (Number.isInteger(state._lastSummaryCount) && state._lastSummaryCount > 0) $('input-count').value = String(state._lastSummaryCount);
+    if (Number.isInteger(state._lastSummaryCount) && state._lastSummaryCount > 0) getElementById('input-count').value = String(state._lastSummaryCount);
     setPracticeMode('practice');
     showScreen('setup');
     refreshSetupUI();
     startPracticeWrong({ indices: state._lastSummaryWrongIndices });
   });
 
-  $('btn-retry').addEventListener('click', () => {
+  getElementById('button-retry').addEventListener('click', () => {
     showScreen('setup');
     loadAll();
   });
 
-  $('btn-update').addEventListener('click', async () => {
+  getElementById('button-update').addEventListener('click', async () => {
     const registration = await navigator.serviceWorker?.getRegistration();
     if (registration?.waiting) {
       reloadAfterUpdate = true;
@@ -4074,7 +3787,7 @@ function bindEvents() {
 
 let reloadAfterUpdate = false;
 
-function registerSW() {
+function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
     toast('Trình duyệt này không hỗ trợ chế độ ngoại tuyến.');
     return;
@@ -4082,12 +3795,12 @@ function registerSW() {
   const swUrl = new URL('sw.js', document.baseURI).href;
   const scope = new URL('.', document.baseURI).href;
   navigator.serviceWorker.register(swUrl, { scope }).then((reg) => {
-    if (reg.waiting && navigator.serviceWorker.controller) $('update-banner').hidden = false;
+    if (reg.waiting && navigator.serviceWorker.controller) getElementById('update-banner').hidden = false;
     reg.addEventListener('updatefound', () => {
       const newWorker = reg.installing;
       if (!newWorker) return;
       newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) $('update-banner').hidden = false;
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) getElementById('update-banner').hidden = false;
         else if (newWorker.state === 'redundant') toast('Không thể cài bản ngoại tuyến mới. Hãy kiểm tra kết nối và tải lại trang khi có mạng.');
       });
     });
@@ -4112,13 +3825,13 @@ function classifyToast(text) {
   ];
   for (const [type, pattern] of rules) if (pattern.test(text)) return type;
   return 'info';
-}
+};
 
-function initInterfaceEnhancements() {
+function initializeInterfaceEnhancements() {
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.content = '#0c0f14';
 
-  const toastElement = $('toast');
+  const toastElement = getElementById('toast');
   if (toastElement) {
     toastElement.addEventListener('click', () => {
       toastElement.hidden = true;
@@ -4136,13 +3849,13 @@ function initInterfaceEnhancements() {
       attributes: true,
       attributeFilter: ['hidden']
     });
-  }
+  };
 
-  const modal = $('modal');
+  const modal = getElementById('modal');
   if (!modal) return;
   const box = modal.querySelector('.modal-box');
-  const title = $('modal-title');
-  const confirmButton = $('modal-ok');
+  const title = getElementById('modal-title');
+  const confirmButton = getElementById('modal-ok');
   if (!box || !title || !confirmButton) return;
 
   let icon = box.querySelector('.modal-icon');
@@ -4151,7 +3864,7 @@ function initInterfaceEnhancements() {
     icon.className = 'modal-icon';
     icon.setAttribute('aria-hidden', 'true');
     box.prepend(icon);
-  }
+  };
 
   const variants = [
     ['danger', /^(Xóa|Bỏ phiên)/, 'trash'],
@@ -4164,8 +3877,8 @@ function initInterfaceEnhancements() {
     const variant = match ? match[0] : 'primary';
     box.dataset.variant = variant;
     icon.dataset.icon = match ? match[2] : 'check';
-    confirmButton.classList.toggle('btn-danger', variant === 'danger');
-    confirmButton.classList.toggle('btn-primary', variant !== 'danger');
+    confirmButton.classList.toggle('button-danger', variant === 'danger');
+    confirmButton.classList.toggle('button-primary', variant !== 'danger');
   };
 
   new MutationObserver(() => {
@@ -4176,13 +3889,13 @@ function initInterfaceEnhancements() {
   });
 
   modal.addEventListener('click', (event) => {
-    if (event.target === modal) $('modal-cancel')?.click();
+    if (event.target === modal) getElementById('modal-cancel')?.click();
   });
-}
+};
 
 function boot() {
-  initInterfaceEnhancements();
-  initTheme();
+  initializeInterfaceEnhancements();
+  initializeTheme();
   if (!storageAvailable()) toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
   bindEvents();
 
@@ -4203,7 +3916,7 @@ function boot() {
     };
   });
 
-  registerSW();
+  registerServiceWorker();
   loadAll();
 };
 

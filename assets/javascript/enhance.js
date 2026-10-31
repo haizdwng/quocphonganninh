@@ -1,9 +1,9 @@
-let touchStart = null;
+let touchStartCoordinates = null;
 
 function syncFixedBarHeights() {
   const targets = [
-    ['#screen-quiz .progress-wrap', '--quiz-top-h'],
-    ['#screen-exam .progress-wrap', '--exam-top-h'],
+    ['#screen-quiz .progress-wrap', '--quiz-top-height'],
+    ['#screen-exam .progress-wrap', '--exam-top-height']
   ];
   const root = document.documentElement;
   for (const [selector, property] of targets) {
@@ -19,21 +19,20 @@ function syncFixedBarHeights() {
   };
 };
 
-export function initEnhance({ onPrev, onNext }) {
+export function initializeEnhancements({ onPrev, onNext }) {
   syncFixedBarHeights();
-
   document.addEventListener('touchstart', (event) => {
     if (event.touches.length !== 1 || document.body.dataset.screen !== 'quiz') {
-      touchStart = null;
+      touchStartCoordinates = null;
       return;
     };
     const target = event.target instanceof Element ? event.target : null;
-    if (!target || target.closest('button:not(.option), input, textarea, select, a, .highlight-toolbar')) {
-      touchStart = null;
+    if (!target || target.closest('button:not(.answer-option), input, textarea, select, a, .highlight-toolbar')) {
+      touchStartCoordinates = null;
       return;
     };
     const touch = event.touches[0];
-    touchStart = {
+    touchStartCoordinates = {
       x: touch.clientX,
       y: touch.clientY,
       time: Date.now(),
@@ -41,12 +40,12 @@ export function initEnhance({ onPrev, onNext }) {
   }, { passive: true });
 
   document.addEventListener('touchend', (event) => {
-    if (!touchStart || document.body.dataset.screen !== 'quiz' || event.changedTouches.length !== 1) {
-      touchStart = null;
+    if (!touchStartCoordinates || document.body.dataset.screen !== 'quiz' || event.changedTouches.length !== 1) {
+      touchStartCoordinates = null;
       return;
     };
-    const start = touchStart;
-    touchStart = null;
+    const start = touchStartCoordinates;
+    touchStartCoordinates = null;
     const touch = event.changedTouches[0];
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
@@ -59,6 +58,6 @@ export function initEnhance({ onPrev, onNext }) {
   }, { passive: false });
 
   document.addEventListener('touchcancel', () => {
-    touchStart = null;
+    touchStartCoordinates = null;
   }, { passive: true });
 };

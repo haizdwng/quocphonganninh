@@ -12,11 +12,11 @@ export function fingerprintQuestions(questions) {
   return questions.length + ':' + (hash >>> 0).toString(16);
 };
 
-export function normalizeQuestions(raw) {
-  if (!Array.isArray(raw)) throw new Error('Dữ liệu bộ đề không phải mảng câu hỏi.');
+export function normalizeQuestions(rawData) {
+  if (!Array.isArray(rawData)) throw new Error('Dữ liệu bộ đề không phải mảng câu hỏi.');
   const normalized = [];
-  for (let index = 0; index < raw.length; index++) {
-    const question = raw[index];
+  for (let index = 0; index < rawData.length; index++) {
+    const question = rawData[index];
     if (!question || typeof question.question !== 'string' || !question.question.trim()) throw new Error('Câu ' + (index + 1) + ' thiếu nội dung câu hỏi.');
     if (!Array.isArray(question.options) || question.options.length < 2) throw new Error('Câu ' + (index + 1) + ' phải có ít nhất hai đáp án.');
     if (question.options.some((option) => typeof option !== 'string' || !option.trim())) throw new Error('Câu ' + (index + 1) + ' có đáp án trống hoặc không hợp lệ.');
@@ -46,13 +46,13 @@ function shuffleInPlace(array) {
 };
 
 export function buildOptionOrder(optionCount, shuffleAnswers, fixed = false) {
-  const order = Array.from({ length: optionCount }, (unusedQuestion, index) => index);
+  const order = Array.from({ length: optionCount }, (_unusedQuestion, optionIndex) => optionIndex);
   if (shuffleAnswers && !fixed) shuffleInPlace(order);
   return order;
 };
 
 export function createSessionItems(pool, { shuffleQuestions, shuffleAnswers }) {
-  const indices = pool.map((unusedQuestion, index) => index);
+  const indices = pool.map((_unusedQuestion, poolIndex) => poolIndex);
   if (shuffleQuestions) shuffleInPlace(indices);
   return indices.map((poolIndex) => {
     const question = pool[poolIndex];

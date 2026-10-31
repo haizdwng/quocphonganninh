@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.2.1';
+const VERSION = '1.2.2';
 const ASSETS = [
   './',
   './index.html',
@@ -66,11 +66,9 @@ self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then(
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   const scope = new URL(self.registration.scope);
   if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
-
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   const isJSON = url.pathname.endsWith('.json');
   const isAssets = /\.(html|css|js|json|webmanifest|svg|woff2|mp3)$/i.test(url.pathname);
@@ -88,7 +86,6 @@ async function cacheFirst(request, event) {
     }).catch(() => {}));
     return cached;
   };
-
   try {
     const response = await fetch(request);
     if (response.ok) await cache.put(request, response.clone());
@@ -104,7 +101,6 @@ async function cacheFirst(request, event) {
 async function networkFirst(request) {
   const cache = await caches.open(NAME + ':' + VERSION);
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
-
   try {
     const response = await fetch(request);
     if (response.ok) {
