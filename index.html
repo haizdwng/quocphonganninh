@@ -137,7 +137,7 @@
                     aria-label='Bật tự sang câu tiếp'
                     title='Tự sang câu tiếp'
                   ></button>
-                  <input type='checkbox' id='chk-auto-advance' class='sr-only' tabindex='-1' />
+                  <input type='checkbox' id='chk-auto-advance' class='screen-reader-only' tabindex='-1' />
                   <div class='slider-inline'>
                     <input type='range' id='input-auto-advance-delay' min='0' max='10' step='1' value='0' />
                     <span class='slider-value' id='label-auto-advance-delay'>0 giây</span>
@@ -156,7 +156,7 @@
                     aria-label='Bật âm thanh'
                     title='Bật âm thanh'
                   ></button>
-                  <input type='checkbox' id='chk-sound' class='sr-only' tabindex='-1' />
+                  <input type='checkbox' id='chk-sound' class='screen-reader-only' tabindex='-1' />
                   <div class='slider-inline'>
                     <input type='range' id='input-sound-volume' min='1' max='100' step='1' value='1' />
                     <span class='slider-value' id='label-sound-volume'>1%</span>
@@ -426,7 +426,7 @@
                 Câu chưa chọn
               </button>
             </div>
-            <div class='exam-nav' id='exam-nav' role='navigation' aria-label='Điều hướng câu hỏi'></div>
+            <div class='exam-navigation' id='exam-navigation' role='navigation' aria-label='Điều hướng câu hỏi'></div>
           </div>
 
           <div class='exam-list' id='exam-list'></div>
@@ -517,7 +517,7 @@
         </section>
       </main>
 
-      <div class='fixed-fab-stack' id='fixed-fab-stack'>
+      <div class='fixed-floating-action-button-stack' id='fixed-floating-action-button-stack'>
         <button type='button' id='btn-search-prev' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả trước' title='Kết quả trước' data-icon='chevron-left'></button>
         <button type='button' id='btn-search-next' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả tiếp' title='Kết quả tiếp' data-icon='chevron-right'></button>
         <button type='button' id='button-scroll-to-top' class='button-scroll-to-top' hidden aria-label='Lên đầu trang' title='Lên đầu trang'>
