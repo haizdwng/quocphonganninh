@@ -46,6 +46,15 @@ for (const property of referencedProperties) {
 const firstDeck = JSON.parse(firstDeckText);
 const secondDeck = JSON.parse(secondDeckText);
 const manifest = JSON.parse(manifestText);
+
+const quizModule = await import('data:text/javascript;charset=utf-8,' + encodeURIComponent(quiz));
+const normalizedFirstDeck = quizModule.normalizeQuestions(firstDeck);
+assert.equal(normalizedFirstDeck.length, firstDeck.length, 'Question normalization must preserve the first set length');
+const fixedQuestion = { originalIndex: 0, question: 'Fixed answer order', options: ['A', 'B', 'C'], correct: 1, fixed: true };
+const fixedSession = quizModule.createSessionItems([fixedQuestion], { shuffleQuestions: false, shuffleAnswers: true });
+assert.deepEqual(fixedSession[0].optionOrder, [0, 1, 2], 'Fixed questions must never shuffle their answer order');
+assert.equal(quizModule.getEndQuestionForDeckSwitch(479, 479, 262), 262, 'Switching from the end of the first set must clamp to the second set');
+assert.equal(quizModule.getEndQuestionForDeckSwitch(173, 479, 262), 173, 'Switching decks must preserve a non-maximum question range');
 assert.equal(firstDeck.length, 479, 'The first question set must contain 479 questions');
 assert.equal(secondDeck.length, 262, 'The second question set must contain 262 questions');
 for (const [deckName, questions] of [['first question set', firstDeck], ['second question set', secondDeck]]) {
