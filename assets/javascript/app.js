@@ -50,6 +50,8 @@ const state = {
   lastTextSelection: null,
   lastCountBeforeAll: null,
   lastTimeBeforeUnlimited: null,
+  savedCountBeforeAll: null,
+  savedTimeBeforeUnlimited: null,
   bankSearchQuery: '',
   bankSearchMatchIndex: -1,
   reviewFocusQuestionNumber: null,
@@ -1569,7 +1571,7 @@ function refreshSetupUI() {
   practiceAllWrongButton.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
-  const rangeBookmarkCount = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex) && !hiddenSet.has(question.originalIndex)).length;
+  const rangeBookmarkCount = [...bookmarks].filter((questionIndex) => questionIndex >= start - 1 && questionIndex < end && questionIndex < fullTotal && !isQuestionHidden(state.currentDeck, questionIndex)).length;
   const practiceBookmarksButton = getElementById('button-practice-bookmarks');
   practiceBookmarksButton.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
   practiceBookmarksButton.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
@@ -3155,14 +3157,28 @@ function initializeInterface() {
   refreshSetupUI();
 };
 
-function applyTheme() {
-  document.documentElement.dataset.theme = 'dark';
+function applyTheme(theme) {
+  const selectedTheme = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = selectedTheme;
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = '#111113';
+  if (themeColor) themeColor.content = selectedTheme === 'light' ? '#f5f7fa' : '#111113';
+  const button = getElementById('button-theme-toggle');
+  if (button) {
+    button.dataset.icon = selectedTheme === 'dark' ? 'sun' : 'moon';
+    button.setAttribute('aria-label', selectedTheme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
+    button.title = selectedTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
+    button.setAttribute('aria-pressed', String(selectedTheme === 'light'));
+  };
+  try { localStorage.setItem('quocphonganninh:theme', selectedTheme); } catch {};
 };
 
 function initializeTheme() {
-  applyTheme();
+  let theme = 'dark';
+  try { theme = localStorage.getItem('quocphonganninh:theme') || 'dark'; } catch {};
+  applyTheme(theme);
+  getElementById('button-theme-toggle')?.addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  });
 };
 
 function bindKeyboardShortcuts() {
@@ -3267,10 +3283,12 @@ function bindEvents() {
     const current = Number.parseInt(input.value, 10);
     const isAll = current === rangeTotal;
     if (isAll) {
-      const previousValue = state.lastCountBeforeAll;
+      let previousValue = state.lastCountBeforeAll;
+      try { previousValue = Number.parseInt(localStorage.getItem('quocphonganninh:count-before-all'), 10) || previousValue; } catch {};
       input.value = String(Number.isInteger(previousValue) && previousValue >= 1 ? Math.min(previousValue, rangeTotal) : Math.min(20, rangeTotal));
     } else {
       state.lastCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 20;
+      try { localStorage.setItem('quocphonganninh:count-before-all', String(state.lastCountBeforeAll)); } catch {};
       input.value = String(rangeTotal);
     };
     persistSetupForm();
@@ -3285,10 +3303,12 @@ function bindEvents() {
     current = Math.min(1440, current);
     const isUnlimited = current === 0;
     if (isUnlimited) {
-      const previousValue = state.lastTimeBeforeUnlimited;
+      let previousValue = state.lastTimeBeforeUnlimited;
+      try { previousValue = Number.parseInt(localStorage.getItem('quocphonganninh:time-before-unlimited'), 10) || previousValue; } catch {};
       timeInput.value = String(Number.isInteger(previousValue) && previousValue > 0 ? Math.min(1440, previousValue) : 50);
     } else {
       state.lastTimeBeforeUnlimited = current > 0 ? current : 50;
+      try { localStorage.setItem('quocphonganninh:time-before-unlimited', String(state.lastTimeBeforeUnlimited)); } catch {};
       timeInput.value = '0';
     };
     persistSetupForm();
@@ -3331,7 +3351,17 @@ function bindEvents() {
       selectAllButton.setAttribute('aria-label', selectAllButton.title);
     };
   };
-  getElementById('input-count').addEventListener('input', updateCountButtonState);
+  getElementById('input-count').addEventListener('input', () => {
+    const form = readSetupForm();
+    const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
+    const count = Number.parseInt(getElementById('input-count').value, 10);
+    if (Number.isInteger(count) && count >= 1 && count < rangeTotal) {
+      state.lastCountBeforeAll = count;
+      try { localStorage.setItem('quocphonganninh:count-before-all', String(count)); } catch {};
+    };
+    updateCountButtonState();
+    persistSetupForm();
+  });
   getElementById('input-count').addEventListener('change', () => {
     persistSetupForm();
     refreshSetupUI();
