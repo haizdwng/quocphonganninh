@@ -3116,8 +3116,7 @@ function initializeInterface() {
   state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
-  const bank = getBankSettings();
-  state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  state.bankDeck = state.currentDeck;
   
   showScreen('setup');
   refreshSetupUI();
