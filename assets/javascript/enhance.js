@@ -2,8 +2,8 @@ let touchStart = null;
 
 function syncFixedBarHeights() {
   const targets = [
-    ['#screen-quiz .progress-wrap', '--quiz-top-h'],
-    ['#screen-exam .progress-wrap', '--exam-top-h'],
+    ['#screen-quiz .progress-wrap', '--quiz-top-height'],
+    ['#screen-exam .progress-wrap', '--exam-top-height'],
   ];
   const root = document.documentElement;
   for (const [selector, property] of targets) {
