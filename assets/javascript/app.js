@@ -3164,7 +3164,7 @@ function applyTheme(theme) {
   if (themeColor) themeColor.content = selectedTheme === 'light' ? '#f5f7fa' : '#111113';
   const button = getElementById('button-theme-toggle');
   if (button) {
-    button.dataset.icon = selectedTheme === 'dark' ? 'sun' : 'moon';
+    button.textContent = selectedTheme === 'dark' ? '☀' : '☾';
     button.setAttribute('aria-label', selectedTheme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
     button.title = selectedTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
     button.setAttribute('aria-pressed', String(selectedTheme === 'light'));
