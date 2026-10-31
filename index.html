@@ -30,11 +30,11 @@
           <div class='card'>
             <h2>Chọn bộ đề</h2>
             <div class='deck-switch' role='group' aria-label='Bộ đề'>
-              <button type='button' class='deck-btn' data-deck='quocphong1' id='button-deck-quocphong1'>
+              <button type='button' class='deck-button' data-deck='quocphong1' id='button-deck-quocphong1'>
                 <span class='deck-name'>Quốc Phòng 1</span>
                 <span class='deck-count' id='count-quocphong1'>479 câu</span>
               </button>
-              <button type='button' class='deck-btn' data-deck='quocphong2' id='button-deck-quocphong2'>
+              <button type='button' class='deck-button' data-deck='quocphong2' id='button-deck-quocphong2'>
                 <span class='deck-name'>Quốc Phòng 2</span>
                 <span class='deck-count' id='count-quocphong2'>262 câu</span>
               </button>
@@ -44,12 +44,12 @@
           <div class='card'>
             <h2>Chế độ làm bài</h2>
             <div class='mode-switch' role='group' aria-label='Chế độ'>
-              <button type='button' class='mode-btn is-active' data-mode='practice' id='button-mode-practice'>
+              <button type='button' class='mode-button is-active' data-mode='practice' id='button-mode-practice'>
                 <span class='mode-icon' data-icon='book-2' aria-hidden='true'></span>
                 <span class='mode-name'>Ôn luyện</span>
                 <span class='mode-desc'>Từng câu</span>
               </button>
-              <button type='button' class='mode-btn' data-mode='exam' id='button-mode-exam'>
+              <button type='button' class='mode-button' data-mode='exam' id='button-mode-exam'>
                 <span class='mode-icon' data-icon='list-check' aria-hidden='true'></span>
                 <span class='mode-name'>Thi thử</span>
                 <span class='mode-desc'>Tất cả câu</span>
@@ -79,7 +79,7 @@
                 <button
                   type='button'
                   class='button button-ghost button-icon-only'
-                  id='btn-all'
+                  id='button-select-all'
                   data-icon='select-all'
                   aria-label='Toàn bộ vùng'
                   title='Toàn bộ vùng'
@@ -93,7 +93,7 @@
                 <button
                   type='button'
                   class='button button-ghost button-icon-only'
-                  id='btn-time-unlimited'
+                  id='button-unlimited-time'
                   data-icon='infinity'
                   aria-label='Không giới hạn thời gian'
                   title='Không giới hạn thời gian'
@@ -102,11 +102,11 @@
             </div>
             <div class='field toggles'>
               <label class='toggle'>
-                <input type='checkbox' id='chk-shuffle-q' checked />
+                <input type='checkbox' id='checkbox-shuffle-questions' checked />
                 <span>Đảo thứ tự câu hỏi</span>
               </label>
               <label class='toggle'>
-                <input type='checkbox' id='chk-shuffle-a' checked />
+                <input type='checkbox' id='checkbox-shuffle-answers' checked />
                 <span>Đảo thứ tự đáp án</span>
               </label>
             </div>
@@ -116,11 +116,11 @@
             <h2>Trải nghiệm làm bài</h2>
             <div class='field toggles experience-toggles'>
               <label class='toggle'>
-                <input type='checkbox' id='chk-auto-check' />
+                <input type='checkbox' id='checkbox-automatic-check' />
                 <span>Tự kiểm tra khi chọn đáp án</span>
               </label>
               <label class='toggle'>
-                <input type='checkbox' id='chk-vibration' />
+                <input type='checkbox' id='checkbox-vibration' />
                 <span>Bật chế độ rung</span>
               </label>
             </div>
@@ -131,13 +131,13 @@
                   <button
                     type='button'
                     class='button button-ghost button-icon-only experience-toggle-btn'
-                    id='btn-auto-advance'
+                    id='button-auto-advance'
                     data-icon='toggle-left'
                     aria-pressed='false'
                     aria-label='Bật tự sang câu tiếp'
                     title='Tự sang câu tiếp'
                   ></button>
-                  <input type='checkbox' id='chk-auto-advance' class='screen-reader-only' tabindex='-1' />
+                  <input type='checkbox' id='checkbox-automatic-advance' class='screen-reader-only' tabindex='-1' />
                   <div class='slider-inline'>
                     <input type='range' id='input-auto-advance-delay' min='0' max='10' step='1' value='0' />
                     <span class='slider-value' id='label-auto-advance-delay'>0 giây</span>
@@ -150,13 +150,13 @@
                   <button
                     type='button'
                     class='button button-ghost button-icon-only experience-toggle-btn'
-                    id='btn-sound'
+                    id='button-sound'
                     data-icon='volume'
                     aria-pressed='false'
                     aria-label='Bật âm thanh'
                     title='Bật âm thanh'
                   ></button>
-                  <input type='checkbox' id='chk-sound' class='screen-reader-only' tabindex='-1' />
+                  <input type='checkbox' id='checkbox-sound' class='screen-reader-only' tabindex='-1' />
                   <div class='slider-inline'>
                     <input type='range' id='input-sound-volume' min='1' max='100' step='1' value='1' />
                     <span class='slider-value' id='label-sound-volume'>1%</span>
@@ -168,32 +168,32 @@
 
           <div class='card stats-card' id='deck-stats'>
             <h2>Tiến độ bộ đề</h2>
-            <ul class='stat-list'>
-              <li><span>Số câu đã hoàn thành</span><strong id='stat-completed'>0</strong></li>
-              <li><span>Số câu chưa hoàn thành</span><strong id='stat-remaining'>0</strong></li>
-              <li><span>Số câu sai</span><strong id='stat-wrong'>0</strong></li>
-              <li><span>Số lượt ôn lại</span><strong id='stat-practice'>0</strong></li>
-              <li><span>Số câu đã đánh dấu</span><strong id='stat-bookmarked'>0</strong></li>
-              <li><span>Câu tiếp theo</span><strong id='stat-cursor'>1</strong></li>
+            <ul class='statistics-list'>
+              <li><span>Số câu đã hoàn thành</span><strong id='statistics-completed'>0</strong></li>
+              <li><span>Số câu chưa hoàn thành</span><strong id='statistics-remaining'>0</strong></li>
+              <li><span>Số câu sai</span><strong id='statistics-wrong'>0</strong></li>
+              <li><span>Số lượt ôn lại</span><strong id='statistics-practiced'>0</strong></li>
+              <li><span>Số câu đã đánh dấu</span><strong id='statistics-bookmarked'>0</strong></li>
+              <li><span>Câu tiếp theo</span><strong id='statistics-sequential-cursor'>1</strong></li>
             </ul>
             <div class='button-row'>
-              <button type='button' class='button button-secondary' id='btn-practice-wrong' disabled data-icon='refresh'>
+              <button type='button' class='button button-secondary' id='button-practice-wrong' disabled data-icon='refresh'>
                 Ôn 0 câu sai trong vùng
               </button>
-              <button type='button' class='button button-secondary' id='btn-practice-all-wrong' disabled data-icon='refresh'>
+              <button type='button' class='button button-secondary' id='button-practice-all-wrong' disabled data-icon='refresh'>
                 Ôn 0 câu sai của bộ đề
               </button>
-              <button type='button' class='button button-secondary' id='btn-practice-bookmarks' disabled data-icon='bookmark'>
+              <button type='button' class='button button-secondary' id='button-practice-bookmarks' disabled data-icon='bookmark'>
                 Ôn 0 câu đã đánh dấu
               </button>
-              <button type='button' class='button button-ghost' id='btn-reset-progress' data-icon='trash'>
+              <button type='button' class='button button-ghost' id='button-reset-progress' data-icon='trash'>
                 Xóa tiến độ bộ đề
               </button>
               <div class='backup-actions'>
-                <button type='button' class='button button-ghost' id='btn-export-progress' data-icon='download'>
+                <button type='button' class='button button-ghost' id='button-export-progress' data-icon='download'>
                   Sao lưu tiến độ
                 </button>
-                <button type='button' class='button button-ghost' id='btn-import-progress' data-icon='upload'>
+                <button type='button' class='button button-ghost' id='button-import-progress' data-icon='upload'>
                   Khôi phục tiến độ
                 </button>
                 <input type='file' id='input-import-progress' accept='.json,application/json' hidden />
@@ -207,23 +207,23 @@
               <p class='hint' id='resume-hint'>Quốc Phòng 1 · Câu 0 / 30</p>
             </div>
             <div class='resume-actions'>
-              <button type='button' class='button button-primary' id='btn-resume-session' data-icon='arrow-right'>
+              <button type='button' class='button button-primary' id='button-resume-session' data-icon='arrow-right'>
                 Tiếp tục
               </button>
-              <button type='button' class='button button-ghost' id='btn-discard-session' data-icon='x'>
+              <button type='button' class='button button-ghost' id='button-discard-session' data-icon='x'>
                 Bỏ lượt
               </button>
             </div>
           </div>
 
           <div class='card setup-start-card' id='setup-actions'>
-            <button type='button' class='button button-ghost button-block' id='btn-view-bank' data-icon='book-2'>
+            <button type='button' class='button button-ghost button-block' id='button-view-bank' data-icon='book-2'>
               Ngân hàng câu hỏi
             </button>
-            <button type='button' class='button button-secondary button-block' id='btn-continue' hidden data-icon='arrow-right'>
+            <button type='button' class='button button-secondary button-block' id='button-continue' hidden data-icon='arrow-right'>
               Tiếp tục tuần tự
             </button>
-            <button type='button' class='button button-primary button-block' id='btn-start' data-icon='player-play'>
+            <button type='button' class='button button-primary button-block' id='button-start' data-icon='player-play'>
               Bắt đầu
             </button>
           </div>
@@ -234,18 +234,18 @@
             <button
               type='button'
               class='button button-ghost button-icon-only'
-              id='btn-review-back'
+              id='button-review-back'
               data-icon='arrow-left'
               aria-label='Quay lại thiết lập'
               title='Quay lại thiết lập'
             ></button>
             <h2 id='review-title'>Ngân hàng câu hỏi</h2>
             <div class='deck-switch review-deck-switch' role='group' aria-label='Bộ đề ngân hàng'>
-              <button type='button' class='deck-btn' data-bank-deck='quocphong1' id='button-bank-deck-quocphong1'>
+              <button type='button' class='deck-button' data-bank-deck='quocphong1' id='button-bank-deck-quocphong1'>
                 <span class='deck-name'>Quốc Phòng 1</span>
                 <span class='deck-count' id='bank-count-quocphong1'>479 câu</span>
               </button>
-              <button type='button' class='deck-btn' data-bank-deck='quocphong2' id='button-bank-deck-quocphong2'>
+              <button type='button' class='deck-button' data-bank-deck='quocphong2' id='button-bank-deck-quocphong2'>
                 <span class='deck-name'>Quốc Phòng 2</span>
                 <span class='deck-count' id='bank-count-quocphong2'>262 câu</span>
               </button>
@@ -264,7 +264,7 @@
                 <button
                   type='button'
                   class='review-search-clear'
-                  id='btn-review-search-clear'
+                  id='button-review-search-clear'
                   data-icon='x'
                   hidden
                   aria-label='Xóa tìm kiếm'
@@ -280,7 +280,7 @@
                 <button
                   type='button'
                   class='button button-ghost button-icon-only'
-                  id='btn-review-goto'
+                  id='button-review-goto'
                   data-icon='arrow-right'
                   aria-label='Đi đến câu'
                   title='Đi đến câu'
@@ -312,7 +312,7 @@
               <button
                 type='button'
                 class='bookmark-btn button-icon-only'
-                id='btn-bookmark'
+                id='button-bookmark'
                 aria-pressed='false'
                 data-icon='bookmark'
                 aria-label='Đánh dấu'
@@ -321,7 +321,7 @@
               <button
                 type='button'
                 class='note-btn button-icon-only'
-                id='btn-note'
+                id='button-note'
                 aria-pressed='false'
                 data-icon='note'
                 aria-label='Ghi chú'
@@ -331,7 +331,7 @@
                 <button
                   type='button'
                   class='button button-ghost button-icon-only highlight-toggle-btn'
-                  id='btn-highlight-toggle'
+                  id='button-highlight-toggle'
                   data-icon='highlight'
                   aria-label='Highlight hoặc bỏ highlight đoạn văn bản đã chọn'
                   title='Highlight'
@@ -356,7 +356,7 @@
                   <button
                     type='button'
                     class='button button-primary button-icon-only'
-                    id='btn-note-save'
+                    id='button-note-save'
                     data-icon='device-floppy'
                     aria-label='Lưu ghi chú'
                     title='Lưu'
@@ -364,7 +364,7 @@
                   <button
                     type='button'
                     class='button button-ghost button-icon-only'
-                    id='btn-note-delete'
+                    id='button-note-delete'
                     data-icon='trash'
                     aria-label='Xóa ghi chú'
                     title='Xóa'
@@ -372,7 +372,7 @@
                   <button
                     type='button'
                     class='button button-ghost button-icon-only'
-                    id='btn-note-close'
+                    id='button-note-close'
                     data-icon='x'
                     aria-label='Hủy'
                     title='Hủy'
@@ -380,26 +380,26 @@
                 </div>
               </div>
             </div>
-            <div class='options' id='options' role='group' aria-label='Chọn một đáp án'></div>
+            <div class='answer-options' id='answer-options' role='group' aria-label='Chọn một đáp án'></div>
             <div class='feedback' id='feedback' role='status' aria-live='polite' hidden></div>
           </div>
 
           <div class='card quiz-actions-card' id='quiz-actions'>
             <div class='quiz-actions-row'>
-              <button type='button' class='button button-ghost' id='btn-prev' disabled data-icon='chevron-left'>
+              <button type='button' class='button button-ghost' id='button-prev' disabled data-icon='chevron-left'>
                 Câu trước
               </button>
-              <button type='button' class='button button-primary' id='btn-next' disabled data-icon='check'>
+              <button type='button' class='button button-primary' id='button-next' disabled data-icon='check'>
                 Kiểm tra
               </button>
             </div>
             <div class='quiz-pause-row'>
-              <button type='button' class='button button-secondary' id='btn-quiz-pause' data-icon='player-pause'>
+              <button type='button' class='button button-secondary' id='button-quiz-pause' data-icon='player-pause'>
                 Tạm dừng
               </button>
             </div>
             <div class='quiz-quit-row'>
-              <button type='button' class='button button-ghost' id='btn-quit' data-icon='x'>
+              <button type='button' class='button button-ghost' id='button-quit' data-icon='x'>
                 Thoát
               </button>
             </div>
@@ -422,7 +422,7 @@
                 <button type='button' class='filter-chip' data-filter='correct' id='exam-filter-correct' hidden>Đúng</button>
                 <button type='button' class='filter-chip' data-filter='wrong' id='exam-filter-wrong' hidden>Sai</button>
               </div>
-              <button type='button' class='button button-ghost button-small' id='btn-exam-next-empty' data-icon='arrow-right'>
+              <button type='button' class='button button-ghost button-small' id='button-exam-next-empty' data-icon='arrow-right'>
                 Câu chưa chọn
               </button>
             </div>
@@ -434,17 +434,17 @@
           <div class='card exam-actions-card' id='exam-actions'>
             <div class='exam-actions-row'>
               <div class='exam-submit-row'>
-                <button type='button' class='button button-primary' id='btn-exam-submit' data-icon='check'>
+                <button type='button' class='button button-primary' id='button-exam-submit' data-icon='check'>
                   Nộp bài
                 </button>
               </div>
               <div class='exam-pause-row'>
-                <button type='button' class='button button-secondary' id='btn-exam-pause' data-icon='player-pause'>
+                <button type='button' class='button button-secondary' id='button-exam-pause' data-icon='player-pause'>
                   Tạm dừng
                 </button>
               </div>
               <div class='exam-quit-row'>
-                <button type='button' class='button button-ghost' id='btn-exam-quit' data-icon='x'>
+                <button type='button' class='button button-ghost' id='button-exam-quit' data-icon='x'>
                   Thoát
                 </button>
               </div>
@@ -461,20 +461,20 @@
                 <circle class='score-ring-fg' id='score-ring-fg' cx='60' cy='60' r='52'/>
               </svg>
               <div class='score-ring-value'>
-                <strong id='sum-score-big'>0</strong>
+                <strong id='summary-score-large'>0</strong>
                 <span>/ 10</span>
               </div>
             </div>
             <p class='hint' id='summary-note'></p>
-            <ul class='stat-list'>
-              <li><span>Tổng số câu</span><strong id='sum-total'>0</strong></li>
-              <li><span>Điểm</span><strong id='sum-score'>0 / 10</strong></li>
-              <li><span>Thời gian làm bài</span><strong id='sum-time'>00:00</strong></li>
-              <li><span>Số câu đúng ngay lần đầu</span><strong id='sum-correct'>0</strong></li>
-              <li><span>Số câu sai</span><strong id='sum-wrong-q'>0</strong></li>
-              <li><span>Tổng số lần sai</span><strong id='sum-wrong-times'>0</strong></li>
-              <li><span>Câu trong lượt ôn lại</span><strong id='sum-practice'>0</strong></li>
-              <li><span>Tỉ lệ đúng lần đầu</span><strong id='sum-first'>0%</strong></li>
+            <ul class='statistics-list'>
+              <li><span>Tổng số câu</span><strong id='summary-total'>0</strong></li>
+              <li><span>Điểm</span><strong id='summary-score'>0 / 10</strong></li>
+              <li><span>Thời gian làm bài</span><strong id='summary-time'>00:00</strong></li>
+              <li><span>Số câu đúng ngay lần đầu</span><strong id='summary-correct'>0</strong></li>
+              <li><span>Số câu sai</span><strong id='summary-wrong-question-count'>0</strong></li>
+              <li><span>Tổng số lần sai</span><strong id='summary-wrong-attempt-count'>0</strong></li>
+              <li><span>Câu trong lượt ôn lại</span><strong id='summary-practice-count'>0</strong></li>
+              <li><span>Tỉ lệ đúng lần đầu</span><strong id='summary-first-try-rate'>0%</strong></li>
             </ul>
           </div>
           <div class='card' id='wrong-list-card' hidden>
@@ -482,25 +482,25 @@
             <ul class='wrong-list' id='wrong-list'></ul>
           </div>
           <div class='actions-stack'>
-            <button type='button' class='button button-primary button-block' id='btn-sum-retry-session' hidden data-icon='rotate-clockwise'>
+            <button type='button' class='button button-primary button-block' id='button-summary-retry-session' hidden data-icon='rotate-clockwise'>
               Ôn lại lượt ôn này
             </button>
-            <button type='button' class='button button-primary button-block' id='btn-sum-practice' hidden data-icon='refresh'>
+            <button type='button' class='button button-primary button-block' id='button-summary-practice' hidden data-icon='refresh'>
               Ôn lại câu sai
             </button>
-            <button type='button' class='button button-primary button-block' id='btn-sum-continue' hidden data-icon='arrow-right'>
+            <button type='button' class='button button-primary button-block' id='button-summary-continue' hidden data-icon='arrow-right'>
               Tiếp tục tuần tự
             </button>
-            <button type='button' class='button button-secondary button-block' id='btn-sum-random' data-icon='refresh'>
+            <button type='button' class='button button-secondary button-block' id='button-summary-random' data-icon='refresh'>
               Ôn ngẫu nhiên tiếp
             </button>
-            <button type='button' class='button button-secondary button-block' id='btn-sum-again' data-icon='book-2'>
+            <button type='button' class='button button-secondary button-block' id='button-summary-again' data-icon='book-2'>
               Thiết lập lượt ôn mới
             </button>
-            <button type='button' class='button button-ghost button-block' id='btn-sum-restart' data-icon='rotate-clockwise'>
+            <button type='button' class='button button-ghost button-block' id='button-summary-restart' data-icon='rotate-clockwise'>
               Làm lại từ đầu
             </button>
-            <button type='button' class='button button-ghost button-block' id='btn-sum-home' data-icon='arrow-left'>
+            <button type='button' class='button button-ghost button-block' id='button-summary-home' data-icon='arrow-left'>
               Về màn hình thiết lập
             </button>
           </div>
@@ -510,7 +510,7 @@
           <div class='card error-card'>
             <h2>Không thể tải dữ liệu</h2>
             <p id='error-message'></p>
-            <button type='button' class='button button-primary' id='btn-retry' data-icon='refresh'>
+            <button type='button' class='button button-primary' id='button-retry' data-icon='refresh'>
               Thử lại
             </button>
           </div>
@@ -518,8 +518,8 @@
       </main>
 
       <div class='fixed-floating-action-button-stack' id='fixed-floating-action-button-stack'>
-        <button type='button' id='btn-search-prev' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả trước' title='Kết quả trước' data-icon='chevron-left'></button>
-        <button type='button' id='btn-search-next' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả tiếp' title='Kết quả tiếp' data-icon='chevron-right'></button>
+        <button type='button' id='button-search-prev' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả trước' title='Kết quả trước' data-icon='chevron-left'></button>
+        <button type='button' id='button-search-next' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả tiếp' title='Kết quả tiếp' data-icon='chevron-right'></button>
         <button type='button' id='button-scroll-to-top' class='button-scroll-to-top' hidden aria-label='Lên đầu trang' title='Lên đầu trang'>
           <span aria-hidden='true'>↑</span>
         </button>
@@ -538,7 +538,7 @@
 
       <div id='update-banner' class='update-banner' hidden>
         <span>Có phiên bản mới.</span>
-        <button type='button' class='button button-primary button-small' id='btn-update' data-icon='refresh'>Tải lại</button>
+        <button type='button' class='button button-primary button-small' id='button-update' data-icon='refresh'>Tải lại</button>
       </div>
     </div>
     <script type='module' src='assets/javascript/app.js'></script>
