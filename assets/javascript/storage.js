@@ -1,4 +1,4 @@
-const NAME = 'quocphonganninh';
+const STORAGE_KEY = 'quocphonganninh';
 const VERSION = 2;
 
 function emptyRoot() {
@@ -30,18 +30,18 @@ function emptyRoot() {
 
 function readRoot() {
   try {
-    const raw = localStorage.getItem(NAME);
-    if (!raw) return emptyRoot();
+    const rawData = localStorage.getItem(STORAGE_KEY);
+    if (!rawData) return emptyRoot();
 
-    const data = JSON.parse(raw);
-    const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphong1', 'quocphong2'].every((id) => !Object.prototype.hasOwnProperty.call(data.decks, id) || (data.decks[id] && typeof data.decks[id] === 'object' && !Array.isArray(data.decks[id]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights))) && (!data.notes || (typeof data.notes === 'object' && !Array.isArray(data.notes)));
+    const data = JSON.parse(rawData);
+    const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphong1', 'quocphong2'].every((deckIdentifier) => !Object.prototype.hasOwnProperty.call(data.decks, deckIdentifier) || (data.decks[deckIdentifier] && typeof data.decks[deckIdentifier] === 'object' && !Array.isArray(data.decks[deckIdentifier]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights))) && (!data.notes || (typeof data.notes === 'object' && !Array.isArray(data.notes)));
     if (valid) return data;
 
-    localStorage.removeItem(NAME);
+    localStorage.removeItem(STORAGE_KEY);
     return emptyRoot();
   } catch {
     try {
-      localStorage.removeItem(NAME);
+      localStorage.removeItem(STORAGE_KEY);
     } catch {};
     return emptyRoot();
   };
@@ -52,7 +52,7 @@ function writeRoot(data) {
     const root = data && typeof data === 'object' && !Array.isArray(data) ? data : emptyRoot();
     root.version = VERSION;
     if (Object.prototype.hasOwnProperty.call(root, 'settings')) delete root.settings;
-    localStorage.setItem(NAME, JSON.stringify(root));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(root));
     return true;
   } catch {
     return false;
@@ -63,8 +63,8 @@ function normalizeDeckId(deckId) {
   return deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
 };
 
-function normalizeSettingsEntry(raw, deckId) {
-  const settings = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+function normalizeSettingsEntry(rawData, deckId) {
+  const settings = rawData && typeof rawData === 'object' && !Array.isArray(rawData) ? rawData : {};
   const count = Number(settings.count);
   return {
     deck: normalizeDeckId(deckId || settings.deck),
@@ -97,12 +97,12 @@ function normalizeSettingsEntry(raw, deckId) {
 };
 
 function legacySettingsFallback(root, activeDeck) {
-  const raw = root.settings;
-  if (Array.isArray(raw)) {
-    const list = raw.filter((entry) => entry && typeof entry === 'object');
+  const rawData = root.settings;
+  if (Array.isArray(rawData)) {
+    const list = rawData.filter((entry) => entry && typeof entry === 'object');
     return list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
   };
-  if (raw && typeof raw === 'object') return raw;
+  if (rawData && typeof rawData === 'object') return rawData;
   return {};
 };
 
@@ -201,9 +201,9 @@ export function saveDeckProgress(deckId, progress) {
 
 export function getSession(deckId) {
   const root = readRoot();
-  const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
+  const deckIdentifier = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   const sessions = root.sessions && typeof root.sessions === 'object' && !Array.isArray(root.sessions) ? root.sessions : {};
-  const session = sessions[id] || (root.session?.deckId === id ? root.session : null);
+  const session = sessions[deckIdentifier] || (root.session?.deckId === deckIdentifier ? root.session : null);
   return session && typeof session === 'object' && !Array.isArray(session) ? session : null;
 };
 
@@ -219,9 +219,9 @@ export function saveSession(session) {
 export function clearSession(deckId) {
   const root = readRoot();
   if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
-  const id = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
-  delete root.sessions[id];
-  if (root.session?.deckId === id) delete root.session;
+  const deckIdentifier = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
+  delete root.sessions[deckIdentifier];
+  if (root.session?.deckId === deckIdentifier) delete root.session;
   return writeRoot(root);
 };
 
@@ -343,11 +343,11 @@ export function saveQuestionHighlights(deckId, originalIndex, ranges) {
   if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
   const root = readRoot();
   if (!root.highlights || typeof root.highlights !== 'object' || Array.isArray(root.highlights)) root.highlights = {};
-  const id = normalizeDeckId(deckId);
-  if (!root.highlights[id] || typeof root.highlights[id] !== 'object' || Array.isArray(root.highlights[id])) root.highlights[id] = {};
+  const deckIdentifier = normalizeDeckId(deckId);
+  if (!root.highlights[deckIdentifier] || typeof root.highlights[deckIdentifier] !== 'object' || Array.isArray(root.highlights[deckIdentifier])) root.highlights[deckIdentifier] = {};
   const normalized = normalizeHighlightRanges(ranges);
-  if (normalized.length) root.highlights[id][String(originalIndex)] = normalized;
-  else delete root.highlights[id][String(originalIndex)];
+  if (normalized.length) root.highlights[deckIdentifier][String(originalIndex)] = normalized;
+  else delete root.highlights[deckIdentifier][String(originalIndex)];
   return writeRoot(root);
 };
 
@@ -369,11 +369,11 @@ export function saveQuestionNote(deckId, originalIndex, text) {
   if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
   const root = readRoot();
   if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphong1: {}, quocphong2: {} };
-  const id = normalizeDeckId(deckId);
-  if (!root.notes[id] || typeof root.notes[id] !== 'object' || Array.isArray(root.notes[id])) root.notes[id] = {};
+  const deckIdentifier = normalizeDeckId(deckId);
+  if (!root.notes[deckIdentifier] || typeof root.notes[deckIdentifier] !== 'object' || Array.isArray(root.notes[deckIdentifier])) root.notes[deckIdentifier] = {};
   const normalized = normalizeNoteText(text);
-  if (normalized) root.notes[id][String(originalIndex)] = normalized;
-  else delete root.notes[id][String(originalIndex)];
+  if (normalized) root.notes[deckIdentifier][String(originalIndex)] = normalized;
+  else delete root.notes[deckIdentifier][String(originalIndex)];
   return writeRoot(root);
 };
 
@@ -401,15 +401,15 @@ export function saveQuestionOverride(deckId, originalIndex, payload) {
   if (!Number.isInteger(originalIndex) || originalIndex < 0) return false;
   const root = readRoot();
   if (!root.overrides || typeof root.overrides !== 'object' || Array.isArray(root.overrides)) root.overrides = { quocphong1: {}, quocphong2: {} };
-  const id = normalizeDeckId(deckId);
-  if (!root.overrides[id] || typeof root.overrides[id] !== 'object' || Array.isArray(root.overrides[id])) root.overrides[id] = {};
+  const deckIdentifier = normalizeDeckId(deckId);
+  if (!root.overrides[deckIdentifier] || typeof root.overrides[deckIdentifier] !== 'object' || Array.isArray(root.overrides[deckIdentifier])) root.overrides[deckIdentifier] = {};
   if (payload === null) {
-    delete root.overrides[id][String(originalIndex)];
+    delete root.overrides[deckIdentifier][String(originalIndex)];
     return writeRoot(root);
   }
   const normalized = normalizeOverrideEntry(payload);
   if (!normalized) return false;
-  root.overrides[id][String(originalIndex)] = normalized;
+  root.overrides[deckIdentifier][String(originalIndex)] = normalized;
   return writeRoot(root);
 }
 
@@ -439,11 +439,11 @@ export function toggleHiddenQuestion(deckId, originalIndex) {
   if (!Number.isInteger(originalIndex) || originalIndex < 0) return null;
   const root = readRoot();
   if (!root.hidden || typeof root.hidden !== 'object' || Array.isArray(root.hidden)) root.hidden = { quocphong1: [], quocphong2: [] };
-  const id = normalizeDeckId(deckId);
-  const set = new Set(Array.isArray(root.hidden[id]) ? root.hidden[id].filter((v) => Number.isInteger(v) && v >= 0) : []);
+  const deckIdentifier = normalizeDeckId(deckId);
+  const set = new Set(Array.isArray(root.hidden[deckIdentifier]) ? root.hidden[deckIdentifier].filter((v) => Number.isInteger(v) && v >= 0) : []);
   if (set.has(originalIndex)) set.delete(originalIndex);
   else set.add(originalIndex);
-  root.hidden[id] = [...set].sort((a, b) => a - b);
+  root.hidden[deckIdentifier] = [...set].sort((a, b) => a - b);
   if (!writeRoot(root)) return null;
   return set.has(originalIndex);
 }
@@ -484,14 +484,14 @@ export function exportBackup() {
   }, null, 2);
 };
 
-export function importBackup(raw) {
+export function importBackup(rawData) {
   let backup;
   try {
-    backup = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    backup = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
   } catch {
     return false;
   };
-  if (!backup || backup.format !== 'backup' || backup.version !== 1 || !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) || !Object.keys(backup.decks).every((id) => ['quocphong1', 'quocphong2'].includes(id))) return false;
+  if (!backup || backup.format !== 'backup' || backup.version !== 1 || !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) || !Object.keys(backup.decks).every((deckIdentifier) => ['quocphong1', 'quocphong2'].includes(deckIdentifier))) return false;
 
   const activeDeck = normalizeDeckId(backup.activeDeck || 'quocphong1');
   let legacyFromBackup = {};
@@ -538,56 +538,56 @@ export function importBackup(raw) {
   };
 
   if (backup.highlights && typeof backup.highlights === 'object' && !Array.isArray(backup.highlights)) {
-    for (const id of ['quocphong1', 'quocphong2']) {
-      const deck = backup.highlights[id];
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
+      const deck = backup.highlights[deckIdentifier];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
       for (const [key, ranges] of Object.entries(deck)) {
         const index = Number(key);
         if (!Number.isInteger(index) || index < 0) continue;
         const valid = normalizeHighlightRanges(ranges);
-        if (valid.length) normalized.highlights[id][String(index)] = valid;
+        if (valid.length) normalized.highlights[deckIdentifier][String(index)] = valid;
       };
     };
   };
 
   if (backup.notes && typeof backup.notes === 'object' && !Array.isArray(backup.notes)) {
-    for (const id of ['quocphong1', 'quocphong2']) {
-      const deck = backup.notes[id];
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
+      const deck = backup.notes[deckIdentifier];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
       for (const [key, value] of Object.entries(deck)) {
         const index = Number(key);
         if (!Number.isInteger(index) || index < 0) continue;
         const text = normalizeNoteText(value);
-        if (text) normalized.notes[id][String(index)] = text;
+        if (text) normalized.notes[deckIdentifier][String(index)] = text;
       };
     };
   };
 
   normalized.overrides = { quocphong1: {}, quocphong2: {} };
   if (backup.overrides && typeof backup.overrides === 'object' && !Array.isArray(backup.overrides)) {
-    for (const id of ['quocphong1', 'quocphong2']) {
-      const deck = backup.overrides[id];
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
+      const deck = backup.overrides[deckIdentifier];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
       for (const [key, value] of Object.entries(deck)) {
         const index = Number(key);
         if (!Number.isInteger(index) || index < 0) continue;
         const entry = normalizeOverrideEntry(value);
-        if (entry) normalized.overrides[id][String(index)] = entry;
+        if (entry) normalized.overrides[deckIdentifier][String(index)] = entry;
       }
     }
   }
 
   normalized.hidden = { quocphong1: [], quocphong2: [] };
   if (backup.hidden && typeof backup.hidden === 'object' && !Array.isArray(backup.hidden)) {
-    for (const id of ['quocphong1', 'quocphong2']) {
-      const list = backup.hidden[id];
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
+      const list = backup.hidden[deckIdentifier];
       if (!Array.isArray(list)) continue;
-      normalized.hidden[id] = [...new Set(list.filter((v) => Number.isInteger(v) && v >= 0))].sort((a, b) => a - b);
+      normalized.hidden[deckIdentifier] = [...new Set(list.filter((v) => Number.isInteger(v) && v >= 0))].sort((a, b) => a - b);
     }
   }
 
-  for (const id of ['quocphong1', 'quocphong2']) {
-    const deckData = backup.decks[id];
+  for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
+    const deckData = backup.decks[deckIdentifier];
     if (!deckData || typeof deckData !== 'object' || Array.isArray(deckData)) continue;
     const wrongMap = {};
     if (deckData.wrongMap && typeof deckData.wrongMap === 'object' && !Array.isArray(deckData.wrongMap)) {
@@ -604,7 +604,7 @@ export function importBackup(raw) {
         if (Number.isInteger(index) && index >= 0 && Number.isInteger(value) && value > 0) practiceMap[String(index)] = value;
       };
     };
-    normalized.decks[id] = {
+    normalized.decks[deckIdentifier] = {
       sequentialCursor: Number.isInteger(deckData.sequentialCursor) && deckData.sequentialCursor >= 0 ? deckData.sequentialCursor : 0,
       completed: Array.isArray(deckData.completed) ? [...new Set(deckData.completed.filter((value) => Number.isInteger(value) && value >= 0))].sort((leftValue, rightValue) => leftValue - rightValue) : [],
       wrongMap,
@@ -625,7 +625,7 @@ export function importBackup(raw) {
 
 export function storageAvailable() {
   try {
-    const key = NAME + ':probe';
+    const key = STORAGE_KEY + ':probe';
     localStorage.setItem(key, '1');
     localStorage.removeItem(key);
     return true;
