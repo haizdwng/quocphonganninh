@@ -3133,7 +3133,7 @@ function showSummary(summary, deckId, mode) {
   retryButton.hidden = !['normal', 'exam'].includes(mode);
   retryButton.textContent = mode === 'exam' ? 'Thi lại lượt thi này' : 'Ôn lại lượt ôn này';
 
-  const btnPractice = getElementById('button-summary-practice-count');
+  const btnPractice = getElementById('button-summary-practice');
   const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.originalIndex))];
   state._lastSummaryWrongIndices = sessionWrong;
   btnPractice.hidden = sessionWrong.length === 0;
@@ -4045,7 +4045,7 @@ function bindEvents() {
     startNormal({ sequential: false });
   });
 
-  getElementById('button-summary-practice-count').addEventListener('click', () => {
+  getElementById('button-summary-practice').addEventListener('click', () => {
     if (state._lastSummaryDeck) state.currentDeck = state._lastSummaryDeck;
     if (Number.isInteger(state._lastSummaryRangeStart) && Number.isInteger(state._lastSummaryRangeEnd)) {
       getElementById('input-range-start').value = String(state._lastSummaryRangeStart);
