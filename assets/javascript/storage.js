@@ -87,6 +87,10 @@ function normalizeSettingsEntry(rawData, deckId) {
     timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0 ? Math.min(1440, Number(settings.timeLimit)) : 35,
     practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice',
     autoCheck: settings.autoCheck === true,
+    autoCheckDelay: (() => {
+      const delay = Number(settings.autoCheckDelay);
+      return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
+    })(),
     autoAdvance: settings.autoAdvance === true,
     vibrationEnabled: settings.vibrationEnabled === true,
     autoAdvanceDelay: (() => {
