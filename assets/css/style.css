@@ -440,6 +440,8 @@ input[type='range']:disabled {
 [data-icon='volume'],
 [data-icon='volume-off'] { --tone: var(--sky); }
 [data-icon='alert-circle'] { --tone: var(--red); }
+[data-icon='sun'],
+[data-icon='moon'] { --tone: var(--yellow); }
 
 #button-quit,
 #button-exam-quit {
@@ -457,6 +459,9 @@ input[type='range']:disabled {
   -webkit-mask: center / contain no-repeat;
   mask: center / contain no-repeat;
 }
+
+[data-icon='sun']::before { -webkit-mask-image: url('../icons/tabler/sun.svg'); mask-image: url('../icons/tabler/sun.svg'); }
+[data-icon='moon']::before { -webkit-mask-image: url('../icons/tabler/moon.svg'); mask-image: url('../icons/tabler/moon.svg'); }
 
 [data-icon='bookmark']::before { -webkit-mask-image: url('../icons/tabler/bookmark.svg'); mask-image: url('../icons/tabler/bookmark.svg'); }
 [data-icon='bookmark-off']::before { -webkit-mask-image: url('../icons/tabler/bookmark-off.svg'); mask-image: url('../icons/tabler/bookmark-off.svg'); }
