@@ -28,7 +28,7 @@ export function initializeEnhancements({ onPrev, onNext }) {
       return;
     };
     const target = event.target instanceof Element ? event.target : null;
-    if (!target || target.closest('button:not(.option), input, textarea, select, a, .highlight-toolbar')) {
+    if (!target || target.closest('button:not(.answer-option), input, textarea, select, a, .highlight-toolbar')) {
       touchStartCoordinates = null;
       return;
     };
