@@ -2773,9 +2773,9 @@ function animateScore(target, displayStr, circumference) {
   const start = performance.now();
 
   let color = 'var(--primary)';
-  if (target >= 8) color = '#22c55e';
-  else if (target >= 5) color = '#eab308';
-  else color = '#ef4444';
+  if (target >= 8) color = 'var(--green)';
+  else if (target >= 5) color = 'var(--warn)';
+  else color = 'var(--red)';
 
   ringFg.style.stroke = color;
   summaryScoreElement.style.color = color;
@@ -3161,7 +3161,7 @@ function applyTheme(theme) {
   const selectedTheme = theme === 'light' ? 'light' : 'dark';
   document.documentElement.dataset.theme = selectedTheme;
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = selectedTheme === 'light' ? '#f5f7fa' : '#111113';
+  if (themeColor) themeColor.content = selectedTheme === 'light' ? '#f2efe7' : '#131210';
   const button = getElementById('button-theme-toggle');
   if (button) {
     button.dataset.icon = selectedTheme === 'dark' ? 'sun' : 'moon';
@@ -3916,7 +3916,7 @@ function classifyToast(text) {
 
 function initializeInterfaceEnhancements() {
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.content = '#0c0f14';
+  if (themeMeta) themeMeta.content = '#131210';
 
   const toastElement = getElementById('toast');
   if (toastElement) {
