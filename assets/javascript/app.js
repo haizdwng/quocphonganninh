@@ -3164,7 +3164,13 @@ function applyTheme(theme) {
   if (themeColor) themeColor.content = selectedTheme === 'light' ? '#f5f7fa' : '#111113';
   const button = getElementById('button-theme-toggle');
   if (button) {
-    button.textContent = selectedTheme === 'dark' ? '☀' : '☾';
+    button.replaceChildren();
+    const icon = document.createElement('img');
+    icon.src = selectedTheme === 'dark' ? './assets/icons/sun.svg' : './assets/icons/moon.svg';
+    icon.alt = '';
+    icon.width = 20;
+    icon.height = 20;
+    button.append(icon);
     button.setAttribute('aria-label', selectedTheme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
     button.title = selectedTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
     button.setAttribute('aria-pressed', String(selectedTheme === 'light'));
