@@ -1,6 +1,6 @@
 import { initializeEnhancements } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
-import { getSettings, saveSettings, getBankSettings, saveBankSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
+import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
 const DECKS = {
   quocphong1: {
@@ -304,7 +304,6 @@ function updateDeckCountLabels() {
 };
 
 function sessionPreferences(deckId) {
-  if (state.session?.fromBank) return getBankSettings();
   return getSettings(deckId || state.session?.deckId || state.currentDeck);
 };
 
@@ -745,7 +744,7 @@ function enterBankQuestionEdit(card, questionIndex) {
   };
   syncFixedButton();
 
-  actions.append(saveBtn, resetBtn, cancelBtn, fixedQuestionButton);
+  actions.append(saveBtn, resetBtn, fixedQuestionButton, cancelBtn);
 
   parts.editBlock.append(qLabel, qInput, optLabel, answerOptionList, actions);
 
@@ -1457,8 +1456,7 @@ function openQuestionBank() {
   virtualScrollState.rangeStart = 0;
   virtualScrollState.rangeEnd = -1;
   if (getElementById('input-review-goto')) getElementById('input-review-goto').value = '';
-  const bank = getBankSettings();
-  state.bankDeck = bank.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  state.bankDeck = state.currentDeck;
   
   renderQuestionBank();
   showScreen('review');
@@ -1670,7 +1668,7 @@ function setBankDeck(deckId) {
   if (state.bankDeck === id) return;
   
   state.bankDeck = id;
-  saveBankSettings({ ...getBankSettings(), deck: id });
+
   
   state.bankSearchMatchIndex = -1;
   state.reviewEditingNoteIndex = null;
@@ -3389,10 +3387,12 @@ function bindEvents() {
   getElementById('input-auto-advance-delay')?.addEventListener('input', () => {
     const delay = Number.parseInt(getElementById('input-auto-advance-delay').value, 10) || 0;
     if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' giây';
+    persistSetupForm();
   });
   getElementById('input-auto-advance-delay')?.addEventListener('change', persistSetupForm);
   getElementById('input-sound-volume')?.addEventListener('input', () => {
     syncSoundFromVolume('input-sound-volume', 'checkbox-sound', 'label-sound-volume');
+    persistSetupForm();
   });
   getElementById('input-sound-volume')?.addEventListener('change', () => {
     syncSoundFromVolume('input-sound-volume', 'checkbox-sound', 'label-sound-volume');
