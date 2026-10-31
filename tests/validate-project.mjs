@@ -18,8 +18,8 @@ const [html, css, application, enhancements, quiz, storage, serviceWorker, first
 const htmlIdentifiers = [...html.matchAll(/\bid=['"]([^'"]+)['"]/g)].map((match) => match[1]);
 assert.equal(new Set(htmlIdentifiers).size, htmlIdentifiers.length, 'HTML identifiers must be unique');
 
-const allJavaScript = [application, enhancements, quiz, storage, serviceWorker].join('\\n');
-const referencedIdentifiers = new Set([...allJavaScript.matchAll(/getElementById\\(['"]([^'"]+)['"]\\)/g)].map((match) => match[1]));
+const allJavaScript = [application, enhancements, quiz, storage, serviceWorker].join('\n');
+const referencedIdentifiers = new Set([...allJavaScript.matchAll(/getElementById\(['"]([^'"]+)['"]\\)/g)].map((match) => match[1]));
 for (const identifier of referencedIdentifiers) {
   assert.ok(htmlIdentifiers.includes(identifier), `JavaScript references a missing HTML identifier: ${identifier}`);
 }
@@ -30,8 +30,8 @@ for (const className of htmlClasses) {
   assert.ok(styleClasses.has(className), `HTML class has no CSS rule: ${className}`);
 }
 
-const javascriptClasses = [...allJavaScript.matchAll(/(?:className\\s*=\\s*|classList\\.(?:add|remove|toggle)\\()\\s*['"]([^'"]+)['"]/g)]
-  .flatMap((match) => match[1].split(/\\s+/).filter(Boolean));
+const javascriptClasses = [...allJavaScript.matchAll(/(?:className\s*=\\s*|classList\.(?:add|remove|toggle)\( )\s*['"]([^'"]+)['"]/g)]
+  .flatMap((match) => match[1].split(/\s+/).filter(Boolean));
 for (const className of javascriptClasses) {
   assert.ok(styleClasses.has(className), `JavaScript assigns a class with no CSS rule: ${className}`);
 }
