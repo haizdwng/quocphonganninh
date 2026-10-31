@@ -86,7 +86,8 @@ export default [
       }],
       "no-unreachable": "error",
       "no-dupe-keys": "error",
-      "no-constant-binary-expression": "error"
+      "no-constant-binary-expression": "error",
+      "id-length": ["error", { min: 4, exceptions: ["i", "j", "k", "x", "y"] }]
     }
   }
 ];
