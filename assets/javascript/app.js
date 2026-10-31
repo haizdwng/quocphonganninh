@@ -169,7 +169,7 @@ async function loadAll() {
       if (screen) {
         errorMessage = document.createElement('pre');
         errorMessage.id = 'error-message';
-        errorMessage.className = 'error-message';
+        
         screen.append(errorMessage);
       };
     };
@@ -740,7 +740,7 @@ function enterBankQuestionEdit(card, questionIndex) {
   let editFixed = question.fixed === true;
   const fixedBtn = document.createElement('button');
   fixedBtn.type = 'button';
-  fixedBtn.className = 'button button-ghost button-icon-only review-edit-fixed-toggle';
+  fixedBtn.className = 'button button-ghost button-icon-only ';
   const syncFixedButton = () => {
     fixedBtn.setAttribute('aria-pressed', String(editFixed));
     setToggleIcon(fixedBtn, editFixed, { on: 'pin', off: 'pinned-off' });
@@ -850,21 +850,21 @@ function createReviewBankCard() {
 
   const bookmarkBtn = document.createElement('button');
   bookmarkBtn.type = 'button';
-  bookmarkBtn.className = 'button button-ghost button-icon-only bank-bookmark-btn';
+  bookmarkBtn.className = 'button button-ghost button-icon-only ';
   bookmarkBtn.dataset.icon = 'bookmark';
   bookmarkBtn.setAttribute('aria-label', 'Đánh dấu');
   bookmarkBtn.title = 'Đánh dấu';
 
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
-  editBtn.className = 'button button-ghost button-icon-only bank-edit-btn';
+  editBtn.className = 'button button-ghost button-icon-only ';
   editBtn.dataset.icon = 'pencil';
   editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
   editBtn.title = 'Chỉnh sửa';
 
   const hideBtn = document.createElement('button');
   hideBtn.type = 'button';
-  hideBtn.className = 'button button-ghost button-icon-only bank-hide-btn';
+  hideBtn.className = 'button button-ghost button-icon-only ';
   hideBtn.dataset.icon = 'eye';
   hideBtn.setAttribute('aria-label', 'Ẩn câu hỏi');
   hideBtn.title = 'Ẩn câu hỏi';
