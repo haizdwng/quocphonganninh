@@ -85,6 +85,8 @@ function normalizeSettingsEntry(rawData, deckId) {
     startQuestion: Number.isInteger(Number(settings.startQuestion)) && Number(settings.startQuestion) > 0 ? Number(settings.startQuestion) : 1,
     endQuestion: Number.isInteger(Number(settings.endQuestion)) && Number(settings.endQuestion) > 0 ? Number(settings.endQuestion) : 0,
     timeLimit: Number.isInteger(Number(settings.timeLimit)) && Number(settings.timeLimit) >= 0 ? Math.min(1440, Number(settings.timeLimit)) : 35,
+    lastCountBeforeAll: Number.isInteger(Number(settings.lastCountBeforeAll)) && Number(settings.lastCountBeforeAll) > 0 ? Number(settings.lastCountBeforeAll) : 20,
+    lastTimeBeforeUnlimited: Number.isInteger(Number(settings.lastTimeBeforeUnlimited)) && Number(settings.lastTimeBeforeUnlimited) > 0 ? Math.min(1440, Number(settings.lastTimeBeforeUnlimited)) : 50,
     practiceMode: settings.practiceMode === 'exam' ? 'exam' : 'practice',
     autoCheck: settings.autoCheck === true,
     autoCheckDelay: (() => {
