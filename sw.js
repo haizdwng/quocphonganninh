@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.2.2';
+const VERSION = '1.0.0';
 const ASSETS = [
   './',
   './index.html',
