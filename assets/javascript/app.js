@@ -75,28 +75,28 @@ function setToggleIcon(button, active, icons) {
   if (onIcon && offIcon) button.dataset.icon = active ? onIcon : offIcon;
 };
 
-function createDataFileUrl(rel) {
-  return new URL(rel, document.baseURI).href;
+function createDataFileUrl(relativePath) {
+  return new URL(relativePath, document.baseURI).href;
 };
 
-async function loadDeck(id) {
-  const meta = DECKS[id];
-  const url = createDataFileUrl(meta.file);
+async function loadDeck(deckIdentifier) {
+  const deckMetadata = DECKS[deckIdentifier];
+  const dataFileUrl = createDataFileUrl(deckMetadata.file);
   let response;
   try {
-    response = await fetch(url, { cache: 'no-cache' });
+    response = await fetch(dataFileUrl, { cache: 'no-cache' });
   } catch {
-    throw new Error('Không thể tải ' + meta.label + '. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.');
+    throw new Error('Không thể tải ' + deckMetadata.label + '. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.');
   };
-  if (!response.ok) throw new Error('Không tải được ' + meta.label + ' (' + response.status + '). Hãy kiểm tra vị trí tệp dữ liệu.');
-  let raw;
+  if (!response.ok) throw new Error('Không tải được ' + deckMetadata.label + ' (' + response.status + '). Hãy kiểm tra vị trí tệp dữ liệu.');
+  let rawData;
   try {
-    raw = await response.json();
+    rawData = await response.json();
   } catch {
-    throw new Error('Tệp dữ liệu ' + meta.file + ' không hợp lệ.');
+    throw new Error('Tệp dữ liệu ' + deckMetadata.file + ' không hợp lệ.');
   };
-  const questions = normalizeQuestions(raw);
-  const overrides = getDeckOverrides(id);
+  const questions = normalizeQuestions(rawData);
+  const overrides = getDeckOverrides(deckIdentifier);
   for (const [key, entry] of Object.entries(overrides)) {
     const index = Number(key);
     if (!Number.isInteger(index) || index < 0 || index >= questions.length || !entry) continue;
@@ -109,17 +109,17 @@ async function loadDeck(id) {
     };
   }
   const fingerprint = fingerprintQuestions(questions);
-  state.decks[id] = questions;
-  state.fingerprints[id] = fingerprint;
-  const progress = getDeckProgress(id);
+  state.decks[deckIdentifier] = questions;
+  state.fingerprints[deckIdentifier] = fingerprint;
+  const progress = getDeckProgress(deckIdentifier);
   const first = questions[0]?.question?.trim().slice(0, 40) || '';
   const last = questions[questions.length - 1]?.question?.trim().slice(0, 40) || '';
   const legacyFingerprint = `${questions.length}|${first}|${last}`;
   if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
     if (progress.dataFingerprint === legacyFingerprint) {
-      state.legacyFingerprintMatched[id] = true;
+      state.legacyFingerprintMatched[deckIdentifier] = true;
       progress.dataFingerprint = fingerprint;
-      if (!saveDeckProgress(id, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
+      if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
     } else {
       progress.completed = [];
       progress.sequentialCursor = 0;
@@ -128,13 +128,13 @@ async function loadDeck(id) {
       progress.practiceMap = {};
       progress.bookmarks = [];
       progress.dataFingerprint = fingerprint;
-      if (!saveDeckProgress(id, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
-      if (!resetDeckHighlights(id)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
-      if (!resetDeckNotes(id)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
+      if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+      if (!resetDeckHighlights(deckIdentifier)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
+      if (!resetDeckNotes(deckIdentifier)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
     };
   } else if (!progress.dataFingerprint) {
     progress.dataFingerprint = fingerprint;
-    if (!saveDeckProgress(id, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
+    if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
   };
 
   const progressBeforeSanitize = JSON.stringify(progress);
@@ -144,7 +144,7 @@ async function loadDeck(id) {
   progress.sequentialCursor = Math.min(progress.sequentialCursor, questions.length);
   progress.wrongMap = Object.fromEntries(Object.entries(progress.wrongMap).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
   progress.practiceMap = Object.fromEntries(Object.entries(progress.practiceMap).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
-  if (JSON.stringify(progress) !== progressBeforeSanitize && !saveDeckProgress(id, progress)) toast('Không thể làm sạch tiến độ cũ trong trình duyệt.');
+  if (JSON.stringify(progress) !== progressBeforeSanitize && !saveDeckProgress(deckIdentifier, progress)) toast('Không thể làm sạch tiến độ cũ trong trình duyệt.');
   return questions;
 };
 
