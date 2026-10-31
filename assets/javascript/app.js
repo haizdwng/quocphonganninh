@@ -75,13 +75,13 @@ function setToggleIcon(button, active, icons) {
   if (onIcon && offIcon) button.dataset.icon = active ? onIcon : offIcon;
 };
 
-function dataUrl(rel) {
+function createDataFileUrl(rel) {
   return new URL(rel, document.baseURI).href;
 };
 
 async function loadDeck(id) {
   const meta = DECKS[id];
-  const url = dataUrl(meta.file);
+  const url = createDataFileUrl(meta.file);
   let response;
   try {
     response = await fetch(url, { cache: 'no-cache' });
@@ -157,7 +157,7 @@ async function loadAll() {
     await Promise.all([loadDeck('quocphong1'), loadDeck('quocphong2')]);
     state.loading = false;
     stage = 'khởi tạo giao diện';
-    initUI();
+    initializeInterface();
   } catch (e) {
     state.loading = false;
     state.error = e?.message || String(e);
@@ -482,7 +482,7 @@ function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
 };
 
 function updateBankSearchNavButtons() {
-  const prevBtn = getElementById('button-search-prev');
+  const prevBtn = getElementById('button-search-previousValue');
   const nextBtn = getElementById('button-search-next');
   if (!prevBtn || !nextBtn) return;
   const matchCount = getBankSearchMatches().length;
@@ -618,10 +618,10 @@ function exitBankQuestionEdit(card) {
   parts.prompt.hidden = false;
   parts.options.hidden = false;
   state.reviewEditingQuestionIndex = null;
-  if (parts.editBtn) {
-    parts.editBtn.classList.remove('is-active');
-    parts.editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
-    parts.editBtn.title = 'Chỉnh sửa';
+  if (parts.editQuestionButton) {
+    parts.editQuestionButton.classList.remove('is-active');
+    parts.editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
+    parts.editQuestionButton.title = 'Chỉnh sửa';
   }
 }
 
@@ -644,10 +644,10 @@ function enterBankQuestionEdit(card, questionIndex) {
   parts.options.hidden = true;
   parts.editBlock.hidden = false;
   parts.editBlock.innerHTML = '';
-  if (parts.editBtn) {
-    parts.editBtn.classList.add('is-active');
-    parts.editBtn.setAttribute('aria-label', 'Đóng chỉnh sửa');
-    parts.editBtn.title = 'Đóng chỉnh sửa';
+  if (parts.editQuestionButton) {
+    parts.editQuestionButton.classList.add('is-active');
+    parts.editQuestionButton.setAttribute('aria-label', 'Đóng chỉnh sửa');
+    parts.editQuestionButton.title = 'Đóng chỉnh sửa';
   }
 
   const qLabel = document.createElement('label');
@@ -662,8 +662,8 @@ function enterBankQuestionEdit(card, questionIndex) {
   optLabel.className = 'review-edit-label';
   optLabel.textContent = 'Đáp án — bấm chữ cái để chọn đáp án đúng';
 
-  const optList = document.createElement('div');
-  optList.className = 'review-edit-options';
+  const answerOptionList = document.createElement('div');
+  answerOptionList.className = 'review-edit-options';
   const optionInputs = [];
   const radios = [];
   const letterBtns = [];
@@ -706,7 +706,7 @@ function enterBankQuestionEdit(card, questionIndex) {
     });
 
     row.append(letterBtn, radio, input);
-    optList.appendChild(row);
+    answerOptionList.appendChild(row);
     optionInputs.push(input);
     radios.push(radio);
     letterBtns.push(letterBtn);
@@ -738,23 +738,23 @@ function enterBankQuestionEdit(card, questionIndex) {
 
   // fixed = giữ nguyên thứ tự đáp án (không xáo) khi làm bài
   let editFixed = question.fixed === true;
-  const fixedBtn = document.createElement('button');
-  fixedBtn.type = 'button';
-  fixedBtn.className = 'button button-ghost button-icon-only ';
+  const fixedQuestionButton = document.createElement('button');
+  fixedQuestionButton.type = 'button';
+  fixedQuestionButton.className = 'button button-ghost button-icon-only ';
   const syncFixedButton = () => {
-    fixedBtn.setAttribute('aria-pressed', String(editFixed));
-    setToggleIcon(fixedBtn, editFixed, { on: 'pin', off: 'pinned-off' });
-    fixedBtn.setAttribute('aria-label', editFixed ? 'Bỏ cố định đáp án (cho phép xáo)' : 'Cố định đáp án (không xáo)');
-    fixedBtn.title = editFixed ? 'Đáp án cố định — bấm để cho phép xáo' : 'Cố định đáp án — không xáo khi làm bài';
-    fixedBtn.classList.toggle('is-on', editFixed);
+    fixedQuestionButton.setAttribute('aria-pressed', String(editFixed));
+    setToggleIcon(fixedQuestionButton, editFixed, { on: 'pin', off: 'pinned-off' });
+    fixedQuestionButton.setAttribute('aria-label', editFixed ? 'Bỏ cố định đáp án (cho phép xáo)' : 'Cố định đáp án (không xáo)');
+    fixedQuestionButton.title = editFixed ? 'Đáp án cố định — bấm để cho phép xáo' : 'Cố định đáp án — không xáo khi làm bài';
+    fixedQuestionButton.classList.toggle('is-on', editFixed);
   };
   syncFixedButton();
 
-  actions.append(saveBtn, resetBtn, cancelBtn, fixedBtn);
+  actions.append(saveBtn, resetBtn, cancelBtn, fixedQuestionButton);
 
-  parts.editBlock.append(qLabel, qInput, optLabel, optList, actions);
+  parts.editBlock.append(qLabel, qInput, optLabel, answerOptionList, actions);
 
-  fixedBtn.addEventListener('click', () => {
+  fixedQuestionButton.addEventListener('click', () => {
     editFixed = !editFixed;
     syncFixedButton();
   });
@@ -848,27 +848,27 @@ function createReviewBankCard() {
   const toolbar = document.createElement('div');
   toolbar.className = 'question-tools-row review-tools-row';
 
-  const bookmarkBtn = document.createElement('button');
-  bookmarkBtn.type = 'button';
-  bookmarkBtn.className = 'button button-ghost button-icon-only ';
-  bookmarkBtn.dataset.icon = 'bookmark';
-  bookmarkBtn.setAttribute('aria-label', 'Đánh dấu');
-  bookmarkBtn.title = 'Đánh dấu';
+  const bookmarkButton = document.createElement('button');
+  bookmarkButton.type = 'button';
+  bookmarkButton.className = 'button button-ghost button-icon-only ';
+  bookmarkButton.dataset.icon = 'bookmark';
+  bookmarkButton.setAttribute('aria-label', 'Đánh dấu');
+  bookmarkButton.title = 'Đánh dấu';
 
-  const editBtn = document.createElement('button');
-  editBtn.type = 'button';
-  editBtn.className = 'button button-ghost button-icon-only ';
-  editBtn.dataset.icon = 'pencil';
-  editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
-  editBtn.title = 'Chỉnh sửa';
+  const editQuestionButton = document.createElement('button');
+  editQuestionButton.type = 'button';
+  editQuestionButton.className = 'button button-ghost button-icon-only ';
+  editQuestionButton.dataset.icon = 'pencil';
+  editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
+  editQuestionButton.title = 'Chỉnh sửa';
 
-  const hideBtn = document.createElement('button');
-  hideBtn.type = 'button';
-  hideBtn.className = 'button button-ghost button-icon-only ';
-  hideBtn.dataset.icon = 'eye';
-  hideBtn.setAttribute('aria-label', 'Ẩn câu hỏi');
-  hideBtn.title = 'Ẩn câu hỏi';
-  hideBtn.setAttribute('aria-pressed', 'false');
+  const hideQuestionButton = document.createElement('button');
+  hideQuestionButton.type = 'button';
+  hideQuestionButton.className = 'button button-ghost button-icon-only ';
+  hideQuestionButton.dataset.icon = 'eye';
+  hideQuestionButton.setAttribute('aria-label', 'Ẩn câu hỏi');
+  hideQuestionButton.title = 'Ẩn câu hỏi';
+  hideQuestionButton.setAttribute('aria-pressed', 'false');
 
   const noteEditBtn = document.createElement('button');
   noteEditBtn.type = 'button';
@@ -877,17 +877,17 @@ function createReviewBankCard() {
   noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
   noteEditBtn.title = 'Sửa ghi chú';
 
-  const hlBtn = document.createElement('button');
-  hlBtn.type = 'button';
-  hlBtn.className = 'button button-ghost button-icon-only';
-  hlBtn.dataset.icon = 'highlight';
-  hlBtn.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
-  hlBtn.title = 'Highlight';
-  hlBtn.addEventListener('pointerdown', (event) => {
+  const highlightButton = document.createElement('button');
+  highlightButton.type = 'button';
+  highlightButton.className = 'button button-ghost button-icon-only';
+  highlightButton.dataset.icon = 'highlight';
+  highlightButton.setAttribute('aria-label', 'Highlight hoặc bỏ highlight đoạn văn bản đã chọn');
+  highlightButton.title = 'Highlight';
+  highlightButton.addEventListener('pointerdown', (event) => {
     if (event.pointerType !== 'touch') event.preventDefault();
   });
-  hlBtn.addEventListener('mousedown', (event) => event.preventDefault());
-  hlBtn.addEventListener('click', () => {
+  highlightButton.addEventListener('mousedown', (event) => event.preventDefault());
+  highlightButton.addEventListener('click', () => {
     const questionIndex = Number(card.dataset.originalIndex);
     if (!Number.isInteger(questionIndex)) return;
     captureHighlightSelection();
@@ -899,7 +899,7 @@ function createReviewBankCard() {
     toggleHighlightSelection(selection.deckId, questionIndex, selection);
   });
 
-  bookmarkBtn.addEventListener('click', () => {
+  bookmarkButton.addEventListener('click', () => {
     const questionIndex = Number(card.dataset.originalIndex);
     if (!Number.isInteger(questionIndex)) return;
     const result = toggleBookmark(state.bankDeck, questionIndex);
@@ -907,15 +907,15 @@ function createReviewBankCard() {
       toast('Không thể cập nhật đánh dấu. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
     }
-    bookmarkBtn.classList.toggle('is-bookmarked', result);
-    bookmarkBtn.setAttribute('aria-pressed', String(result));
-    setToggleIcon(bookmarkBtn, result, { on: 'bookmark-off', off: 'bookmark' });
-    bookmarkBtn.setAttribute('aria-label', result ? 'Bỏ đánh dấu' : 'Đánh dấu');
-    bookmarkBtn.title = result ? 'Bỏ đánh dấu' : 'Đánh dấu';
+    bookmarkButton.classList.toggle('is-bookmarked', result);
+    bookmarkButton.setAttribute('aria-pressed', String(result));
+    setToggleIcon(bookmarkButton, result, { on: 'bookmark-off', off: 'bookmark' });
+    bookmarkButton.setAttribute('aria-label', result ? 'Bỏ đánh dấu' : 'Đánh dấu');
+    bookmarkButton.title = result ? 'Bỏ đánh dấu' : 'Đánh dấu';
     toast(result ? 'Đã đánh dấu câu hỏi.' : 'Đã bỏ đánh dấu câu hỏi.');
   });
 
-  hideBtn.addEventListener('click', () => {
+  hideQuestionButton.addEventListener('click', () => {
     const questionIndex = Number(card.dataset.originalIndex);
     if (!Number.isInteger(questionIndex)) return;
     const result = toggleHiddenQuestion(state.bankDeck, questionIndex);
@@ -924,16 +924,16 @@ function createReviewBankCard() {
       return;
     }
     card.classList.toggle('is-hidden-question', result);
-    hideBtn.classList.toggle('is-hidden-active', result);
-    hideBtn.setAttribute('aria-pressed', String(result));
-    setToggleIcon(hideBtn, result, { on: 'eye-off', off: 'eye' });
-    hideBtn.setAttribute('aria-label', result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
-    hideBtn.title = result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
+    hideQuestionButton.classList.toggle('is-hidden-active', result);
+    hideQuestionButton.setAttribute('aria-pressed', String(result));
+    setToggleIcon(hideQuestionButton, result, { on: 'eye-off', off: 'eye' });
+    hideQuestionButton.setAttribute('aria-label', result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
+    hideQuestionButton.title = result ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
     updateDeckCountLabels();
     toast(result ? 'Đã ẩn câu hỏi (làm mờ).' : 'Đã hiện lại câu hỏi.');
   });
 
-  editBtn.addEventListener('click', () => {
+  editQuestionButton.addEventListener('click', () => {
     const questionIndex = Number(card.dataset.originalIndex);
     if (!Number.isInteger(questionIndex)) return;
     if (state.reviewEditingQuestionIndex === questionIndex) {
@@ -943,7 +943,7 @@ function createReviewBankCard() {
     enterBankQuestionEdit(card, questionIndex);
   });
 
-  toolbar.append(bookmarkBtn, editBtn, hideBtn, noteEditBtn, hlBtn);
+  toolbar.append(bookmarkButton, editQuestionButton, hideQuestionButton, noteEditBtn, highlightButton);
 
   const noteBlock = document.createElement('div');
   noteBlock.className = 'review-note-block is-empty';
@@ -1106,9 +1106,9 @@ function createReviewBankCard() {
     heading,
     prompt,
     toolbar,
-    bookmarkBtn,
-    editBtn,
-    hideBtn,
+    bookmarkButton,
+    editQuestionButton,
+    hideQuestionButton,
     noteBlock,
     noteText,
     noteInput: noteInputEl,
@@ -1136,22 +1136,22 @@ function bindReviewBankCard(card, question, listIndex) {
   card.classList.toggle('is-answer-fixed', question.fixed === true);
 
   const isBookmarked = getBookmarkedIndices(state.bankDeck).includes(question.originalIndex);
-  if (parts.bookmarkBtn) {
-    parts.bookmarkBtn.classList.toggle('is-bookmarked', isBookmarked);
-    parts.bookmarkBtn.setAttribute('aria-pressed', String(isBookmarked));
-    setToggleIcon(parts.bookmarkBtn, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
-    parts.bookmarkBtn.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
-    parts.bookmarkBtn.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
+  if (parts.bookmarkButton) {
+    parts.bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
+    parts.bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
+    setToggleIcon(parts.bookmarkButton, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
+    parts.bookmarkButton.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
+    parts.bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
   }
 
   const hidden = isQuestionHidden(state.bankDeck, question.originalIndex);
   card.classList.toggle('is-hidden-question', hidden);
-  if (parts.hideBtn) {
-    parts.hideBtn.classList.toggle('is-hidden-active', hidden);
-    parts.hideBtn.setAttribute('aria-pressed', String(hidden));
-    setToggleIcon(parts.hideBtn, hidden, { on: 'eye-off', off: 'eye' });
-    parts.hideBtn.setAttribute('aria-label', hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
-    parts.hideBtn.title = hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
+  if (parts.hideQuestionButton) {
+    parts.hideQuestionButton.classList.toggle('is-hidden-active', hidden);
+    parts.hideQuestionButton.setAttribute('aria-pressed', String(hidden));
+    setToggleIcon(parts.hideQuestionButton, hidden, { on: 'eye-off', off: 'eye' });
+    parts.hideQuestionButton.setAttribute('aria-label', hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi');
+    parts.hideQuestionButton.title = hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
   }
 
   if (state.reviewEditingQuestionIndex === question.originalIndex) {
@@ -1507,13 +1507,13 @@ function refreshSetupUI() {
 
   const countNum = Number.parseInt(input.value, 10);
   const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal && rangeTotal > 0;
-  const btnAll = getElementById('button-select-all');
-  if (btnAll) {
-    btnAll.classList.toggle('is-active', isAllCount);
-    btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
-    setToggleIcon(btnAll, isAllCount, { on: 'deselect', off: 'select-all' });
-    btnAll.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
-    btnAll.setAttribute('aria-label', btnAll.title);
+  const selectAllButton = getElementById('button-select-all');
+  if (selectAllButton) {
+    selectAllButton.classList.toggle('is-active', isAllCount);
+    selectAllButton.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+    setToggleIcon(selectAllButton, isAllCount, { on: 'deselect', off: 'select-all' });
+    selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+    selectAllButton.setAttribute('aria-label', selectAllButton.title);
   };
   input.disabled = isAllCount && !countFocused;
 
@@ -1527,13 +1527,13 @@ function refreshSetupUI() {
       timeInput.value = String(timeVal);
     };
     const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-    const btnUnlimited = getElementById('button-unlimited-time');
-    if (btnUnlimited) {
-      btnUnlimited.classList.toggle('is-active', isUnlimited);
-      btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
-      setToggleIcon(btnUnlimited, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-      btnUnlimited.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
-      btnUnlimited.setAttribute('aria-label', btnUnlimited.title);
+    const unlimitedTimeButton = getElementById('button-unlimited-time');
+    if (unlimitedTimeButton) {
+      unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
+      unlimitedTimeButton.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+      setToggleIcon(unlimitedTimeButton, isUnlimited, { on: 'infinity-off', off: 'infinity' });
+      unlimitedTimeButton.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      unlimitedTimeButton.setAttribute('aria-label', unlimitedTimeButton.title);
     };
     timeInput.disabled = isUnlimited && !timeFocused;
   };
@@ -1551,37 +1551,37 @@ function refreshSetupUI() {
   else getElementById('statistics-sequential-cursor').textContent = String(progress.sequentialCursor + 1);
 
   const hiddenSet = new Set(getHiddenIndices(state.currentDeck));
-  const btnWrong = getElementById('button-practice-wrong');
+  const practiceWrongButton = getElementById('button-practice-wrong');
   const rangeWrongCount = getRangeWrongIndices(
     state.currentDeck,
     start,
     end
   ).filter((index) => !hiddenSet.has(index)).length;
-  btnWrong.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
-  btnWrong.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
+  practiceWrongButton.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
+  practiceWrongButton.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
 
   const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < fullTotal && !hiddenSet.has(index)).length;
-  const btnAllWrong = getElementById('button-practice-all-wrong');
-  btnAllWrong.disabled = state.practiceMode === 'exam' || allWrongCount === 0;
-  btnAllWrong.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
+  const practiceAllWrongButton = getElementById('button-practice-all-wrong');
+  practiceAllWrongButton.disabled = state.practiceMode === 'exam' || allWrongCount === 0;
+  practiceAllWrongButton.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
 
   const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
   const rangeBookmarkCount = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end && bookmarks.has(question.originalIndex) && !hiddenSet.has(question.originalIndex)).length;
-  const btnBookmarks = getElementById('button-practice-bookmarks');
-  btnBookmarks.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
-  btnBookmarks.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
+  const practiceBookmarksButton = getElementById('button-practice-bookmarks');
+  practiceBookmarksButton.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
+  practiceBookmarksButton.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
 
   const rangeQuestions = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
   const shuffleQuestions = getElementById('checkbox-shuffle-questions').checked;
-  const btnContinue = getElementById('button-continue');
+  const continueButton = getElementById('button-continue');
   const nextQuestion = findNextUncompletedQuestion(rangeQuestions, Math.max(progress.sequentialCursor, start - 1), completed);
   const nextIndex = nextQuestion?.originalIndex ?? end;
   const canContinue = state.practiceMode !== 'exam' && !shuffleQuestions && !!nextQuestion;
-  btnContinue.hidden = !canContinue;
+  continueButton.hidden = !canContinue;
   if (canContinue) {
     const left = end - nextIndex;
     const n = Math.min(Number(input.value) || 20, left);
-    btnContinue.textContent = 'Tiếp tục tuần tự ' + n + ' câu từ câu ' + (nextIndex + 1);
+    continueButton.textContent = 'Tiếp tục tuần tự ' + n + ' câu từ câu ' + (nextIndex + 1);
   };
 
   document.querySelectorAll('.preset-btn').forEach((button) => {
@@ -2028,7 +2028,7 @@ function startSessionFromPool(pool, meta) {
   startSessionTimer();
 };
 
-function startNormal(opts = {}) {
+function startNormal(answerOptionsElement = {}) {
   const allQuestions = currentQuestions();
   if (!allQuestions.length) {
     toast('Bộ đề trống.');
@@ -2046,7 +2046,7 @@ function startNormal(opts = {}) {
   const rangeStart = form.startQuestion - 1;
   const rangeEnd = form.endQuestion;
 
-  if (opts.restart) {
+  if (answerOptionsElement.restart) {
     const { items, nextCursor } = pickSequential(questions, 0, form.count, new Set());
     const globalNextCursor = nextCursor > 0 ? questions[Math.min(nextCursor, questions.length) - 1].originalIndex + 1 : rangeStart;
     startSessionFromPool(items, {
@@ -2060,7 +2060,7 @@ function startNormal(opts = {}) {
     return;
   };
 
-  if (opts.sequential) {
+  if (answerOptionsElement.sequential) {
     const nextQuestion = findNextUncompletedQuestion(questions, Math.max(progress.sequentialCursor, rangeStart), completedSet);
     if (!nextQuestion) {
       toast('Đã hoàn thành toàn bộ câu trong vùng đã chọn.');
@@ -2168,15 +2168,15 @@ function recordWrongAnswer(session, originalIndex) {
   if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) && !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [originalIndex])) toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
 };
 
-function currentItem() {
+function currentSessionItem() {
   const session = state.session;
   if (!session) return null;
   return session.items[session.viewIndex];
 };
 
-function currentQ() {
+function currentQuestion() {
   const session = state.session;
-  const item = currentItem();
+  const item = currentSessionItem();
   if (!session || !item) return null;
   return session.pool[item.poolIndex];
 };
@@ -2184,8 +2184,8 @@ function currentQ() {
 function renderQuestion() {
   const session = state.session;
   if (!session) return;
-  const item = currentItem();
-  const question = currentQ();
+  const item = currentSessionItem();
+  const question = currentQuestion();
   if (!item || !question) return;
 
   const viewingHistory = session.viewIndex < session.maxReached;
@@ -2194,9 +2194,9 @@ function renderQuestion() {
   const progressTotal = session.mode === 'practice-wrong' ? session.practiceInitialCount || session.items.length : session.items.length;
   getElementById('progress-score').textContent = 'Điểm ' + formatScore(session.firstTryCorrect || 0, progressTotal) + ' / 10';
   updateTimerDisplay();
-  const pct = progressTotal ? Math.round((session.completedInSession / progressTotal) * 100) : 0;
-  getElementById('progress-fill').style.width = pct + '%';
-  getElementById('progress-fill').parentElement.setAttribute('aria-valuenow', String(pct));
+  const percentage = progressTotal ? Math.round((session.completedInSession / progressTotal) * 100) : 0;
+  getElementById('progress-fill').style.width = percentage + '%';
+  getElementById('progress-fill').parentElement.setAttribute('aria-valuenow', String(percentage));
 
   getElementById('question-badge').textContent = session.mode === 'practice-wrong' ? 'Ôn câu sai · Gốc #' + (question.originalIndex + 1) : session.mode === 'practice-bookmarks' ? 'Ôn câu đã đánh dấu · Gốc #' + (question.originalIndex + 1) : 'Câu hỏi · Gốc #' + (question.originalIndex + 1);
   const bookmarkButton = getElementById('button-bookmark');
@@ -2247,8 +2247,8 @@ function renderQuestion() {
   if (highlightToolbar) highlightToolbar.hidden = session.examMode === true;
   if (noteButton) noteButton.hidden = session.examMode === true;
 
-  const optsEl = getElementById('options');
-  optsEl.replaceChildren();
+  const answerOptionsElement = getElementById('options');
+  answerOptionsElement.replaceChildren();
   const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
   item.optionOrder.forEach((origIdx, displayIdx) => {
     const button = document.createElement('button');
@@ -2295,7 +2295,7 @@ function renderQuestion() {
       };
       onSelectOption(displayIdx);
     });
-    optsEl.appendChild(button);
+    answerOptionsElement.appendChild(button);
   });
 
   const feedback = getElementById('feedback');
@@ -2312,7 +2312,7 @@ function renderQuestion() {
     feedback.textContent = '';
   };
 
-  getElementById('button-prev').disabled = session.viewIndex <= 0;
+  getElementById('button-previousValue').disabled = session.viewIndex <= 0;
   const nextButton = getElementById('button-next');
   if (viewingHistory) {
     nextButton.textContent = 'Câu tiếp';
@@ -2354,11 +2354,11 @@ function updateExamProgressHeader() {
   const answered = session.items.filter((item) => item.userAnswer != null).length;
   const unanswered = session.items.length - answered;
   getElementById('exam-progress-label').textContent = session.reviewMode ? 'Kết quả · ' + (session.firstTryCorrect || 0) + ' / ' + session.items.length + ' câu đúng' : 'Đã chọn ' + answered + ' / ' + session.items.length + ' câu';
-  const pct = session.items.length ? Math.round((answered / session.items.length) * 100) : 0;
+  const percentage = session.items.length ? Math.round((answered / session.items.length) * 100) : 0;
   const fill = getElementById('exam-progress-fill');
   if (fill) {
-    fill.style.width = pct + '%';
-    fill.parentElement?.setAttribute('aria-valuenow', String(pct));
+    fill.style.width = percentage + '%';
+    fill.parentElement?.setAttribute('aria-valuenow', String(percentage));
   };
   updateTimerDisplay();
   const filterWrong = getElementById('exam-filter-wrong');
@@ -2463,10 +2463,10 @@ function renderExam() {
     text.textContent = question.question;
     card.appendChild(text);
 
-    const opts = document.createElement('div');
-    opts.className = 'exam-options answer-options';
-    opts.setAttribute('role', 'group');
-    opts.setAttribute('aria-label', 'Đáp án câu ' + (index + 1));
+    const answerOptionsElement = document.createElement('div');
+    answerOptionsElement.className = 'exam-options answer-options';
+    answerOptionsElement.setAttribute('role', 'group');
+    answerOptionsElement.setAttribute('aria-label', 'Đáp án câu ' + (index + 1));
 
     item.optionOrder.forEach((origIdx, displayIdx) => {
       const button = document.createElement('button');
@@ -2490,9 +2490,9 @@ function renderExam() {
       body.textContent = question.options[origIdx];
       button.append(label, body);
       if (!session.reviewMode) button.addEventListener('click', () => onExamSelect(index, displayIdx));
-      opts.appendChild(button);
+      answerOptionsElement.appendChild(button);
     });
-    card.appendChild(opts);
+    card.appendChild(answerOptionsElement);
     list.appendChild(card);
 
     const dot = document.createElement('button');
@@ -2660,10 +2660,10 @@ function enforceSessionDeadline() {
 function onSelectOption(displayIdx) {
   if (enforceSessionDeadline()) return;
   const session = state.session;
-  const item = currentItem();
+  const item = currentSessionItem();
   if (!session || !item) return;
   if (item.status === 'correct' || session.viewIndex < session.maxReached) return;
-  const question = currentQ();
+  const question = currentQuestion();
   if (!question || (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))) return;
 
   item.userAnswer = displayIdx;
@@ -2677,8 +2677,8 @@ function onSelectOption(displayIdx) {
 };
 
 const answerSounds = {
-  correct: new Audio(dataUrl('assets/sounds/correct.mp3')),
-  incorrect: new Audio(dataUrl('assets/sounds/incorrect.mp3'))
+  correct: new Audio(createDataFileUrl('assets/sounds/correct.mp3')),
+  incorrect: new Audio(createDataFileUrl('assets/sounds/incorrect.mp3'))
 };
 
 for (const audio of Object.values(answerSounds)) {
@@ -2705,8 +2705,8 @@ function playAnswerSound(isCorrect) {
 function onCheck() {
   if (enforceSessionDeadline()) return;
   const session = state.session;
-  const item = currentItem();
-  const question = currentQ();
+  const item = currentSessionItem();
+  const question = currentQuestion();
   if (!session || !item || !question || item.userAnswer == null) return;
   if (item.status === 'correct' || item.checked || session.viewIndex < session.maxReached) return;
 
@@ -2769,7 +2769,7 @@ function onCheck() {
     const delaySec = Number.isInteger(preferences.autoAdvanceDelay) && preferences.autoAdvanceDelay >= 0 ? Math.min(10, preferences.autoAdvanceDelay) : 0;
     const delayMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : delaySec * 1000;
     setTimeout(() => {
-      if (state.session === session && currentItem() === item && item.status === 'correct' && session.viewIndex < session.items.length - 1) onNext();
+      if (state.session === session && currentSessionItem() === item && item.status === 'correct' && session.viewIndex < session.items.length - 1) onNext();
     }, delayMs);
   };
 };
@@ -2778,7 +2778,7 @@ function onNext() {
   if (enforceSessionDeadline()) return;
   const session = state.session;
   if (!session) return;
-  const item = currentItem();
+  const item = currentSessionItem();
   if (!item) return;
 
   if (session.viewIndex >= session.maxReached && item.status !== 'correct' && !(session.mode === 'practice-wrong' && item.status === 'wrong' && item.checked)) {
@@ -2886,9 +2886,9 @@ function formatScore(correct, total) {
 };
 
 function animateScore(target, displayStr, circumference) {
-  const scoreBig = getElementById('summary-score-large');
+  const summaryScoreElement = getElementById('summary-score-large');
   const ringFg = getElementById('score-ring-fg');
-  if (!scoreBig || !ringFg) return;
+  if (!summaryScoreElement || !ringFg) return;
 
   const duration = 1100;
   const start = performance.now();
@@ -2899,7 +2899,7 @@ function animateScore(target, displayStr, circumference) {
   else color = '#ef4444';
 
   ringFg.style.stroke = color;
-  scoreBig.style.color = color;
+  summaryScoreElement.style.color = color;
   ringFg.style.transition = 'stroke-dashoffset ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
 
   function frame(now) {
@@ -2908,20 +2908,20 @@ function animateScore(target, displayStr, circumference) {
     const current = target * eased;
 
     const shown = Math.round(current * 10) / 10;
-    scoreBig.textContent = shown.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+    summaryScoreElement.textContent = shown.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
 
-    const pct = Math.max(0, Math.min(1, current / 10));
-    ringFg.style.strokeDashoffset = String(circumference * (1 - pct));
+    const percentage = Math.max(0, Math.min(1, current / 10));
+    ringFg.style.strokeDashoffset = String(circumference * (1 - percentage));
 
     if (progressRatio < 1) requestAnimationFrame(frame);
     else {
-      scoreBig.textContent = displayStr;
+      summaryScoreElement.textContent = displayStr;
       ringFg.style.strokeDashoffset = String(circumference * (1 - target / 10));
 
-      scoreBig.style.transition = 'transform 0.25s ease';
-      scoreBig.style.transform = 'scale(1.08)';
+      summaryScoreElement.style.transition = 'transform 0.25s ease';
+      summaryScoreElement.style.transform = 'scale(1.08)';
       setTimeout(() => {
-        scoreBig.style.transform = 'scale(1)';
+        summaryScoreElement.style.transform = 'scale(1)';
       }, 220);
     };
   };
@@ -3082,7 +3082,7 @@ function showSummary(summary, deckId, mode) {
   getElementById('summary-total').textContent = String(summary.total);
   getElementById('summary-score').textContent = scoreVal+ ' / 10';
 
-  const scoreBig = getElementById('summary-score-large');
+  const summaryScoreElement = getElementById('summary-score-large');
   const ringFg = getElementById('score-ring-fg');
   const circumference = 2 * Math.PI * 52;
 
@@ -3092,10 +3092,10 @@ function showSummary(summary, deckId, mode) {
     ringFg.style.transition = 'none';
     ringFg.style.stroke = 'var(--primary)';
   };
-  if (scoreBig) {
-    scoreBig.textContent = '0';
-    scoreBig.style.transform = 'scale(1)';
-    scoreBig.style.color = 'var(--primary)';
+  if (summaryScoreElement) {
+    summaryScoreElement.textContent = '0';
+    summaryScoreElement.style.transform = 'scale(1)';
+    summaryScoreElement.style.color = 'var(--primary)';
   };
 
   requestAnimationFrame(() => requestAnimationFrame(() => animateScore(scoreNum, scoreVal, circumference)));
@@ -3140,17 +3140,17 @@ function showSummary(summary, deckId, mode) {
   btnPractice.textContent ='Ôn lại ' + sessionWrong.length + ' câu sai trong lượt này';
 
   const progress = getDeckProgress(deckId);
-  const btnContinue = getElementById('button-summary-continue');
+  const continueButton = getElementById('button-summary-continue');
   const form = readSetupForm();
   const rangeEnd = form.endQuestion;
   const nextIndex = Math.max(progress.sequentialCursor, form.startQuestion - 1);
   const canSeq = summary.sequential && nextIndex < rangeEnd;
-  btnContinue.hidden = !canSeq;
+  continueButton.hidden = !canSeq;
   if (canSeq) {
     const left = rangeEnd - nextIndex;
     const settings = getSettings(deckId);
     const n = Math.min(settings.count || 20, left);
-    btnContinue.textContent = 'Tiếp tục tuần tự ' + n + ' câu trong vùng';
+    continueButton.textContent = 'Tiếp tục tuần tự ' + n + ' câu trong vùng';
   };
 
   state._lastSummaryDeck = deckId;
@@ -3244,7 +3244,7 @@ function restoreSessionIfAny() {
   return true;
 };
 
-function initUI() {
+function initializeInterface() {
   document.addEventListener('selectionchange', captureHighlightSelection);
   const captureAfterSelectionGesture = () => {
     captureHighlightSelection();
@@ -3259,7 +3259,7 @@ function initUI() {
   getElementById('button-highlight-toggle')?.addEventListener('mousedown', (event) => event.preventDefault());
   getElementById('button-highlight-toggle')?.addEventListener('click', () => {
     captureHighlightSelection();
-    const question = currentQ();
+    const question = currentQuestion();
     const session = state.session;
     const selection = state.lastTextSelection;
     if (!question || !session || session.examMode || !selection || selection.questionIndex !== question.originalIndex || selection.deckId !== session.deckId) {
@@ -3285,7 +3285,7 @@ function applyTheme() {
   if (themeColor) themeColor.content = '#111113';
 };
 
-function initTheme() {
+function initializeTheme() {
   applyTheme();
 };
 
@@ -3341,9 +3341,9 @@ function bindKeyboardShortcuts() {
       if (!getElementById('button-next').disabled) getElementById('button-next').click();
       return;
     };
-    if (event.key === 'ArrowLeft' && !getElementById('button-prev').disabled) {
+    if (event.key === 'ArrowLeft' && !getElementById('button-previousValue').disabled) {
       event.preventDefault();
-      getElementById('button-prev').click();
+      getElementById('button-previousValue').click();
     } else if (event.key === 'ArrowRight' && !getElementById('button-next').disabled) {
       event.preventDefault();
       getElementById('button-next').click();
@@ -3391,8 +3391,8 @@ function bindEvents() {
     const current = Number.parseInt(input.value, 10);
     const isAll = current === rangeTotal;
     if (isAll) {
-      const prev = state.lastCountBeforeAll;
-      input.value = String(Number.isInteger(prev) && prev >= 1 ? Math.min(prev, rangeTotal) : Math.min(20, rangeTotal));
+      const previousValue = state.lastCountBeforeAll;
+      input.value = String(Number.isInteger(previousValue) && previousValue >= 1 ? Math.min(previousValue, rangeTotal) : Math.min(20, rangeTotal));
     } else {
       state.lastCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 20;
       input.value = String(rangeTotal);
@@ -3409,8 +3409,8 @@ function bindEvents() {
     current = Math.min(1440, current);
     const isUnlimited = current === 0;
     if (isUnlimited) {
-      const prev = state.lastTimeBeforeUnlimited;
-      timeInput.value = String(Number.isInteger(prev) && prev > 0 ? Math.min(1440, prev) : 50);
+      const previousValue = state.lastTimeBeforeUnlimited;
+      timeInput.value = String(Number.isInteger(previousValue) && previousValue > 0 ? Math.min(1440, previousValue) : 50);
     } else {
       state.lastTimeBeforeUnlimited = current > 0 ? current : 50;
       timeInput.value = '0';
@@ -3446,13 +3446,13 @@ function bindEvents() {
     const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
     const countNum = Number.parseInt(input.value, 10);
     const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal;
-    const btnAll = getElementById('button-select-all');
-    if (btnAll) {
-      btnAll.classList.toggle('is-active', isAllCount);
-      btnAll.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
-      setToggleIcon(btnAll, isAllCount, { on: 'deselect', off: 'select-all' });
-      btnAll.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
-      btnAll.setAttribute('aria-label', btnAll.title);
+    const selectAllButton = getElementById('button-select-all');
+    if (selectAllButton) {
+      selectAllButton.classList.toggle('is-active', isAllCount);
+      selectAllButton.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
+      setToggleIcon(selectAllButton, isAllCount, { on: 'deselect', off: 'select-all' });
+      selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+      selectAllButton.setAttribute('aria-label', selectAllButton.title);
     };
   };
   getElementById('input-count').addEventListener('input', updateCountButtonState);
@@ -3469,13 +3469,13 @@ function bindEvents() {
     const timeInput = getElementById('input-time-limit');
     const timeVal = Number.parseInt(timeInput.value, 10);
     const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
-    const btnUnlimited = getElementById('button-unlimited-time');
-    if (btnUnlimited) {
-      btnUnlimited.classList.toggle('is-active', isUnlimited);
-      btnUnlimited.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
-      setToggleIcon(btnUnlimited, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-      btnUnlimited.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
-      btnUnlimited.setAttribute('aria-label', btnUnlimited.title);
+    const unlimitedTimeButton = getElementById('button-unlimited-time');
+    if (unlimitedTimeButton) {
+      unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
+      unlimitedTimeButton.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
+      setToggleIcon(unlimitedTimeButton, isUnlimited, { on: 'infinity-off', off: 'infinity' });
+      unlimitedTimeButton.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      unlimitedTimeButton.setAttribute('aria-label', unlimitedTimeButton.title);
     };
   };
   getElementById('input-time-limit').addEventListener('input', updateTimeButtonState);
@@ -3600,7 +3600,7 @@ function bindEvents() {
     input?.focus();
   });
   updateReviewSearchClearButton();
-  getElementById('button-search-prev')?.addEventListener('click', () => scrollToBankSearchMatch(-1));
+  getElementById('button-search-previousValue')?.addEventListener('click', () => scrollToBankSearchMatch(-1));
   getElementById('button-search-next')?.addEventListener('click', () => scrollToBankSearchMatch(1));
 
   getElementById('button-review-back').addEventListener('click', () => {
@@ -3746,8 +3746,8 @@ function bindEvents() {
     const current = Number.parseInt(input.value, 10);
     const isAll = Number.isInteger(current) && current === selectedCount;
     if (isAll) {
-      const prev = state.lastBankCountBeforeAll;
-      input.value = String(Number.isInteger(prev) && prev >= 1 ? Math.min(prev, selectedCount) : Math.min(30, selectedCount));
+      const previousValue = state.lastBankCountBeforeAll;
+      input.value = String(Number.isInteger(previousValue) && previousValue >= 1 ? Math.min(previousValue, selectedCount) : Math.min(30, selectedCount));
     } else {
       state.lastBankCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 30;
       input.value = String(selectedCount);
@@ -3764,8 +3764,8 @@ function bindEvents() {
     current = Math.min(1440, current);
     const isUnlimited = current === 0;
     if (isUnlimited) {
-      const prev = state.lastBankTimeBeforeUnlimited;
-      timeInput.value = String(Number.isInteger(prev) && prev > 0 ? Math.min(1440, prev) : 35);
+      const previousValue = state.lastBankTimeBeforeUnlimited;
+      timeInput.value = String(Number.isInteger(previousValue) && previousValue > 0 ? Math.min(1440, previousValue) : 35);
     } else {
       state.lastBankTimeBeforeUnlimited = current > 0 ? current : 35;
       timeInput.value = '0';
@@ -3805,7 +3805,7 @@ function bindEvents() {
   });
 
   getElementById('button-bookmark').addEventListener('click', () => {
-    const question = currentQ();
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session) return;
     const result = toggleBookmark(session.deckId, question.originalIndex);
@@ -3819,17 +3819,17 @@ function bindEvents() {
 
   const notePanel = getElementById('question-note-panel');
   const noteInput = getElementById('question-note-input');
-  const noteBtn = getElementById('button-note');
+  const noteButton = getElementById('button-note');
   const noteDisplay = getElementById('question-note-display');
   const noteTextEl = getElementById('question-note-text');
 
   function syncQuizNoteUI(note) {
     const has = !!note;
-    if (noteBtn) {
-      noteBtn.classList.toggle('has-note', has);
-      noteBtn.setAttribute('aria-pressed', String(has));
-      noteBtn.setAttribute('aria-label', has ? 'Sửa ghi chú' : 'Thêm ghi chú');
-      noteBtn.title = has ? 'Sửa ghi chú' : 'Thêm ghi chú';
+    if (noteButton) {
+      noteButton.classList.toggle('has-note', has);
+      noteButton.setAttribute('aria-pressed', String(has));
+      noteButton.setAttribute('aria-label', has ? 'Sửa ghi chú' : 'Thêm ghi chú');
+      noteButton.title = has ? 'Sửa ghi chú' : 'Thêm ghi chú';
     };
     if (notePanel) notePanel.hidden = true;
     if (noteDisplay && noteTextEl) {
@@ -3844,7 +3844,7 @@ function bindEvents() {
   };
 
   function openNoteEditor() {
-    const question = currentQ();
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session || !notePanel || !noteInput) return;
     noteInput.value = getQuestionNote(session.deckId, question.originalIndex);
@@ -3856,21 +3856,21 @@ function bindEvents() {
   function closeNoteEditor(refresh) {
     if (notePanel) notePanel.hidden = true;
     if (refresh !== false) {
-      const question = currentQ();
+      const question = currentQuestion();
       const session = state.session;
       const note = question && session ? getQuestionNote(session.deckId, question.originalIndex) : '';
       syncQuizNoteUI(note);
     };
   };
 
-  noteBtn?.addEventListener('click', () => {
+  noteButton?.addEventListener('click', () => {
     if (!notePanel) return;
     if (notePanel.hidden) openNoteEditor();
     else closeNoteEditor();
   });
 
   getElementById('button-note-save')?.addEventListener('click', () => {
-    const question = currentQ();
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session || !noteInput) return;
     const ok = saveQuestionNote(session.deckId, question.originalIndex, noteInput.value);
@@ -3884,7 +3884,7 @@ function bindEvents() {
   });
 
   getElementById('button-note-delete')?.addEventListener('click', () => {
-    const question = currentQ();
+    const question = currentQuestion();
     const session = state.session;
     if (!question || !session) return;
     const ok = saveQuestionNote(session.deckId, question.originalIndex, '');
@@ -3955,7 +3955,7 @@ function bindEvents() {
   });
 
   getElementById('button-next').addEventListener('click', onNext);
-  getElementById('button-prev').addEventListener('click', onPrev);
+  getElementById('button-previousValue').addEventListener('click', onPrev);
 
   getElementById('button-quit').addEventListener('click', async () => {
     const ok = await confirmModal('Thoát lượt ôn?', 'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.');
@@ -4074,7 +4074,7 @@ function bindEvents() {
 
 let reloadAfterUpdate = false;
 
-function registerSW() {
+function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
     toast('Trình duyệt này không hỗ trợ chế độ ngoại tuyến.');
     return;
@@ -4182,7 +4182,7 @@ function initInterfaceEnhancements() {
 
 function boot() {
   initInterfaceEnhancements();
-  initTheme();
+  initializeTheme();
   if (!storageAvailable()) toast('Trình duyệt hạn chế lưu trữ. Tiến độ có thể không được ghi nhớ.');
   bindEvents();
 
@@ -4203,7 +4203,7 @@ function boot() {
     };
   });
 
-  registerSW();
+  registerServiceWorker();
   loadAll();
 };
 
