@@ -14,8 +14,8 @@
   </head>
   <body>
     <div id='app'>
-      <main id='main'>
-        <section id='screen-loading' class='screen active' aria-label='Đang tải dữ liệu'>
+      <main>
+        <section class='screen active' aria-label='Đang tải dữ liệu'>
           <div class='card loading-card' role='status' aria-live='polite'>
             <span class='loading-spinner' aria-hidden='true'></span>
             <h2>Đang chuẩn bị bộ đề</h2>
@@ -30,11 +30,11 @@
           <div class='card'>
             <h2>Chọn bộ đề</h2>
             <div class='deck-switch' role='group' aria-label='Bộ đề'>
-              <button type='button' class='deck-button' data-deck='quocphong1' id='button-deck-quocphong1'>
+              <button type='button' class='deck-button' data-deck='quocphong1'>
                 <span class='deck-name'>Quốc Phòng 1</span>
                 <span class='deck-count' id='count-quocphong1'>479 câu</span>
               </button>
-              <button type='button' class='deck-button' data-deck='quocphong2' id='button-deck-quocphong2'>
+              <button type='button' class='deck-button' data-deck='quocphong2'>
                 <span class='deck-name'>Quốc Phòng 2</span>
                 <span class='deck-count' id='count-quocphong2'>262 câu</span>
               </button>
@@ -44,12 +44,12 @@
           <div class='card'>
             <h2>Chế độ làm bài</h2>
             <div class='mode-switch' role='group' aria-label='Chế độ'>
-              <button type='button' class='mode-button is-active' data-mode='practice' id='button-mode-practice'>
+              <button type='button' class='mode-button is-active' data-mode='practice'>
                 <span class='mode-icon' data-icon='book-2' aria-hidden='true'></span>
                 <span class='mode-name'>Ôn luyện</span>
                 <span class='mode-desc'>Từng câu</span>
               </button>
-              <button type='button' class='mode-button' data-mode='exam' id='button-mode-exam'>
+              <button type='button' class='mode-button' data-mode='exam'>
                 <span class='mode-icon' data-icon='list-check' aria-hidden='true'></span>
                 <span class='mode-name'>Thi thử</span>
                 <span class='mode-desc'>Tất cả câu</span>
@@ -112,7 +112,7 @@
             </div>
           </div>
 
-          <div class='card experience-card'>
+          <div class='card'>
             <h2>Trải nghiệm làm bài</h2>
             <div class='field toggles experience-toggles'>
               <label class='toggle'>
@@ -130,7 +130,7 @@
                 <div class='row experience-control-row'>
                   <button
                     type='button'
-                    class='button button-ghost button-icon-only experience-toggle-btn'
+                    class='button button-ghost button-icon-only'
                     id='button-auto-advance'
                     data-icon='toggle-left'
                     aria-pressed='false'
@@ -149,7 +149,7 @@
                 <div class='row experience-control-row'>
                   <button
                     type='button'
-                    class='button button-ghost button-icon-only experience-toggle-btn'
+                    class='button button-ghost button-icon-only'
                     id='button-sound'
                     data-icon='volume'
                     aria-pressed='false'
@@ -166,7 +166,7 @@
             </div>
           </div>
 
-          <div class='card stats-card' id='deck-stats'>
+          <div class='card' id='deck-stats'>
             <h2>Tiến độ bộ đề</h2>
             <ul class='statistics-list'>
               <li><span>Số câu đã hoàn thành</span><strong id='statistics-completed'>0</strong></li>
@@ -240,12 +240,12 @@
               title='Quay lại thiết lập'
             ></button>
             <h2 id='review-title'>Ngân hàng câu hỏi</h2>
-            <div class='deck-switch review-deck-switch' role='group' aria-label='Bộ đề ngân hàng'>
-              <button type='button' class='deck-button' data-bank-deck='quocphong1' id='button-bank-deck-quocphong1'>
+            <div class='deck-switch' role='group' aria-label='Bộ đề ngân hàng'>
+              <button type='button' class='deck-button' data-bank-deck='quocphong1'>
                 <span class='deck-name'>Quốc Phòng 1</span>
                 <span class='deck-count' id='bank-count-quocphong1'>479 câu</span>
               </button>
-              <button type='button' class='deck-button' data-bank-deck='quocphong2' id='button-bank-deck-quocphong2'>
+              <button type='button' class='deck-button' data-bank-deck='quocphong2'>
                 <span class='deck-name'>Quốc Phòng 2</span>
                 <span class='deck-count' id='bank-count-quocphong2'>262 câu</span>
               </button>
@@ -330,7 +330,7 @@
               <div class='highlight-toolbar' id='quiz-highlight-toolbar' hidden>
                 <button
                   type='button'
-                  class='button button-ghost button-icon-only highlight-toggle-btn'
+                  class='button button-ghost button-icon-only'
                   id='button-highlight-toggle'
                   data-icon='highlight'
                   aria-label='Highlight hoặc bỏ highlight đoạn văn bản đã chọn'
@@ -384,7 +384,7 @@
             <div class='feedback' id='feedback' role='status' aria-live='polite' hidden></div>
           </div>
 
-          <div class='card quiz-actions-card' id='quiz-actions'>
+          <div class='card quiz-actions-card'>
             <div class='quiz-actions-row'>
               <button type='button' class='button button-ghost' id='button-prev' disabled data-icon='chevron-left'>
                 Câu trước
@@ -407,7 +407,7 @@
         </section>
 
         <section id='screen-exam' class='screen' aria-label='Thi thử' hidden>
-          <div class='progress-wrap is-fixed-top exam-progress'>
+          <div class='progress-wrap is-fixed-top'>
             <div class='progress-meta' aria-live='polite' aria-atomic='true'>
               <span id='exam-progress-label'>Đã chọn 0 / 20</span>
               <span id='exam-progress-time' aria-live='polite'>00:00</span>
@@ -417,8 +417,8 @@
             </div>
             <div class='exam-toolbar'>
               <div class='exam-filter' role='group' aria-label='Lọc câu hỏi'>
-                <button type='button' class='filter-chip is-active' data-filter='all' id='exam-filter-all'>Tất cả</button>
-                <button type='button' class='filter-chip' data-filter='unanswered' id='exam-filter-unanswered'>Chưa chọn</button>
+                <button type='button' class='filter-chip is-active' data-filter='all'>Tất cả</button>
+                <button type='button' class='filter-chip' data-filter='unanswered'>Chưa chọn</button>
                 <button type='button' class='filter-chip' data-filter='correct' id='exam-filter-correct' hidden>Đúng</button>
                 <button type='button' class='filter-chip' data-filter='wrong' id='exam-filter-wrong' hidden>Sai</button>
               </div>
@@ -431,7 +431,7 @@
 
           <div class='exam-list' id='exam-list'></div>
 
-          <div class='card exam-actions-card' id='exam-actions'>
+          <div class='card exam-actions-card'>
             <div class='exam-actions-row'>
               <div class='exam-submit-row'>
                 <button type='button' class='button button-primary' id='button-exam-submit' data-icon='check'>
@@ -455,7 +455,7 @@
         <section id='screen-summary' class='screen' aria-label='Tổng kết' hidden>
           <div class='card summary-hero'>
             <h2 id='summary-title'>Hoàn thành lượt ôn</h2>
-            <div class='score-ring' id='score-ring' aria-hidden='true'>
+            <div class='score-ring' aria-hidden='true'>
               <svg viewBox='0 0 120 120' width='120' height='120'>
                 <circle class='score-ring-bg' cx='60' cy='60' r='52' />
                 <circle class='score-ring-fg' id='score-ring-fg' cx='60' cy='60' r='52'/>
@@ -517,7 +517,7 @@
         </section>
       </main>
 
-      <div class='fixed-floating-action-button-stack' id='fixed-floating-action-button-stack'>
+      <div class='fixed-floating-action-button-stack'>
         <button type='button' id='button-search-prev' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả trước' title='Kết quả trước' data-icon='chevron-left'></button>
         <button type='button' id='button-search-next' class='button-scroll-to-top button-search-navigation' hidden aria-label='Kết quả tiếp' title='Kết quả tiếp' data-icon='chevron-right'></button>
         <button type='button' id='button-scroll-to-top' class='button-scroll-to-top' hidden aria-label='Lên đầu trang' title='Lên đầu trang'>
