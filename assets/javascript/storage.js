@@ -491,7 +491,7 @@ export function importBackup(rawData) {
     legacyFromBackup = list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
   } else if (backup.settings && typeof backup.settings === 'object') legacyFromBackup = backup.settings;
   const importedSettings = normalizeSettingsEntry(
-    backup.settings && typeof backup.settings === 'object' ? backup.settings : backup.sharedSettings && typeof backup.sharedSettings === 'object' ? backup.sharedSettings : legacyFromBackup,
+    backup.settings && typeof backup.settings === 'object' && !Array.isArray(backup.settings) ? backup.settings : backup.sharedSettings && typeof backup.sharedSettings === 'object' ? backup.sharedSettings : legacyFromBackup,
     activeDeck
   );
   const normalized = {
