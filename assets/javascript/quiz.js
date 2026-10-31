@@ -46,13 +46,13 @@ function shuffleInPlace(array) {
 };
 
 export function buildOptionOrder(optionCount, shuffleAnswers, fixed = false) {
-  const order = Array.from({ length: optionCount }, (unusedQuestion, index) => index);
+  const order = Array.from({ length: optionCount }, (_unusedQuestion, optionIndex) => optionIndex);
   if (shuffleAnswers && !fixed) shuffleInPlace(order);
   return order;
 };
 
 export function createSessionItems(pool, { shuffleQuestions, shuffleAnswers }) {
-  const indices = pool.map((unusedQuestion, index) => index);
+  const indices = pool.map((_unusedQuestion, poolIndex) => poolIndex);
   if (shuffleQuestions) shuffleInPlace(indices);
   return indices.map((poolIndex) => {
     const question = pool[poolIndex];
