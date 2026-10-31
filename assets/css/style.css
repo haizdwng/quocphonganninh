@@ -1877,9 +1877,6 @@ input[type='range']:disabled {
   color: var(--text-on-accent-color);
 }
 
-.review-edit-action-buttons {
-  margin-top: 4px;
-}
 
 /* ==========================================================================
    Lỗi, toast, modal, banner, nút nổi
