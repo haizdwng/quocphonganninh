@@ -1,12 +1,12 @@
-const NAME = 'quocphonganninh';
-const VERSION = '2.0.0';
+const CACHE_NAME = 'quocphonganninh';
+const CACHE_VERSION = '1';
 const ASSETS = [
   './',
   './index.html',
   './sw.js',
   './manifest.webmanifest',
-  './data/quocphonganninh1.json',
-  './data/quocphonganninh2.json',
+  './data/quocphong1.json',
+  './data/quocphong2.json',
   './assets/fonts/Inter.woff2',
   './assets/styles/app.css',
   './assets/scripts/app.js',
@@ -59,7 +59,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => event.waitUntil((async () => {
-  const cache = await caches.open(NAME + ':' + VERSION);
+  const cache = await caches.open(CACHE_NAME + ':' + CACHE_VERSION);
   await cache.addAll(ASSETS);
 })()));
 
@@ -67,7 +67,7 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith(NAME) && key !== NAME + ':' + VERSION).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
+self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith(CACHE_NAME) && key !== CACHE_NAME + ':' + CACHE_VERSION).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
@@ -84,7 +84,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 async function cacheFirst(request, event) {
-  const cache = await caches.open(NAME + ':' + VERSION);
+  const cache = await caches.open(CACHE_NAME + ':' + CACHE_VERSION);
   const cached = await cache.match(request, { ignoreSearch: true });
   if (cached) {
     event.waitUntil(fetch(request).then((response) => {
@@ -105,7 +105,7 @@ async function cacheFirst(request, event) {
 };
 
 async function networkFirst(request) {
-  const cache = await caches.open(NAME + ':' + VERSION);
+  const cache = await caches.open(CACHE_NAME + ':' + CACHE_VERSION);
   const isHTML = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
   try {
     const response = await fetch(request);

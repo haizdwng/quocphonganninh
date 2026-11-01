@@ -2,8 +2,8 @@ let touchStartCoordinates = null;
 
 function syncFixedBarHeights() {
   const targets = [
-    ['#screen-quiz .progress-wrap', '--quiz-top-height'],
-    ['#screen-exam .progress-wrap', '--exam-top-height']
+    ['#screen-quiz .progress-wrap', '--quiz-header-height'],
+    ['#screen-exam .progress-wrap', '--exam-header-height']
   ];
   const root = document.documentElement;
   for (const [selector, property] of targets) {
@@ -38,7 +38,6 @@ export function initializeEnhancements({ onPrev, onNext }) {
       time: Date.now(),
     };
   }, { passive: true });
-
   document.addEventListener('touchend', (event) => {
     if (!touchStartCoordinates || document.body.dataset.screen !== 'quiz' || event.changedTouches.length !== 1) {
       touchStartCoordinates = null;
@@ -56,7 +55,6 @@ export function initializeEnhancements({ onPrev, onNext }) {
     if (horizontalDistance < 0) onNext();
     else onPrev();
   }, { passive: false });
-
   document.addEventListener('touchcancel', () => {
     touchStartCoordinates = null;
   }, { passive: true });

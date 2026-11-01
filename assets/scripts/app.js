@@ -3,36 +3,32 @@ import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSeque
 import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, clearWrongAnswers, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, clearBookmarks, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
 const DECKS = {
-  quocphonganninh1: {
-    id: 'quocphonganninh1',
+  quocphong1: {
+    id: 'quocphong1',
     label: 'QUỐC PHÒNG 1',
-    file: 'data/quocphonganninh1.json'
+    file: 'data/quocphong1.json'
   },
-  quocphonganninh2: {
-    id: 'quocphonganninh2',
+  quocphong2: {
+    id: 'quocphong2',
     label: 'QUỐC PHÒNG 2',
-    file: 'data/quocphonganninh2.json'
+    file: 'data/quocphong2.json'
   }
 };
 
 const state = {
   decks: {
-    quocphonganninh1: null,
-    quocphonganninh2: null
+    quocphong1: null,
+    quocphong2: null
   },
   fingerprints: {
-    quocphonganninh1: '',
-    quocphonganninh2: ''
-  },
-  legacyFingerprintMatched: {
-    quocphonganninh1: false,
-    quocphonganninh2: false
+    quocphong1: '',
+    quocphong2: ''
   },
   loading: true,
   error: null,
-  currentDeck: 'quocphonganninh1',
-  bankDeck: 'quocphonganninh1',
-  setupDeckBeforeBank: 'quocphonganninh1',
+  currentDeck: 'quocphong1',
+  bankDeck: 'quocphong1',
+  setupDeckBeforeBank: 'quocphong1',
   mode: 'setup',
   studyMode: 'practice',
   session: null,
@@ -109,26 +105,17 @@ async function loadDeck(deckIdentifier) {
   state.decks[deckIdentifier] = questions;
   state.fingerprints[deckIdentifier] = fingerprint;
   const progress = getDeckProgress(deckIdentifier);
-  const first = questions[0]?.questionText?.trim().slice(0, 40) || '';
-  const last = questions[questions.length - 1]?.questionText?.trim().slice(0, 40) || '';
-  const legacyFingerprint = questions.length + '|' + first + '|' + last;
   if (progress.questionDataFingerprint && progress.questionDataFingerprint !== fingerprint) {
-    if (progress.questionDataFingerprint === legacyFingerprint) {
-      state.legacyFingerprintMatched[deckIdentifier] = true;
-      progress.questionDataFingerprint = fingerprint;
-      if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
-    } else {
-      progress.completedQuestionIndices = [];
-      progress.sequentialQuestionCursor = 0;
-      progress.incorrectAnswerCounts = {};
-      progress.rangeIncorrectQuestionIndices = {};
-      progress.practiceQuestionCounts = {};
-      progress.bookmarkedQuestionIndices = [];
-      progress.questionDataFingerprint = fingerprint;
-      if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
-      if (!resetDeckHighlights(deckIdentifier)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
-      if (!resetDeckNotes(deckIdentifier)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
-    };
+    progress.completedQuestionIndices = [];
+    progress.sequentialQuestionCursor = 0;
+    progress.incorrectAnswerCounts = {};
+    progress.rangeIncorrectQuestionIndices = {};
+    progress.practiceQuestionCounts = {};
+    progress.bookmarkedQuestionIndices = [];
+    progress.questionDataFingerprint = fingerprint;
+    if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
+    if (!resetDeckHighlights(deckIdentifier)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
+    if (!resetDeckNotes(deckIdentifier)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
   } else if (!progress.questionDataFingerprint) {
     progress.questionDataFingerprint = fingerprint;
     if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
@@ -151,7 +138,7 @@ async function loadAll() {
   showScreen('loading');
   let stage = 'tải dữ liệu';
   try {
-    await Promise.all([loadDeck('quocphonganninh1'), loadDeck('quocphonganninh2')]);
+    await Promise.all([loadDeck('quocphong1'), loadDeck('quocphong2')]);
     state.loading = false;
     stage = 'khởi tạo giao diện';
     initializeInterface();
@@ -166,7 +153,6 @@ async function loadAll() {
       if (screen) {
         errorMessage = document.createElement('pre');
         errorMessage.id = 'error-message';
-        
         screen.append(errorMessage);
       };
     };
@@ -296,10 +282,10 @@ function formatBankDeckCountLabel(deckId) {
 };
 
 function updateDeckCountLabels() {
-  if (getElementById('count-quocphonganninh1')) getElementById('count-quocphonganninh1').textContent = formatDeckCountLabel('quocphonganninh1');
-  if (getElementById('count-quocphonganninh2')) getElementById('count-quocphonganninh2').textContent = formatDeckCountLabel('quocphonganninh2');
-  if (getElementById('bank-count-quocphonganninh1')) getElementById('bank-count-quocphonganninh1').textContent = formatBankDeckCountLabel('quocphonganninh1');
-  if (getElementById('bank-count-quocphonganninh2')) getElementById('bank-count-quocphonganninh2').textContent = formatBankDeckCountLabel('quocphonganninh2');
+  if (getElementById('count-quocphong1')) getElementById('count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
+  if (getElementById('count-quocphong2')) getElementById('count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
+  if (getElementById('bank-count-quocphong1')) getElementById('bank-count-quocphong1').textContent = formatBankDeckCountLabel('quocphong1');
+  if (getElementById('bank-count-quocphong2')) getElementById('bank-count-quocphong2').textContent = formatBankDeckCountLabel('quocphong2');
 };
 
 function sessionPreferences(deckId) {
@@ -368,7 +354,7 @@ function toggleHighlightSelection(deckId, questionIndex, selection) {
   state.lastTextSelection = null;
   if (state.mode === 'review') renderQuestionBank();
   else renderQuestion();
-  toast(fullyHighlighted ? 'Đã xóa highlight ở đoạn chọn.' : 'Đã highlight đoạn chọn.');
+  toast(fullyHighlighted ? 'Đã xóa highlight ở đoạn chọn.' : 'Đã highlight ở đoạn chọn.');
   return true;
 };
 
@@ -453,7 +439,7 @@ function getBankSearchMatches(questions = bankQuestions()) {
 
 function getFilteredBankQuestions() {
   const questions = bankQuestions();
-    const query = normalizeSearchText(state.bankSearchQuery);
+  const query = normalizeSearchText(state.bankSearchQuery);
   const matches = query ? questions.filter((questionText) => questionMatchesSearch(questionText, query)) : [];
   const filtered = query ? matches : questions;
   return { questions, filtered, query, matches };
@@ -469,9 +455,9 @@ function updateBankSearchHint(matchCount = getBankSearchMatches().length) {
     return;
   };
   hint.hidden = false;
-  if (matchCount === 0) hint.textContent = 'Không tìm thấy câu hỏi phù hợp.';
+  if (matchCount === 0) hint.textContent = 'Không tìm thấy câu hỏi hoặc đáp án phù hợp.';
   else if (state.bankSearchMatchIndex >= 0 && state.bankSearchMatchIndex < matchCount) hint.textContent = 'Kết quả ' + (state.bankSearchMatchIndex + 1) + ' / ' + matchCount;
-  else hint.textContent = 'Tìm thấy ' + matchCount + ' câu.';
+  else hint.textContent = 'Tìm thấy ' + matchCount + ' câu hỏi và đáp án phù hợp.';
 };
 
 function updateBankSearchNavButtons() {
@@ -1759,7 +1745,7 @@ function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
 };
 
 function setBankDeck(deckId) {
-  const id = deckId === 'quocphonganninh2' ? 'quocphonganninh2' : 'quocphonganninh1';
+  const id = deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   if (state.bankDeck === id) return;
   
   state.bankDeck = id;
@@ -1773,9 +1759,9 @@ function setBankDeck(deckId) {
   virtualScrollState.positions = [];
   
   renderQuestionBank();
-  if (getElementById('bank-count-quocphonganninh1')) {
-    getElementById('bank-count-quocphonganninh1').textContent = formatBankDeckCountLabel('quocphonganninh1');
-    getElementById('bank-count-quocphonganninh2').textContent = formatBankDeckCountLabel('quocphonganninh2');
+  if (getElementById('bank-count-quocphong1')) {
+    getElementById('bank-count-quocphong1').textContent = formatBankDeckCountLabel('quocphong1');
+    getElementById('bank-count-quocphong2').textContent = formatBankDeckCountLabel('quocphong2');
   };
   updateBankSearchHint();
   updateBankSearchNavButtons();
@@ -2306,7 +2292,7 @@ function setPracticeMode(mode) {
   const startBtn = getElementById('button-start');
   if (startBtn) startBtn.textContent = state.studyMode === 'exam' ? 'BẮT ĐẦU THI THỬ' : 'BẮT ĐẦU ÔN LUYỆN';
   persistSetupForm();
-  if (state.mode === 'setup' && state.decks.quocphonganninh1) refreshSetupUI();
+  if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
 };
 
 function updateExamProgressHeader() {
@@ -2872,10 +2858,10 @@ function animateScore(target, displayStr, circumference) {
   const duration = 1100;
   const start = performance.now();
 
-  let color = 'var(--primary)';
-  if (target >= 8) color = 'var(--green)';
-  else if (target >= 5) color = 'var(--warn)';
-  else color = 'var(--red)';
+  let color = 'var(--primary-color)';
+  if (target >= 8) color = 'var(--success-color)';
+  else if (target >= 5) color = 'var(--warning-color)';
+  else color = 'var(--error-color)';
 
   ringFg.style.stroke = color;
   summaryScoreElement.style.color = color;
@@ -3075,12 +3061,12 @@ function showSummary(summary, deckId, mode) {
     ringFg.style.strokeDasharray = String(circumference);
     ringFg.style.strokeDashoffset = String(circumference);
     ringFg.style.transition = 'none';
-    ringFg.style.stroke = 'var(--primary)';
+    ringFg.style.stroke = 'var(--primary-color)';
   };
   if (summaryScoreElement) {
     summaryScoreElement.textContent = '0';
     summaryScoreElement.style.transform = 'scale(1)';
-    summaryScoreElement.style.color = 'var(--primary)';
+    summaryScoreElement.style.color = 'var(--primary-color)';
   };
 
   requestAnimationFrame(() => requestAnimationFrame(() => animateScore(scoreNum, scoreVal, circumference)));
@@ -3170,42 +3156,31 @@ function showSummary(summary, deckId, mode) {
 function restoreSessionIfAny() {
   const saved = getSession(state.currentDeck);
   if (!saved) return false;
-  if (!['quocphonganninh1', 'quocphonganninh2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
+  if (!['quocphong1', 'quocphong2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
     clearSession(state.currentDeck);
     return false;
   };
-  saved.items = saved.items.map((item) => {
-    if (!item || typeof item !== 'object') return item;
-    const { poolIdx: legacyPoolIndex, ...sessionItem } = item;
-    return {
-      ...sessionItem,
-      questionPoolIndex: Number.isInteger(item.questionPoolIndex) ? item.questionPoolIndex : legacyPoolIndex
-    };
-  });
   if (!state.decks[saved.deckId]) {
     clearSession(state.currentDeck);
     return false;
   };
   const fingerprint = state.fingerprints[saved.deckId];
-  const legacyCompatible = !saved.questionDataFingerprint && state.legacyFingerprintMatched[saved.deckId];
   const validPool = saved.pool.length > 0 && saved.pool.every((questionText) => questionText && Number.isInteger(questionText.sourceQuestionIndex) && questionText.sourceQuestionIndex >= 0 && typeof questionText.questionText === 'string' && Array.isArray(questionText.answerOptions) && questionText.answerOptions.length >= 2 && Number.isInteger(questionText.correctAnswerIndex) && questionText.correctAnswerIndex >= 0 && questionText.correctAnswerIndex < questionText.answerOptions.length);
   const poolMatchesCurrentData = saved.pool.every((questionText) => {
     const current = state.decks[saved.deckId][questionText.sourceQuestionIndex];
     return (current && current.questionText === questionText.questionText && current.correctAnswerIndex === questionText.correctAnswerIndex && JSON.stringify(current.answerOptions) === JSON.stringify(questionText.answerOptions));
   });
-  const legacyPoolCompatible = !legacyCompatible || poolMatchesCurrentData;
-  const validSession = validPool && poolMatchesCurrentData && legacyPoolCompatible && saved.items.length > 0 && Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length && Number.isInteger(saved.maxReached) && saved.maxReached >= 0 && saved.maxReached < saved.items.length && saved.viewIndex <= saved.maxReached && saved.items.every((item, index) => {
+  const validSession = validPool && poolMatchesCurrentData && saved.items.length > 0 && Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length && Number.isInteger(saved.maxReached) && saved.maxReached >= 0 && saved.maxReached < saved.items.length && saved.viewIndex <= saved.maxReached && saved.items.every((item, index) => {
     if (!item || typeof item !== 'object' || !Number.isInteger(item.questionPoolIndex) || item.questionPoolIndex < 0 || item.questionPoolIndex >= saved.pool.length) return false;
     const questionText = saved.pool[item.questionPoolIndex];
     return (Array.isArray(item.displayedAnswerOrder) && item.displayedAnswerOrder.length === questionText.answerOptions.length && (item.incorrectAnswerIndices == null || (Array.isArray(item.incorrectAnswerIndices) && item.incorrectAnswerIndices.every((value) => Number.isInteger(value) && value >= 0 && value < questionText.answerOptions.length))) && new Set(item.displayedAnswerOrder).size === questionText.answerOptions.length && item.displayedAnswerOrder.every((index) => Number.isInteger(index) && index >= 0 && index < questionText.answerOptions.length) && ['pending', 'wrong', 'correct', 'unanswered'].includes(item.status) && (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') && (item.selectedAnswerIndex == null || (Number.isInteger(item.selectedAnswerIndex) && item.selectedAnswerIndex >= 0 && item.selectedAnswerIndex < item.displayedAnswerOrder.length)) && Number.isInteger(item.incorrectAttemptCount) && item.incorrectAttemptCount >= 0);
   });
-  if (!validSession || (saved.questionDataFingerprint !== fingerprint && !legacyCompatible)) {
+  if (!validSession || saved.questionDataFingerprint !== fingerprint) {
     clearSession(state.currentDeck);
     return false;
   };
-  if (legacyCompatible) saved.questionDataFingerprint = fingerprint;
   const progress = getDeckProgress(saved.deckId);
-  if (progress.questionDataFingerprint && progress.questionDataFingerprint !== fingerprint && !legacyCompatible) {
+  if (progress.questionDataFingerprint && progress.questionDataFingerprint !== fingerprint) {
     clearSession(state.currentDeck);
     return false;
   };
@@ -3280,7 +3255,7 @@ function initializeInterface() {
     toggleHighlightSelection(selection.deckId, questionText.sourceQuestionIndex, selection);
   });
   const active = getSettings();
-  state.currentDeck = active.deck === 'quocphonganninh2' ? 'quocphonganninh2' : 'quocphonganninh1';
+  state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
   state.bankDeck = state.currentDeck;
@@ -3301,12 +3276,12 @@ function applyTheme(theme) {
     button.title = selectedTheme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối';
     button.setAttribute('aria-pressed', String(selectedTheme === 'light'));
   };
-  try { localStorage.setItem('quocphonganninh:theme', selectedTheme); } catch {};
+  try { localStorage.setItem('theme', selectedTheme); } catch {};
 };
 
 function initializeTheme() {
   let theme = 'dark';
-  try { theme = localStorage.getItem('quocphonganninh:theme') || 'dark'; } catch {};
+  try { theme = localStorage.getItem('theme') || 'dark'; } catch {};
   applyTheme(theme);
   getElementById('button-theme-toggle')?.addEventListener('click', () => {
     applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
@@ -3384,7 +3359,7 @@ function bindEvents() {
 
   document.querySelectorAll('#screen-setup .deck-button[data-deck]').forEach((button) => {
     button.addEventListener('click', () => {
-      const nextDeck = button.dataset.deck === 'quocphonganninh2' ? 'quocphonganninh2' : 'quocphonganninh1';
+      const nextDeck = button.dataset.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
       if (state.currentDeck === nextDeck) return;
       const previousTotal = currentQuestions().length;
       const previousStart = Number.parseInt(getElementById('input-range-start').value, 10) || 1;
@@ -3845,7 +3820,7 @@ function bindEvents() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'quocphonganninh-' + Date.now() + '.json';
+      link.download = 'defenseSecurityQuiz-' + Date.now() + '.json';
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       toast('Đã tạo tệp sao lưu tiến độ.');

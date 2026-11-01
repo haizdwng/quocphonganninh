@@ -1,56 +1,46 @@
-const NAME = 'quocphonganninh';
-const VERSION = 1;
+const STORAGE_KEY = 'quocphonganninh';
+const STORAGE_VERSION = 1;
 
 function emptyRoot() {
   return {
-    version: VERSION,
+    version: STORAGE_VERSION,
     settings: null,
-    activeDeck: 'quocphonganninh1',
+    activeDeck: 'quocphong1',
     decks: {},
     sessions: {},
     highlights: {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     notes: {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     overrides: {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     hidden: {
-      quocphonganninh1: [],
-      quocphonganninh2: []
+      quocphong1: [],
+      quocphong2: []
     }
   };
 };
 
 function readRoot() {
   try {
-    const rawData = localStorage.getItem(NAME);
+    const rawData = localStorage.getItem(STORAGE_KEY);
     if (!rawData) return emptyRoot();
     const data = JSON.parse(rawData);
-    const valid = data && typeof data === 'object' && !Array.isArray(data) && data.version === VERSION && data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks) && ['quocphonganninh1', 'quocphonganninh2'].every((deckIdentifier) => !Object.prototype.hasOwnProperty.call(data.decks, deckIdentifier) || (data.decks[deckIdentifier] && typeof data.decks[deckIdentifier] === 'object' && !Array.isArray(data.decks[deckIdentifier]))) && (!data.sessions || (typeof data.sessions === 'object' && !Array.isArray(data.sessions))) && (!data.highlights || (typeof data.highlights === 'object' && !Array.isArray(data.highlights))) && (!data.notes || (typeof data.notes === 'object' && !Array.isArray(data.notes)));
-    if (valid) {
-      const hadLegacySettingsArray = Array.isArray(data.settings);
-      const legacySettings = data.sharedSettings && typeof data.sharedSettings === 'object' && !Array.isArray(data.sharedSettings) ? data.sharedSettings : null;
-      if (hadLegacySettingsArray) {
-        const entries = data.settings.filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry));
-        data.settings = entries.find((entry) => normalizeDeckId(entry.deck) === normalizeDeckId(data.activeDeck)) || entries[0] || null;
-      } else if ((!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) && legacySettings) data.settings = legacySettings;
-      const requiresMigration = Object.prototype.hasOwnProperty.call(data, 'sharedSettings') || Object.prototype.hasOwnProperty.call(data, 'bankSettings') || hadLegacySettingsArray;
-      delete data.sharedSettings;
-      delete data.bankSettings;
-      if (requiresMigration) localStorage.setItem(NAME, JSON.stringify(data));
-      return data;
-    };
-    localStorage.removeItem(NAME);
+    const valid = data && typeof data === 'object' && !Array.isArray(data) &&
+      data.version === STORAGE_VERSION &&
+      data.decks && typeof data.decks === 'object' && !Array.isArray(data.decks);
+    if (valid) return data;
+    localStorage.removeItem(STORAGE_KEY);
     return emptyRoot();
   } catch {
     try {
-      localStorage.removeItem(NAME);
+      localStorage.removeItem(STORAGE_KEY);
     } catch {};
     return emptyRoot();
   };
@@ -59,11 +49,8 @@ function readRoot() {
 function writeRoot(data) {
   try {
     const root = data && typeof data === 'object' && !Array.isArray(data) ? data : emptyRoot();
-    root.version = VERSION;
-    if (!root.settings || typeof root.settings !== 'object' || Array.isArray(root.settings)) root.settings = root.sharedSettings && typeof root.sharedSettings === 'object' ? root.sharedSettings : null;
-    delete root.sharedSettings;
-    delete root.bankSettings;
-    localStorage.setItem(NAME, JSON.stringify(root));
+    root.version = STORAGE_VERSION;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(root));
     return true;
   } catch {
     return false;
@@ -71,7 +58,7 @@ function writeRoot(data) {
 };
 
 function normalizeDeckId(deckId) {
-  return deckId === 'quocphonganninh2' ? 'quocphonganninh2' : 'quocphonganninh1';
+  return deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
 };
 
 function normalizeSettingsEntry(rawData, deckId) {
@@ -113,29 +100,16 @@ function normalizeSettingsEntry(rawData, deckId) {
   };
 };
 
-function legacySettingsFallback(root, activeDeck) {
-  const rawData = root.sharedSettings;
-  if (Array.isArray(rawData)) {
-    const list = rawData.filter((entry) => entry && typeof entry === 'object');
-    return list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
-  };
-  if (rawData && typeof rawData === 'object') return rawData;
-  return {};
-};
-
 export function getSettings(deckId) {
   const root = readRoot();
-  const activeDeck = normalizeDeckId(deckId || root.activeDeck || 'quocphonganninh1');
-  const settings = root.settings && typeof root.settings === 'object' ? root.settings : legacySettingsFallback(root, activeDeck);
-  return normalizeSettingsEntry(settings, activeDeck);
+  const activeDeck = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
+  return normalizeSettingsEntry(root.settings, activeDeck);
 };
 
 export function saveSettings(settings) {
   const root = readRoot();
   const activeDeck = normalizeDeckId(settings?.deck || root.activeDeck);
   root.settings = normalizeSettingsEntry(settings, activeDeck);
-  delete root.sharedSettings;
-  delete root.bankSettings;
   root.activeDeck = activeDeck;
   return writeRoot(root);
 };
@@ -194,14 +168,14 @@ export function saveDeckProgress(deckId, progress) {
 
 export function getSession(deckId) {
   const root = readRoot();
-  const deckIdentifier = normalizeDeckId(deckId || root.activeDeck || 'quocphonganninh1');
+  const deckIdentifier = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   const sessions = root.sessions && typeof root.sessions === 'object' && !Array.isArray(root.sessions) ? root.sessions : {};
   const session = sessions[deckIdentifier] || (root.session?.deckId === deckIdentifier ? root.session : null);
   return session && typeof session === 'object' && !Array.isArray(session) ? session : null;
 };
 
 export function saveSession(session) {
-  if (!session || !['quocphonganninh1', 'quocphonganninh2'].includes(session.deckId)) return false;
+  if (!session || !['quocphong1', 'quocphong2'].includes(session.deckId)) return false;
   const root = readRoot();
   if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
   root.sessions[session.deckId] = session;
@@ -212,7 +186,7 @@ export function saveSession(session) {
 export function clearSession(deckId) {
   const root = readRoot();
   if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
-  const deckIdentifier = normalizeDeckId(deckId || root.activeDeck || 'quocphonganninh1');
+  const deckIdentifier = normalizeDeckId(deckId || root.activeDeck || 'quocphong1');
   delete root.sessions[deckIdentifier];
   if (root.session?.deckId === deckIdentifier) delete root.session;
   return writeRoot(root);
@@ -346,8 +320,8 @@ export function getQuestionHighlights(deckId, sourceQuestionIndex) {
 export function resetDeckHighlights(deckId) {
   const root = readRoot();
   if (!root.highlights || typeof root.highlights !== 'object' || Array.isArray(root.highlights)) root.highlights = {
-    quocphonganninh1: {},
-    quocphonganninh2: {}
+    quocphong1: {},
+    quocphong2: {}
   };
   root.highlights[normalizeDeckId(deckId)] = {};
   return writeRoot(root);
@@ -382,7 +356,7 @@ export function getQuestionNote(deckId, sourceQuestionIndex) {
 export function saveQuestionNote(deckId, sourceQuestionIndex, text) {
   if (!Number.isInteger(sourceQuestionIndex) || sourceQuestionIndex < 0) return false;
   const root = readRoot();
-  if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphonganninh1: {}, quocphonganninh2: {} };
+  if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphong1: {}, quocphong2: {} };
   const deckIdentifier = normalizeDeckId(deckId);
   if (!root.notes[deckIdentifier] || typeof root.notes[deckIdentifier] !== 'object' || Array.isArray(root.notes[deckIdentifier])) root.notes[deckIdentifier] = {};
   const normalized = normalizeNoteText(text);
@@ -393,7 +367,7 @@ export function saveQuestionNote(deckId, sourceQuestionIndex, text) {
 
 export function resetDeckNotes(deckId) {
   const root = readRoot();
-  if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphonganninh1: {}, quocphonganninh2: {} };
+  if (!root.notes || typeof root.notes !== 'object' || Array.isArray(root.notes)) root.notes = { quocphong1: {}, quocphong2: {} };
   root.notes[normalizeDeckId(deckId)] = {};
   return writeRoot(root);
 };
@@ -417,7 +391,7 @@ function normalizeOverrideEntry(value) {
 export function saveQuestionOverride(deckId, sourceQuestionIndex, payload) {
   if (!Number.isInteger(sourceQuestionIndex) || sourceQuestionIndex < 0) return false;
   const root = readRoot();
-  if (!root.overrides || typeof root.overrides !== 'object' || Array.isArray(root.overrides)) root.overrides = { quocphonganninh1: {}, quocphonganninh2: {} };
+  if (!root.overrides || typeof root.overrides !== 'object' || Array.isArray(root.overrides)) root.overrides = { quocphong1: {}, quocphong2: {} };
   const deckIdentifier = normalizeDeckId(deckId);
   if (!root.overrides[deckIdentifier] || typeof root.overrides[deckIdentifier] !== 'object' || Array.isArray(root.overrides[deckIdentifier])) root.overrides[deckIdentifier] = {};
   if (payload === null) {
@@ -455,7 +429,7 @@ export function getHiddenIndices(deckId) {
 export function toggleHiddenQuestion(deckId, sourceQuestionIndex) {
   if (!Number.isInteger(sourceQuestionIndex) || sourceQuestionIndex < 0) return null;
   const root = readRoot();
-  if (!root.hidden || typeof root.hidden !== 'object' || Array.isArray(root.hidden)) root.hidden = { quocphonganninh1: [], quocphonganninh2: [] };
+  if (!root.hidden || typeof root.hidden !== 'object' || Array.isArray(root.hidden)) root.hidden = { quocphong1: [], quocphong2: [] };
   const deckIdentifier = normalizeDeckId(deckId);
   const hiddenQuestionIndices = new Set(Array.isArray(root.hidden[deckIdentifier]) ? root.hidden[deckIdentifier].filter((value) => Number.isInteger(value) && value >= 0) : []);
   if (hiddenQuestionIndices.has(sourceQuestionIndex)) hiddenQuestionIndices.delete(sourceQuestionIndex);
@@ -471,30 +445,29 @@ export function isQuestionHidden(deckId, sourceQuestionIndex) {
 
 export function exportBackup() {
   const root = readRoot();
-  const activeDeck = normalizeDeckId(root.activeDeck || 'quocphonganninh1');
-  const settings = root.settings && typeof root.settings === 'object' ? root.settings : legacySettingsFallback(root, activeDeck);
+  const activeDeck = normalizeDeckId(root.activeDeck || 'quocphong1');
   return JSON.stringify({
-    format: 'quocphonganninh',
-    version: 1,
+    format: 'defense-security-quiz',
+    version: STORAGE_VERSION,
     exportedAt: new Date().toISOString(),
-    settings: settings && typeof settings === 'object' ? settings : null,
-    activeDeck: root.activeDeck || 'quocphonganninh1',
+    settings: root.settings && typeof root.settings === 'object' ? root.settings : null,
+    activeDeck: root.activeDeck || 'quocphong1',
     decks: root.decks || {},
     highlights: root.highlights || {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     notes: root.notes || {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     overrides: root.overrides || {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     hidden: root.hidden || {
-      quocphonganninh1: [],
-      quocphonganninh2: []
+      quocphong1: [],
+      quocphong2: []
     }
   }, null, 2);
 };
@@ -506,41 +479,33 @@ export function importBackup(rawData) {
   } catch {
     return false;
   };
-  if (!backup || backup.format !== 'quocphonganninh' || backup.version !== 1 || !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) || !Object.keys(backup.decks).every((deckIdentifier) => ['quocphonganninh1', 'quocphonganninh2'].includes(deckIdentifier))) return false;
-  const activeDeck = normalizeDeckId(backup.activeDeck || 'quocphonganninh1');
-  let legacyFromBackup = {};
-  if (Array.isArray(backup.settings)) {
-    const list = backup.settings.filter((entry) => entry && typeof entry === 'object');
-    legacyFromBackup = list.find((entry) => normalizeDeckId(entry.deck) === activeDeck) || list[0] || {};
-  } else if (backup.settings && typeof backup.settings === 'object') legacyFromBackup = backup.settings;
-  const importedSettings = normalizeSettingsEntry(
-    backup.settings && typeof backup.settings === 'object' && !Array.isArray(backup.settings) ? backup.settings : backup.sharedSettings && typeof backup.sharedSettings === 'object' ? backup.sharedSettings : legacyFromBackup,
-    activeDeck
-  );
+  if (!backup || backup.format !== 'defense-security-quiz' || backup.version !== STORAGE_VERSION || !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) || !Object.keys(backup.decks).every((deckIdentifier) => ['quocphong1', 'quocphong2'].includes(deckIdentifier))) return false;
+  const activeDeck = normalizeDeckId(backup.activeDeck || 'quocphong1');
+  const importedSettings = normalizeSettingsEntry(backup.settings, activeDeck);
   const normalized = {
     settings: importedSettings,
     activeDeck,
     decks: {},
     sessions: {},
     highlights: {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     notes: {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     overrides: {
-      quocphonganninh1: {},
-      quocphonganninh2: {}
+      quocphong1: {},
+      quocphong2: {}
     },
     hidden: {
-      quocphonganninh1: [],
-      quocphonganninh2: []
+      quocphong1: [],
+      quocphong2: []
     }
   };
   if (backup.highlights && typeof backup.highlights === 'object' && !Array.isArray(backup.highlights)) {
-    for (const deckIdentifier of ['quocphonganninh1', 'quocphonganninh2']) {
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
       const deck = backup.highlights[deckIdentifier];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
       for (const [key, ranges] of Object.entries(deck)) {
@@ -552,7 +517,7 @@ export function importBackup(rawData) {
     };
   };
   if (backup.notes && typeof backup.notes === 'object' && !Array.isArray(backup.notes)) {
-    for (const deckIdentifier of ['quocphonganninh1', 'quocphonganninh2']) {
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
       const deck = backup.notes[deckIdentifier];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
       for (const [key, value] of Object.entries(deck)) {
@@ -563,9 +528,9 @@ export function importBackup(rawData) {
       };
     };
   };
-  normalized.overrides = { quocphonganninh1: {}, quocphonganninh2: {} };
+  normalized.overrides = { quocphong1: {}, quocphong2: {} };
   if (backup.overrides && typeof backup.overrides === 'object' && !Array.isArray(backup.overrides)) {
-    for (const deckIdentifier of ['quocphonganninh1', 'quocphonganninh2']) {
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
       const deck = backup.overrides[deckIdentifier];
       if (!deck || typeof deck !== 'object' || Array.isArray(deck)) continue;
       for (const [key, value] of Object.entries(deck)) {
@@ -576,15 +541,15 @@ export function importBackup(rawData) {
       };
     };
   };
-  normalized.hidden = { quocphonganninh1: [], quocphonganninh2: [] };
+  normalized.hidden = { quocphong1: [], quocphong2: [] };
   if (backup.hidden && typeof backup.hidden === 'object' && !Array.isArray(backup.hidden)) {
-    for (const deckIdentifier of ['quocphonganninh1', 'quocphonganninh2']) {
+    for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
       const list = backup.hidden[deckIdentifier];
       if (!Array.isArray(list)) continue;
       normalized.hidden[deckIdentifier] = [...new Set(list.filter((value) => Number.isInteger(value) && value >= 0))].sort((leftValue, rightValue) => leftValue - rightValue);
     };
   };
-  for (const deckIdentifier of ['quocphonganninh1', 'quocphonganninh2']) {
+  for (const deckIdentifier of ['quocphong1', 'quocphong2']) {
     const deckData = backup.decks[deckIdentifier];
     if (!deckData || typeof deckData !== 'object' || Array.isArray(deckData)) continue;
     const incorrectAnswerCounts = {};
@@ -623,7 +588,7 @@ export function importBackup(rawData) {
 
 export function storageAvailable() {
   try {
-    const key = NAME + ':nguyenquangquan';
+    const key = STORAGE_KEY + ':availability-check';
     localStorage.setItem(key, '1');
     localStorage.removeItem(key);
     return true;
