@@ -508,6 +508,8 @@ input[type='range']:disabled {
 [data-icon='pencil']::before { -webkit-mask-image: url('../icons/tabler/pencil.svg'); mask-image: url('../icons/tabler/pencil.svg'); }
 [data-icon='pinned']::before { -webkit-mask-image: url('../icons/tabler/pinned.svg'); mask-image: url('../icons/tabler/pinned.svg'); }
 [data-icon='pinned-off']::before { -webkit-mask-image: url('../icons/tabler/pinned-off.svg'); mask-image: url('../icons/tabler/pinned-off.svg'); }
+[data-icon='square-rounded']::before { -webkit-mask-image: url('../icons/tabler/square-rounded.svg'); mask-image: url('../icons/tabler/square-rounded.svg'); }
+[data-icon='square-rounded-check']::before { -webkit-mask-image: url('../icons/tabler/square-rounded-check.svg'); mask-image: url('../icons/tabler/square-rounded-check.svg'); }
 
 .button,
 .button-icon-only {

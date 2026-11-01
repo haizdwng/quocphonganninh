@@ -474,7 +474,7 @@ export function exportBackup() {
   const activeDeck = normalizeDeckId(root.activeDeck || 'quocphonganninh1');
   const settings = root.settings && typeof root.settings === 'object' ? root.settings : legacySettingsFallback(root, activeDeck);
   return JSON.stringify({
-    format: 'backup',
+    format: 'quocphonganninh',
     version: 1,
     exportedAt: new Date().toISOString(),
     settings: settings && typeof settings === 'object' ? settings : null,
@@ -506,7 +506,7 @@ export function importBackup(rawData) {
   } catch {
     return false;
   };
-  if (!backup || backup.format !== 'backup' || backup.version !== 1 || !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) || !Object.keys(backup.decks).every((deckIdentifier) => ['quocphonganninh1', 'quocphonganninh2'].includes(deckIdentifier))) return false;
+  if (!backup || backup.format !== 'quocphonganninh' || backup.version !== 1 || !backup.decks || typeof backup.decks !== 'object' || Array.isArray(backup.decks) || !Object.keys(backup.decks).every((deckIdentifier) => ['quocphonganninh1', 'quocphonganninh2'].includes(deckIdentifier))) return false;
   const activeDeck = normalizeDeckId(backup.activeDeck || 'quocphonganninh1');
   let legacyFromBackup = {};
   if (Array.isArray(backup.settings)) {

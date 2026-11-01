@@ -5,12 +5,12 @@ import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSessio
 const DECKS = {
   quocphonganninh1: {
     id: 'quocphonganninh1',
-    label: 'Quốc Phòng 1',
+    label: 'QUỐC PHÒNG 1',
     file: 'data/quocphonganninh1.json'
   },
   quocphonganninh2: {
     id: 'quocphonganninh2',
-    label: 'Quốc Phòng 2',
+    label: 'QUỐC PHÒNG 2',
     file: 'data/quocphonganninh2.json'
   }
 };
@@ -288,11 +288,11 @@ function visibleDeckQuestions(deckId) {
 };
 
 function formatDeckCountLabel(deckId) {
-  return visibleDeckQuestions(deckId).length + ' câu';
+  return visibleDeckQuestions(deckId).length + ' CÂU';
 };
 
 function formatBankDeckCountLabel(deckId) {
-  return allDeckQuestions(deckId).length + ' câu';
+  return allDeckQuestions(deckId).length + ' CÂU';
 };
 
 function updateDeckCountLabels() {
@@ -606,6 +606,8 @@ function findReviewVirtualIndex(virtualScrollState, offsetY) {
 function exitBankQuestionEdit(card) {
   const parts = card && card._vs;
   if (!parts || !parts.editBlock) return;
+  const questionIndex = Number(card.dataset.sourceQuestionIndex);
+  const isEdited = Number.isInteger(questionIndex) && !!getDeckOverrides(state.bankDeck)[questionIndex];
   parts.editBlock.hidden = true;
   parts.editBlock.innerHTML = '';
   parts.prompt.hidden = false;
@@ -613,9 +615,9 @@ function exitBankQuestionEdit(card) {
   state.reviewEditingQuestionIndex = null;
   if (parts.syncReviewActionState) parts.syncReviewActionState();
   if (parts.editQuestionButton) {
-    parts.editQuestionButton.classList.remove('is-active');
-    parts.editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
-    parts.editQuestionButton.title = 'Mở trình chỉnh sửa';
+    parts.editQuestionButton.classList.toggle('is-active', isEdited);
+    parts.editQuestionButton.setAttribute('aria-label', isEdited ? 'Mở trình sửa câu hỏi đã chỉnh sửa' : 'Chỉnh sửa câu hỏi và đáp án');
+    parts.editQuestionButton.title = isEdited ? 'Mở trình sửa câu hỏi đã chỉnh sửa' : 'Mở trình chỉnh sửa';
   };
   refreshReviewVirtualLayout();
 };
@@ -1185,6 +1187,12 @@ function bindReviewBankCard(card, questionText, listIndex) {
   parts.heading.textContent = 'CÂU ' + (questionText.sourceQuestionIndex + 1);
   card.classList.toggle('review-question-highlight', state.reviewFocusQuestionNumber === questionText.sourceQuestionIndex + 1);
   card.classList.toggle('is-answer-fixed', Array.isArray(questionText.fixedAnswerIndices) && questionText.fixedAnswerIndices.length > 0);
+  const isEdited = !!getDeckOverrides(state.bankDeck)[questionText.sourceQuestionIndex];
+  parts.editQuestionButton.classList.toggle('is-active', isEdited);
+  if (state.reviewEditingQuestionIndex !== questionText.sourceQuestionIndex) {
+    parts.editQuestionButton.setAttribute('aria-label', isEdited ? 'Mở trình sửa câu hỏi đã chỉnh sửa' : 'Chỉnh sửa câu hỏi và đáp án');
+    parts.editQuestionButton.title = isEdited ? 'Mở trình sửa câu hỏi đã chỉnh sửa' : 'Mở trình chỉnh sửa';
+  };
 
   const isBookmarked = getBookmarkedIndices(state.bankDeck).includes(questionText.sourceQuestionIndex);
   if (parts.bookmarkButton) {
@@ -1624,14 +1632,14 @@ function refreshSetupUI() {
     end
   ).filter((index) => !hiddenSet.has(index)).length;
   practiceWrongButton.disabled = state.studyMode === 'exam' || rangeWrongCount === 0;
-  practiceWrongButton.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
+  practiceWrongButton.textContent = 'ÔN ' + rangeWrongCount + ' CÂU SAI TRONG VÙNG';
   const clearPracticeWrongButton = getElementById('button-clear-practice-wrong');
   if (clearPracticeWrongButton) clearPracticeWrongButton.disabled = rangeWrongCount === 0;
 
   const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < fullTotal && !hiddenSet.has(index)).length;
   const practiceAllWrongButton = getElementById('button-practice-all-wrong');
   practiceAllWrongButton.disabled = state.studyMode === 'exam' || allWrongCount === 0;
-  practiceAllWrongButton.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
+  practiceAllWrongButton.textContent = 'ÔN ' + allWrongCount + ' CÂU SAI CỦA BỘ ĐỀ';
   const clearAllWrongButton = getElementById('button-clear-all-wrong');
   if (clearAllWrongButton) clearAllWrongButton.disabled = allWrongCount === 0;
 
@@ -1639,7 +1647,7 @@ function refreshSetupUI() {
   const rangeBookmarkCount = [...bookmarkedQuestionIndices].filter((questionIndex) => questionIndex >= start - 1 && questionIndex < end && questionIndex < fullTotal && !isQuestionHidden(state.currentDeck, questionIndex)).length;
   const practiceBookmarksButton = getElementById('button-practice-bookmarks');
   practiceBookmarksButton.disabled = state.studyMode === 'exam' || rangeBookmarkCount === 0;
-  practiceBookmarksButton.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
+  practiceBookmarksButton.textContent = 'ÔN ' + rangeBookmarkCount + ' CÂU ĐÃ ĐÁNH DẤU';
   const clearBookmarksButton = getElementById('button-clear-bookmarks');
   if (clearBookmarksButton) clearBookmarksButton.disabled = rangeBookmarkCount === 0;
 
@@ -1654,7 +1662,7 @@ function refreshSetupUI() {
   if (canContinue) {
     const left = rangeQuestions.filter((questionText) => questionText.sourceQuestionIndex >= nextIndex).length;
     const availableQuestionCount = Math.min(state.allQuestionsEnabled ? rangeTotal : (Number(input.value) || 20), left);
-    continueButton.textContent = 'Tiếp tục tuần tự ' + availableQuestionCount + ' câu từ câu ' + (nextIndex + 1);
+    continueButton.textContent = 'TIẾP TỤC TUẦN TỰ ' + availableQuestionCount + ' CÂU TỪ CÂU ' + (nextIndex + 1);
   };
 
   document.querySelectorAll('.preset-btn').forEach((button) => {
@@ -1678,8 +1686,8 @@ function refreshResumeCard() {
   const isExam = !!saved.examMode || saved.mode === 'exam';
   const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
   card.hidden = false;
-  getElementById('resume-title').textContent = isExam ? saved.reviewMode ? 'Có lượt thi đã chấm' : 'Có lượt thi thử đang dở' : 'Có lượt ôn đang dở';
-  getElementById('resume-hint').textContent = isExam ? deckLabel + ' · ' + answered + ' / ' + saved.items.length + ' câu đã chọn' + (saved.reviewMode ? ' · Đã chấm' : '') : deckLabel + ' · Câu ' + ((saved.viewIndex || 0) + 1) + ' / ' + saved.items.length;
+  getElementById('resume-title').textContent = isExam ? saved.reviewMode ? 'CÓ LƯỢT THI ĐÃ CHẤM' : 'CÓ LƯỢT THI THỬ ĐANG DỞ' : 'CÓ LƯỢT ÔN ĐANG DỞ';
+  getElementById('resume-hint').textContent = isExam ? deckLabel + ' · ' + answered + ' / ' + saved.items.length + ' CÂU ĐÃ CHỌN' + (saved.reviewMode ? ' · ĐÃ CHẤM' : '') : deckLabel + ' · CÂU ' + ((saved.viewIndex || 0) + 1) + ' / ' + saved.items.length;
 };
 
 function normalizeSoundVolume(value, fallback = 1) {
@@ -1876,13 +1884,13 @@ function applySettingsToForm(settings) {
   if (getElementById('input-auto-check-delay')) {
     const delay = Number.isInteger(settings.automaticAnswerCheckDelaySeconds) && settings.automaticAnswerCheckDelaySeconds >= 0 ? Math.min(10, settings.automaticAnswerCheckDelaySeconds) : 0;
     getElementById('input-auto-check-delay').value = String(delay);
-    if (getElementById('label-auto-check-delay')) getElementById('label-auto-check-delay').textContent = delay + ' giây';
+    if (getElementById('label-auto-check-delay')) getElementById('label-auto-check-delay').textContent = delay + ' GIÂY';
   };
   getElementById('checkbox-vibration').checked = settings.vibrationEnabled === true;
   if (getElementById('input-auto-advance-delay')) {
     const delay = Number.isInteger(settings.automaticQuestionAdvanceDelaySeconds) && settings.automaticQuestionAdvanceDelaySeconds >= 0 ? Math.min(10, settings.automaticQuestionAdvanceDelaySeconds) : 5;
     getElementById('input-auto-advance-delay').value = String(delay);
-    if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' giây';
+    if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' GIÂY';
   };
   const volume = normalizeSoundVolume(settings.soundVolumePercentage, 1);
   if (getElementById('input-sound-volume')) {
@@ -2293,8 +2301,10 @@ function renderQuestion() {
 function setPracticeMode(mode) {
   state.studyMode = mode === 'exam' ? 'exam' : 'practice';
   document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.studyMode));
+  const experienceCard = getElementById('practice-experience-card');
+  if (experienceCard) experienceCard.hidden = state.studyMode === 'exam';
   const startBtn = getElementById('button-start');
-  if (startBtn) startBtn.textContent = state.studyMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn luyện';
+  if (startBtn) startBtn.textContent = state.studyMode === 'exam' ? 'BẮT ĐẦU THI THỬ' : 'BẮT ĐẦU ÔN LUYỆN';
   persistSetupForm();
   if (state.mode === 'setup' && state.decks.quocphonganninh1) refreshSetupUI();
 };
@@ -2319,7 +2329,9 @@ function updateExamProgressHeader() {
   const nextEmpty = getElementById('button-exam-next-empty');
   if (nextEmpty) {
     nextEmpty.hidden = session.reviewMode || unanswered === 0;
-    nextEmpty.textContent = unanswered ? 'CÒN ' + unanswered + ' CÂU' : 'ĐỦ ĐÁP ÁN';
+    const nextEmptyLabel = unanswered ? 'Còn ' + unanswered + ' câu chưa chọn' : 'Đủ đáp án';
+    nextEmpty.setAttribute('aria-label', nextEmptyLabel);
+    nextEmpty.title = nextEmptyLabel;
   };
   const pauseBtn = getElementById('button-exam-pause');
   if (pauseBtn) pauseBtn.hidden = !!session.reviewMode;
@@ -2337,7 +2349,20 @@ function updateExamProgressHeader() {
       submitBtn.disabled = !!state.examSubmitting;
     };
   };
-  document.querySelectorAll('.filter-chip').forEach((chip) => chip.classList.toggle('is-active', chip.dataset.filter === state.examFilter));
+  document.querySelectorAll('.filter-chip').forEach((chip) => {
+    const isActive = chip.dataset.filter === state.examFilter;
+    chip.classList.toggle('is-active', isActive);
+    const labels = {
+      all: 'Tất cả câu hỏi',
+      unanswered: 'Câu chưa chọn',
+      answered: 'Câu đã chọn',
+      correct: 'Câu đúng',
+      wrong: 'Câu sai'
+    };
+    const label = labels[chip.dataset.filter] || 'Lọc câu hỏi';
+    chip.setAttribute('aria-label', label);
+    chip.title = label;
+  });
 };
 
 function applyExamFilter() {
@@ -2349,6 +2374,7 @@ function applyExamFilter() {
     if (!card) return;
     let show = true;
     if (filter === 'unanswered') show = item.selectedAnswerIndex == null;
+    else if (filter === 'answered') show = item.selectedAnswerIndex != null;
     else if (filter === 'wrong') show = item.status === 'wrong';
     else if (filter === 'correct') show = item.status === 'correct';
     card.hidden = !show;
@@ -2405,8 +2431,8 @@ function renderExam() {
     head.appendChild(questionNumberElement);
     if (session.reviewMode) {
       const badge = document.createElement('span');
-      badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'is-correct-answer' : 'is-incorrect-answer');
-      badge.textContent = item.status === 'correct' ? 'ĐÚNG' : item.selectedAnswerIndex == null ? 'BỎ TRỐNG' : 'SAI';
+      badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'is-correct-answer' : item.status === 'unanswered' ? 'is-unanswered' : 'is-incorrect-answer');
+      badge.textContent = item.status === 'correct' ? 'ĐÚNG' : item.status === 'unanswered' ? 'BỎ TRỐNG' : 'SAI';
       head.appendChild(badge);
     };
     card.appendChild(head);
@@ -2513,10 +2539,10 @@ async function onExamSubmit() {
   };
   const unanswered = session.items.filter((item) => item.selectedAnswerIndex == null).length;
   if (unanswered > 0) {
-    const ok = await confirmModal('Còn câu chưa chọn', 'Bạn còn ' + unanswered + ' câu chưa chọn đáp án. Vẫn nộp bài?');
+    const ok = await confirmModal('CÒN CÂU CHƯA CHỌN', 'Bạn còn ' + unanswered + ' câu chưa chọn đáp án. Vẫn nộp bài?');
     if (!ok) return;
   } else {
-    const ok = await confirmModal('Nộp bài thi?', 'Bạn đã chọn đủ ' + session.items.length + ' câu. Nộp bài để xem kết quả?');
+    const ok = await confirmModal('NỘP BÀI THI', 'Bạn đã chọn đủ ' + session.items.length + ' câu. Nộp bài để xem kết quả?');
     if (!ok) return;
   };
 
@@ -2526,15 +2552,12 @@ async function onExamSubmit() {
   try {
     let firstTry = 0;
     let wrongAttempts = 0;
-    const completedIdx = [];
     for (const item of session.items) {
       const questionText = session.pool[item.questionPoolIndex];
       if (item.selectedAnswerIndex == null) {
-        item.status = 'wrong';
+        item.status = 'unanswered';
         item.checked = true;
-        item.incorrectAttemptCount = 1;
-        wrongAttempts += 1;
-        recordWrongAnswer(session, questionText.sourceQuestionIndex);
+        item.incorrectAttemptCount = 0;
         continue;
       };
       const correctAnswerIndex = isAnswerCorrect(item, questionText);
@@ -2542,7 +2565,6 @@ async function onExamSubmit() {
       if (correctAnswerIndex) {
         item.status = 'correct';
         firstTry += 1;
-        completedIdx.push(questionText.sourceQuestionIndex);
       } else {
         item.status = 'wrong';
         item.incorrectAttemptCount = 1;
@@ -2550,10 +2572,8 @@ async function onExamSubmit() {
         const wrongOriginalIndex = item.displayedAnswerOrder[item.selectedAnswerIndex];
         if (!item.incorrectAnswerIndices) item.incorrectAnswerIndices = [];
         if (!item.incorrectAnswerIndices.includes(wrongOriginalIndex)) item.incorrectAnswerIndices.push(wrongOriginalIndex);
-        recordWrongAnswer(session, questionText.sourceQuestionIndex);
       };
     };
-    if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
     session.firstTryCorrect = firstTry;
     session.totalWrongAttempts = wrongAttempts;
     session.completedInSession = session.items.length;
@@ -2580,22 +2600,21 @@ function enforceSessionDeadline() {
     state.reviewMode = true;
     let firstTry = 0;
     let wrongAttempts = 0;
-    const completedIdx = [];
     for (const item of session.items) {
       const questionText = session.pool[item.questionPoolIndex];
       item.checked = true;
       if (item.selectedAnswerIndex != null && isAnswerCorrect(item, questionText)) {
         item.status = 'correct';
         firstTry += 1;
-        completedIdx.push(questionText.sourceQuestionIndex);
+      } else if (item.selectedAnswerIndex == null) {
+        item.status = 'unanswered';
+        item.incorrectAttemptCount = 0;
       } else {
         item.status = 'wrong';
         item.incorrectAttemptCount = Math.max(1, item.incorrectAttemptCount || 0);
         wrongAttempts += 1;
-        recordWrongAnswer(session, questionText.sourceQuestionIndex);
       };
     };
-    if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
     session.firstTryCorrect = firstTry;
     session.totalWrongAttempts = wrongAttempts;
     session.completedInSession = session.items.length;
@@ -2627,7 +2646,7 @@ function onSelectOption(displayIdx) {
   persistSession();
   renderQuestion();
   const preferences = sessionPreferences(session.deckId);
-  if (preferences.automaticAnswerChecking) {
+  if (!session.examMode && preferences.automaticAnswerChecking) {
     const delay = Number.isInteger(preferences.automaticAnswerCheckDelaySeconds) ? Math.min(10, Math.max(0, preferences.automaticAnswerCheckDelaySeconds)) : 0;
     if (delay === 0) onCheck();
     else setTimeout(() => {
@@ -2725,7 +2744,7 @@ function onCheck() {
   };
   persistSession();
   renderQuestion();
-  if (isCorrect && preferences.automaticQuestionAdvance === true && session.viewIndex < session.items.length - 1) {
+  if (!session.examMode && isCorrect && preferences.automaticQuestionAdvance === true && session.viewIndex < session.items.length - 1) {
     const delaySec = Number.isInteger(preferences.automaticQuestionAdvanceDelaySeconds) && preferences.automaticQuestionAdvanceDelaySeconds >= 0 ? Math.min(10, preferences.automaticQuestionAdvanceDelaySeconds) : 0;
     const delayMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : delaySec * 1000;
     setTimeout(() => {
@@ -2811,7 +2830,7 @@ async function pauseSession() {
   const session = state.session;
   if (!session || session.reviewMode || session.finishedAt || session.pausedAt) return;
   const isExam = !!session.examMode || session.mode === 'exam';
-  const ok = await confirmModal('Tạm dừng?', isExam ? 'Bạn có thể tiếp tục bài thi sau từ thẻ phiên đang dở. Thời gian còn lại sẽ được giữ nguyên nếu có giới hạn thời gian.' : 'Bạn có thể tiếp tục ôn luyện sau từ thẻ phiên đang dở. Thời gian còn lại sẽ được giữ nguyên nếu có giới hạn thời gian.');
+  const ok = await confirmModal('TẠM DỪNG PHIÊN', isExam ? 'Bạn có thể tiếp tục bài thi sau từ thẻ phiên đang dở. Thời gian còn lại sẽ được giữ nguyên nếu có giới hạn thời gian.' : 'Bạn có thể tiếp tục ôn luyện sau từ thẻ phiên đang dở. Thời gian còn lại sẽ được giữ nguyên nếu có giới hạn thời gian.');
   if (!ok) return;
   if (!state.session || state.session !== session || session.finishedAt || session.pausedAt) return;
   session.pausedAt = Date.now();
@@ -2960,7 +2979,7 @@ function finishSession() {
   if (!session) return;
   stopSessionTimer(true);
 
-  if (session.mode !== 'practice-wrong') {
+  if (session.mode !== 'practice-wrong' && !session.examMode) {
     const completedIdx = session.items.filter((item) => item.status === 'correct').map((item) => session.pool[item.questionPoolIndex].sourceQuestionIndex);
     const progressSaved = addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
     if (!progressSaved) toast('Không thể lưu tiến độ hoàn thành. Hãy kiểm tra dung lượng bộ nhớ trình duyệt.');
@@ -2978,6 +2997,7 @@ function finishSession() {
     };
   } else {
     for (const item of session.items) {
+      if (session.examMode && item.selectedAnswerIndex == null) continue;
       if (item.incorrectAttemptCount > 0) {
         const sourceQuestionIndex = session.pool[item.questionPoolIndex].sourceQuestionIndex;
         if (!seen.has(sourceQuestionIndex)) {
@@ -2993,6 +3013,9 @@ function finishSession() {
   };
 
   const scoreTotal = session.mode === 'practice-wrong' ? session.practiceInitialCount || session.items.length : session.items.length;
+  const unansweredQuestions = session.examMode
+    ? session.items.filter((item) => item.selectedAnswerIndex == null).length
+    : 0;
   session.summary = {
     total: scoreTotal,
     score: formatScore(session.firstTryCorrect || 0, scoreTotal),
@@ -3000,7 +3023,8 @@ function finishSession() {
     timeExpired: !!session.timeExpired,
     correctAnswerIndex: session.firstTryCorrect || 0,
     wrongQuestions: wrongInSession.length,
-    wrongAttempts: session.totalWrongAttempts,
+    wrongAttempts: session.examMode ? 0 : session.totalWrongAttempts,
+    unansweredQuestions,
     practiceQuestions: session.mode === 'practice-wrong' ? session.practiceInitialCount || session.items.length : 0,
     firstTryRate: (session.mode === 'practice-wrong' ? session.practiceInitialCount : session.items.length) ? Math.round((session.firstTryCorrect / (session.mode === 'practice-wrong' ? session.practiceInitialCount : session.items.length)) * 100) : 0,
     wrongList: wrongInSession,
@@ -3009,7 +3033,7 @@ function finishSession() {
     mode: session.mode
   };
 
-  if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) && wrongInSession.length) {
+  if (!session.examMode && Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) && wrongInSession.length) {
     if (!addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, wrongInSession.map((entry) => entry.sourceQuestionIndex))) toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
   };
   state._lastSummarySession = {
@@ -3035,7 +3059,8 @@ function finishSession() {
 
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
-  getElementById('summary-title').textContent = mode === 'practice-wrong' ? 'KẾT THÚC ÔN CÂU SAI' : mode === 'practice-bookmarks' ? 'KẾT THÚC ÔN CÂU ĐÁNH DẤU' : mode === 'exam' ? 'KẾT QUẢ THI THỬ' : 'KẾT THÚC ÔN LUYỆN';
+  const isExamResult = mode === 'exam';
+  getElementById('summary-title').textContent = mode === 'practice-wrong' ? 'KẾT THÚC ÔN CÂU SAI' : mode === 'practice-bookmarks' ? 'KẾT THÚC ÔN CÂU ĐÁNH DẤU' : isExamResult ? 'KẾT QUẢ THI THỬ' : 'KẾT THÚC ÔN LUYỆN';
   const scoreVal = summary.score ?? formatScore(summary.correctAnswerIndex, summary.total);
   const scoreNum = Number(String(scoreVal).replace(',', '.')) || 0;
 
@@ -3062,14 +3087,37 @@ function showSummary(summary, deckId, mode) {
   getElementById('summary-time').textContent = formatTime(summary.elapsedSeconds || 0);
   getElementById('summary-correct').textContent = String(summary.correctAnswerIndex);
   getElementById('summary-wrong-question-count').textContent = String(summary.wrongQuestions);
-  getElementById('summary-wrong-attempt-count').textContent = String(summary.wrongAttempts);
-  getElementById('summary-practice-count').textContent = String(summary.practiceQuestions || 0);
+  const answeredCount = isExamResult
+    ? summary.total - (summary.unansweredQuestions || 0)
+    : summary.total;
+  const accuracy = answeredCount > 0 ? Math.round((summary.correctAnswerIndex / answeredCount) * 100) : 0;
+  getElementById('summary-unanswered').textContent = String(summary.unansweredQuestions || 0);
+  getElementById('summary-accuracy').textContent = accuracy + '%';
+  getElementById('summary-wrong-attempt-count').textContent = String(summary.wrongAttempts || 0);
   getElementById('summary-first-try-rate').textContent = summary.firstTryRate + '%';
+  const summaryCorrectLabel = getElementById('summary-correct-label');
+  if (summaryCorrectLabel) summaryCorrectLabel.textContent = isExamResult ? 'SỐ CÂU ĐÚNG' : 'SỐ CÂU ĐÚNG NGAY LẦN ĐẦU';
+  const summaryUnansweredRow = getElementById('summary-unanswered-row');
+  if (summaryUnansweredRow) summaryUnansweredRow.hidden = !isExamResult;
+  const summaryAccuracyRow = getElementById('summary-accuracy-row');
+  if (summaryAccuracyRow) summaryAccuracyRow.hidden = !isExamResult;
+  const summaryWrongAttemptRow = getElementById('summary-wrong-attempt-row');
+  if (summaryWrongAttemptRow) summaryWrongAttemptRow.hidden = isExamResult;
+  const summaryFirstTryRateRow = getElementById('summary-first-try-rate-row');
+  if (summaryFirstTryRateRow) summaryFirstTryRateRow.hidden = isExamResult;
 
   const totalQuestions = (state.decks[deckId] || []).length;
   const progressAfterSession = getDeckProgress(deckId);
   const completedAfterSession = new Set(progressAfterSession.completedQuestionIndices).size;
-  getElementById('summary-note').textContent = summary.timeExpired ? 'Đã hết giờ. Bài làm được tự động kết thúc.' : completedAfterSession >= totalQuestions ? 'Bạn đã hoàn thành toàn bộ bộ đề ' + DECKS[deckId].label + '.' : summary.wrongQuestions === 0 ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.' : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
+  getElementById('summary-note').textContent = summary.timeExpired
+    ? 'Đã hết giờ. Bài làm được tự động kết thúc.'
+    : isExamResult
+      ? 'Đây là kết quả riêng của lượt thi thử; không thay đổi tiến độ ôn luyện bộ đề.'
+      : completedAfterSession >= totalQuestions
+        ? 'Bạn đã hoàn thành toàn bộ bộ đề ' + DECKS[deckId].label + '.'
+        : summary.wrongQuestions === 0
+          ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.'
+          : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
 
   const listCard = getElementById('wrong-list-card');
   const list = getElementById('wrong-list');
@@ -3091,13 +3139,13 @@ function showSummary(summary, deckId, mode) {
   state.currentDeck = deckId;
   const retryButton = getElementById('button-summary-retry-session');
   retryButton.hidden = !['normal', 'exam'].includes(mode);
-  retryButton.textContent = mode === 'exam' ? 'Thi lại lượt thi này' : 'Ôn lại lượt ôn này';
+  retryButton.textContent = mode === 'exam' ? 'THI LẠI LƯỢT THI NÀY' : 'ÔN LẠI LƯỢT ÔN NÀY';
 
   const btnPractice = getElementById('button-summary-practice');
   const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.sourceQuestionIndex))];
   state._lastSummaryWrongIndices = sessionWrong;
-  btnPractice.hidden = sessionWrong.length === 0;
-  btnPractice.textContent ='Ôn lại ' + sessionWrong.length + ' câu sai trong lượt này';
+  btnPractice.hidden = isExamResult || sessionWrong.length === 0;
+  btnPractice.textContent ='ÔN LẠI ' + sessionWrong.length + ' CÂU SAI TRONG LƯỢT NÀY';
 
   const progress = getDeckProgress(deckId);
   const continueButton = getElementById('button-summary-continue');
@@ -3105,15 +3153,18 @@ function showSummary(summary, deckId, mode) {
   const rangeEnd = form.lastQuestionNumber;
   const nextIndex = Math.max(progress.sequentialQuestionCursor, form.firstQuestionNumber - 1);
   const canSeq = summary.sequential && nextIndex < rangeEnd;
-  continueButton.hidden = !canSeq;
+  continueButton.hidden = isExamResult || !canSeq;
   if (canSeq) {
     const left = rangeEnd - nextIndex;
     const settings = getSettings(deckId);
     const availableQuestionCount = Math.min(settings.allQuestionsEnabled ? left : (settings.count || 20), left);
-    continueButton.textContent = 'Tiếp tục tuần tự ' + availableQuestionCount + ' câu trong vùng';
+    continueButton.textContent = 'TIẾP TỤC TUẦN TỰ ' + availableQuestionCount + ' CÂU TRONG VÙNG';
   };
 
   state._lastSummaryDeck = deckId;
+  getElementById('button-summary-random').hidden = isExamResult;
+  getElementById('button-summary-restart').hidden = isExamResult;
+  getElementById('button-summary-again').textContent = isExamResult ? 'THI THỬ LƯỢT MỚI' : 'THIẾT LẬP LƯỢT ÔN MỚI';
 };
 
 function restoreSessionIfAny() {
@@ -3146,7 +3197,7 @@ function restoreSessionIfAny() {
   const validSession = validPool && poolMatchesCurrentData && legacyPoolCompatible && saved.items.length > 0 && Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length && Number.isInteger(saved.maxReached) && saved.maxReached >= 0 && saved.maxReached < saved.items.length && saved.viewIndex <= saved.maxReached && saved.items.every((item, index) => {
     if (!item || typeof item !== 'object' || !Number.isInteger(item.questionPoolIndex) || item.questionPoolIndex < 0 || item.questionPoolIndex >= saved.pool.length) return false;
     const questionText = saved.pool[item.questionPoolIndex];
-    return (Array.isArray(item.displayedAnswerOrder) && item.displayedAnswerOrder.length === questionText.answerOptions.length && (item.incorrectAnswerIndices == null || (Array.isArray(item.incorrectAnswerIndices) && item.incorrectAnswerIndices.every((value) => Number.isInteger(value) && value >= 0 && value < questionText.answerOptions.length))) && new Set(item.displayedAnswerOrder).size === questionText.answerOptions.length && item.displayedAnswerOrder.every((index) => Number.isInteger(index) && index >= 0 && index < questionText.answerOptions.length) && ['pending', 'wrong', 'correct'].includes(item.status) && (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') && (item.selectedAnswerIndex == null || (Number.isInteger(item.selectedAnswerIndex) && item.selectedAnswerIndex >= 0 && item.selectedAnswerIndex < item.displayedAnswerOrder.length)) && Number.isInteger(item.incorrectAttemptCount) && item.incorrectAttemptCount >= 0);
+    return (Array.isArray(item.displayedAnswerOrder) && item.displayedAnswerOrder.length === questionText.answerOptions.length && (item.incorrectAnswerIndices == null || (Array.isArray(item.incorrectAnswerIndices) && item.incorrectAnswerIndices.every((value) => Number.isInteger(value) && value >= 0 && value < questionText.answerOptions.length))) && new Set(item.displayedAnswerOrder).size === questionText.answerOptions.length && item.displayedAnswerOrder.every((index) => Number.isInteger(index) && index >= 0 && index < questionText.answerOptions.length) && ['pending', 'wrong', 'correct', 'unanswered'].includes(item.status) && (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') && (item.selectedAnswerIndex == null || (Number.isInteger(item.selectedAnswerIndex) && item.selectedAnswerIndex >= 0 && item.selectedAnswerIndex < item.displayedAnswerOrder.length)) && Number.isInteger(item.incorrectAttemptCount) && item.incorrectAttemptCount >= 0);
   });
   if (!validSession || (saved.questionDataFingerprint !== fingerprint && !legacyCompatible)) {
     clearSession(state.currentDeck);
@@ -3512,13 +3563,13 @@ function bindEvents() {
   getElementById('input-time-limit')?.addEventListener('change', persistSetupForm);
   getElementById('input-auto-advance-delay')?.addEventListener('input', () => {
     const delay = Number.parseInt(getElementById('input-auto-advance-delay').value, 10) || 0;
-    if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' giây';
+    if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' GIÂY';
     persistSetupForm();
   });
   getElementById('input-auto-advance-delay')?.addEventListener('change', persistSetupForm);
   getElementById('input-auto-check-delay')?.addEventListener('input', () => {
     const delay = Number.parseInt(getElementById('input-auto-check-delay').value, 10) || 0;
-    if (getElementById('label-auto-check-delay')) getElementById('label-auto-check-delay').textContent = delay + ' giây';
+    if (getElementById('label-auto-check-delay')) getElementById('label-auto-check-delay').textContent = delay + ' GIÂY';
     persistSetupForm();
   });
   getElementById('input-auto-check-delay')?.addEventListener('change', persistSetupForm);
@@ -3626,30 +3677,30 @@ function bindEvents() {
   getElementById('button-clear-practice-wrong')?.addEventListener('click', async () => {
     const form = readSetupForm();
     const indices = selectedQuestions(form).map((questionText) => questionText.sourceQuestionIndex);
-    const ok = await confirmModal('Xóa câu sai trong vùng?', 'Lịch sử sai của các câu trong vùng hiện tại sẽ bị xóa.');
+    const ok = await confirmModal('XÓA TOÀN BỘ CÂU SAI TRONG VÙNG', 'Lịch sử sai của toàn bộ câu trong vùng hiện tại sẽ bị xóa.');
     if (!ok) return;
     if (!clearWrongAnswers(state.currentDeck, indices)) {
-      toast('Không thể xóa câu sai trong vùng.');
+      toast('Không thể xóa toàn bộ câu sai trong vùng.');
       return;
     };
     refreshSetupUI();
-    toast('Đã xóa câu sai trong vùng.');
+    toast('Đã xóa toàn bộ câu sai trong vùng.');
   });
   getElementById('button-clear-all-wrong')?.addEventListener('click', async () => {
-    const ok = await confirmModal('Xóa toàn bộ câu sai?', 'Toàn bộ lịch sử sai của bộ đề sẽ bị xóa.');
+    const ok = await confirmModal('XÓA TOÀN BỘ CÂU SAI CỦA BỘ ĐỀ', 'Toàn bộ lịch sử câu sai của bộ đề sẽ bị xóa.');
     if (!ok) return;
     if (!clearWrongAnswers(state.currentDeck)) {
-      toast('Không thể xóa toàn bộ câu sai.');
+      toast('Không thể xóa toàn bộ câu sai của bộ đề.');
       return;
     };
     refreshSetupUI();
-    toast('Đã xóa toàn bộ câu sai.');
+    toast('Đã xóa toàn bộ câu sai của bộ đề.');
   });
   getElementById('button-clear-bookmarks')?.addEventListener('click', async () => {
-    const ok = await confirmModal('Xóa toàn bộ đánh dấu?', 'Tất cả câu hỏi đã đánh dấu của bộ đề sẽ bị xóa.');
+    const ok = await confirmModal('XÓA TOÀN BỘ CÂU ĐÃ ĐÁNH DẤU?', 'Toàn bộ câu hỏi đã đánh dấu của bộ đề sẽ bị xóa.');
     if (!ok) return;
     if (!clearBookmarks(state.currentDeck)) {
-      toast('Không thể xóa câu đã đánh dấu.');
+      toast('Không thể xóa toàn bộ câu đã đánh dấu.');
       return;
     };
     refreshSetupUI();
@@ -3664,18 +3715,18 @@ function bindEvents() {
     else refreshSetupUI();
   });
   getElementById('button-discard-session')?.addEventListener('click', async () => {
-    const ok = await confirmModal('Bỏ phiên đang dở?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
+    const ok = await confirmModal('XÓA PHIÊN ĐANG DỞ?', 'Phiên làm bài hiện tại sẽ bị xóa. Tiến độ bộ đề đã lưu vẫn giữ nguyên.');
     if (!ok) return;
     clearSession(state.currentDeck);
     state.session = null;
     state.reviewMode = false;
     refreshResumeCard();
-    toast('Đã bỏ phiên cũ.');
+    toast('Đã bỏ phiên đang dở.');
   });
   getElementById('button-exam-quit')?.addEventListener('click', async () => {
     const session = state.session;
     const reviewing = session?.reviewMode;
-    const ok = await confirmModal(reviewing ? 'Thoát kết quả thi?' : 'Thoát bài thi?', reviewing ? 'Bạn sẽ quay về màn hình thiết lập. Kết quả lần thi này không lưu lại phiên đang mở.' : 'Phiên thi hiện tại sẽ bị đóng. Tiến độ bộ đề (câu đã hoàn thành, câu sai) vẫn được giữ nếu bạn đã nộp bài.');
+    const ok = await confirmModal(reviewing ? 'XÓA KẾT QUẢ THI?' : 'XÓA BÀI THI?', reviewing ? 'Bạn sẽ quay về màn hình thiết lập. Kết quả lần thi này không lưu lại phiên đang mở.' : 'Phiên thi hiện tại sẽ bị đóng. Tiến độ bộ đề vẫn được giữ nếu bạn đã nộp bài.');
     if (!ok) return;
     clearInterval(state.timerInterval);
     state.timerInterval = null;
@@ -3846,7 +3897,7 @@ function bindEvents() {
   getElementById('button-prev').addEventListener('click', onPrev);
 
   getElementById('button-quit').addEventListener('click', async () => {
-    const ok = await confirmModal('Thoát lượt ôn?', 'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.');
+    const ok = await confirmModal('XÓA PHIÊN ÔN', 'Phiên ôn hiện tại sẽ bị đóng. Tiến độ các lượt đã hoàn thành và lịch sử câu sai vẫn được giữ trên trình duyệt.');
     if (!ok) return;
     clearInterval(state.timerInterval);
     state.timerInterval = null;

@@ -1,5 +1,5 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1';
+const VERSION = '2.0.0';
 const ASSETS = [
   './',
   './index.html',
@@ -51,7 +51,11 @@ const ASSETS = [
   './assets/icons/tabler/infinity.svg',
   './assets/icons/tabler/infinity-off.svg',
   './assets/icons/tabler/sun.svg',
-  './assets/icons/tabler/moon.svg'
+  './assets/icons/tabler/moon.svg',
+  './assets/icons/tabler/square-rounded.svg',
+  './assets/icons/tabler/square-rounded-check.svg',
+  './assets/icons/tabler/info-circle.svg',
+  './assets/icons/tabler/info-triangle.svg'
 ];
 
 self.addEventListener('install', (event) => event.waitUntil((async () => {
