@@ -1,6 +1,6 @@
 import { initializeEnhancements } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
-import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
+import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, clearWrongAnswers, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, clearBookmarks, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
 const DECKS = {
   quocphonganninh1: {
@@ -55,7 +55,8 @@ const state = {
   reviewEditingNoteDraft: '',
   reviewEditingQuestionIndex: null,
   allQuestionsEnabled: false,
-  unlimitedTimeEnabled: false
+  unlimitedTimeEnabled: false,
+  visibleQuestionCount: null
 };
 
 const REVIEW_VIRTUAL_OVERSCAN = 3;
@@ -287,20 +288,18 @@ function visibleDeckQuestions(deckId) {
 };
 
 function formatDeckCountLabel(deckId) {
-  const all = allDeckQuestions(deckId);
-  const full = all.length;
-  if (!full) return '0 câu';
-  const visible = visibleDeckQuestions(deckId).length;
-  const hidden = full - visible;
-  if (hidden > 0) return visible + ' câu · ' + hidden + ' ẩn';
-  return visible + ' câu';
+  return visibleDeckQuestions(deckId).length + ' câu';
+};
+
+function formatBankDeckCountLabel(deckId) {
+  return allDeckQuestions(deckId).length + ' câu';
 };
 
 function updateDeckCountLabels() {
   if (getElementById('count-quocphonganninh1')) getElementById('count-quocphonganninh1').textContent = formatDeckCountLabel('quocphonganninh1');
   if (getElementById('count-quocphonganninh2')) getElementById('count-quocphonganninh2').textContent = formatDeckCountLabel('quocphonganninh2');
-  if (getElementById('bank-count-quocphonganninh1')) getElementById('bank-count-quocphonganninh1').textContent = formatDeckCountLabel('quocphonganninh1');
-  if (getElementById('bank-count-quocphonganninh2')) getElementById('bank-count-quocphonganninh2').textContent = formatDeckCountLabel('quocphonganninh2');
+  if (getElementById('bank-count-quocphonganninh1')) getElementById('bank-count-quocphonganninh1').textContent = formatBankDeckCountLabel('quocphonganninh1');
+  if (getElementById('bank-count-quocphonganninh2')) getElementById('bank-count-quocphonganninh2').textContent = formatBankDeckCountLabel('quocphonganninh2');
 };
 
 function sessionPreferences(deckId) {
@@ -616,8 +615,9 @@ function exitBankQuestionEdit(card) {
   if (parts.editQuestionButton) {
     parts.editQuestionButton.classList.remove('is-active');
     parts.editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
-    parts.editQuestionButton.title = 'Chỉnh sửa';
+    parts.editQuestionButton.title = 'Mở trình chỉnh sửa';
   };
+  refreshReviewVirtualLayout();
 };
 
 function enterBankQuestionEdit(card, questionIndex) {
@@ -650,21 +650,20 @@ function enterBankQuestionEdit(card, questionIndex) {
   parts.editBlock.innerHTML = '';
   if (parts.editQuestionButton) {
     parts.editQuestionButton.classList.add('is-active');
-    parts.editQuestionButton.setAttribute('aria-label', 'Đóng chỉnh sửa');
-    parts.editQuestionButton.title = 'Đóng chỉnh sửa';
+    parts.editQuestionButton.setAttribute('aria-label', 'Đóng trình chỉnh sửa');
+    parts.editQuestionButton.title = 'Đóng trình chỉnh sửa';
   };
-
   const questionLabel = document.createElement('label');
   questionLabel.className = 'review-edit-label';
-  questionLabel.textContent = 'Câu hỏi';
+  questionLabel.textContent = 'CÂU HỎI';
   const questionInput = document.createElement('textarea');
-  questionInput.className = 'review-edit-questionText';
+  questionInput.className = 'review-edit-question';
   questionInput.rows = 3;
   questionInput.value = questionText.questionText;
 
   const answerLabel = document.createElement('div');
   answerLabel.className = 'review-edit-label';
-  answerLabel.textContent = 'Đáp án (bấm ghim để cố định vị trí)';
+  answerLabel.textContent = 'ĐÁP ÁN';
 
   const answerOptionList = document.createElement('div');
   answerOptionList.className = 'review-edit-options';
@@ -730,8 +729,8 @@ function enterBankQuestionEdit(card, questionIndex) {
   resetBtn.type = 'button';
   resetBtn.className = 'button button-ghost button-icon-only';
   resetBtn.dataset.icon = 'rotate-clockwise';
-  resetBtn.setAttribute('aria-label', 'Khôi phục gốc');
-  resetBtn.title = 'Khôi phục gốc';
+  resetBtn.setAttribute('aria-label', 'Khôi phục');
+  resetBtn.title = 'Khôi phục';
 
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
@@ -766,6 +765,7 @@ function enterBankQuestionEdit(card, questionIndex) {
   actions.append(saveBtn, resetBtn, cancelBtn);
 
   parts.editBlock.append(questionLabel, questionInput, answerLabel, answerOptionList, actions);
+  refreshReviewVirtualLayout();
 
   cancelBtn.addEventListener('click', () => {
     exitBankQuestionEdit(card);
@@ -872,7 +872,7 @@ function createReviewBankCard() {
   editQuestionButton.className = 'button button-ghost button-icon-only ';
   editQuestionButton.dataset.icon = 'pencil';
   editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
-  editQuestionButton.title = 'Chỉnh sửa';
+  editQuestionButton.title = 'Mở trình chỉnh sửa';
 
   const hideQuestionButton = document.createElement('button');
   hideQuestionButton.type = 'button';
@@ -884,10 +884,10 @@ function createReviewBankCard() {
 
   const noteEditBtn = document.createElement('button');
   noteEditBtn.type = 'button';
-  noteEditBtn.className = 'button-icon-only';
+  noteEditBtn.className = 'button button-ghost button-icon-only';
   noteEditBtn.dataset.icon = 'notebook';
-  noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
-  noteEditBtn.title = 'Sửa ghi chú';
+  noteEditBtn.setAttribute('aria-label', 'Mở trình sửa ghi chú');
+  noteEditBtn.title = 'Mở trình sửa ghi chú';
 
   const highlightButton = document.createElement('button');
   highlightButton.type = 'button';
@@ -1010,22 +1010,24 @@ function createReviewBankCard() {
       noteText.hidden = false;
       noteBlock.classList.remove('is-empty');
       noteBlock.hidden = false;
-      noteEditBtn.setAttribute('aria-label', 'Sửa ghi chú');
-      noteEditBtn.title = 'Sửa ghi chú';
+      noteEditBtn.setAttribute('aria-label', 'Mở trình sửa ghi chú');
+      noteEditBtn.title = 'Mở trình sửa ghi chú';
     } else {
       noteText.textContent = '';
       noteText.hidden = true;
       noteBlock.classList.add('is-empty');
       noteBlock.hidden = true;
-      noteEditBtn.setAttribute('aria-label', 'Thêm ghi chú');
-      noteEditBtn.title = 'Thêm ghi chú';
+      noteEditBtn.setAttribute('aria-label', 'Mở trình thêm ghi chú');
+      noteEditBtn.title = 'Mở trình thêm ghi chú';
     };
     syncReviewActionState();
+    refreshReviewVirtualLayout();
   };
 
   function setReviewNoteEditMode(questionIndex, draft) {
     state.reviewEditingNoteIndex = questionIndex;
-    const value = typeof draft === 'string' ? draft : getQuestionNote(state.bankDeck, questionIndex);
+    const existingNote = getQuestionNote(state.bankDeck, questionIndex);
+    const value = typeof draft === 'string' ? draft : existingNote;
     state.reviewEditingNoteDraft = value;
     noteInputElement.value = value;
     noteText.hidden = true;
@@ -1036,7 +1038,10 @@ function createReviewBankCard() {
     noteBlock.classList.remove('is-empty');
     noteBlock.hidden = false;
     noteEditBtn.classList.add('has-note');
+    noteEditBtn.setAttribute('aria-label', existingNote ? 'Đóng trình sửa ghi chú' : 'Đóng trình thêm ghi chú');
+    noteEditBtn.title = existingNote ? 'Đóng trình sửa ghi chú' : 'Đóng trình thêm ghi chú';
     syncReviewActionState();
+    refreshReviewVirtualLayout();
     noteInputElement.focus();
   };
 
@@ -1049,6 +1054,13 @@ function createReviewBankCard() {
   noteEditBtn.addEventListener('click', () => {
     const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
+    if (Number.isInteger(state.reviewEditingQuestionIndex)) {
+      const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.sourceQuestionIndex) === state.reviewEditingQuestionIndex);
+      if (!activeCard?._vs?.editBlock || activeCard._vs.editBlock.hidden) {
+        state.reviewEditingQuestionIndex = null;
+        syncReviewActionState();
+      };
+    };
     if (Number.isInteger(state.reviewEditingQuestionIndex)) {
       toast('Hãy lưu hoặc đóng chỉnh sửa câu hỏi trước khi ghi chú.');
       return;
@@ -1095,10 +1107,22 @@ function createReviewBankCard() {
   const syncReviewActionState = () => {
     const editingQuestion = Number.isInteger(state.reviewEditingQuestionIndex);
     const editingNote = Number.isInteger(state.reviewEditingNoteIndex);
+    const hasNote = !!getQuestionNote(state.bankDeck, Number(card.dataset.sourceQuestionIndex));
     editQuestionButton.disabled = editingNote;
     noteEditBtn.disabled = editingQuestion;
-    editQuestionButton.title = editingNote ? 'Hãy đóng ghi chú trước' : 'Chỉnh sửa';
-    noteEditBtn.title = editingQuestion ? 'Hãy đóng chỉnh sửa trước' : noteEditBtn.title;
+    const editBlockedLabel = hasNote ? 'Hãy đóng trình sửa ghi chú trước' : 'Hãy đóng trình thêm ghi chú trước';
+    editQuestionButton.title = editingNote ? editBlockedLabel : 'Mở trình chỉnh sửa';
+    editQuestionButton.setAttribute('aria-label', editingNote ? editBlockedLabel : 'Mở trình chỉnh sửa');
+    if (editingQuestion) {
+      noteEditBtn.title = 'Hãy đóng trình chỉnh sửa trước';
+      noteEditBtn.setAttribute('aria-label', noteEditBtn.title);
+    } else if (editingNote) {
+      noteEditBtn.title = hasNote ? 'Đóng trình sửa ghi chú' : 'Đóng trình thêm ghi chú';
+      noteEditBtn.setAttribute('aria-label', noteEditBtn.title);
+    } else {
+      noteEditBtn.title = hasNote ? 'Mở trình sửa ghi chú' : 'Mở trình thêm ghi chú';
+      noteEditBtn.setAttribute('aria-label', noteEditBtn.title);
+    };
   };
   const answerOptions = document.createElement('ol');
   answerOptions.className = 'review-options';
@@ -1158,7 +1182,7 @@ function bindReviewBankCard(card, questionText, listIndex) {
   card.dataset.listIndex = String(listIndex);
   card.dataset.sourceQuestionIndex = String(questionText.sourceQuestionIndex);
   card.id = 'review-question-' + (questionText.sourceQuestionIndex + 1);
-  parts.heading.textContent = 'Câu ' + (questionText.sourceQuestionIndex + 1);
+  parts.heading.textContent = 'CÂU ' + (questionText.sourceQuestionIndex + 1);
   card.classList.toggle('review-question-highlight', state.reviewFocusQuestionNumber === questionText.sourceQuestionIndex + 1);
   card.classList.toggle('is-answer-fixed', Array.isArray(questionText.fixedAnswerIndices) && questionText.fixedAnswerIndices.length > 0);
 
@@ -1320,6 +1344,21 @@ function syncReviewVirtualWindow() {
   });
 };
 
+function refreshReviewVirtualLayout() {
+  if (state.mode !== 'review') return;
+  const virtualScrollState = getReviewVirtualState();
+  if (!getElementById('review-list')) return;
+  requestAnimationFrame(() => {
+    measureReviewVirtualVisible(virtualScrollState);
+    rebuildReviewVirtualMetrics(virtualScrollState);
+    for (const card of virtualScrollState.pool || []) {
+      if (card.hidden) continue;
+      const index = Number(card.dataset.listIndex);
+      if (Number.isInteger(index)) card.style.transform = 'translateY(' + (virtualScrollState.positions[index] || 0) + 'px)';
+    };
+  });
+};
+
 function onReviewVirtualScroll() {
   const virtualScrollState = getReviewVirtualState();
   if (virtualScrollState.scrollRaf) return;
@@ -1418,11 +1457,10 @@ function renderQuestionBank() {
     gotoInput.min = '1';
     gotoInput.max = String(Math.max(1, questions.length));
     gotoInput.placeholder = '1–' + questions.length;
-    gotoInput.setAttribute('aria-label', 'Đi đến câu số từ 1 đến ' + questions.length);
+    gotoInput.setAttribute('aria-label', 'Đến một câu trong khoảng từ câu 1 đến câu ' + questions.length);
   };
   const searchInput = getElementById('input-review-search');
   if (searchInput && searchInput.value !== state.bankSearchQuery) searchInput.value = state.bankSearchQuery;
-  getElementById('review-title').textContent = 'Ngân hàng câu hỏi';
   document.querySelectorAll('[data-bank-deck]').forEach((button) => button.classList.toggle('active', button.dataset.bankDeck === state.bankDeck));
   updateDeckCountLabels();
 
@@ -1502,7 +1540,7 @@ function openQuestionBank() {
 
 function refreshSetupUI() {
   const questions = currentQuestions();
-  const fullTotal = allDeckQuestions(state.currentDeck).length;
+  const fullTotal = questions.length;
   const total = questions.length;
   updateDeckCountLabels();
 
@@ -1514,12 +1552,16 @@ function refreshSetupUI() {
   endInput.max = String(Math.max(1, fullTotal));
   let start = Number.parseInt(startInput.value, 10);
   let end = Number.parseInt(endInput.value, 10);
+  const previousVisibleTotal = state.visibleQuestionCount;
+  const endWasAtPreviousTotal = Number.isInteger(previousVisibleTotal) && end === previousVisibleTotal;
   if (!Number.isInteger(start)) start = 1;
   if (!Number.isInteger(end)) end = fullTotal;
+  if (endWasAtPreviousTotal) end = fullTotal;
   start = Math.max(1, Math.min(start, Math.max(1, fullTotal)));
   end = Math.max(start, Math.min(end, Math.max(1, fullTotal)));
   startInput.value = String(start);
   endInput.value = String(end);
+  state.visibleQuestionCount = fullTotal;
 
   const rangeTotal = Math.max(0, end - start + 1);
   const input = getElementById('input-count');
@@ -1536,7 +1578,7 @@ function refreshSetupUI() {
     selectAllButton.classList.toggle('is-active', isAllCount);
     selectAllButton.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
     setToggleIcon(selectAllButton, isAllCount, { on: 'deselect', off: 'select-all' });
-    selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+    selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Chọn toàn bộ vùng';
     selectAllButton.setAttribute('aria-label', selectAllButton.title);
   };
   input.disabled = isAllCount && !countFocused;
@@ -1556,7 +1598,7 @@ function refreshSetupUI() {
       unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
       unlimitedTimeButton.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
       setToggleIcon(unlimitedTimeButton, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-      unlimitedTimeButton.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      unlimitedTimeButton.title = isUnlimited ? 'Tắt không giới hạn thời gian' : 'Bật không giới hạn thời gian';
       unlimitedTimeButton.setAttribute('aria-label', unlimitedTimeButton.title);
     };
     timeInput.disabled = isUnlimited && !timeFocused;
@@ -1583,27 +1625,34 @@ function refreshSetupUI() {
   ).filter((index) => !hiddenSet.has(index)).length;
   practiceWrongButton.disabled = state.studyMode === 'exam' || rangeWrongCount === 0;
   practiceWrongButton.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
+  const clearPracticeWrongButton = getElementById('button-clear-practice-wrong');
+  if (clearPracticeWrongButton) clearPracticeWrongButton.disabled = rangeWrongCount === 0;
 
   const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < fullTotal && !hiddenSet.has(index)).length;
   const practiceAllWrongButton = getElementById('button-practice-all-wrong');
   practiceAllWrongButton.disabled = state.studyMode === 'exam' || allWrongCount === 0;
   practiceAllWrongButton.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
+  const clearAllWrongButton = getElementById('button-clear-all-wrong');
+  if (clearAllWrongButton) clearAllWrongButton.disabled = allWrongCount === 0;
 
   const bookmarkedQuestionIndices = new Set(getBookmarkedIndices(state.currentDeck));
   const rangeBookmarkCount = [...bookmarkedQuestionIndices].filter((questionIndex) => questionIndex >= start - 1 && questionIndex < end && questionIndex < fullTotal && !isQuestionHidden(state.currentDeck, questionIndex)).length;
   const practiceBookmarksButton = getElementById('button-practice-bookmarks');
   practiceBookmarksButton.disabled = state.studyMode === 'exam' || rangeBookmarkCount === 0;
   practiceBookmarksButton.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
+  const clearBookmarksButton = getElementById('button-clear-bookmarks');
+  if (clearBookmarksButton) clearBookmarksButton.disabled = rangeBookmarkCount === 0;
 
-  const rangeQuestions = questions.filter((questionText) => questionText.sourceQuestionIndex >= start - 1 && questionText.sourceQuestionIndex < end);
+  const rangeQuestions = questions.slice(start - 1, end);
   const shuffleQuestionOrder = getElementById('checkbox-shuffle-questions').checked;
   const continueButton = getElementById('button-continue');
-  const nextQuestion = findNextUncompletedQuestion(rangeQuestions, Math.max(progress.sequentialQuestionCursor, start - 1), completedQuestionIndices);
+  const rangeStartSourceIndex = rangeQuestions[0]?.sourceQuestionIndex ?? 0;
+  const nextQuestion = findNextUncompletedQuestion(rangeQuestions, Math.max(progress.sequentialQuestionCursor, rangeStartSourceIndex), completedQuestionIndices);
   const nextIndex = nextQuestion?.sourceQuestionIndex ?? end;
   const canContinue = state.studyMode !== 'exam' && !shuffleQuestionOrder && !!nextQuestion;
   continueButton.hidden = !canContinue;
   if (canContinue) {
-    const left = end - nextIndex;
+    const left = rangeQuestions.filter((questionText) => questionText.sourceQuestionIndex >= nextIndex).length;
     const availableQuestionCount = Math.min(state.allQuestionsEnabled ? rangeTotal : (Number(input.value) || 20), left);
     continueButton.textContent = 'Tiếp tục tuần tự ' + availableQuestionCount + ' câu từ câu ' + (nextIndex + 1);
   };
@@ -1664,7 +1713,7 @@ function updateSetupExperienceControls() {
   const delayField = getElementById('field-auto-advance-delay');
   if (delayInput) delayInput.disabled = !autoAdvanceOn;
   if (delayField) delayField.classList.toggle('is-disabled', !autoAdvanceOn);
-  syncExperienceToggleButton('button-auto-advance', 'checkbox-automatic-advance', 'toggle-right', 'toggle-left', 'Bật tự sang câu tiếp', 'Tắt tự sang câu tiếp');
+  syncExperienceToggleButton('button-auto-advance', 'checkbox-automatic-advance', 'toggle-right', 'toggle-left', 'Bật tự chuyển câu', 'Tắt tự chuyển câu');
 
   const soundOn = !!getElementById('checkbox-sound')?.checked;
   const volumeInput = getElementById('input-sound-volume');
@@ -1717,8 +1766,8 @@ function setBankDeck(deckId) {
   
   renderQuestionBank();
   if (getElementById('bank-count-quocphonganninh1')) {
-    getElementById('bank-count-quocphonganninh1').textContent = (state.decks.quocphonganninh1?.length ?? 479) + ' câu';
-    getElementById('bank-count-quocphonganninh2').textContent = (state.decks.quocphonganninh2?.length ?? 262) + ' câu';
+    getElementById('bank-count-quocphonganninh1').textContent = formatBankDeckCountLabel('quocphonganninh1');
+    getElementById('bank-count-quocphonganninh2').textContent = formatBankDeckCountLabel('quocphonganninh2');
   };
   updateBankSearchHint();
   updateBankSearchNavButtons();
@@ -1858,7 +1907,7 @@ function stopSessionTimer(freeze = true) {
 };
 
 function selectedQuestions(form = readSetupForm()) {
-  return currentQuestions().filter((questionText) => questionText.sourceQuestionIndex >= form.firstQuestionNumber - 1 && questionText.sourceQuestionIndex < form.lastQuestionNumber);
+  return currentQuestions().slice(form.firstQuestionNumber - 1, form.lastQuestionNumber);
 };
 
 function startSessionFromPool(pool, metadata) {
@@ -1944,8 +1993,8 @@ function startNormal(answerOptionsElement = {}) {
   persistSetupForm();
   const progress = getDeckProgress(state.currentDeck);
   const completedSet = new Set(progress.completedQuestionIndices);
-  const rangeStart = form.firstQuestionNumber - 1;
-  const rangeEnd = form.lastQuestionNumber;
+  const rangeStart = questions[0]?.sourceQuestionIndex ?? 0;
+  const rangeEnd = questions.length ? questions[questions.length - 1].sourceQuestionIndex + 1 : 0;
 
   if (answerOptionsElement.restart) {
     const { items, nextCursor } = pickSequential(questions, 0, form.count, new Set());
@@ -2038,7 +2087,7 @@ function startPracticeWrong(answerOptions = {}) {
   const allDeck = answerOptions.allDeck === true;
   const questions = allDeck ? currentQuestions() : selectedQuestions(form);
   const rangeIndices = new Set(questions.map((questionText) => questionText.sourceQuestionIndex));
-  const sourceIndices = Array.isArray(answerOptions.indices) ? answerOptions.indices : allDeck ? getWrongIndices(state.currentDeck) : getRangeWrongIndices(state.currentDeck, form.firstQuestionNumber, form.lastQuestionNumber);
+  const sourceIndices = Array.isArray(answerOptions.indices) ? answerOptions.indices : getWrongIndices(state.currentDeck);
   const wrongs = [...new Set(sourceIndices)].filter((index) => rangeIndices.has(index));
   if (!wrongs.length) {
     toast(allDeck ? 'Bộ đề này chưa có câu sai để ôn.' : 'Trong vùng câu hỏi đã chọn không có câu sai để ôn.');
@@ -2091,15 +2140,15 @@ function renderQuestion() {
 
   const viewingHistory = session.viewIndex < session.maxReached;
 
-  getElementById('progress-label').textContent = 'Câu ' + (session.viewIndex + 1) + ' / ' + session.items.length;
+  getElementById('progress-label').textContent = 'CÂU ' + (session.viewIndex + 1) + ' / ' + session.items.length;
   const progressTotal = session.mode === 'practice-wrong' ? session.practiceInitialCount || session.items.length : session.items.length;
-  getElementById('progress-score').textContent = 'Điểm ' + formatScore(session.firstTryCorrect || 0, progressTotal) + ' / 10';
+  getElementById('progress-score').textContent = 'ĐIỂM ' + formatScore(session.firstTryCorrect || 0, progressTotal) + ' / 10';
   updateTimerDisplay();
   const percentage = progressTotal ? Math.round((session.completedInSession / progressTotal) * 100) : 0;
   getElementById('progress-fill').style.width = percentage + '%';
   getElementById('progress-fill').parentElement.setAttribute('aria-valuenow', String(percentage));
 
-  getElementById('question-badge').textContent = session.mode === 'practice-wrong' ? 'Ôn câu sai · Gốc #' + (questionText.sourceQuestionIndex + 1) : session.mode === 'practice-bookmarks' ? 'Ôn câu đã đánh dấu · Gốc #' + (questionText.sourceQuestionIndex + 1) : 'Câu hỏi · Gốc #' + (questionText.sourceQuestionIndex + 1);
+  getElementById('question-badge').textContent = session.mode === 'practice-wrong' ? 'ÔN CÂU SAI · GỐC #' + (questionText.sourceQuestionIndex + 1) : session.mode === 'practice-bookmarks' ? 'ÔN CÂU ĐÁNH DẤU · GỐC #' + (questionText.sourceQuestionIndex + 1) : 'CÂU HỎI · GỐC #' + (questionText.sourceQuestionIndex + 1);
   const bookmarkButton = getElementById('button-bookmark');
   const isBookmarked = getBookmarkedIndices(session.deckId).includes(questionText.sourceQuestionIndex);
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
@@ -2118,8 +2167,9 @@ function renderQuestion() {
   if (noteButton) {
     noteButton.classList.toggle('has-note', !!existingNote);
     noteButton.setAttribute('aria-pressed', String(!!existingNote || editingNote));
-    noteButton.setAttribute('aria-label', existingNote || editingNote ? 'Sửa ghi chú' : 'Thêm ghi chú');
-    noteButton.title = existingNote || editingNote ? 'Sửa ghi chú' : 'Thêm ghi chú';
+    const noteEditorLabel = existingNote ? 'trình sửa ghi chú' : 'trình thêm ghi chú';
+    noteButton.setAttribute('aria-label', editingNote ? 'Đóng ' + noteEditorLabel : 'Mở ' + noteEditorLabel);
+    noteButton.title = editingNote ? 'Đóng ' + noteEditorLabel : 'Mở ' + noteEditorLabel;
   };
   if (noteWrap && session.examMode) {
     noteWrap.hidden = true;
@@ -2216,7 +2266,7 @@ function renderQuestion() {
   getElementById('button-prev').disabled = session.viewIndex <= 0;
   const nextButton = getElementById('button-next');
   if (viewingHistory) {
-    nextButton.textContent = 'Câu tiếp';
+    nextButton.textContent = 'CÂU TIẾP';
     nextButton.dataset.icon = 'chevron-right';
     nextButton.disabled = session.viewIndex >= session.maxReached;
   } else if (item.status === 'correct') {
@@ -2226,15 +2276,15 @@ function renderQuestion() {
       const unresolved = session.items.filter((entry) => entry.status !== 'correct');
       shouldFinish = unresolved.length === 0;
     };
-    nextButton.textContent = shouldFinish ? 'Kết thúc' : 'Câu tiếp';
+    nextButton.textContent = shouldFinish ? 'KẾT THÚC' : 'CÂU TIẾP';
     nextButton.dataset.icon = shouldFinish ? 'check' : 'chevron-right';
     nextButton.disabled = false;
   } else if (session.mode === 'practice-wrong' && item.status === 'wrong' && item.checked) {
-    nextButton.textContent = 'Câu tiếp';
+    nextButton.textContent = 'CÂU TIẾP';
     nextButton.dataset.icon = 'chevron-right';
     nextButton.disabled = false;
   } else {
-    nextButton.textContent = 'Kiểm tra';
+    nextButton.textContent = 'KIỂM TRA';
     nextButton.dataset.icon = 'check';
     nextButton.disabled = item.selectedAnswerIndex == null || item.checked;
   };
@@ -2254,7 +2304,7 @@ function updateExamProgressHeader() {
   if (!session || !session.examMode) return;
   const answered = session.items.filter((item) => item.selectedAnswerIndex != null).length;
   const unanswered = session.items.length - answered;
-  getElementById('exam-progress-label').textContent = session.reviewMode ? 'Kết quả · ' + (session.firstTryCorrect || 0) + ' / ' + session.items.length + ' câu đúng' : 'Đã chọn ' + answered + ' / ' + session.items.length + ' câu';
+  getElementById('exam-progress-label').textContent = session.reviewMode ? 'KẾT QUẢ · ' + (session.firstTryCorrect || 0) + ' / ' + session.items.length + ' CÂU ĐÚNG' : 'ĐÃ CHỌN ' + answered + ' / ' + session.items.length + ' CÂU';
   const percentage = session.items.length ? Math.round((answered / session.items.length) * 100) : 0;
   const fill = getElementById('exam-progress-fill');
   if (fill) {
@@ -2269,18 +2319,20 @@ function updateExamProgressHeader() {
   const nextEmpty = getElementById('button-exam-next-empty');
   if (nextEmpty) {
     nextEmpty.hidden = session.reviewMode || unanswered === 0;
-    nextEmpty.textContent = unanswered ? 'Còn ' + unanswered + ' câu' : 'Đủ đáp án';
+    nextEmpty.textContent = unanswered ? 'CÒN ' + unanswered + ' CÂU' : 'ĐỦ ĐÁP ÁN';
   };
   const pauseBtn = getElementById('button-exam-pause');
   if (pauseBtn) pauseBtn.hidden = !!session.reviewMode;
+  const examActionsRow = document.querySelector('.exam-actions-row');
+  if (examActionsRow) examActionsRow.classList.toggle('is-reviewing', !!session.reviewMode);
   const submitBtn = getElementById('button-exam-submit');
   if (submitBtn) {
     if (session.reviewMode) {
-      submitBtn.textContent = 'Xem tổng kết';
+      submitBtn.textContent = 'XEM TỔNG KẾT';
       submitBtn.dataset.icon = 'list-check';
       submitBtn.disabled = false;
     } else {
-      submitBtn.textContent = 'Nộp bài';
+      submitBtn.textContent = 'NỘP BÀI';
       submitBtn.dataset.icon = 'check';
       submitBtn.disabled = !!state.examSubmitting;
     };
@@ -2349,12 +2401,12 @@ function renderExam() {
     head.className = 'exam-question-header';
     const questionNumberElement = document.createElement('span');
     questionNumberElement.className = 'exam-question-number';
-    questionNumberElement.textContent = 'Câu ' + (index + 1) + ' · Gốc #' + (questionText.sourceQuestionIndex + 1);
+    questionNumberElement.textContent = 'CÂU ' + (index + 1) + ' · GỐC #' + (questionText.sourceQuestionIndex + 1);
     head.appendChild(questionNumberElement);
     if (session.reviewMode) {
       const badge = document.createElement('span');
       badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'is-correct-answer' : 'is-incorrect-answer');
-      badge.textContent = item.status === 'correct' ? 'Đúng' : item.selectedAnswerIndex == null ? 'Bỏ trống' : 'Sai';
+      badge.textContent = item.status === 'correct' ? 'ĐÚNG' : item.selectedAnswerIndex == null ? 'BỎ TRỐNG' : 'SAI';
       head.appendChild(badge);
     };
     card.appendChild(head);
@@ -2400,7 +2452,7 @@ function renderExam() {
     dot.type = 'button';
     dot.className = 'exam-question-navigation-dot';
     dot.textContent = String(index + 1);
-    dot.title = 'Câu ' + (index + 1);
+    dot.title = 'CÂU ' + (index + 1);
     dot.dataset.index = String(index);
     if (item.selectedAnswerIndex != null) dot.classList.add('is-answered');
     if (session.reviewMode) {
@@ -2862,10 +2914,10 @@ function updateTimerDisplay() {
   const remaining = hasLimit ? Math.max(0, Math.ceil((session.deadlineAt - Date.now()) / 1000)) : null;
   element.hidden = false;
   if (stopped) {
-    element.textContent = session.pausedAt && !session.finishedAt && !session.reviewMode ? 'Tạm dừng · ' + formatTime(elapsed) : 'Hoàn thành · ' + formatTime(elapsed);
+    element.textContent = session.pausedAt && !session.finishedAt && !session.reviewMode ? 'TẠM DỪNG · ' + formatTime(elapsed) : 'HOÀN THÀNH · ' + formatTime(elapsed);
     element.classList.remove('time-warning');
   } else {
-    element.textContent = hasLimit ? 'Thời gian ' + formatTime(remaining) : 'Thời gian ' + formatTime(elapsed);
+    element.textContent = hasLimit ? 'THỜI GIAN ' + formatTime(remaining) : 'THỜI GIAN ' + formatTime(elapsed);
     element.classList.toggle('time-warning', hasLimit && remaining <= 60);
   };
 };
@@ -2983,7 +3035,7 @@ function finishSession() {
 
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
-  getElementById('summary-title').textContent = mode === 'practice-wrong' ? 'Kết thúc ôn câu sai' : mode === 'practice-bookmarks' ? 'Hoàn thành ôn câu đã đánh dấu' : mode === 'exam' ? 'Kết quả thi thử' : 'Hoàn thành lượt ôn';
+  getElementById('summary-title').textContent = mode === 'practice-wrong' ? 'KẾT THÚC ÔN CÂU SAI' : mode === 'practice-bookmarks' ? 'KẾT THÚC ÔN CÂU ĐÁNH DẤU' : mode === 'exam' ? 'KẾT QUẢ THI THỬ' : 'KẾT THÚC ÔN LUYỆN';
   const scoreVal = summary.score ?? formatScore(summary.correctAnswerIndex, summary.total);
   const scoreNum = Number(String(scoreVal).replace(',', '.')) || 0;
 
@@ -3350,7 +3402,7 @@ function bindEvents() {
       selectAllButton.classList.toggle('is-active', isAllCount);
       selectAllButton.setAttribute('aria-pressed', isAllCount ? 'true' : 'false');
       setToggleIcon(selectAllButton, isAllCount, { on: 'deselect', off: 'select-all' });
-      selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Toàn bộ vùng';
+      selectAllButton.title = isAllCount ? 'Bỏ chọn toàn bộ vùng' : 'Chọn toàn bộ vùng';
       selectAllButton.setAttribute('aria-label', selectAllButton.title);
     };
   };
@@ -3378,7 +3430,7 @@ function bindEvents() {
       unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
       unlimitedTimeButton.setAttribute('aria-pressed', isUnlimited ? 'true' : 'false');
       setToggleIcon(unlimitedTimeButton, isUnlimited, { on: 'infinity-off', off: 'infinity' });
-      unlimitedTimeButton.title = isUnlimited ? 'Bỏ không giới hạn thời gian' : 'Không giới hạn thời gian';
+      unlimitedTimeButton.title = isUnlimited ? 'Tắt không giới hạn thời gian' : 'Bật không giới hạn thời gian';
       unlimitedTimeButton.setAttribute('aria-label', unlimitedTimeButton.title);
     };
   };
@@ -3571,6 +3623,38 @@ function bindEvents() {
     setPracticeMode('practice');
     startPracticeBookmarks();
   });
+  getElementById('button-clear-practice-wrong')?.addEventListener('click', async () => {
+    const form = readSetupForm();
+    const indices = selectedQuestions(form).map((questionText) => questionText.sourceQuestionIndex);
+    const ok = await confirmModal('Xóa câu sai trong vùng?', 'Lịch sử sai của các câu trong vùng hiện tại sẽ bị xóa.');
+    if (!ok) return;
+    if (!clearWrongAnswers(state.currentDeck, indices)) {
+      toast('Không thể xóa câu sai trong vùng.');
+      return;
+    };
+    refreshSetupUI();
+    toast('Đã xóa câu sai trong vùng.');
+  });
+  getElementById('button-clear-all-wrong')?.addEventListener('click', async () => {
+    const ok = await confirmModal('Xóa toàn bộ câu sai?', 'Toàn bộ lịch sử sai của bộ đề sẽ bị xóa.');
+    if (!ok) return;
+    if (!clearWrongAnswers(state.currentDeck)) {
+      toast('Không thể xóa toàn bộ câu sai.');
+      return;
+    };
+    refreshSetupUI();
+    toast('Đã xóa toàn bộ câu sai.');
+  });
+  getElementById('button-clear-bookmarks')?.addEventListener('click', async () => {
+    const ok = await confirmModal('Xóa toàn bộ đánh dấu?', 'Tất cả câu hỏi đã đánh dấu của bộ đề sẽ bị xóa.');
+    if (!ok) return;
+    if (!clearBookmarks(state.currentDeck)) {
+      toast('Không thể xóa câu đã đánh dấu.');
+      return;
+    };
+    refreshSetupUI();
+    toast('Đã xóa toàn bộ câu đã đánh dấu.');
+  });
 
   getElementById('button-exam-submit')?.addEventListener('click', () => onExamSubmit());
   getElementById('button-exam-pause')?.addEventListener('click', () => pauseSession());
@@ -3626,8 +3710,8 @@ function bindEvents() {
     if (noteButton) {
       noteButton.classList.toggle('has-note', has);
       noteButton.setAttribute('aria-pressed', String(has));
-      noteButton.setAttribute('aria-label', has ? 'Sửa ghi chú' : 'Thêm ghi chú');
-      noteButton.title = has ? 'Sửa ghi chú' : 'Thêm ghi chú';
+      noteButton.setAttribute('aria-label', has ? 'Mở trình sửa ghi chú' : 'Mở trình thêm ghi chú');
+      noteButton.title = has ? 'Mở trình sửa ghi chú' : 'Mở trình thêm ghi chú';
     };
     if (notePanel) notePanel.hidden = true;
     if (noteDisplay && noteTextEl) {
@@ -3645,9 +3729,13 @@ function bindEvents() {
     const questionText = currentQuestion();
     const session = state.session;
     if (!questionText || !session || !notePanel || !noteInput) return;
-    noteInput.value = getQuestionNote(session.deckId, questionText.sourceQuestionIndex);
+    const note = getQuestionNote(session.deckId, questionText.sourceQuestionIndex);
+    noteInput.value = note;
     if (noteDisplay) noteDisplay.hidden = true;
     notePanel.hidden = false;
+    const label = note ? 'Đóng trình sửa ghi chú' : 'Đóng trình thêm ghi chú';
+    noteButton?.setAttribute('aria-label', label);
+    if (noteButton) noteButton.title = label;
     noteInput.focus();
   };
 
@@ -3753,6 +3841,8 @@ function bindEvents() {
   });
 
   getElementById('button-next').addEventListener('click', onNext);
+  getElementById('button-prev').setAttribute('aria-label', 'Câu trước');
+  getElementById('button-prev').title = 'Câu trước';
   getElementById('button-prev').addEventListener('click', onPrev);
 
   getElementById('button-quit').addEventListener('click', async () => {

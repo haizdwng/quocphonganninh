@@ -265,6 +265,21 @@ export function getWrongIndices(deckId) {
   return Object.keys(progress.incorrectAnswerCounts).map(Number).filter((index) => Number.isInteger(index) && index >= 0 && progress.incorrectAnswerCounts[String(index)] > 0).sort((leftValue, rightValue) => leftValue - rightValue);
 };
 
+export function clearWrongAnswers(deckId, sourceQuestionIndices = null) {
+  const progress = getDeckProgress(deckId);
+  if (sourceQuestionIndices == null) {
+    progress.incorrectAnswerCounts = {};
+    progress.rangeIncorrectQuestionIndices = {};
+  } else {
+    const indices = new Set(sourceQuestionIndices.filter((index) => Number.isInteger(index) && index >= 0));
+    for (const index of indices) delete progress.incorrectAnswerCounts[String(index)];
+    for (const [range, values] of Object.entries(progress.rangeIncorrectQuestionIndices)) {
+      progress.rangeIncorrectQuestionIndices[range] = values.filter((index) => !indices.has(index));
+    };
+  };
+  return saveDeckProgress(deckId, progress);
+};
+
 export function getRangeWrongIndices(deckId, firstQuestionNumber, lastQuestionNumber) {
   const start = Number(firstQuestionNumber);
   const end = Number(lastQuestionNumber);
@@ -304,6 +319,12 @@ export function toggleBookmark(deckId, sourceQuestionIndex) {
   else bookmarkedQuestionIndices.add(sourceQuestionIndex);
   progress.bookmarkedQuestionIndices = [...bookmarkedQuestionIndices].sort((leftValue, rightValue) => leftValue - rightValue);
   return saveDeckProgress(deckId, progress) ? bookmarkedQuestionIndices.has(sourceQuestionIndex) : null;
+};
+
+export function clearBookmarks(deckId) {
+  const progress = getDeckProgress(deckId);
+  progress.bookmarkedQuestionIndices = [];
+  return saveDeckProgress(deckId, progress);
 };
 
 function normalizeHighlightRanges(value) {
