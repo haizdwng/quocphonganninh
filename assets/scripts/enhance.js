@@ -33,8 +33,8 @@ export function initializeEnhancements({ onPrev, onNext }) {
     };
     const touch = event.touches[0];
     touchStartCoordinates = {
-      x: touch.clientX,
-      y: touch.clientY,
+      horizontal: touch.clientX,
+      vertical: touch.clientY,
       time: Date.now(),
     };
   }, { passive: true });
@@ -47,13 +47,13 @@ export function initializeEnhancements({ onPrev, onNext }) {
     const start = touchStartCoordinates;
     touchStartCoordinates = null;
     const touch = event.changedTouches[0];
-    const deltaX = touch.clientX - start.x;
-    const deltaY = touch.clientY - start.y;
+    const horizontalDistance = touch.clientX - start.horizontal;
+    const verticalDistance = touch.clientY - start.vertical;
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed && selection.toString().trim()) return;
-    if (Date.now() - start.time > 800 || Math.abs(deltaX) < 65 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+    if (Date.now() - start.time > 800 || Math.abs(horizontalDistance) < 65 || Math.abs(horizontalDistance) < Math.abs(verticalDistance) * 1.25) return;
     event.preventDefault();
-    if (deltaX < 0) onNext();
+    if (horizontalDistance < 0) onNext();
     else onPrev();
   }, { passive: false });
 

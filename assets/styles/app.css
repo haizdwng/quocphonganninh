@@ -6,114 +6,79 @@
   src: url('../fonts/Inter.woff2') format('woff2');
 }
 
-/* ==========================================================================
-   Hệ thiết kế
-   - Nền trung tính ấm, một màu nhấn duy nhất (đồng thau / brass)
-   - Xanh lá và đỏ chỉ dùng cho đúng / sai
-   - Phân tầng bằng đường viền mảnh, không dùng bóng đổ nặng
-   - Mọi trạng thái (hover, active, focus, disabled, selected) theo cùng một quy tắc
-   ========================================================================== */
-
 :root {
   color-scheme: dark;
-
-  /* Bề mặt */
   --bg: #131210;
   --surface: #1a1916;
   --raised: #22211d;
   --high: #2b2924;
   --highest: #37342d;
   --inset: #0f0e0c;
-
-  /* Đường viền */
   --border: #2a2823;
   --border-strong: #3c3932;
-
-  /* Chữ */
   --text: #ece8df;
   --text-2: #bab4a6;
   --muted: #878173;
-
-  /* Màu nhấn */
   --accent: #d9a441;
   --accent-hover: #e5b457;
   --accent-active: #c4912f;
   --accent-ink: #1b1405;
   --accent-soft: color-mix(in srgb, var(--accent) 13%, transparent);
   --accent-line: color-mix(in srgb, var(--accent) 55%, transparent);
-
-  /* Ngữ nghĩa */
   --green: #6dbd8a;
   --red: #e2755f;
   --info: #84a7c9;
   --warn: #e09a4a;
   --green-ink: #0c1c12;
   --red-ink: #240d08;
-
-  /* Hình khối */
   --r-lg: 16px;
   --r: 12px;
   --r-sm: 8px;
   --touch: 44px;
-
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --reading-width: 760px;
-
   --font: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: var(--font);
-
   --shadow-bar: 0 8px 24px rgba(0, 0, 0, 0.45);
   --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.55);
   --scrim: rgba(6, 5, 4, 0.7);
   --highlight: color-mix(in srgb, var(--accent) 32%, transparent);
-
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --t: 0.14s;
-
-  /* Bí danh để tương thích với mã JS cũ */
   --primary: var(--accent);
-
-  --information-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0'/%3E%3Cpath d='M12 9h.01'/%3E%3Cpath d='M11 12h1v4h1'/%3E%3C/svg%3E");
-  --warning-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z'/%3E%3Cpath d='M12 16h.01'/%3E%3C/svg%3E");
+  --information-icon: url('../icons/tabler/info-circle.svg');
+  --warning-icon: url('../icons/tabler/info-triangle.svg');
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-
   --bg: #f2efe7;
   --surface: #fbf9f4;
   --raised: #f1ede3;
   --high: #e8e3d6;
   --highest: #dcd6c5;
   --inset: #eae6da;
-
   --border: #e0dbcc;
   --border-strong: #cbc4b0;
-
   --text: #26231c;
   --text-2: #53493b;
   --muted: #837a69;
-
   --accent: #9a6208;
   --accent-hover: #86540a;
   --accent-active: #734709;
   --accent-ink: #fffaf0;
-
   --green: #2f7d4f;
   --red: #b8452f;
   --info: #3f6e96;
   --warn: #a8610f;
   --green-ink: #f4fff8;
   --red-ink: #fff6f3;
-
   --shadow-bar: 0 8px 22px rgba(52, 40, 18, 0.14);
   --shadow-pop: 0 16px 40px rgba(52, 40, 18, 0.22);
   --scrim: rgba(38, 30, 14, 0.45);
   --highlight: color-mix(in srgb, #e6b030 45%, transparent);
 }
-
-/* ---------- Nền tảng ---------- */
 
 *,
 *::before,
@@ -175,7 +140,7 @@ button {
   outline-offset: 2px;
 }
 
-#app {
+#application {
   width: min(100% - 24px, var(--reading-width));
   margin: 0 auto;
   padding: 14px 0 max(40px, calc(var(--safe-bottom) + 24px));
@@ -209,8 +174,6 @@ button {
   white-space: nowrap;
   border: 0;
 }
-
-/* ---------- Thẻ & tiêu đề ---------- */
 
 .card {
   padding: clamp(14px, 2.4vw, 20px);
@@ -278,8 +241,6 @@ button {
   align-items: center;
 }
 
-/* ---------- Ô nhập ---------- */
-
 input[type='number'],
 input[type='search'] {
   width: 100%;
@@ -341,8 +302,6 @@ input:disabled {
   font-size: 0.78rem;
   color: var(--muted);
 }
-
-/* ---------- Công tắc dạng hộp kiểm ---------- */
 
 .toggles {
   display: grid;
@@ -433,8 +392,6 @@ input:disabled {
   cursor: not-allowed;
 }
 
-/* ---------- Thanh trượt ---------- */
-
 .experience-toggles {
   margin-top: 12px;
 }
@@ -503,8 +460,6 @@ input[type='range']:disabled {
   color: var(--muted);
 }
 
-/* ---------- Biểu tượng (đơn sắc, theo màu chữ của nút) ---------- */
-
 [data-icon]::before {
   content: '';
   display: inline-block;
@@ -554,8 +509,6 @@ input[type='range']:disabled {
 [data-icon='pinned']::before { -webkit-mask-image: url('../icons/tabler/pinned.svg'); mask-image: url('../icons/tabler/pinned.svg'); }
 [data-icon='pinned-off']::before { -webkit-mask-image: url('../icons/tabler/pinned-off.svg'); mask-image: url('../icons/tabler/pinned-off.svg'); }
 
-/* ---------- Nút ---------- */
-
 .button,
 .button-icon-only {
   display: inline-flex;
@@ -589,7 +542,6 @@ input[type='range']:disabled {
   width: 100%;
 }
 
-/* Chính: nền nhấn */
 .button-primary {
   background: var(--accent);
   color: var(--accent-ink);
@@ -599,7 +551,6 @@ input[type='range']:disabled {
   background: var(--accent-active);
 }
 
-/* Phụ: nền nổi + viền */
 .button-secondary {
   background: var(--raised);
   border-color: var(--border-strong);
@@ -610,7 +561,6 @@ input[type='range']:disabled {
   background: var(--high);
 }
 
-/* Viền: trong suốt + viền */
 .button-ghost {
   background: transparent;
   border-color: var(--border-strong);
@@ -666,7 +616,6 @@ input[type='range']:disabled {
   gap: 8px;
 }
 
-/* Nút chỉ có biểu tượng */
 .button-icon-only {
   flex: 0 0 auto;
   width: var(--touch);
@@ -687,14 +636,12 @@ input[type='range']:disabled {
   background: var(--high);
 }
 
-/* Bật / đang dùng */
 .button-icon-only:is(.is-active, .is-on, .is-bookmarked, .has-note, .is-hidden-active, [aria-pressed='true']):not(:disabled) {
   border-color: var(--accent-line);
   background: var(--accent-soft);
   color: var(--accent);
 }
 
-/* Nút lưu / nút chính dạng biểu tượng */
 .button-icon-only.button-primary {
   border-color: transparent;
   background: var(--accent);
@@ -713,7 +660,6 @@ input[type='range']:disabled {
   background: var(--raised);
 }
 
-/* Điều hướng: không tô màu nhấn khi aria-pressed */
 .button-icon-only[data-icon='x'],
 .button-icon-only[data-icon='arrow-left'],
 .button-icon-only[data-icon='arrow-right'],
@@ -737,8 +683,6 @@ input[type='range']:disabled {
   justify-content: flex-end;
   margin-top: 10px;
 }
-
-/* ---------- Đang tải ---------- */
 
 .loading-card {
   display: grid;
@@ -785,8 +729,6 @@ input[type='range']:disabled {
   from { transform: translateX(-110%); }
   to { transform: translateX(290%); }
 }
-
-/* ---------- Chọn bộ đề / chế độ ---------- */
 
 .deck-switch,
 .mode-switch {
@@ -870,8 +812,6 @@ input[type='range']:disabled {
   color: var(--accent-ink);
 }
 
-/* ---------- Thống kê ---------- */
-
 .statistics-list {
   margin: 0;
   padding: 0;
@@ -942,8 +882,6 @@ input[type='range']:disabled {
   gap: 8px;
 }
 
-/* ---------- Tiến độ ---------- */
-
 .progress-wrap {
   padding: 12px 14px;
   border: 1px solid var(--border);
@@ -951,7 +889,7 @@ input[type='range']:disabled {
   background: var(--surface);
 }
 
-.progress-meta {
+.progress-metadata {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1016,8 +954,6 @@ input[type='range']:disabled {
   padding-bottom: 150px;
 }
 
-/* ---------- Câu hỏi ---------- */
-
 .question-card {
   padding: clamp(16px, 3vw, 26px);
 }
@@ -1070,8 +1006,6 @@ input[type='range']:disabled {
   padding: 0 1px;
   color: inherit;
 }
-
-/* ---------- Ghi chú ---------- */
 
 .question-note-wrap {
   margin: 0 0 14px;
@@ -1145,8 +1079,6 @@ input[type='range']:disabled {
 .review-note-block.is-empty {
   display: none;
 }
-
-/* ---------- Đáp án ---------- */
 
 .answer-options,
 .exam-options {
@@ -1300,8 +1232,6 @@ input[type='range']:disabled {
   mask-image: url('../icons/tabler/alert-circle.svg');
 }
 
-/* ---------- Thanh thao tác cố định ---------- */
-
 .quiz-actions-card,
 .exam-actions-card {
   position: fixed;
@@ -1354,8 +1284,6 @@ input[type='range']:disabled {
   min-height: 42px;
   padding-inline: 8px;
 }
-
-/* ---------- Thi thử ---------- */
 
 .exam-toolbar {
   display: flex;
@@ -1511,8 +1439,6 @@ input[type='range']:disabled {
   color: var(--red-ink);
 }
 
-/* ---------- Tổng kết ---------- */
-
 .summary-hero {
   text-align: center;
 }
@@ -1602,8 +1528,6 @@ input[type='range']:disabled {
   font-size: 0.8rem;
   color: var(--red);
 }
-
-/* ---------- Ngân hàng câu hỏi ---------- */
 
 .review-header {
   display: flex;
@@ -1852,6 +1776,15 @@ input[type='range']:disabled {
   gap: 8px;
 }
 
+.review-edit-option-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.review-edit-fixed-btn {
+  flex: 0 0 36px;
+}
+
 .review-edit-correct-btn {
   flex: 0 0 36px;
   width: 36px;
@@ -1873,8 +1806,6 @@ input[type='range']:disabled {
   color: var(--green-ink);
 }
 
-/* ---------- Lỗi ---------- */
-
 .error-card {
   text-align: center;
 }
@@ -1887,8 +1818,6 @@ input[type='range']:disabled {
   color: var(--muted);
   white-space: pre-wrap;
 }
-
-/* ---------- Thông báo nhanh ---------- */
 
 .toast {
   --tone: var(--info);
@@ -1955,8 +1884,6 @@ body[data-screen='quiz'] .toast,
 body[data-screen='exam'] .toast {
   bottom: max(142px, calc(var(--safe-bottom) + 134px));
 }
-
-/* ---------- Hộp thoại ---------- */
 
 .modal {
   position: fixed;
@@ -2065,8 +1992,6 @@ body[data-screen='exam'] .toast {
   font-size: 0.9rem;
 }
 
-/* ---------- Nút nổi ---------- */
-
 .fixed-floating-action-button-stack {
   position: fixed;
   right: max(14px, env(safe-area-inset-right, 0px));
@@ -2122,8 +2047,6 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
   height: 1.25em;
   margin: 0;
 }
-
-/* ---------- Hover (chỉ trên thiết bị có chuột, tránh dính hover trên cảm ứng) ---------- */
 
 @media (hover: hover) and (pointer: fine) {
   input[type='number']:hover:not(:disabled):not(:focus),
@@ -2238,14 +2161,12 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
   }
 }
 
-/* ---------- Bố cục theo màn hình ---------- */
-
 @media (min-width: 900px) {
   :root {
     --reading-width: 760px;
   }
 
-  #app {
+  #application {
     width: min(100% - 48px, 940px);
     padding-top: 28px;
   }
@@ -2289,7 +2210,7 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
 }
 
 @media (max-width: 640px) {
-  #app {
+  #application {
     width: calc(100% - 16px);
     padding-top: 8px;
   }

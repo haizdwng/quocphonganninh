@@ -3,38 +3,38 @@ import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSeque
 import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
 
 const DECKS = {
-  quocphong1: {
-    id: 'quocphong1',
+  quocphonganninh1: {
+    id: 'quocphonganninh1',
     label: 'Quốc Phòng 1',
-    file: 'data/quocphong1.json'
+    file: 'data/quocphonganninh1.json'
   },
-  quocphong2: {
-    id: 'quocphong2',
+  quocphonganninh2: {
+    id: 'quocphonganninh2',
     label: 'Quốc Phòng 2',
-    file: 'data/quocphong2.json'
+    file: 'data/quocphonganninh2.json'
   }
 };
 
 const state = {
   decks: {
-    quocphong1: null,
-    quocphong2: null
+    quocphonganninh1: null,
+    quocphonganninh2: null
   },
   fingerprints: {
-    quocphong1: '',
-    quocphong2: ''
+    quocphonganninh1: '',
+    quocphonganninh2: ''
   },
   legacyFingerprintMatched: {
-    quocphong1: false,
-    quocphong2: false
+    quocphonganninh1: false,
+    quocphonganninh2: false
   },
   loading: true,
   error: null,
-  currentDeck: 'quocphong1',
-  bankDeck: 'quocphong1',
-  setupDeckBeforeBank: 'quocphong1',
+  currentDeck: 'quocphonganninh1',
+  bankDeck: 'quocphonganninh1',
+  setupDeckBeforeBank: 'quocphonganninh1',
   mode: 'setup',
-  practiceMode: 'practice',
+  studyMode: 'practice',
   session: null,
   reviewMode: false,
   timerInterval: null,
@@ -48,16 +48,14 @@ const state = {
   _lastSummaryCount: null,
   highlightEditMode: false,
   lastTextSelection: null,
-  lastCountBeforeAll: null,
-  lastTimeBeforeUnlimited: null,
-  savedCountBeforeAll: null,
-  savedTimeBeforeUnlimited: null,
   bankSearchQuery: '',
   bankSearchMatchIndex: -1,
   reviewFocusQuestionNumber: null,
   reviewEditingNoteIndex: null,
   reviewEditingNoteDraft: '',
-  reviewEditingQuestionIndex: null
+  reviewEditingQuestionIndex: null,
+  allQuestionsEnabled: false,
+  unlimitedTimeEnabled: false
 };
 
 const REVIEW_VIRTUAL_OVERSCAN = 3;
@@ -100,48 +98,48 @@ async function loadDeck(deckIdentifier) {
     if (!Number.isInteger(index) || index < 0 || index >= questions.length || !entry) continue;
     questions[index] = {
       ...questions[index],
-      question: entry.question,
-      options: entry.options.slice(),
-      correct: entry.correct,
-      fixed: entry.fixed === true
+      questionText: entry.questionText,
+      answerOptions: entry.answerOptions.slice(),
+      correctAnswerIndex: entry.correctAnswerIndex,
+      fixedAnswerIndices: Array.isArray(entry.fixedAnswerIndices) ? entry.fixedAnswerIndices.slice() : []
     };
   };
   const fingerprint = fingerprintQuestions(questions);
   state.decks[deckIdentifier] = questions;
   state.fingerprints[deckIdentifier] = fingerprint;
   const progress = getDeckProgress(deckIdentifier);
-  const first = questions[0]?.question?.trim().slice(0, 40) || '';
-  const last = questions[questions.length - 1]?.question?.trim().slice(0, 40) || '';
+  const first = questions[0]?.questionText?.trim().slice(0, 40) || '';
+  const last = questions[questions.length - 1]?.questionText?.trim().slice(0, 40) || '';
   const legacyFingerprint = questions.length + '|' + first + '|' + last;
-  if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint) {
-    if (progress.dataFingerprint === legacyFingerprint) {
+  if (progress.questionDataFingerprint && progress.questionDataFingerprint !== fingerprint) {
+    if (progress.questionDataFingerprint === legacyFingerprint) {
       state.legacyFingerprintMatched[deckIdentifier] = true;
-      progress.dataFingerprint = fingerprint;
+      progress.questionDataFingerprint = fingerprint;
       if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể cập nhật phiên bản tiến độ trong trình duyệt.');
     } else {
-      progress.completed = [];
-      progress.sequentialCursor = 0;
-      progress.wrongMap = {};
-      progress.wrongRangeMap = {};
-      progress.practiceMap = {};
-      progress.bookmarks = [];
-      progress.dataFingerprint = fingerprint;
+      progress.completedQuestionIndices = [];
+      progress.sequentialQuestionCursor = 0;
+      progress.incorrectAnswerCounts = {};
+      progress.rangeIncorrectQuestionIndices = {};
+      progress.practiceQuestionCounts = {};
+      progress.bookmarkedQuestionIndices = [];
+      progress.questionDataFingerprint = fingerprint;
       if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       if (!resetDeckHighlights(deckIdentifier)) toast('Không thể xóa phần đánh dấu cũ vì bộ nhớ trình duyệt không ghi được.');
       if (!resetDeckNotes(deckIdentifier)) toast('Không thể xóa ghi chú cũ vì bộ nhớ trình duyệt không ghi được.');
     };
-  } else if (!progress.dataFingerprint) {
-    progress.dataFingerprint = fingerprint;
+  } else if (!progress.questionDataFingerprint) {
+    progress.questionDataFingerprint = fingerprint;
     if (!saveDeckProgress(deckIdentifier, progress)) toast('Không thể lưu dấu vân tay bộ đề vào trình duyệt.');
   };
 
   const progressBeforeSanitize = JSON.stringify(progress);
   const isValidIndex = (index) => Number.isInteger(index) && index >= 0 && index < questions.length;
-  progress.completed = progress.completed.filter(isValidIndex);
-  progress.bookmarks = progress.bookmarks.filter(isValidIndex);
-  progress.sequentialCursor = Math.min(progress.sequentialCursor, questions.length);
-  progress.wrongMap = Object.fromEntries(Object.entries(progress.wrongMap).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
-  progress.practiceMap = Object.fromEntries(Object.entries(progress.practiceMap).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
+  progress.completedQuestionIndices = progress.completedQuestionIndices.filter(isValidIndex);
+  progress.bookmarkedQuestionIndices = progress.bookmarkedQuestionIndices.filter(isValidIndex);
+  progress.sequentialQuestionCursor = Math.min(progress.sequentialQuestionCursor, questions.length);
+  progress.incorrectAnswerCounts = Object.fromEntries(Object.entries(progress.incorrectAnswerCounts).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
+  progress.practiceQuestionCounts = Object.fromEntries(Object.entries(progress.practiceQuestionCounts).filter(([key, count]) => isValidIndex(Number(key)) && Number.isInteger(count) && count > 0));
   if (JSON.stringify(progress) !== progressBeforeSanitize && !saveDeckProgress(deckIdentifier, progress)) toast('Không thể làm sạch tiến độ cũ trong trình duyệt.');
   return questions;
 };
@@ -152,14 +150,14 @@ async function loadAll() {
   showScreen('loading');
   let stage = 'tải dữ liệu';
   try {
-    await Promise.all([loadDeck('quocphong1'), loadDeck('quocphong2')]);
+    await Promise.all([loadDeck('quocphonganninh1'), loadDeck('quocphonganninh2')]);
     state.loading = false;
     stage = 'khởi tạo giao diện';
     initializeInterface();
-  } catch (e) {
+  } catch (error) {
     state.loading = false;
-    state.error = e?.message || String(e);
-    console.error('Lỗi khi ' + stage + ':', e);
+    state.error = error?.message || String(error);
+    console.error('Lỗi khi ' + stage + ':', error);
     showScreen('error');
     let errorMessage = getElementById('error-message');
     if (!errorMessage) {
@@ -285,7 +283,7 @@ function visibleDeckQuestions(deckId) {
   const questions = allDeckQuestions(deckId);
   const hidden = new Set(getHiddenIndices(deckId));
   if (!hidden.size) return questions;
-  return questions.filter((question) => !hidden.has(question.originalIndex));
+  return questions.filter((questionText) => !hidden.has(questionText.sourceQuestionIndex));
 };
 
 function formatDeckCountLabel(deckId) {
@@ -299,22 +297,22 @@ function formatDeckCountLabel(deckId) {
 };
 
 function updateDeckCountLabels() {
-  if (getElementById('count-quocphong1')) getElementById('count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
-  if (getElementById('count-quocphong2')) getElementById('count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
-  if (getElementById('bank-count-quocphong1')) getElementById('bank-count-quocphong1').textContent = formatDeckCountLabel('quocphong1');
-  if (getElementById('bank-count-quocphong2')) getElementById('bank-count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
+  if (getElementById('count-quocphonganninh1')) getElementById('count-quocphonganninh1').textContent = formatDeckCountLabel('quocphonganninh1');
+  if (getElementById('count-quocphonganninh2')) getElementById('count-quocphonganninh2').textContent = formatDeckCountLabel('quocphonganninh2');
+  if (getElementById('bank-count-quocphonganninh1')) getElementById('bank-count-quocphonganninh1').textContent = formatDeckCountLabel('quocphonganninh1');
+  if (getElementById('bank-count-quocphonganninh2')) getElementById('bank-count-quocphonganninh2').textContent = formatDeckCountLabel('quocphonganninh2');
 };
 
 function sessionPreferences(deckId) {
   return getSettings(deckId || state.session?.deckId || state.currentDeck);
 };
 
-function renderTextWithHighlights(element, text, deckId, originalIndex, target) {
+function renderTextWithHighlights(element, text, deckId, sourceQuestionIndex, target) {
   element.replaceChildren();
   element.dataset.highlightTarget = target;
-  element.dataset.questionIndex = String(originalIndex);
+  element.dataset.questionIndex = String(sourceQuestionIndex);
   element.dataset.deckId = deckId;
-  const ranges = getQuestionHighlights(deckId, originalIndex).filter((range) => range.target === target && range.start < text.length && range.end > 0).map((range) => ({
+  const ranges = getQuestionHighlights(deckId, sourceQuestionIndex).filter((range) => range.target === target && range.start < text.length && range.end > 0).map((range) => ({
     start: Math.max(0, range.start),
     end: Math.min(text.length, range.end)
   })).sort((leftRange, rightRange) => leftRange.start - rightRange.start || leftRange.end - rightRange.end);
@@ -439,11 +437,11 @@ function normalizeSearchText(value) {
   return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 };
 
-function questionMatchesSearch(question, query) {
+function questionMatchesSearch(questionText, query) {
   if (!query) return false;
   const haystack = normalizeSearchText([
-    question.question || '',
-    ...(Array.isArray(question.options) ? question.options : [])
+    questionText.questionText || '',
+    ...(Array.isArray(questionText.answerOptions) ? questionText.answerOptions : [])
   ].join(' '));
   return haystack.includes(query);
 };
@@ -451,13 +449,13 @@ function questionMatchesSearch(question, query) {
 function getBankSearchMatches(questions = bankQuestions()) {
   const query = normalizeSearchText(state.bankSearchQuery);
   if (!query) return [];
-  return questions.filter((question) => questionMatchesSearch(question, query));
+  return questions.filter((questionText) => questionMatchesSearch(questionText, query));
 };
 
 function getFilteredBankQuestions() {
   const questions = bankQuestions();
     const query = normalizeSearchText(state.bankSearchQuery);
-  const matches = query ? questions.filter((question) => questionMatchesSearch(question, query)) : [];
+  const matches = query ? questions.filter((questionText) => questionMatchesSearch(questionText, query)) : [];
   const filtered = query ? matches : questions;
   return { questions, filtered, query, matches };
 };
@@ -509,7 +507,7 @@ function scrollToBankSearchMatch(direction) {
   if (!Number.isInteger(index) || index < 0 || index >= matches.length) index = direction > 0 ? 0 : matches.length - 1;
   else index = (index + direction + matches.length) % matches.length;
   state.bankSearchMatchIndex = index;
-  const questionNumber = matches[index].originalIndex + 1;
+  const questionNumber = matches[index].sourceQuestionIndex + 1;
   scrollReviewToQuestionNumber(questionNumber);
   updateBankSearchHint(matches.length);
 };
@@ -521,7 +519,7 @@ function updateReviewSearchClearButton() {
   clearBtn.hidden = !String(input.value || '').length;
 };
 
-function applyBankSearch(options = {}) {
+function applyBankSearch(answerOptions = {}) {
   const input = getElementById('input-review-search');
   const raw = input ? input.value : state.bankSearchQuery;
   state.bankSearchQuery = String(raw || '');
@@ -531,9 +529,9 @@ function applyBankSearch(options = {}) {
   const matches = getBankSearchMatches();
   updateBankSearchHint(matches.length);
   updateBankSearchNavButtons();
-  if (options.scrollToFirst && matches.length >= 1) {
+  if (answerOptions.scrollToFirst && matches.length >= 1) {
     state.bankSearchMatchIndex = 0;
-    scrollReviewToQuestionNumber(matches[0].originalIndex + 1);
+    scrollReviewToQuestionNumber(matches[0].sourceQuestionIndex + 1);
     updateBankSearchHint(matches.length);
   };
 };
@@ -567,29 +565,29 @@ function averageReviewMeasuredHeight(virtualScrollState) {
 };
 
 function syncReviewHeightsFromCache(virtualScrollState) {
-  const n = virtualScrollState.filtered.length;
+  const filteredQuestionCount = virtualScrollState.filtered.length;
   const avg = averageReviewMeasuredHeight(virtualScrollState);
   const map = virtualScrollState.heightByOriginalIndex || new Map();
-  virtualScrollState.heights = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const originalIndex = virtualScrollState.filtered[i]?.originalIndex;
-    const cached = Number.isInteger(originalIndex) ? map.get(originalIndex) : null;
-    virtualScrollState.heights[i] = cached || avg;
+  virtualScrollState.heights = new Array(filteredQuestionCount);
+  for (let questionIndex = 0; questionIndex < filteredQuestionCount; questionIndex++) {
+    const sourceQuestionIndex = virtualScrollState.filtered[questionIndex]?.sourceQuestionIndex;
+    const cached = Number.isInteger(sourceQuestionIndex) ? map.get(sourceQuestionIndex) : null;
+    virtualScrollState.heights[questionIndex] = cached || avg;
   };
 };
 
 function rebuildReviewVirtualMetrics(virtualScrollState) {
-  const n = virtualScrollState.filtered.length;
-  if (virtualScrollState.heights.length !== n) syncReviewHeightsFromCache(virtualScrollState);
+  const filteredQuestionCount = virtualScrollState.filtered.length;
+  if (virtualScrollState.heights.length !== filteredQuestionCount) syncReviewHeightsFromCache(virtualScrollState);
     const REVIEW_CARD_GAP = 12;
-  virtualScrollState.positions = new Array(n);
-  let y = 0;
-  for (let i = 0; i < n; i++) {
-    virtualScrollState.positions[i] = y;
-    y += (virtualScrollState.heights[i] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT) + REVIEW_CARD_GAP;
+  virtualScrollState.positions = new Array(filteredQuestionCount);
+  let verticalOffset = 0;
+  for (let questionIndex = 0; questionIndex < filteredQuestionCount; questionIndex++) {
+    virtualScrollState.positions[questionIndex] = verticalOffset;
+    verticalOffset += (virtualScrollState.heights[questionIndex] || REVIEW_VIRTUAL_ESTIMATED_HEIGHT) + REVIEW_CARD_GAP;
   };
-  virtualScrollState.totalHeight = Math.max(0, y - (n ? REVIEW_CARD_GAP : 0));
-  if (virtualScrollState.phantom) virtualScrollState.phantom.style.height = Math.max(y, 0) + 'px';
+  virtualScrollState.totalHeight = Math.max(0, verticalOffset - (filteredQuestionCount ? REVIEW_CARD_GAP : 0));
+  if (virtualScrollState.phantom) virtualScrollState.phantom.style.height = Math.max(verticalOffset, 0) + 'px';
 };
 
 function findReviewVirtualIndex(virtualScrollState, offsetY) {
@@ -612,8 +610,9 @@ function exitBankQuestionEdit(card) {
   parts.editBlock.hidden = true;
   parts.editBlock.innerHTML = '';
   parts.prompt.hidden = false;
-  parts.options.hidden = false;
+  parts.answerOptions.hidden = false;
   state.reviewEditingQuestionIndex = null;
+  if (parts.syncReviewActionState) parts.syncReviewActionState();
   if (parts.editQuestionButton) {
     parts.editQuestionButton.classList.remove('is-active');
     parts.editQuestionButton.setAttribute('aria-label', 'Chỉnh sửa câu hỏi và đáp án');
@@ -625,11 +624,11 @@ function enterBankQuestionEdit(card, questionIndex) {
   const parts = card._vs;
   if (!parts) return;
   const deck = state.decks[state.bankDeck] || [];
-  const question = deck.find((item) => item.originalIndex === questionIndex) || deck[questionIndex];
-  if (!question) return;
+  const questionText = deck.find((item) => item.sourceQuestionIndex === questionIndex) || deck[questionIndex];
+  if (!questionText) return;
 
   if (Number.isInteger(state.reviewEditingNoteIndex)) {
-    const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.originalIndex) === state.reviewEditingNoteIndex);
+    const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.sourceQuestionIndex) === state.reviewEditingNoteIndex);
     if (activeCard?._vs?.setReviewNoteViewMode) activeCard._vs.setReviewNoteViewMode(getQuestionNote(state.bankDeck, state.reviewEditingNoteIndex));
     else {
       state.reviewEditingNoteIndex = null;
@@ -639,13 +638,14 @@ function enterBankQuestionEdit(card, questionIndex) {
 
   if (Number.isInteger(state.reviewEditingQuestionIndex) && state.reviewEditingQuestionIndex !== questionIndex) {
     for (const other of (getReviewVirtualState().pool || [])) {
-      if (Number(other.dataset.originalIndex) === state.reviewEditingQuestionIndex) exitBankQuestionEdit(other);
+      if (Number(other.dataset.sourceQuestionIndex) === state.reviewEditingQuestionIndex) exitBankQuestionEdit(other);
     };
   };
 
   state.reviewEditingQuestionIndex = questionIndex;
+  if (parts.syncReviewActionState) parts.syncReviewActionState();
   parts.prompt.hidden = true;
-  parts.options.hidden = true;
+  parts.answerOptions.hidden = true;
   parts.editBlock.hidden = false;
   parts.editBlock.innerHTML = '';
   if (parts.editQuestionButton) {
@@ -654,43 +654,43 @@ function enterBankQuestionEdit(card, questionIndex) {
     parts.editQuestionButton.title = 'Đóng chỉnh sửa';
   };
 
-  const qLabel = document.createElement('label');
-  qLabel.className = 'review-edit-label';
-  qLabel.textContent = 'Câu hỏi';
-  const qInput = document.createElement('textarea');
-  qInput.className = 'review-edit-question';
-  qInput.rows = 3;
-  qInput.value = question.question;
+  const questionLabel = document.createElement('label');
+  questionLabel.className = 'review-edit-label';
+  questionLabel.textContent = 'Câu hỏi';
+  const questionInput = document.createElement('textarea');
+  questionInput.className = 'review-edit-questionText';
+  questionInput.rows = 3;
+  questionInput.value = questionText.questionText;
 
-  const optLabel = document.createElement('div');
-  optLabel.className = 'review-edit-label';
-  optLabel.textContent = 'Đáp án';
+  const answerLabel = document.createElement('div');
+  answerLabel.className = 'review-edit-label';
+  answerLabel.textContent = 'Đáp án (bấm ghim để cố định vị trí)';
 
   const answerOptionList = document.createElement('div');
   answerOptionList.className = 'review-edit-options';
   const optionInputs = [];
   const radios = [];
-  const letterBtns = [];
-  const optionCount = Math.max(4, question.options.length);
-  for (let i = 0; i < optionCount; i++) {
+  const answerLetterButtons = [];
+  const optionCount = Math.max(4, questionText.answerOptions.length);
+  for (let optionIndex = 0; optionIndex < optionCount; optionIndex++) {
     const row = document.createElement('div');
     row.className = 'review-edit-option-row';
-    const letter = String.fromCharCode(65 + i);
+    const letter = String.fromCharCode(65 + optionIndex);
 
-    const letterBtn = document.createElement('button');
-    letterBtn.type = 'button';
-    letterBtn.className = 'review-edit-correct-btn';
-    letterBtn.textContent = letter;
-    letterBtn.setAttribute('aria-label', 'Chọn đáp án đúng ' + letter);
-    letterBtn.title = 'Đáp án đúng: ' + letter;
-    letterBtn.setAttribute('aria-pressed', String(question.correct === i));
-    if (question.correct === i) letterBtn.classList.add('is-correct');
+    const answerLetterButton = document.createElement('button');
+    answerLetterButton.type = 'button';
+    answerLetterButton.className = 'review-edit-correct-btn';
+    answerLetterButton.textContent = letter;
+    answerLetterButton.setAttribute('aria-label', 'Chọn đáp án đúng ' + letter);
+    answerLetterButton.title = 'Đáp án đúng: ' + letter;
+    answerLetterButton.setAttribute('aria-pressed', String(questionText.correctAnswerIndex === optionIndex));
+    if (questionText.correctAnswerIndex === optionIndex) answerLetterButton.classList.add('is-correct');
 
     const radio = document.createElement('input');
     radio.type = 'radio';
     radio.name = 'bank-edit-correct-' + questionIndex;
-    radio.value = String(i);
-    radio.checked = question.correct === i;
+    radio.value = String(optionIndex);
+    radio.checked = questionText.correctAnswerIndex === optionIndex;
     radio.className = 'screen-reader-only';
     radio.tabIndex = -1;
     radio.setAttribute('aria-hidden', 'true');
@@ -699,21 +699,21 @@ function enterBankQuestionEdit(card, questionIndex) {
     input.type = 'text';
     input.className = 'review-edit-option-input';
     input.placeholder = 'Đáp án ' + letter;
-    input.value = question.options[i] || '';
+    input.value = questionText.answerOptions[optionIndex] || '';
 
-    letterBtn.addEventListener('click', () => {
-      radios.forEach((r, idx) => {
-        r.checked = idx === i;
-        letterBtns[idx].classList.toggle('is-correct', idx === i);
-        letterBtns[idx].setAttribute('aria-pressed', String(idx === i));
+    answerLetterButton.addEventListener('click', () => {
+      radios.forEach((radioButton, buttonIndex) => {
+        radioButton.checked = buttonIndex === optionIndex;
+        answerLetterButtons[buttonIndex].classList.toggle('is-correct', buttonIndex === optionIndex);
+        answerLetterButtons[buttonIndex].setAttribute('aria-pressed', String(buttonIndex === optionIndex));
       });
     });
 
-    row.append(letterBtn, radio, input);
+    row.append(answerLetterButton, radio, input);
     answerOptionList.appendChild(row);
     optionInputs.push(input);
     radios.push(radio);
-    letterBtns.push(letterBtn);
+    answerLetterButtons.push(answerLetterButton);
   };
 
   const actions = document.createElement('div');
@@ -740,31 +740,36 @@ function enterBankQuestionEdit(card, questionIndex) {
   cancelBtn.setAttribute('aria-label', 'Hủy');
   cancelBtn.title = 'Hủy';
 
-  let editFixed = question.fixed === true;
-  const fixedQuestionButton = document.createElement('button');
-  fixedQuestionButton.type = 'button';
-  fixedQuestionButton.className = 'button button-ghost button-icon-only ';
-  const syncFixedButton = () => {
-    fixedQuestionButton.setAttribute('aria-pressed', String(editFixed));
-    setToggleIcon(fixedQuestionButton, editFixed, { on: 'pinned-off', off: 'pinned' });
-    fixedQuestionButton.setAttribute('aria-label', editFixed ? 'Bỏ cố định đáp án' : 'Cố định đáp án');
-    fixedQuestionButton.title = editFixed ? 'Đáp án cố định' : 'Cố định đáp án';
-    fixedQuestionButton.classList.toggle('is-on', editFixed);
-  };
-  syncFixedButton();
-
-  actions.append(saveBtn, resetBtn, fixedQuestionButton, cancelBtn);
-
-  parts.editBlock.append(qLabel, qInput, optLabel, answerOptionList, actions);
-
-  fixedQuestionButton.addEventListener('click', () => {
-    editFixed = !editFixed;
-    syncFixedButton();
+  const fixedAnswerIndices = new Set(Array.isArray(questionText.fixedAnswerIndices) ? questionText.fixedAnswerIndices : []);
+  answerOptionList.querySelectorAll('.review-edit-option-row').forEach((row, index) => {
+    const fixedButton = document.createElement('button');
+    fixedButton.type = 'button';
+    fixedButton.className = 'button button-ghost button-icon-only review-edit-fixed-btn';
+    fixedButton.dataset.icon = fixedAnswerIndices.has(index) ? 'pinned-off' : 'pinned';
+    fixedButton.setAttribute('aria-pressed', String(fixedAnswerIndices.has(index)));
+    fixedButton.setAttribute('aria-label', fixedAnswerIndices.has(index) ? 'Bỏ cố định đáp án ' + String.fromCharCode(65 + index) : 'Cố định đáp án ' + String.fromCharCode(65 + index));
+    fixedButton.title = fixedAnswerIndices.has(index) ? 'Bỏ cố định đáp án' : 'Cố định đáp án';
+    fixedButton.classList.toggle('is-on', fixedAnswerIndices.has(index));
+    fixedButton.addEventListener('click', () => {
+      const active = !fixedAnswerIndices.has(index);
+      if (active) fixedAnswerIndices.add(index);
+      else fixedAnswerIndices.delete(index);
+      fixedButton.dataset.icon = active ? 'pinned-off' : 'pinned';
+      fixedButton.setAttribute('aria-pressed', String(active));
+      fixedButton.setAttribute('aria-label', active ? 'Bỏ cố định đáp án ' + String.fromCharCode(65 + index) : 'Cố định đáp án ' + String.fromCharCode(65 + index));
+      fixedButton.title = active ? 'Bỏ cố định đáp án' : 'Cố định đáp án';
+      fixedButton.classList.toggle('is-on', active);
+    });
+    row.appendChild(fixedButton);
   });
+
+  actions.append(saveBtn, resetBtn, cancelBtn);
+
+  parts.editBlock.append(questionLabel, questionInput, answerLabel, answerOptionList, actions);
 
   cancelBtn.addEventListener('click', () => {
     exitBankQuestionEdit(card);
-    bindReviewBankCard(card, question, Number(card.dataset.listIndex));
+    bindReviewBankCard(card, questionText, Number(card.dataset.listIndex));
   });
 
   resetBtn.addEventListener('click', async () => {
@@ -785,29 +790,34 @@ function enterBankQuestionEdit(card, questionIndex) {
   });
 
   saveBtn.addEventListener('click', () => {
-    const questionText = qInput.value.trim();
+    const questionText = questionInput.value.trim();
     if (!questionText) {
       toast('Câu hỏi không được để trống.');
       return;
     };
-    const options = optionInputs.map((el) => el.value.trim()).filter(Boolean);
-    if (options.length < 2) {
+    const answerOptions = optionInputs.map((optionInput) => optionInput.value.trim()).filter(Boolean);
+    if (answerOptions.length < 2) {
       toast('Cần ít nhất 2 đáp án.');
       return;
     };
-    let correct = radios.findIndex((r) => r.checked);
+    let correctAnswerIndex = radios.findIndex((radioButton) => radioButton.checked);
     const filledIndices = [];
-    optionInputs.forEach((el, i) => { if (el.value.trim()) filledIndices.push(i); });
-    if (correct < 0 || !optionInputs[correct] || !optionInputs[correct].value.trim()) {
+    optionInputs.forEach((optionInput, optionIndex) => { if (optionInput.value.trim()) filledIndices.push(optionIndex); });
+    if (correctAnswerIndex < 0 || !optionInputs[correctAnswerIndex] || !optionInputs[correctAnswerIndex].value.trim()) {
       toast('Hãy chọn đáp án đúng trong các đáp án đã nhập.');
       return;
     };
-    correct = filledIndices.indexOf(correct);
-    if (correct < 0) {
+    correctAnswerIndex = filledIndices.indexOf(correctAnswerIndex);
+    if (correctAnswerIndex < 0) {
       toast('Đáp án đúng không hợp lệ.');
       return;
     };
-    const payload = { question: questionText, options, correct, fixed: editFixed === true };
+    const payload = {
+      questionText: questionText,
+      answerOptions,
+      correctAnswerIndex,
+      fixedAnswerIndices: [...fixedAnswerIndices].filter((index) => filledIndices.includes(index)).map((index) => filledIndices.indexOf(index))
+    };
     const ok = saveQuestionOverride(state.bankDeck, questionIndex, payload);
     if (!ok) {
       toast('Không thể lưu chỉnh sửa. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
@@ -817,10 +827,10 @@ function enterBankQuestionEdit(card, questionIndex) {
     if (deck && deck[questionIndex]) {
       deck[questionIndex] = {
         ...deck[questionIndex],
-        question: questionText,
-        options: options.slice(),
-        correct,
-        fixed: editFixed === true
+        questionText: questionText,
+        answerOptions: answerOptions.slice(),
+        correctAnswerIndex,
+        fixedAnswerIndices: payload.fixedAnswerIndices.slice()
       };
       state.fingerprints[state.bankDeck] = fingerprintQuestions(deck);
     };
@@ -829,7 +839,7 @@ function enterBankQuestionEdit(card, questionIndex) {
     renderQuestionBank();
   });
 
-  qInput.focus();
+  questionInput.focus();
 };
 
 function createReviewBankCard() {
@@ -890,7 +900,7 @@ function createReviewBankCard() {
   });
   highlightButton.addEventListener('mousedown', (event) => event.preventDefault());
   highlightButton.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
     captureHighlightSelection();
     const selection = state.lastTextSelection;
@@ -902,7 +912,7 @@ function createReviewBankCard() {
   });
 
   bookmarkButton.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
     const result = toggleBookmark(state.bankDeck, questionIndex);
     if (result === null) {
@@ -918,14 +928,14 @@ function createReviewBankCard() {
   });
 
   hideQuestionButton.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
     const result = toggleHiddenQuestion(state.bankDeck, questionIndex);
     if (result === null) {
       toast('Không thể cập nhật trạng thái ẩn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
     };
-    card.classList.toggle('is-hidden-question', result);
+    card.classList.toggle('is-hidden-questionText', result);
     hideQuestionButton.classList.toggle('is-hidden-active', result);
     hideQuestionButton.setAttribute('aria-pressed', String(result));
     setToggleIcon(hideQuestionButton, result, { on: 'eye-off', off: 'eye' });
@@ -936,7 +946,7 @@ function createReviewBankCard() {
   });
 
   editQuestionButton.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
     if (state.reviewEditingQuestionIndex === questionIndex) {
       exitBankQuestionEdit(card);
@@ -951,12 +961,12 @@ function createReviewBankCard() {
   noteBlock.className = 'review-note-block is-empty';
   const noteText = document.createElement('p');
   noteText.className = 'review-note-text';
-  const noteInputEl = document.createElement('textarea');
-  noteInputEl.className = 'question-note-input';
-  noteInputEl.rows = 3;
-  noteInputEl.maxLength = 2000;
-  noteInputEl.placeholder = 'Nhập ghi chú cho câu hỏi này…';
-  noteInputEl.hidden = true;
+  const noteInputElement = document.createElement('textarea');
+  noteInputElement.className = 'question-note-input';
+  noteInputElement.rows = 3;
+  noteInputElement.maxLength = 2000;
+  noteInputElement.placeholder = 'Nhập ghi chú cho câu hỏi này…';
+  noteInputElement.hidden = true;
   const noteActions = document.createElement('div');
   noteActions.className = 'review-note-action-buttons note-actions-icons';
   const noteSaveBtn = document.createElement('button');
@@ -981,15 +991,15 @@ function createReviewBankCard() {
   noteCancelBtn.title = 'Hủy';
   noteCancelBtn.hidden = true;
   noteActions.append(noteSaveBtn, noteDeleteBtn, noteCancelBtn);
-  noteBlock.append(noteText, noteInputEl, noteActions);
+  noteBlock.append(noteText, noteInputElement, noteActions);
 
   function setReviewNoteViewMode(existing) {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (Number.isInteger(questionIndex) && state.reviewEditingNoteIndex === questionIndex) {
       state.reviewEditingNoteIndex = null;
       state.reviewEditingNoteDraft = '';
     };
-    noteInputEl.hidden = true;
+    noteInputElement.hidden = true;
     noteSaveBtn.hidden = true;
     noteDeleteBtn.hidden = true;
     noteCancelBtn.hidden = true;
@@ -1010,55 +1020,56 @@ function createReviewBankCard() {
       noteEditBtn.setAttribute('aria-label', 'Thêm ghi chú');
       noteEditBtn.title = 'Thêm ghi chú';
     };
+    syncReviewActionState();
   };
 
   function setReviewNoteEditMode(questionIndex, draft) {
     state.reviewEditingNoteIndex = questionIndex;
     const value = typeof draft === 'string' ? draft : getQuestionNote(state.bankDeck, questionIndex);
     state.reviewEditingNoteDraft = value;
-    noteInputEl.value = value;
+    noteInputElement.value = value;
     noteText.hidden = true;
-    noteInputEl.hidden = false;
+    noteInputElement.hidden = false;
     noteSaveBtn.hidden = false;
     noteDeleteBtn.hidden = false;
     noteCancelBtn.hidden = false;
     noteBlock.classList.remove('is-empty');
     noteBlock.hidden = false;
     noteEditBtn.classList.add('has-note');
-    noteInputEl.focus();
+    syncReviewActionState();
+    noteInputElement.focus();
   };
 
-  noteInputEl.addEventListener('input', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+  noteInputElement.addEventListener('input', () => {
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
-    if (state.reviewEditingNoteIndex === questionIndex) state.reviewEditingNoteDraft = noteInputEl.value;
+    if (state.reviewEditingNoteIndex === questionIndex) state.reviewEditingNoteDraft = noteInputElement.value;
   });
 
   noteEditBtn.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
-    if (!noteInputEl.hidden) {
-      setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
+    if (Number.isInteger(state.reviewEditingQuestionIndex)) {
+      toast('Hãy lưu hoặc đóng chỉnh sửa câu hỏi trước khi ghi chú.');
       return;
     };
-    if (Number.isInteger(state.reviewEditingQuestionIndex)) {
-      const activeCard = (getReviewVirtualState().pool || []).find((item) => Number(item.dataset.originalIndex) === state.reviewEditingQuestionIndex);
-      if (activeCard) exitBankQuestionEdit(activeCard);
-      else state.reviewEditingQuestionIndex = null;
+    if (!noteInputElement.hidden) {
+      setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
+      return;
     };
     setReviewNoteEditMode(questionIndex);
   });
 
   noteCancelBtn.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
     setReviewNoteViewMode(getQuestionNote(state.bankDeck, questionIndex));
   });
 
   noteSaveBtn.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
-    const ok = saveQuestionNote(state.bankDeck, questionIndex, noteInputEl.value);
+    const ok = saveQuestionNote(state.bankDeck, questionIndex, noteInputElement.value);
     if (!ok) {
       toast('Không thể lưu ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
@@ -1069,24 +1080,32 @@ function createReviewBankCard() {
   });
 
   noteDeleteBtn.addEventListener('click', () => {
-    const questionIndex = Number(card.dataset.originalIndex);
+    const questionIndex = Number(card.dataset.sourceQuestionIndex);
     if (!Number.isInteger(questionIndex)) return;
     const ok = saveQuestionNote(state.bankDeck, questionIndex, '');
     if (!ok) {
       toast('Không thể xóa ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
     };
-    noteInputEl.value = '';
+    noteInputElement.value = '';
     setReviewNoteViewMode('');
     toast('Đã xóa ghi chú.');
   });
 
-  const options = document.createElement('ol');
-  options.className = 'review-options';
-  options.type = 'A';
+  const syncReviewActionState = () => {
+    const editingQuestion = Number.isInteger(state.reviewEditingQuestionIndex);
+    const editingNote = Number.isInteger(state.reviewEditingNoteIndex);
+    editQuestionButton.disabled = editingNote;
+    noteEditBtn.disabled = editingQuestion;
+    editQuestionButton.title = editingNote ? 'Hãy đóng ghi chú trước' : 'Chỉnh sửa';
+    noteEditBtn.title = editingQuestion ? 'Hãy đóng chỉnh sửa trước' : noteEditBtn.title;
+  };
+  const answerOptions = document.createElement('ol');
+  answerOptions.className = 'review-options';
+  answerOptions.type = 'A';
 
   const optionNodes = [];
-  for (let i = 0; i < 6; i++) {
+  for (let optionIndex = 0; optionIndex < 6; optionIndex++) {
     const item = document.createElement('li');
     item.className = 'review-option';
     item.hidden = true;
@@ -1099,7 +1118,7 @@ function createReviewBankCard() {
     badge.textContent = 'Đáp án đúng';
     badge.hidden = true;
     item.append(label, text, badge);
-    options.appendChild(item);
+    answerOptions.appendChild(item);
     optionNodes.push({ item, label, text, badge });
   };
 
@@ -1108,7 +1127,7 @@ function createReviewBankCard() {
   editBlock.className = 'review-edit-block';
   editBlock.hidden = true;
 
-  card.append(heading, prompt, toolbar, noteBlock, editBlock, options);
+  card.append(heading, prompt, toolbar, noteBlock, editBlock, answerOptions);
   card._vs = {
     heading,
     prompt,
@@ -1118,31 +1137,32 @@ function createReviewBankCard() {
     hideQuestionButton,
     noteBlock,
     noteText,
-    noteInput: noteInputEl,
+    noteInput: noteInputElement,
     noteEditBtn,
+    syncReviewActionState,
     noteSaveBtn,
     noteDeleteBtn,
     noteCancelBtn,
     setReviewNoteViewMode,
     setReviewNoteEditMode,
     editBlock,
-    options,
+    answerOptions,
     optionNodes
   };
   return card;
 };
 
-function bindReviewBankCard(card, question, listIndex) {
+function bindReviewBankCard(card, questionText, listIndex) {
   const parts = card._vs;
   const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
   card.dataset.listIndex = String(listIndex);
-  card.dataset.originalIndex = String(question.originalIndex);
-  card.id = 'review-question-' + (question.originalIndex + 1);
-  parts.heading.textContent = 'Câu ' + (question.originalIndex + 1);
-  card.classList.toggle('review-question-highlight', state.reviewFocusQuestionNumber === question.originalIndex + 1);
-  card.classList.toggle('is-answer-fixed', question.fixed === true);
+  card.dataset.sourceQuestionIndex = String(questionText.sourceQuestionIndex);
+  card.id = 'review-question-' + (questionText.sourceQuestionIndex + 1);
+  parts.heading.textContent = 'Câu ' + (questionText.sourceQuestionIndex + 1);
+  card.classList.toggle('review-question-highlight', state.reviewFocusQuestionNumber === questionText.sourceQuestionIndex + 1);
+  card.classList.toggle('is-answer-fixed', Array.isArray(questionText.fixedAnswerIndices) && questionText.fixedAnswerIndices.length > 0);
 
-  const isBookmarked = getBookmarkedIndices(state.bankDeck).includes(question.originalIndex);
+  const isBookmarked = getBookmarkedIndices(state.bankDeck).includes(questionText.sourceQuestionIndex);
   if (parts.bookmarkButton) {
     parts.bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
     parts.bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
@@ -1151,8 +1171,8 @@ function bindReviewBankCard(card, question, listIndex) {
     parts.bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
   };
 
-  const hidden = isQuestionHidden(state.bankDeck, question.originalIndex);
-  card.classList.toggle('is-hidden-question', hidden);
+  const hidden = isQuestionHidden(state.bankDeck, questionText.sourceQuestionIndex);
+  card.classList.toggle('is-hidden-questionText', hidden);
   if (parts.hideQuestionButton) {
     parts.hideQuestionButton.classList.toggle('is-hidden-active', hidden);
     parts.hideQuestionButton.setAttribute('aria-pressed', String(hidden));
@@ -1161,39 +1181,39 @@ function bindReviewBankCard(card, question, listIndex) {
     parts.hideQuestionButton.title = hidden ? 'Hiện câu hỏi' : 'Ẩn câu hỏi';
   };
 
-  if (state.reviewEditingQuestionIndex === question.originalIndex) {
+  if (state.reviewEditingQuestionIndex === questionText.sourceQuestionIndex) {
     if (parts.editBlock.hidden || !parts.editBlock.childElementCount) {
-      enterBankQuestionEdit(card, question.originalIndex);
+      enterBankQuestionEdit(card, questionText.sourceQuestionIndex);
     } else {
       parts.prompt.hidden = true;
-      parts.options.hidden = true;
+      parts.answerOptions.hidden = true;
       parts.editBlock.hidden = false;
     };
   } else {
     if (!parts.editBlock.hidden) exitBankQuestionEdit(card);
     parts.prompt.hidden = false;
-    parts.options.hidden = false;
+    parts.answerOptions.hidden = false;
   };
 
-  renderTextWithHighlights(parts.prompt, question.question, state.bankDeck, question.originalIndex, 'question');
+  renderTextWithHighlights(parts.prompt, questionText.questionText, state.bankDeck, questionText.sourceQuestionIndex, 'questionText');
 
-  const existingNote = getQuestionNote(state.bankDeck, question.originalIndex);
+  const existingNote = getQuestionNote(state.bankDeck, questionText.sourceQuestionIndex);
   if (parts.noteBlock) {
-    if (state.reviewEditingNoteIndex === question.originalIndex && typeof parts.setReviewNoteEditMode === 'function') parts.setReviewNoteEditMode(question.originalIndex, state.reviewEditingNoteDraft);
+    if (state.reviewEditingNoteIndex === questionText.sourceQuestionIndex && typeof parts.setReviewNoteEditMode === 'function') parts.setReviewNoteEditMode(questionText.sourceQuestionIndex, state.reviewEditingNoteDraft);
     else if (typeof parts.setReviewNoteViewMode === 'function') parts.setReviewNoteViewMode(existingNote);
   };
 
-  const optionCount = question.options.length;
+  const optionCount = questionText.answerOptions.length;
   parts.optionNodes.forEach((node, index) => {
     if (index >= optionCount) {
       node.item.hidden = true;
       return;
     };
     node.item.hidden = false;
-    const isCorrect = index === question.correct;
+    const isCorrect = index === questionText.correctAnswerIndex;
     node.item.className = isCorrect ? 'review-option is-correct' : 'review-option';
     node.label.textContent = labels[index] || String(index + 1);
-    renderTextWithHighlights(node.text, question.options[index], state.bankDeck, question.originalIndex, 'option:' + index);
+    renderTextWithHighlights(node.text, questionText.answerOptions[index], state.bankDeck, questionText.sourceQuestionIndex, 'option:' + index);
     node.badge.hidden = !isCorrect;
   });
 };
@@ -1217,8 +1237,8 @@ function measureReviewVirtualVisible(virtualScrollState) {
     const height = card.offsetHeight;
     if (!(height > 0)) continue;
     const withGap = height + 12;
-    const originalIndex = virtualScrollState.filtered[index]?.originalIndex;
-    if (Number.isInteger(originalIndex)) virtualScrollState.heightByOriginalIndex.set(originalIndex, withGap);
+    const sourceQuestionIndex = virtualScrollState.filtered[index]?.sourceQuestionIndex;
+    if (Number.isInteger(sourceQuestionIndex)) virtualScrollState.heightByOriginalIndex.set(sourceQuestionIndex, withGap);
     if (Math.abs((virtualScrollState.heights[index] || 0) - withGap) > 2) {
       virtualScrollState.heights[index] = withGap;
       changed = true;
@@ -1252,7 +1272,7 @@ function syncReviewVirtualWindow() {
   };
 
   const neededIndices = [];
-  for (let i = start; i <= end; i++) neededIndices.push(i);
+  for (let listIndex = start; listIndex <= end; listIndex++) neededIndices.push(listIndex);
 
   const assigned = new Map();
   const free = [];
@@ -1262,15 +1282,15 @@ function syncReviewVirtualWindow() {
     else free.push(card);
   };
 
-  for (const i of neededIndices) {
-    let card = assigned.get(i);
+  for (const listIndex of neededIndices) {
+    let card = assigned.get(listIndex);
     if (!card) card = free.pop();
     if (!card) continue;
-    assigned.set(i, card);
-    const question = virtualScrollState.filtered[i];
-    bindReviewBankCard(card, question, i);
+    assigned.set(listIndex, card);
+    const questionText = virtualScrollState.filtered[listIndex];
+    bindReviewBankCard(card, questionText, listIndex);
     card.hidden = false;
-    card.style.transform = 'translateY(' + (virtualScrollState.positions[i] || 0) + 'px)';
+    card.style.transform = 'translateY(' + (virtualScrollState.positions[listIndex] || 0) + 'px)';
   };
 
   const used = new Set(assigned.values());
@@ -1278,7 +1298,7 @@ function syncReviewVirtualWindow() {
     if (!used.has(card)) {
       card.hidden = true;
       card.dataset.listIndex = '';
-      card.dataset.originalIndex = '';
+      card.dataset.sourceQuestionIndex = '';
     };
   };
   virtualScrollState.rangeStart = start;
@@ -1321,15 +1341,15 @@ function setReviewFocusQuestion(questionNumber) {
   state.reviewFocusQuestionNumber = Number.isInteger(questionNumber) && questionNumber > 0 ? questionNumber : null;
   const virtualScrollState = getReviewVirtualState();
   for (const card of virtualScrollState.pool || []) {
-    const originalIndex = Number(card.dataset.originalIndex);
-    const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(originalIndex) && state.reviewFocusQuestionNumber === originalIndex + 1;
+    const sourceQuestionIndex = Number(card.dataset.sourceQuestionIndex);
+    const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(sourceQuestionIndex) && state.reviewFocusQuestionNumber === sourceQuestionIndex + 1;
     card.classList.toggle('review-question-highlight', shouldHighlight);
   };
   const list = getElementById('review-list');
   if (list) {
     list.querySelectorAll('.review-question-highlight').forEach((element) => {
-      const originalIndex = Number(element.dataset.originalIndex);
-      const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(originalIndex) && state.reviewFocusQuestionNumber === originalIndex + 1;
+      const sourceQuestionIndex = Number(element.dataset.sourceQuestionIndex);
+      const shouldHighlight = state.reviewFocusQuestionNumber != null && Number.isInteger(sourceQuestionIndex) && state.reviewFocusQuestionNumber === sourceQuestionIndex + 1;
       if (!shouldHighlight) element.classList.remove('review-question-highlight');
     });
   };
@@ -1347,7 +1367,7 @@ function scrollReviewToListIndex(index, behavior = 'auto') {
 
 function scrollReviewToQuestionNumber(questionNumber) {
   const virtualScrollState = getReviewVirtualState();
-  const index = virtualScrollState.filtered.findIndex((question) => question.originalIndex + 1 === questionNumber);
+  const index = virtualScrollState.filtered.findIndex((questionText) => questionText.sourceQuestionIndex + 1 === questionNumber);
   if (index < 0) return false;
   const list = getElementById('review-list');
   if (!list) return false;
@@ -1369,8 +1389,8 @@ function scrollReviewToQuestionNumber(questionNumber) {
       if (Number.isInteger(listIndex) && height > 0) {
         const withGap = height + 12;
         virtualScrollState.heights[listIndex] = withGap;
-        const originalIndex = virtualScrollState.filtered[listIndex]?.originalIndex;
-        if (Number.isInteger(originalIndex)) virtualScrollState.heightByOriginalIndex.set(originalIndex, withGap);
+        const sourceQuestionIndex = virtualScrollState.filtered[listIndex]?.sourceQuestionIndex;
+        if (Number.isInteger(sourceQuestionIndex)) virtualScrollState.heightByOriginalIndex.set(sourceQuestionIndex, withGap);
         rebuildReviewVirtualMetrics(virtualScrollState);
       };
       setReviewFocusQuestion(questionNumber);
@@ -1505,13 +1525,12 @@ function refreshSetupUI() {
   const input = getElementById('input-count');
   input.max = String(Math.max(1, rangeTotal));
   const countFocused = document.activeElement === input;
-  if (!countFocused) {
+  if (!countFocused && !state.allQuestionsEnabled) {
     if (Number(input.value) > rangeTotal) input.value = String(rangeTotal || 1);
     if (Number(input.value) < 1 || !Number.isFinite(Number(input.value))) input.value = '1';
   };
 
-  const countNum = Number.parseInt(input.value, 10);
-  const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal && rangeTotal > 0;
+  const isAllCount = state.allQuestionsEnabled;
   const selectAllButton = getElementById('button-select-all');
   if (selectAllButton) {
     selectAllButton.classList.toggle('is-active', isAllCount);
@@ -1531,7 +1550,7 @@ function refreshSetupUI() {
       timeVal = Math.min(1440, timeVal);
       timeInput.value = String(timeVal);
     };
-    const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
+    const isUnlimited = state.unlimitedTimeEnabled;
     const unlimitedTimeButton = getElementById('button-unlimited-time');
     if (unlimitedTimeButton) {
       unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
@@ -1544,16 +1563,16 @@ function refreshSetupUI() {
   };
 
   const progress = getDeckProgress(state.currentDeck);
-  const completed = new Set(progress.completed);
-  const remaining = questions.filter((question) => !completed.has(question.originalIndex)).length;
+  const completedQuestionIndices = new Set(progress.completedQuestionIndices);
+  const remaining = questions.filter((questionText) => !completedQuestionIndices.has(questionText.sourceQuestionIndex)).length;
   const wrongs = getWrongIndices(state.currentDeck);
-  getElementById('statistics-completed').textContent = String(completed.size);
+  getElementById('statistics-completed').textContent = String(completedQuestionIndices.size);
   getElementById('statistics-remaining').textContent = String(remaining);
   getElementById('statistics-wrong').textContent = String(wrongs.length);
-  getElementById('statistics-practiced').textContent = String(Object.values(progress.practiceMap || {}).reduce((sum, count) => sum + count, 0));
-  getElementById('statistics-bookmarked').textContent = String(progress.bookmarks.length);
-  if (progress.sequentialCursor >= total) getElementById('statistics-sequential-cursor').textContent = 'Đã làm hết bộ đề';
-  else getElementById('statistics-sequential-cursor').textContent = String(progress.sequentialCursor + 1);
+  getElementById('statistics-practiced').textContent = String(Object.values(progress.practiceQuestionCounts || {}).reduce((sum, count) => sum + count, 0));
+  getElementById('statistics-bookmarked').textContent = String(progress.bookmarkedQuestionIndices.length);
+  if (progress.sequentialQuestionCursor >= total) getElementById('statistics-sequential-cursor').textContent = 'Đã làm hết bộ đề';
+  else getElementById('statistics-sequential-cursor').textContent = String(progress.sequentialQuestionCursor + 1);
 
   const hiddenSet = new Set(getHiddenIndices(state.currentDeck));
   const practiceWrongButton = getElementById('button-practice-wrong');
@@ -1562,37 +1581,37 @@ function refreshSetupUI() {
     start,
     end
   ).filter((index) => !hiddenSet.has(index)).length;
-  practiceWrongButton.disabled = state.practiceMode === 'exam' || rangeWrongCount === 0;
+  practiceWrongButton.disabled = state.studyMode === 'exam' || rangeWrongCount === 0;
   practiceWrongButton.textContent = 'Ôn ' + rangeWrongCount + ' câu sai trong vùng';
 
   const allWrongCount = getWrongIndices(state.currentDeck).filter((index) => index < fullTotal && !hiddenSet.has(index)).length;
   const practiceAllWrongButton = getElementById('button-practice-all-wrong');
-  practiceAllWrongButton.disabled = state.practiceMode === 'exam' || allWrongCount === 0;
+  practiceAllWrongButton.disabled = state.studyMode === 'exam' || allWrongCount === 0;
   practiceAllWrongButton.textContent = 'Ôn ' + allWrongCount + ' câu sai của bộ đề';
 
-  const bookmarks = new Set(getBookmarkedIndices(state.currentDeck));
-  const rangeBookmarkCount = [...bookmarks].filter((questionIndex) => questionIndex >= start - 1 && questionIndex < end && questionIndex < fullTotal && !isQuestionHidden(state.currentDeck, questionIndex)).length;
+  const bookmarkedQuestionIndices = new Set(getBookmarkedIndices(state.currentDeck));
+  const rangeBookmarkCount = [...bookmarkedQuestionIndices].filter((questionIndex) => questionIndex >= start - 1 && questionIndex < end && questionIndex < fullTotal && !isQuestionHidden(state.currentDeck, questionIndex)).length;
   const practiceBookmarksButton = getElementById('button-practice-bookmarks');
-  practiceBookmarksButton.disabled = state.practiceMode === 'exam' || rangeBookmarkCount === 0;
+  practiceBookmarksButton.disabled = state.studyMode === 'exam' || rangeBookmarkCount === 0;
   practiceBookmarksButton.textContent = 'Ôn ' + rangeBookmarkCount + ' câu đã đánh dấu';
 
-  const rangeQuestions = questions.filter((question) => question.originalIndex >= start - 1 && question.originalIndex < end);
-  const shuffleQuestions = getElementById('checkbox-shuffle-questions').checked;
+  const rangeQuestions = questions.filter((questionText) => questionText.sourceQuestionIndex >= start - 1 && questionText.sourceQuestionIndex < end);
+  const shuffleQuestionOrder = getElementById('checkbox-shuffle-questions').checked;
   const continueButton = getElementById('button-continue');
-  const nextQuestion = findNextUncompletedQuestion(rangeQuestions, Math.max(progress.sequentialCursor, start - 1), completed);
-  const nextIndex = nextQuestion?.originalIndex ?? end;
-  const canContinue = state.practiceMode !== 'exam' && !shuffleQuestions && !!nextQuestion;
+  const nextQuestion = findNextUncompletedQuestion(rangeQuestions, Math.max(progress.sequentialQuestionCursor, start - 1), completedQuestionIndices);
+  const nextIndex = nextQuestion?.sourceQuestionIndex ?? end;
+  const canContinue = state.studyMode !== 'exam' && !shuffleQuestionOrder && !!nextQuestion;
   continueButton.hidden = !canContinue;
   if (canContinue) {
     const left = end - nextIndex;
-    const n = Math.min(Number(input.value) || 20, left);
-    continueButton.textContent = 'Tiếp tục tuần tự ' + n + ' câu từ câu ' + (nextIndex + 1);
+    const availableQuestionCount = Math.min(state.allQuestionsEnabled ? rangeTotal : (Number(input.value) || 20), left);
+    continueButton.textContent = 'Tiếp tục tuần tự ' + availableQuestionCount + ' câu từ câu ' + (nextIndex + 1);
   };
 
   document.querySelectorAll('.preset-btn').forEach((button) => {
-    const n = Number(button.dataset.count);
-    button.classList.toggle('is-active', Number(input.value) === n);
-    button.disabled = n > rangeTotal;
+    const presetQuestionCount = Number(button.dataset.count);
+    button.classList.toggle('is-active', Number(input.value) === presetQuestionCount);
+    button.disabled = presetQuestionCount > rangeTotal;
   });
 
   refreshResumeCard();
@@ -1606,7 +1625,7 @@ function refreshResumeCard() {
     card.hidden = true;
     return;
   };
-  const answered = saved.items.filter((item) => item.userAnswer != null).length;
+  const answered = saved.items.filter((item) => item.selectedAnswerIndex != null).length;
   const isExam = !!saved.examMode || saved.mode === 'exam';
   const deckLabel = DECKS[saved.deckId]?.label || saved.deckId;
   card.hidden = false;
@@ -1683,7 +1702,7 @@ function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
 };
 
 function setBankDeck(deckId) {
-  const id = deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  const id = deckId === 'quocphonganninh2' ? 'quocphonganninh2' : 'quocphonganninh1';
   if (state.bankDeck === id) return;
   
   state.bankDeck = id;
@@ -1697,9 +1716,9 @@ function setBankDeck(deckId) {
   virtualScrollState.positions = [];
   
   renderQuestionBank();
-  if (getElementById('bank-count-quocphong1')) {
-    getElementById('bank-count-quocphong1').textContent = (state.decks.quocphong1?.length ?? 479) + ' câu';
-    getElementById('bank-count-quocphong2').textContent = (state.decks.quocphong2?.length ?? 262) + ' câu';
+  if (getElementById('bank-count-quocphonganninh1')) {
+    getElementById('bank-count-quocphonganninh1').textContent = (state.decks.quocphonganninh1?.length ?? 479) + ' câu';
+    getElementById('bank-count-quocphonganninh2').textContent = (state.decks.quocphonganninh2?.length ?? 262) + ' câu';
   };
   updateBankSearchHint();
   updateBankSearchNavButtons();
@@ -1710,46 +1729,52 @@ function startPracticeBookmarks() {
   persistSetupForm();
   const questions = selectedQuestions(form);
   const bookmarked = getBookmarkedIndices(state.currentDeck).filter((questionIndex) => !isQuestionHidden(state.currentDeck, questionIndex));
-  const pool = pickWrong(questions, bookmarked, form.count, form.shuffleQuestions);
+  const pool = pickWrong(questions, bookmarked, form.count, form.shuffleQuestionOrder);
   if (!pool.length) {
     toast('Trong vùng câu hỏi đã chọn không có câu nào được đánh dấu.');
     return;
   };
-  const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
+  const practiceSaveFailed = pool.some((questionText) => markPracticed(state.currentDeck, questionText.sourceQuestionIndex) === null);
   if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
     mode: 'practice-bookmarks',
     sequential: false,
-    forceShuffleQuestions: form.shuffleQuestions,
+    forceShuffleQuestions: form.shuffleQuestionOrder,
     alreadyShuffled: true
   });
 };
 
 function readSetupForm() {
   const total = currentQuestions().length;
-  let startQuestion = Number.parseInt(getElementById('input-range-start').value, 10);
-  let endQuestion = Number.parseInt(getElementById('input-range-end').value, 10);
-  if (!Number.isInteger(startQuestion)) startQuestion = 1;
-  if (!Number.isInteger(endQuestion)) endQuestion = total;
-  startQuestion = Math.max(1, Math.min(startQuestion, Math.max(1, total)));
-  endQuestion = Math.max(startQuestion, Math.min(endQuestion, Math.max(1, total)));
+  let firstQuestionNumber = Number.parseInt(getElementById('input-range-start').value, 10);
+  let lastQuestionNumber = Number.parseInt(getElementById('input-range-end').value, 10);
+  if (!Number.isInteger(firstQuestionNumber)) firstQuestionNumber = 1;
+  if (!Number.isInteger(lastQuestionNumber)) lastQuestionNumber = total;
+  firstQuestionNumber = Math.max(1, Math.min(firstQuestionNumber, Math.max(1, total)));
+  lastQuestionNumber = Math.max(firstQuestionNumber, Math.min(lastQuestionNumber, Math.max(1, total)));
 
   let count = Number.parseInt(getElementById('input-count').value, 10);
-  const rangeCount = Math.max(1, endQuestion - startQuestion + 1);
+  const rangeCount = Math.max(1, lastQuestionNumber - firstQuestionNumber + 1);
   if (!Number.isFinite(count) || count < 1) count = 1;
   if (count > rangeCount) count = rangeCount;
+  const storedCount = count;
   let timeLimit = Number.parseInt(getElementById('input-time-limit').value, 10);
   if (!Number.isInteger(timeLimit) || timeLimit < 0) timeLimit = 0;
   timeLimit = Math.min(1440, timeLimit);
-  const shuffleQuestions = getElementById('checkbox-shuffle-questions').checked;
-  const shuffleAnswers = getElementById('checkbox-shuffle-answers').checked;
+  const storedTimeLimit = timeLimit;
+  const shuffleQuestionOrder = getElementById('checkbox-shuffle-questions').checked;
+  const shuffleAnswerOrder = getElementById('checkbox-shuffle-answers').checked;
   return {
-    count,
-    shuffleQuestions,
-    shuffleAnswers,
-    startQuestion,
-    endQuestion,
-    timeLimit
+    count: state.allQuestionsEnabled ? rangeCount : count,
+    storedCount,
+    shuffleQuestionOrder,
+    shuffleAnswerOrder,
+    firstQuestionNumber,
+    lastQuestionNumber,
+    timeLimit: state.unlimitedTimeEnabled ? 0 : timeLimit,
+    storedTimeLimit,
+    allQuestionsEnabled: state.allQuestionsEnabled,
+    unlimitedTimeEnabled: state.unlimitedTimeEnabled
   };
 };
 
@@ -1757,72 +1782,68 @@ function persistSetupForm() {
   const form = readSetupForm();
   const saved = saveSettings({
     deck: state.currentDeck,
-    count: form.count,
-    shuffleQuestions: form.shuffleQuestions,
-    shuffleAnswers: form.shuffleAnswers,
-    startQuestion: form.startQuestion,
-    endQuestion: form.endQuestion,
-    timeLimit: form.timeLimit,
-    practiceMode: state.practiceMode,
-    autoCheck: getElementById('checkbox-automatic-check').checked,
-    autoCheckDelay: (() => {
+    count: form.storedCount,
+    allQuestionsEnabled: form.allQuestionsEnabled,
+    shuffleQuestionOrder: form.shuffleQuestionOrder,
+    shuffleAnswerOrder: form.shuffleAnswerOrder,
+    firstQuestionNumber: form.firstQuestionNumber,
+    lastQuestionNumber: form.lastQuestionNumber,
+    timeLimit: form.storedTimeLimit,
+    unlimitedTimeEnabled: form.unlimitedTimeEnabled,
+    studyMode: state.studyMode,
+    automaticAnswerChecking: getElementById('checkbox-automatic-check').checked,
+    automaticAnswerCheckDelaySeconds: (() => {
       const delay = Number.parseInt(getElementById('input-auto-check-delay')?.value, 10);
       return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
     })(),
-    autoAdvance: getElementById('checkbox-automatic-advance').checked,
+    automaticQuestionAdvance: getElementById('checkbox-automatic-advance').checked,
     vibrationEnabled: getElementById('checkbox-vibration').checked,
-    autoAdvanceDelay: (() => {
+    automaticQuestionAdvanceDelaySeconds: (() => {
       const delay = Number.parseInt(getElementById('input-auto-advance-delay')?.value, 10);
       return Number.isInteger(delay) && delay >= 0 ? Math.min(10, delay) : 0;
     })(),
-    soundVolume: (() => {
+    soundVolumePercentage: (() => {
       const input = getElementById('input-sound-volume');
       return normalizeSoundVolume(input?.dataset?.lastVolume || input?.value, 1);
     })(),
-    soundEnabled: !!getElementById('checkbox-sound')?.checked,
-    lastCountBeforeAll: state.lastCountBeforeAll,
-    lastTimeBeforeUnlimited: state.lastTimeBeforeUnlimited
+    soundEnabled: !!getElementById('checkbox-sound')?.checked
   });
   if (!saved) toast('Không thể lưu tùy chọn. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
 };
 
 function applySettingsToForm(settings) {
   if (!settings) return;
-  const total = currentQuestions().length || settings.endQuestion || 1;
+  const total = currentQuestions().length || settings.lastQuestionNumber || 1;
+  state.allQuestionsEnabled = settings.allQuestionsEnabled === true;
+  state.unlimitedTimeEnabled = settings.unlimitedTimeEnabled === true;
   getElementById('input-count').value = String(settings.count || 30);
   getElementById('input-time-limit').value = String(Number.isInteger(settings.timeLimit) && settings.timeLimit >= 0 ? Math.min(1440, settings.timeLimit) : 35);
-  state.lastCountBeforeAll = Number.isInteger(settings.lastCountBeforeAll) && settings.lastCountBeforeAll >= 1
-    ? settings.lastCountBeforeAll
-    : Math.min(20, Math.max(1, settings.count || 30));
-  state.lastTimeBeforeUnlimited = Number.isInteger(settings.lastTimeBeforeUnlimited) && settings.lastTimeBeforeUnlimited > 0
-    ? Math.min(1440, settings.lastTimeBeforeUnlimited)
-    : (settings.timeLimit > 0 ? settings.timeLimit : 50);
-  getElementById('input-range-start').value = String(settings.startQuestion || 1);
-  getElementById('input-range-end').value = String(settings.endQuestion > 0 ? Math.min(settings.endQuestion, total) : total);
-  getElementById('checkbox-shuffle-questions').checked = !!settings.shuffleQuestions;
-  getElementById('checkbox-shuffle-answers').checked = !!settings.shuffleAnswers;
-  getElementById('checkbox-automatic-check').checked = settings.autoCheck === true;
-  getElementById('checkbox-automatic-advance').checked = settings.autoAdvance === true;
+  getElementById('input-range-start').value = String(settings.firstQuestionNumber || 1);
+  getElementById('input-range-end').value = String(settings.lastQuestionNumber > 0 ? Math.min(settings.lastQuestionNumber, total) : total);
+  getElementById('checkbox-shuffle-questions').checked = !!settings.shuffleQuestionOrder;
+  getElementById('checkbox-shuffle-answers').checked = !!settings.shuffleAnswerOrder;
+  getElementById('checkbox-automatic-check').checked = settings.automaticAnswerChecking === true;
+  getElementById('checkbox-automatic-advance').checked = settings.automaticQuestionAdvance === true;
   if (getElementById('input-auto-check-delay')) {
-    const delay = Number.isInteger(settings.autoCheckDelay) && settings.autoCheckDelay >= 0 ? Math.min(10, settings.autoCheckDelay) : 0;
+    const delay = Number.isInteger(settings.automaticAnswerCheckDelaySeconds) && settings.automaticAnswerCheckDelaySeconds >= 0 ? Math.min(10, settings.automaticAnswerCheckDelaySeconds) : 0;
     getElementById('input-auto-check-delay').value = String(delay);
     if (getElementById('label-auto-check-delay')) getElementById('label-auto-check-delay').textContent = delay + ' giây';
   };
   getElementById('checkbox-vibration').checked = settings.vibrationEnabled === true;
   if (getElementById('input-auto-advance-delay')) {
-    const delay = Number.isInteger(settings.autoAdvanceDelay) && settings.autoAdvanceDelay >= 0 ? Math.min(10, settings.autoAdvanceDelay) : 5;
+    const delay = Number.isInteger(settings.automaticQuestionAdvanceDelaySeconds) && settings.automaticQuestionAdvanceDelaySeconds >= 0 ? Math.min(10, settings.automaticQuestionAdvanceDelaySeconds) : 5;
     getElementById('input-auto-advance-delay').value = String(delay);
     if (getElementById('label-auto-advance-delay')) getElementById('label-auto-advance-delay').textContent = delay + ' giây';
   };
-  const volume = normalizeSoundVolume(settings.soundVolume, 1);
+  const volume = normalizeSoundVolume(settings.soundVolumePercentage, 1);
   if (getElementById('input-sound-volume')) {
     getElementById('input-sound-volume').value = String(volume);
     getElementById('input-sound-volume').dataset.lastVolume = String(volume);
     if (getElementById('label-sound-volume')) getElementById('label-sound-volume').textContent = volume + '%';
   };
-  if (getElementById('checkbox-sound')) getElementById('checkbox-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolume) || 0) > 0);
+  if (getElementById('checkbox-sound')) getElementById('checkbox-sound').checked = settings.soundEnabled !== false && (settings.soundEnabled === true || (Number(settings.soundVolumePercentage) || 0) > 0);
   updateSetupExperienceControls();
-  setPracticeMode(settings.practiceMode === 'exam' ? 'exam' : 'practice');
+  setPracticeMode(settings.studyMode === 'exam' ? 'exam' : 'practice');
 };
 
 function stopSessionTimer(freeze = true) {
@@ -1837,45 +1858,45 @@ function stopSessionTimer(freeze = true) {
 };
 
 function selectedQuestions(form = readSetupForm()) {
-  return currentQuestions().filter((question) => question.originalIndex >= form.startQuestion - 1 && question.originalIndex < form.endQuestion);
+  return currentQuestions().filter((questionText) => questionText.sourceQuestionIndex >= form.firstQuestionNumber - 1 && questionText.sourceQuestionIndex < form.lastQuestionNumber);
 };
 
-function startSessionFromPool(pool, meta) {
-  const fromBank = !!meta.fromBank;
+function startSessionFromPool(pool, metadata) {
+  const fromBank = !!metadata.fromBank;
   const form = readSetupForm();
-  const shuffleAnswers = meta.shuffleAnswers != null ? meta.shuffleAnswers : form.shuffleAnswers;
-  const shuffleQuestions = meta.forceShuffleQuestions != null ? meta.forceShuffleQuestions : form.shuffleQuestions;
-  const shouldShuffleQuestions = meta.alreadyShuffled ? false : !!shuffleQuestions;
-  const timeLimit = meta.timeLimit != null ? meta.timeLimit : form.timeLimit;
+  const shuffleAnswerOrder = metadata.shuffleAnswerOrder != null ? metadata.shuffleAnswerOrder : form.shuffleAnswerOrder;
+  const shuffleQuestionOrder = metadata.forceShuffleQuestions != null ? metadata.forceShuffleQuestions : form.shuffleQuestionOrder;
+  const shouldShuffleQuestions = metadata.alreadyShuffled ? false : !!shuffleQuestionOrder;
+  const timeLimit = metadata.timeLimit != null ? metadata.timeLimit : form.timeLimit;
   const items = createSessionItems(pool, {
-    shuffleQuestions: shouldShuffleQuestions,
-    shuffleAnswers
+    shuffleQuestionOrder: shouldShuffleQuestions,
+    shuffleAnswerOrder
   });
   const session = {
     deckId: state.currentDeck,
-    dataFingerprint: state.fingerprints[state.currentDeck],
-    mode: meta.mode || 'normal',
-    rangeStart: meta.rangeStart ?? form.startQuestion,
-    rangeEnd: meta.rangeEnd ?? form.endQuestion,
-    requestedCount: meta.requestedCount ?? form.count,
-    sequential: !!meta.sequential,
-    startCursor: meta.startCursor ?? null,
-    nextCursor: meta.nextCursor ?? null,
-    shuffleQuestions,
-    shuffleAnswers,
+    questionDataFingerprint: state.fingerprints[state.currentDeck],
+    mode: metadata.mode || 'normal',
+    rangeStart: metadata.rangeStart ?? form.firstQuestionNumber,
+    rangeEnd: metadata.rangeEnd ?? form.lastQuestionNumber,
+    requestedCount: metadata.requestedCount ?? form.count,
+    sequential: !!metadata.sequential,
+    startCursor: metadata.startCursor ?? null,
+    nextCursor: metadata.nextCursor ?? null,
+    shuffleQuestionOrder,
+    shuffleAnswerOrder,
     fromBank,
-    pool: pool.map((question) => ({
-      originalIndex: question.originalIndex,
-      question: question.question,
-      options: question.options.slice(),
-      correct: question.correct
+    pool: pool.map((questionText) => ({
+      sourceQuestionIndex: questionText.sourceQuestionIndex,
+      questionText: questionText.questionText,
+      answerOptions: questionText.answerOptions.slice(),
+      correctAnswerIndex: questionText.correctAnswerIndex
     })),
     items,
     viewIndex: 0,
     reviewingPast: false,
     maxReached: 0,
     completedInSession: 0,
-    practiceInitialCount: meta.mode === 'practice-wrong' ? pool.length : 0,
+    practiceInitialCount: metadata.mode === 'practice-wrong' ? pool.length : 0,
     practiceCompletedIndices: [],
     practiceWrongHistory: [],
     firstTryCorrect: 0,
@@ -1888,7 +1909,7 @@ function startSessionFromPool(pool, meta) {
     remainingMs: null,
     timeExpired: false
   };
-  const examRequested = meta.examMode != null ? !!meta.examMode : state.practiceMode === 'exam';
+  const examRequested = metadata.examMode != null ? !!metadata.examMode : state.studyMode === 'exam';
   if (examRequested) {
     session.examMode = true;
     session.mode = session.mode === 'normal' ? 'exam' : session.mode;
@@ -1922,13 +1943,13 @@ function startNormal(answerOptionsElement = {}) {
   };
   persistSetupForm();
   const progress = getDeckProgress(state.currentDeck);
-  const completedSet = new Set(progress.completed);
-  const rangeStart = form.startQuestion - 1;
-  const rangeEnd = form.endQuestion;
+  const completedSet = new Set(progress.completedQuestionIndices);
+  const rangeStart = form.firstQuestionNumber - 1;
+  const rangeEnd = form.lastQuestionNumber;
 
   if (answerOptionsElement.restart) {
     const { items, nextCursor } = pickSequential(questions, 0, form.count, new Set());
-    const globalNextCursor = nextCursor > 0 ? questions[Math.min(nextCursor, questions.length) - 1].originalIndex + 1 : rangeStart;
+    const globalNextCursor = nextCursor > 0 ? questions[Math.min(nextCursor, questions.length) - 1].sourceQuestionIndex + 1 : rangeStart;
     startSessionFromPool(items, {
       mode: 'normal',
       sequential: true,
@@ -1941,20 +1962,20 @@ function startNormal(answerOptionsElement = {}) {
   };
 
   if (answerOptionsElement.sequential) {
-    const nextQuestion = findNextUncompletedQuestion(questions, Math.max(progress.sequentialCursor, rangeStart), completedSet);
+    const nextQuestion = findNextUncompletedQuestion(questions, Math.max(progress.sequentialQuestionCursor, rangeStart), completedSet);
     if (!nextQuestion) {
       toast('Đã hoàn thành toàn bộ câu trong vùng đã chọn.');
       return;
     };
-    const cursor = nextQuestion.originalIndex;
-    const scanQuestions = questions.filter((question) => question.originalIndex >= cursor);
+    const cursor = nextQuestion.sourceQuestionIndex;
+    const scanQuestions = questions.filter((questionText) => questionText.sourceQuestionIndex >= cursor);
     const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
     if (!items.length) {
       toast('Không còn câu tuần tự trong vùng đã chọn.');
       return;
     };
     if (actualCount < form.count) toast('Chỉ còn ' + actualCount + ' câu theo thứ tự trong vùng đã chọn.');
-    const globalNextCursor = nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1 : cursor;
+    const globalNextCursor = nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].sourceQuestionIndex + 1 : cursor;
     startSessionFromPool(items, {
       mode: 'normal',
       sequential: true,
@@ -1966,8 +1987,8 @@ function startNormal(answerOptionsElement = {}) {
     return;
   };
 
-  if (form.shuffleQuestions) {
-    const remainingCount = questions.filter((question) => !completedSet.has(question.originalIndex)).length;
+  if (form.shuffleQuestionOrder) {
+    const remainingCount = questions.filter((questionText) => !completedSet.has(questionText.sourceQuestionIndex)).length;
     const pool = pickRandom(questions, form.count, true, completedSet);
     if (!pool.length) {
       toast('Không lấy được câu hỏi trong vùng đã chọn.');
@@ -1984,9 +2005,9 @@ function startNormal(answerOptionsElement = {}) {
     return;
   };
 
-  const nextQuestion = findNextUncompletedQuestion(questions, Math.max(progress.sequentialCursor, rangeStart), completedSet);
-  const cursor = nextQuestion?.originalIndex ?? rangeEnd;
-  const scanQuestions = questions.filter((question) => question.originalIndex >= cursor);
+  const nextQuestion = findNextUncompletedQuestion(questions, Math.max(progress.sequentialQuestionCursor, rangeStart), completedSet);
+  const cursor = nextQuestion?.sourceQuestionIndex ?? rangeEnd;
+  const scanQuestions = questions.filter((questionText) => questionText.sourceQuestionIndex >= cursor);
   const { items, nextCursor, actualCount } = pickSequential(scanQuestions, 0, form.count, completedSet);
   if (!items.length) {
     const pool = pickRandom(questions, form.count, false, completedSet);
@@ -2000,7 +2021,7 @@ function startNormal(answerOptionsElement = {}) {
     return;
   };
   if (actualCount < form.count) toast('Lượt này có ' + actualCount + ' câu trong vùng đã chọn.');
-  const globalNextCursor = nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].originalIndex + 1 : cursor;
+  const globalNextCursor = nextCursor > 0 ? scanQuestions[Math.min(nextCursor, scanQuestions.length) - 1].sourceQuestionIndex + 1 : cursor;
   startSessionFromPool(items, {
     mode: 'normal',
     sequential: true,
@@ -2011,29 +2032,29 @@ function startNormal(answerOptionsElement = {}) {
   });
 };
 
-function startPracticeWrong(options = {}) {
+function startPracticeWrong(answerOptions = {}) {
   const form = readSetupForm();
   persistSetupForm();
-  const allDeck = options.allDeck === true;
+  const allDeck = answerOptions.allDeck === true;
   const questions = allDeck ? currentQuestions() : selectedQuestions(form);
-  const rangeIndices = new Set(questions.map((question) => question.originalIndex));
-  const sourceIndices = Array.isArray(options.indices) ? options.indices : allDeck ? getWrongIndices(state.currentDeck) : getRangeWrongIndices(state.currentDeck, form.startQuestion, form.endQuestion);
+  const rangeIndices = new Set(questions.map((questionText) => questionText.sourceQuestionIndex));
+  const sourceIndices = Array.isArray(answerOptions.indices) ? answerOptions.indices : allDeck ? getWrongIndices(state.currentDeck) : getRangeWrongIndices(state.currentDeck, form.firstQuestionNumber, form.lastQuestionNumber);
   const wrongs = [...new Set(sourceIndices)].filter((index) => rangeIndices.has(index));
   if (!wrongs.length) {
     toast(allDeck ? 'Bộ đề này chưa có câu sai để ôn.' : 'Trong vùng câu hỏi đã chọn không có câu sai để ôn.');
     return;
   };
-  const pool = pickWrong(questions, wrongs, allDeck ? wrongs.length : form.count, form.shuffleQuestions);
+  const pool = pickWrong(questions, wrongs, allDeck ? wrongs.length : form.count, form.shuffleQuestionOrder);
   if (!pool.length) {
     toast('Không tìm thấy câu sai hợp lệ trong bộ đề đã chọn. Hãy tải lại bộ đề.');
     return;
   };
-  const practiceSaveFailed = pool.some((question) => markPracticed(state.currentDeck, question.originalIndex) === null);
+  const practiceSaveFailed = pool.some((questionText) => markPracticed(state.currentDeck, questionText.sourceQuestionIndex) === null);
   if (practiceSaveFailed) toast('Không thể lưu thống kê ôn lại vào trình duyệt.');
   startSessionFromPool(pool, {
     mode: 'practice-wrong',
     sequential: false,
-    forceShuffleQuestions: form.shuffleQuestions,
+    forceShuffleQuestions: form.shuffleQuestionOrder,
     alreadyShuffled: true,
     ...(allDeck ? {
       rangeStart: 1,
@@ -2043,9 +2064,9 @@ function startPracticeWrong(options = {}) {
   });
 };
 
-function recordWrongAnswer(session, originalIndex) {
-  if (markWrong(session.deckId, originalIndex) === null) toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
-  if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) && !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [originalIndex])) toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
+function recordWrongAnswer(session, sourceQuestionIndex) {
+  if (markWrong(session.deckId, sourceQuestionIndex) === null) toast('Không thể lưu lịch sử câu sai vào trình duyệt.');
+  if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) && !addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, [sourceQuestionIndex])) toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
 };
 
 function currentSessionItem() {
@@ -2058,15 +2079,15 @@ function currentQuestion() {
   const session = state.session;
   const item = currentSessionItem();
   if (!session || !item) return null;
-  return session.pool[item.poolIndex];
+  return session.pool[item.questionPoolIndex];
 };
 
 function renderQuestion() {
   const session = state.session;
   if (!session) return;
   const item = currentSessionItem();
-  const question = currentQuestion();
-  if (!item || !question) return;
+  const questionText = currentQuestion();
+  if (!item || !questionText) return;
 
   const viewingHistory = session.viewIndex < session.maxReached;
 
@@ -2078,16 +2099,16 @@ function renderQuestion() {
   getElementById('progress-fill').style.width = percentage + '%';
   getElementById('progress-fill').parentElement.setAttribute('aria-valuenow', String(percentage));
 
-  getElementById('question-badge').textContent = session.mode === 'practice-wrong' ? 'Ôn câu sai · Gốc #' + (question.originalIndex + 1) : session.mode === 'practice-bookmarks' ? 'Ôn câu đã đánh dấu · Gốc #' + (question.originalIndex + 1) : 'Câu hỏi · Gốc #' + (question.originalIndex + 1);
+  getElementById('question-badge').textContent = session.mode === 'practice-wrong' ? 'Ôn câu sai · Gốc #' + (questionText.sourceQuestionIndex + 1) : session.mode === 'practice-bookmarks' ? 'Ôn câu đã đánh dấu · Gốc #' + (questionText.sourceQuestionIndex + 1) : 'Câu hỏi · Gốc #' + (questionText.sourceQuestionIndex + 1);
   const bookmarkButton = getElementById('button-bookmark');
-  const isBookmarked = getBookmarkedIndices(session.deckId).includes(question.originalIndex);
+  const isBookmarked = getBookmarkedIndices(session.deckId).includes(questionText.sourceQuestionIndex);
   bookmarkButton.classList.toggle('is-bookmarked', isBookmarked);
   bookmarkButton.setAttribute('aria-pressed', String(isBookmarked));
   setToggleIcon(bookmarkButton, isBookmarked, { on: 'bookmark-off', off: 'bookmark' });
   bookmarkButton.setAttribute('aria-label', isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu');
   bookmarkButton.title = isBookmarked ? 'Bỏ đánh dấu' : 'Đánh dấu';
   const noteButton = getElementById('button-note');
-  const existingNote = getQuestionNote(session.deckId, question.originalIndex);
+  const existingNote = getQuestionNote(session.deckId, questionText.sourceQuestionIndex);
   const noteDisplay = getElementById('question-note-display');
   const noteTextEl = getElementById('question-note-text');
   const notePanel = getElementById('question-note-panel');
@@ -2122,7 +2143,7 @@ function renderQuestion() {
       };
     };
   };
-  renderTextWithHighlights(getElementById('question-text'), question.question, session.deckId, question.originalIndex, 'question');
+  renderTextWithHighlights(getElementById('question-text'), questionText.questionText, session.deckId, questionText.sourceQuestionIndex, 'questionText');
   const highlightToolbar = getElementById('quiz-highlight-toolbar');
   if (highlightToolbar) highlightToolbar.hidden = session.examMode === true;
   if (noteButton) noteButton.hidden = session.examMode === true;
@@ -2130,25 +2151,25 @@ function renderQuestion() {
   const answerOptionsElement = getElementById('options');
   answerOptionsElement.replaceChildren();
   const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
-  item.optionOrder.forEach((origIdx, displayIdx) => {
+  item.displayedAnswerOrder.forEach((origIdx, displayIdx) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'answer-option';
-    button.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
+    button.setAttribute('aria-pressed', String(item.selectedAnswerIndex === displayIdx));
     button.dataset.display = String(displayIdx);
 
-    if (item.userAnswer === displayIdx) button.classList.add('selected');
-    if (item.checked && item.status === 'correct' && displayIdx === item.userAnswer) button.classList.add('correct', 'answer-bounce');
-    if (item.checked && item.status === 'wrong' && displayIdx === item.userAnswer) button.classList.add('incorrect', 'answer-shake');
-    const wrongOptions = Array.isArray(item.wrongOptions) ? item.wrongOptions : [];
-    if (wrongOptions.includes(origIdx)) {
+    if (item.selectedAnswerIndex === displayIdx) button.classList.add('selected');
+    if (item.checked && item.status === 'correct' && displayIdx === item.selectedAnswerIndex) button.classList.add('correct', 'answer-bounce');
+    if (item.checked && item.status === 'wrong' && displayIdx === item.selectedAnswerIndex) button.classList.add('incorrect', 'answer-shake');
+    const incorrectAnswerIndices = Array.isArray(item.incorrectAnswerIndices) ? item.incorrectAnswerIndices : [];
+    if (incorrectAnswerIndices.includes(origIdx)) {
       button.classList.add('incorrect', 'locked');
       button.disabled = true;
     };
     if (item.status === 'correct') {
       button.classList.add('locked');
       button.disabled = true;
-      if (displayIdx === displayedCorrectIndex(item, question)) button.classList.add('correct');
+      if (displayIdx === displayedCorrectIndex(item, questionText)) button.classList.add('correct');
     } else if (viewingHistory) {
       button.disabled = true;
       button.classList.add('locked');
@@ -2159,7 +2180,7 @@ function renderQuestion() {
     key.textContent = labels[displayIdx] || String(displayIdx + 1);
     const text = document.createElement('span');
     text.className = 'answer-option-text';
-    renderTextWithHighlights(text, question.options[origIdx], session.deckId, question.originalIndex, 'option:' + origIdx);
+    renderTextWithHighlights(text, questionText.answerOptions[origIdx], session.deckId, questionText.sourceQuestionIndex, 'option:' + origIdx);
     button.append(key, text);
 
     if (!button.disabled) button.addEventListener('click', () => {
@@ -2215,23 +2236,23 @@ function renderQuestion() {
   } else {
     nextButton.textContent = 'Kiểm tra';
     nextButton.dataset.icon = 'check';
-    nextButton.disabled = item.userAnswer == null || item.checked;
+    nextButton.disabled = item.selectedAnswerIndex == null || item.checked;
   };
 };
 
 function setPracticeMode(mode) {
-  state.practiceMode = mode === 'exam' ? 'exam' : 'practice';
-  document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.practiceMode));
+  state.studyMode = mode === 'exam' ? 'exam' : 'practice';
+  document.querySelectorAll('#screen-setup .mode-button').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === state.studyMode));
   const startBtn = getElementById('button-start');
-  if (startBtn) startBtn.textContent = state.practiceMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn luyện';
+  if (startBtn) startBtn.textContent = state.studyMode === 'exam' ? 'Bắt đầu thi thử' : 'Bắt đầu ôn luyện';
   persistSetupForm();
-  if (state.mode === 'setup' && state.decks.quocphong1) refreshSetupUI();
+  if (state.mode === 'setup' && state.decks.quocphonganninh1) refreshSetupUI();
 };
 
 function updateExamProgressHeader() {
   const session = state.session;
   if (!session || !session.examMode) return;
-  const answered = session.items.filter((item) => item.userAnswer != null).length;
+  const answered = session.items.filter((item) => item.selectedAnswerIndex != null).length;
   const unanswered = session.items.length - answered;
   getElementById('exam-progress-label').textContent = session.reviewMode ? 'Kết quả · ' + (session.firstTryCorrect || 0) + ' / ' + session.items.length + ' câu đúng' : 'Đã chọn ' + answered + ' / ' + session.items.length + ' câu';
   const percentage = session.items.length ? Math.round((answered / session.items.length) * 100) : 0;
@@ -2275,7 +2296,7 @@ function applyExamFilter() {
     const card = getElementById('exam-q-' + index);
     if (!card) return;
     let show = true;
-    if (filter === 'unanswered') show = item.userAnswer == null;
+    if (filter === 'unanswered') show = item.selectedAnswerIndex == null;
     else if (filter === 'wrong') show = item.status === 'wrong';
     else if (filter === 'correct') show = item.status === 'correct';
     card.hidden = !show;
@@ -2287,12 +2308,12 @@ function scrollToExamQuestion(index) {
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
-function jumpToNextUnanswered(fromIdx = -1) {
+function jumpToNextUnanswered(startingIndex = -1) {
   const session = state.session;
   if (!session?.examMode || session.reviewMode) return;
-  const start = fromIdx + 1;
-  let found = session.items.findIndex((item, i) => i >= start && item.userAnswer == null);
-  if (found < 0) found = session.items.findIndex((item) => item.userAnswer == null);
+  const start = startingIndex + 1;
+  let found = session.items.findIndex((item, itemIndex) => itemIndex >= start && item.selectedAnswerIndex == null);
+  if (found < 0) found = session.items.findIndex((item) => item.selectedAnswerIndex == null);
   if (found >= 0) {
     state.examFilter = 'all';
     applyExamFilter();
@@ -2314,11 +2335,11 @@ function renderExam() {
   updateExamProgressHeader();
 
   session.items.forEach((item, index) => {
-    const question = session.pool[item.poolIndex];
+    const questionText = session.pool[item.questionPoolIndex];
     const card = document.createElement('article');
     card.className = 'exam-question-card';
     card.id = 'exam-q-' + index;
-    if (item.userAnswer != null) card.classList.add('is-answered');
+    if (item.selectedAnswerIndex != null) card.classList.add('is-answered');
     if (session.reviewMode) {
       if (item.status === 'correct') card.classList.add('is-correct');
       else if (item.status === 'wrong') card.classList.add('is-wrong');
@@ -2326,21 +2347,21 @@ function renderExam() {
 
     const head = document.createElement('div');
     head.className = 'exam-question-header';
-    const num = document.createElement('span');
-    num.className = 'exam-question-number';
-    num.textContent = 'Câu ' + (index + 1) + ' · Gốc #' + (question.originalIndex + 1);
-    head.appendChild(num);
+    const questionNumberElement = document.createElement('span');
+    questionNumberElement.className = 'exam-question-number';
+    questionNumberElement.textContent = 'Câu ' + (index + 1) + ' · Gốc #' + (questionText.sourceQuestionIndex + 1);
+    head.appendChild(questionNumberElement);
     if (session.reviewMode) {
       const badge = document.createElement('span');
       badge.className = 'exam-status-badge ' + (item.status === 'correct' ? 'is-correct-answer' : 'is-incorrect-answer');
-      badge.textContent = item.status === 'correct' ? 'Đúng' : item.userAnswer == null ? 'Bỏ trống' : 'Sai';
+      badge.textContent = item.status === 'correct' ? 'Đúng' : item.selectedAnswerIndex == null ? 'Bỏ trống' : 'Sai';
       head.appendChild(badge);
     };
     card.appendChild(head);
 
     const text = document.createElement('h3');
     text.className = 'exam-question-text';
-    text.textContent = question.question;
+    text.textContent = questionText.questionText;
     card.appendChild(text);
 
     const answerOptionsElement = document.createElement('div');
@@ -2348,26 +2369,26 @@ function renderExam() {
     answerOptionsElement.setAttribute('role', 'group');
     answerOptionsElement.setAttribute('aria-label', 'Đáp án câu ' + (index + 1));
 
-    item.optionOrder.forEach((origIdx, displayIdx) => {
+    item.displayedAnswerOrder.forEach((origIdx, displayIdx) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'answer-option';
       button.dataset.q = String(index);
       button.dataset.display = String(displayIdx);
-      button.setAttribute('aria-pressed', String(item.userAnswer === displayIdx));
-      if (item.userAnswer === displayIdx) button.classList.add('selected');
+      button.setAttribute('aria-pressed', String(item.selectedAnswerIndex === displayIdx));
+      if (item.selectedAnswerIndex === displayIdx) button.classList.add('selected');
       if (session.reviewMode) {
         button.disabled = true;
-        const correctDisplay = item.optionOrder.indexOf(question.correct);
+        const correctDisplay = item.displayedAnswerOrder.indexOf(questionText.correctAnswerIndex);
         if (displayIdx === correctDisplay) button.classList.add('correct');
-        if (item.userAnswer === displayIdx && item.status === 'wrong') button.classList.add('incorrect');
+        if (item.selectedAnswerIndex === displayIdx && item.status === 'wrong') button.classList.add('incorrect');
       };
       const label = document.createElement('span');
       label.className = 'answer-option-key';
       label.textContent = labels[displayIdx] || String(displayIdx + 1);
       const body = document.createElement('span');
       body.className = 'answer-option-text';
-      body.textContent = question.options[origIdx];
+      body.textContent = questionText.answerOptions[origIdx];
       button.append(label, body);
       if (!session.reviewMode) button.addEventListener('click', () => onExamSelect(index, displayIdx));
       answerOptionsElement.appendChild(button);
@@ -2381,7 +2402,7 @@ function renderExam() {
     dot.textContent = String(index + 1);
     dot.title = 'Câu ' + (index + 1);
     dot.dataset.index = String(index);
-    if (item.userAnswer != null) dot.classList.add('is-answered');
+    if (item.selectedAnswerIndex != null) dot.classList.add('is-answered');
     if (session.reviewMode) {
       if (item.status === 'correct') dot.classList.add('is-correct');
       else if (item.status === 'wrong') dot.classList.add('is-wrong');
@@ -2403,15 +2424,15 @@ function patchExamQuestion(questionIndex) {
     renderExam();
     return;
   };
-  card.classList.toggle('is-answered', item.userAnswer != null);
+  card.classList.toggle('is-answered', item.selectedAnswerIndex != null);
   card.querySelectorAll('.answer-option').forEach((button) => {
     const displayIdx = Number(button.dataset.display);
-    const selected = item.userAnswer === displayIdx;
+    const selected = item.selectedAnswerIndex === displayIdx;
     button.classList.toggle('selected', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
   const dot = getElementById('exam-navigation')?.querySelector('.exam-question-navigation-dot[data-index="' + questionIndex + '"]');
-  if (dot) dot.classList.toggle('is-answered', item.userAnswer != null);
+  if (dot) dot.classList.toggle('is-answered', item.selectedAnswerIndex != null);
   updateExamProgressHeader();
   applyExamFilter();
 };
@@ -2422,7 +2443,7 @@ function onExamSelect(questionIndex, displayIdx) {
   if (!session || session.reviewMode || !session.examMode || state.examSubmitting) return;
   const item = session.items[questionIndex];
   if (!item) return;
-  item.userAnswer = displayIdx;
+  item.selectedAnswerIndex = displayIdx;
   item.checked = false;
   item.status = 'pending';
   persistSession();
@@ -2438,7 +2459,7 @@ async function onExamSubmit() {
     finishSession();
     return;
   };
-  const unanswered = session.items.filter((item) => item.userAnswer == null).length;
+  const unanswered = session.items.filter((item) => item.selectedAnswerIndex == null).length;
   if (unanswered > 0) {
     const ok = await confirmModal('Còn câu chưa chọn', 'Bạn còn ' + unanswered + ' câu chưa chọn đáp án. Vẫn nộp bài?');
     if (!ok) return;
@@ -2455,29 +2476,29 @@ async function onExamSubmit() {
     let wrongAttempts = 0;
     const completedIdx = [];
     for (const item of session.items) {
-      const question = session.pool[item.poolIndex];
-      if (item.userAnswer == null) {
+      const questionText = session.pool[item.questionPoolIndex];
+      if (item.selectedAnswerIndex == null) {
         item.status = 'wrong';
         item.checked = true;
-        item.wrongCount = 1;
+        item.incorrectAttemptCount = 1;
         wrongAttempts += 1;
-        recordWrongAnswer(session, question.originalIndex);
+        recordWrongAnswer(session, questionText.sourceQuestionIndex);
         continue;
       };
-      const correct = isAnswerCorrect(item, question);
+      const correctAnswerIndex = isAnswerCorrect(item, questionText);
       item.checked = true;
-      if (correct) {
+      if (correctAnswerIndex) {
         item.status = 'correct';
         firstTry += 1;
-        completedIdx.push(question.originalIndex);
+        completedIdx.push(questionText.sourceQuestionIndex);
       } else {
         item.status = 'wrong';
-        item.wrongCount = 1;
+        item.incorrectAttemptCount = 1;
         wrongAttempts += 1;
-        const wrongOriginalIndex = item.optionOrder[item.userAnswer];
-        if (!item.wrongOptions) item.wrongOptions = [];
-        if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
-        recordWrongAnswer(session, question.originalIndex);
+        const wrongOriginalIndex = item.displayedAnswerOrder[item.selectedAnswerIndex];
+        if (!item.incorrectAnswerIndices) item.incorrectAnswerIndices = [];
+        if (!item.incorrectAnswerIndices.includes(wrongOriginalIndex)) item.incorrectAnswerIndices.push(wrongOriginalIndex);
+        recordWrongAnswer(session, questionText.sourceQuestionIndex);
       };
     };
     if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
@@ -2509,17 +2530,17 @@ function enforceSessionDeadline() {
     let wrongAttempts = 0;
     const completedIdx = [];
     for (const item of session.items) {
-      const question = session.pool[item.poolIndex];
+      const questionText = session.pool[item.questionPoolIndex];
       item.checked = true;
-      if (item.userAnswer != null && isAnswerCorrect(item, question)) {
+      if (item.selectedAnswerIndex != null && isAnswerCorrect(item, questionText)) {
         item.status = 'correct';
         firstTry += 1;
-        completedIdx.push(question.originalIndex);
+        completedIdx.push(questionText.sourceQuestionIndex);
       } else {
         item.status = 'wrong';
-        item.wrongCount = Math.max(1, item.wrongCount || 0);
+        item.incorrectAttemptCount = Math.max(1, item.incorrectAttemptCount || 0);
         wrongAttempts += 1;
-        recordWrongAnswer(session, question.originalIndex);
+        recordWrongAnswer(session, questionText.sourceQuestionIndex);
       };
     };
     if (completedIdx.length) addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
@@ -2543,10 +2564,10 @@ function onSelectOption(displayIdx) {
   const item = currentSessionItem();
   if (!session || !item) return;
   if (item.status === 'correct' || session.viewIndex < session.maxReached) return;
-  const question = currentQuestion();
-  if (!question || (Array.isArray(item.wrongOptions) && item.wrongOptions.includes(item.optionOrder[displayIdx]))) return;
+  const questionText = currentQuestion();
+  if (!questionText || (Array.isArray(item.incorrectAnswerIndices) && item.incorrectAnswerIndices.includes(item.displayedAnswerOrder[displayIdx]))) return;
 
-  item.userAnswer = displayIdx;
+  item.selectedAnswerIndex = displayIdx;
   if (item.status === 'wrong') {
     item.checked = false;
     item.status = 'pending';
@@ -2554,11 +2575,11 @@ function onSelectOption(displayIdx) {
   persistSession();
   renderQuestion();
   const preferences = sessionPreferences(session.deckId);
-  if (preferences.autoCheck) {
-    const delay = Number.isInteger(preferences.autoCheckDelay) ? Math.min(10, Math.max(0, preferences.autoCheckDelay)) : 0;
+  if (preferences.automaticAnswerChecking) {
+    const delay = Number.isInteger(preferences.automaticAnswerCheckDelaySeconds) ? Math.min(10, Math.max(0, preferences.automaticAnswerCheckDelaySeconds)) : 0;
     if (delay === 0) onCheck();
     else setTimeout(() => {
-      if (state.session === session && currentSessionItem() === item && item.userAnswer === displayIdx && item.status !== 'correct') onCheck();
+      if (state.session === session && currentSessionItem() === item && item.selectedAnswerIndex === displayIdx && item.status !== 'correct') onCheck();
     }, delay * 1000);
   };
 };
@@ -2576,7 +2597,7 @@ for (const audio of Object.values(answerSounds)) {
 function playAnswerSound(isCorrect) {
   const preferences = sessionPreferences(state.session?.deckId || state.currentDeck);
   if (preferences.soundEnabled === false) return;
-  const volumePct = Number.isInteger(preferences.soundVolume) && preferences.soundVolume > 0 ? Math.min(100, preferences.soundVolume) : 1;
+  const volumePct = Number.isInteger(preferences.soundVolumePercentage) && preferences.soundVolumePercentage > 0 ? Math.min(100, preferences.soundVolumePercentage) : 1;
   const audio = answerSounds[isCorrect ? 'correct' : 'incorrect'];
   try {
     audio.pause();
@@ -2593,13 +2614,13 @@ function onCheck() {
   if (enforceSessionDeadline()) return;
   const session = state.session;
   const item = currentSessionItem();
-  const question = currentQuestion();
-  if (!session || !item || !question || item.userAnswer == null) return;
+  const questionText = currentQuestion();
+  if (!session || !item || !questionText || item.selectedAnswerIndex == null) return;
   if (item.status === 'correct' || item.checked || session.viewIndex < session.maxReached) return;
 
   item.checked = true;
-  if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
-  const isCorrect = isAnswerCorrect(item, question);
+  if (!Array.isArray(item.incorrectAnswerIndices)) item.incorrectAnswerIndices = [];
+  const isCorrect = isAnswerCorrect(item, questionText);
   const preferences = sessionPreferences(session.deckId);
   const vibrate = (pattern) => {
     if (preferences.vibrationEnabled === true && typeof navigator.vibrate === 'function') {
@@ -2612,14 +2633,14 @@ function onCheck() {
     playAnswerSound(true);
     vibrate(18);
     const wasAlreadyCorrect = item.status === 'correct';
-    const firstTime = item.wrongCount === 0 && !wasAlreadyCorrect;
+    const firstTime = item.incorrectAttemptCount === 0 && !wasAlreadyCorrect;
     item.status = 'correct';
     if (!wasAlreadyCorrect) {
       if (session.mode === 'practice-wrong') {
         if (!Array.isArray(session.practiceCompletedIndices)) session.practiceCompletedIndices = [];
-        const originalIndex = question.originalIndex;
-        if (!session.practiceCompletedIndices.includes(originalIndex)) {
-          session.practiceCompletedIndices.push(originalIndex);
+        const sourceQuestionIndex = questionText.sourceQuestionIndex;
+        if (!session.practiceCompletedIndices.includes(sourceQuestionIndex)) {
+          session.practiceCompletedIndices.push(sourceQuestionIndex);
           session.completedInSession = session.practiceCompletedIndices.length;
           if (firstTime) session.firstTryCorrect += 1;
         };
@@ -2634,26 +2655,26 @@ function onCheck() {
     playAnswerSound(false);
     vibrate([28, 45, 28]);
     item.status = 'wrong';
-    const wrongOriginalIndex = item.optionOrder[item.userAnswer];
-    if (!item.wrongOptions.includes(wrongOriginalIndex)) item.wrongOptions.push(wrongOriginalIndex);
-    item.wrongCount += 1;
+    const wrongOriginalIndex = item.displayedAnswerOrder[item.selectedAnswerIndex];
+    if (!item.incorrectAnswerIndices.includes(wrongOriginalIndex)) item.incorrectAnswerIndices.push(wrongOriginalIndex);
+    item.incorrectAttemptCount += 1;
     session.totalWrongAttempts += 1;
     if (session.mode === 'practice-wrong') {
       if (!Array.isArray(session.practiceWrongHistory)) session.practiceWrongHistory = [];
-      const history = session.practiceWrongHistory.find((entry) => entry.originalIndex === question.originalIndex);
-      if (history) history.wrongCount += 1;
+      const history = session.practiceWrongHistory.find((entry) => entry.sourceQuestionIndex === questionText.sourceQuestionIndex);
+      if (history) history.incorrectAttemptCount += 1;
       else session.practiceWrongHistory.push({
-        originalIndex: question.originalIndex,
-        question: question.question,
-        wrongCount: 1
+        sourceQuestionIndex: questionText.sourceQuestionIndex,
+        questionText: questionText.questionText,
+        incorrectAttemptCount: 1
       });
     };
-    recordWrongAnswer(session, question.originalIndex);
+    recordWrongAnswer(session, questionText.sourceQuestionIndex);
   };
   persistSession();
   renderQuestion();
-  if (isCorrect && preferences.autoAdvance === true && session.viewIndex < session.items.length - 1) {
-    const delaySec = Number.isInteger(preferences.autoAdvanceDelay) && preferences.autoAdvanceDelay >= 0 ? Math.min(10, preferences.autoAdvanceDelay) : 0;
+  if (isCorrect && preferences.automaticQuestionAdvance === true && session.viewIndex < session.items.length - 1) {
+    const delaySec = Number.isInteger(preferences.automaticQuestionAdvanceDelaySeconds) && preferences.automaticQuestionAdvanceDelaySeconds >= 0 ? Math.min(10, preferences.automaticQuestionAdvanceDelaySeconds) : 0;
     const delayMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : delaySec * 1000;
     setTimeout(() => {
       if (state.session === session && currentSessionItem() === item && item.status === 'correct' && session.viewIndex < session.items.length - 1) onNext();
@@ -2695,8 +2716,8 @@ function onNext() {
       };
       session.items = unresolved.map((entry) => ({
         ...entry,
-        optionOrder: entry.optionOrder.slice(),
-        userAnswer: null,
+        displayedAnswerOrder: entry.displayedAnswerOrder.slice(),
+        selectedAnswerIndex: null,
         status: 'pending',
         checked: false
       }));
@@ -2766,9 +2787,9 @@ function formatTime(seconds) {
   return String(minutes).padStart(2, '0') + ':' + String(remainder).padStart(2, '0');
 };
 
-function formatScore(correct, total) {
+function formatScore(correctAnswerIndex, total) {
   if (!(total > 0)) return '0';
-  const score = Math.round((Math.max(0, correct) / total) * 100) / 10;
+  const score = Math.round((Math.max(0, correctAnswerIndex) / total) * 100) / 10;
   return score.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
 };
 
@@ -2888,7 +2909,7 @@ function finishSession() {
   stopSessionTimer(true);
 
   if (session.mode !== 'practice-wrong') {
-    const completedIdx = session.items.filter((item) => item.status === 'correct').map((item) => session.pool[item.poolIndex].originalIndex);
+    const completedIdx = session.items.filter((item) => item.status === 'correct').map((item) => session.pool[item.questionPoolIndex].sourceQuestionIndex);
     const progressSaved = addCompleted(session.deckId, completedIdx, state.fingerprints[session.deckId]);
     if (!progressSaved) toast('Không thể lưu tiến độ hoàn thành. Hãy kiểm tra dung lượng bộ nhớ trình duyệt.');
     else if (session.sequential && session.nextCursor != null && !setSequentialCursor(session.deckId, session.nextCursor, state.fingerprints[session.deckId])) toast('Không thể lưu vị trí tuần tự của bộ đề.');
@@ -2898,21 +2919,21 @@ function finishSession() {
   const seen = new Set();
   if (session.mode === 'practice-wrong' && Array.isArray(session.practiceWrongHistory)) {
     for (const entry of session.practiceWrongHistory) {
-      if (!seen.has(entry.originalIndex)) {
-        seen.add(entry.originalIndex);
+      if (!seen.has(entry.sourceQuestionIndex)) {
+        seen.add(entry.sourceQuestionIndex);
         wrongInSession.push({ ...entry });
       };
     };
   } else {
     for (const item of session.items) {
-      if (item.wrongCount > 0) {
-        const originalIndex = session.pool[item.poolIndex].originalIndex;
-        if (!seen.has(originalIndex)) {
-          seen.add(originalIndex);
+      if (item.incorrectAttemptCount > 0) {
+        const sourceQuestionIndex = session.pool[item.questionPoolIndex].sourceQuestionIndex;
+        if (!seen.has(sourceQuestionIndex)) {
+          seen.add(sourceQuestionIndex);
           wrongInSession.push({
-            originalIndex: originalIndex,
-            question: session.pool[item.poolIndex].question,
-            wrongCount: item.wrongCount
+            sourceQuestionIndex: sourceQuestionIndex,
+            questionText: session.pool[item.questionPoolIndex].questionText,
+            incorrectAttemptCount: item.incorrectAttemptCount
           });
         };
       };
@@ -2925,7 +2946,7 @@ function finishSession() {
     score: formatScore(session.firstTryCorrect || 0, scoreTotal),
     elapsedSeconds: getElapsedSeconds(session),
     timeExpired: !!session.timeExpired,
-    correct: session.firstTryCorrect || 0,
+    correctAnswerIndex: session.firstTryCorrect || 0,
     wrongQuestions: wrongInSession.length,
     wrongAttempts: session.totalWrongAttempts,
     practiceQuestions: session.mode === 'practice-wrong' ? session.practiceInitialCount || session.items.length : 0,
@@ -2937,19 +2958,19 @@ function finishSession() {
   };
 
   if (Number.isInteger(session.rangeStart) && Number.isInteger(session.rangeEnd) && wrongInSession.length) {
-    if (!addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, wrongInSession.map((entry) => entry.originalIndex))) toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
+    if (!addWrongIndicesForRange(session.deckId, session.rangeStart, session.rangeEnd, wrongInSession.map((entry) => entry.sourceQuestionIndex))) toast('Không thể lưu câu sai riêng cho vùng câu hỏi này.');
   };
   state._lastSummarySession = {
     deckId: session.deckId,
     mode: session.examMode || session.mode === 'exam' ? 'exam' : 'practice',
     sourceMode: session.mode,
-    indices: [...new Set(session.pool.map((question) => question.originalIndex))],
+    indices: [...new Set(session.pool.map((questionText) => questionText.sourceQuestionIndex))],
     rangeStart: Number.isInteger(session.rangeStart) ? session.rangeStart : 1,
     rangeEnd: Number.isInteger(session.rangeEnd) ? session.rangeEnd : (state.decks[session.deckId] || []).length,
     requestedCount: session.items.length,
     timeLimit: Number.isInteger(session.timeLimit) ? session.timeLimit : 0
   };
-  state._lastSummaryWrongIndices = wrongInSession.map((entry) => entry.originalIndex);
+  state._lastSummaryWrongIndices = wrongInSession.map((entry) => entry.sourceQuestionIndex);
   state._lastSummaryRangeStart = Number.isInteger(session.rangeStart) ? session.rangeStart : null;
   state._lastSummaryRangeEnd = Number.isInteger(session.rangeEnd) ? session.rangeEnd : null;
   state._lastSummaryCount = Number.isInteger(session.requestedCount) ? session.requestedCount : session.items.length;
@@ -2963,7 +2984,7 @@ function finishSession() {
 function showSummary(summary, deckId, mode) {
   showScreen('summary');
   getElementById('summary-title').textContent = mode === 'practice-wrong' ? 'Kết thúc ôn câu sai' : mode === 'practice-bookmarks' ? 'Hoàn thành ôn câu đã đánh dấu' : mode === 'exam' ? 'Kết quả thi thử' : 'Hoàn thành lượt ôn';
-  const scoreVal = summary.score ?? formatScore(summary.correct, summary.total);
+  const scoreVal = summary.score ?? formatScore(summary.correctAnswerIndex, summary.total);
   const scoreNum = Number(String(scoreVal).replace(',', '.')) || 0;
 
   getElementById('summary-total').textContent = String(summary.total);
@@ -2987,7 +3008,7 @@ function showSummary(summary, deckId, mode) {
 
   requestAnimationFrame(() => requestAnimationFrame(() => animateScore(scoreNum, scoreVal, circumference)));
   getElementById('summary-time').textContent = formatTime(summary.elapsedSeconds || 0);
-  getElementById('summary-correct').textContent = String(summary.correct);
+  getElementById('summary-correct').textContent = String(summary.correctAnswerIndex);
   getElementById('summary-wrong-question-count').textContent = String(summary.wrongQuestions);
   getElementById('summary-wrong-attempt-count').textContent = String(summary.wrongAttempts);
   getElementById('summary-practice-count').textContent = String(summary.practiceQuestions || 0);
@@ -2995,7 +3016,7 @@ function showSummary(summary, deckId, mode) {
 
   const totalQuestions = (state.decks[deckId] || []).length;
   const progressAfterSession = getDeckProgress(deckId);
-  const completedAfterSession = new Set(progressAfterSession.completed).size;
+  const completedAfterSession = new Set(progressAfterSession.completedQuestionIndices).size;
   getElementById('summary-note').textContent = summary.timeExpired ? 'Đã hết giờ. Bài làm được tự động kết thúc.' : completedAfterSession >= totalQuestions ? 'Bạn đã hoàn thành toàn bộ bộ đề ' + DECKS[deckId].label + '.' : summary.wrongQuestions === 0 ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.' : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
 
   const listCard = getElementById('wrong-list-card');
@@ -3007,8 +3028,8 @@ function showSummary(summary, deckId, mode) {
       const listItemElement = document.createElement('li');
       const index = document.createElement('span');
       index.className = 'question-index';
-      index.textContent = '#' + (wrongQuestion.originalIndex + 1);
-      listItemElement.append(index, document.createTextNode(wrongQuestion.question));
+      index.textContent = '#' + (wrongQuestion.sourceQuestionIndex + 1);
+      listItemElement.append(index, document.createTextNode(wrongQuestion.questionText));
       list.appendChild(listItemElement);
     };
   } else {
@@ -3021,7 +3042,7 @@ function showSummary(summary, deckId, mode) {
   retryButton.textContent = mode === 'exam' ? 'Thi lại lượt thi này' : 'Ôn lại lượt ôn này';
 
   const btnPractice = getElementById('button-summary-practice');
-  const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.originalIndex))];
+  const sessionWrong = [...new Set(summary.wrongList.map((entry) => entry.sourceQuestionIndex))];
   state._lastSummaryWrongIndices = sessionWrong;
   btnPractice.hidden = sessionWrong.length === 0;
   btnPractice.textContent ='Ôn lại ' + sessionWrong.length + ' câu sai trong lượt này';
@@ -3029,15 +3050,15 @@ function showSummary(summary, deckId, mode) {
   const progress = getDeckProgress(deckId);
   const continueButton = getElementById('button-summary-continue');
   const form = readSetupForm();
-  const rangeEnd = form.endQuestion;
-  const nextIndex = Math.max(progress.sequentialCursor, form.startQuestion - 1);
+  const rangeEnd = form.lastQuestionNumber;
+  const nextIndex = Math.max(progress.sequentialQuestionCursor, form.firstQuestionNumber - 1);
   const canSeq = summary.sequential && nextIndex < rangeEnd;
   continueButton.hidden = !canSeq;
   if (canSeq) {
     const left = rangeEnd - nextIndex;
     const settings = getSettings(deckId);
-    const n = Math.min(settings.count || 20, left);
-    continueButton.textContent = 'Tiếp tục tuần tự ' + n + ' câu trong vùng';
+    const availableQuestionCount = Math.min(settings.allQuestionsEnabled ? left : (settings.count || 20), left);
+    continueButton.textContent = 'Tiếp tục tuần tự ' + availableQuestionCount + ' câu trong vùng';
   };
 
   state._lastSummaryDeck = deckId;
@@ -3046,7 +3067,7 @@ function showSummary(summary, deckId, mode) {
 function restoreSessionIfAny() {
   const saved = getSession(state.currentDeck);
   if (!saved) return false;
-  if (!['quocphong1', 'quocphong2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
+  if (!['quocphonganninh1', 'quocphonganninh2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
     clearSession(state.currentDeck);
     return false;
   };
@@ -3055,7 +3076,7 @@ function restoreSessionIfAny() {
     const { poolIdx: legacyPoolIndex, ...sessionItem } = item;
     return {
       ...sessionItem,
-      poolIndex: Number.isInteger(item.poolIndex) ? item.poolIndex : legacyPoolIndex
+      questionPoolIndex: Number.isInteger(item.questionPoolIndex) ? item.questionPoolIndex : legacyPoolIndex
     };
   });
   if (!state.decks[saved.deckId]) {
@@ -3063,25 +3084,25 @@ function restoreSessionIfAny() {
     return false;
   };
   const fingerprint = state.fingerprints[saved.deckId];
-  const legacyCompatible = !saved.dataFingerprint && state.legacyFingerprintMatched[saved.deckId];
-  const validPool = saved.pool.length > 0 && saved.pool.every((question) => question && Number.isInteger(question.originalIndex) && question.originalIndex >= 0 && typeof question.question === 'string' && Array.isArray(question.options) && question.options.length >= 2 && Number.isInteger(question.correct) && question.correct >= 0 && question.correct < question.options.length);
-  const poolMatchesCurrentData = saved.pool.every((question) => {
-    const current = state.decks[saved.deckId][question.originalIndex];
-    return (current && current.question === question.question && current.correct === question.correct && JSON.stringify(current.options) === JSON.stringify(question.options));
+  const legacyCompatible = !saved.questionDataFingerprint && state.legacyFingerprintMatched[saved.deckId];
+  const validPool = saved.pool.length > 0 && saved.pool.every((questionText) => questionText && Number.isInteger(questionText.sourceQuestionIndex) && questionText.sourceQuestionIndex >= 0 && typeof questionText.questionText === 'string' && Array.isArray(questionText.answerOptions) && questionText.answerOptions.length >= 2 && Number.isInteger(questionText.correctAnswerIndex) && questionText.correctAnswerIndex >= 0 && questionText.correctAnswerIndex < questionText.answerOptions.length);
+  const poolMatchesCurrentData = saved.pool.every((questionText) => {
+    const current = state.decks[saved.deckId][questionText.sourceQuestionIndex];
+    return (current && current.questionText === questionText.questionText && current.correctAnswerIndex === questionText.correctAnswerIndex && JSON.stringify(current.answerOptions) === JSON.stringify(questionText.answerOptions));
   });
   const legacyPoolCompatible = !legacyCompatible || poolMatchesCurrentData;
   const validSession = validPool && poolMatchesCurrentData && legacyPoolCompatible && saved.items.length > 0 && Number.isInteger(saved.viewIndex) && saved.viewIndex >= 0 && saved.viewIndex < saved.items.length && Number.isInteger(saved.maxReached) && saved.maxReached >= 0 && saved.maxReached < saved.items.length && saved.viewIndex <= saved.maxReached && saved.items.every((item, index) => {
-    if (!item || typeof item !== 'object' || !Number.isInteger(item.poolIndex) || item.poolIndex < 0 || item.poolIndex >= saved.pool.length) return false;
-    const question = saved.pool[item.poolIndex];
-    return (Array.isArray(item.optionOrder) && item.optionOrder.length === question.options.length && (item.wrongOptions == null || (Array.isArray(item.wrongOptions) && item.wrongOptions.every((value) => Number.isInteger(value) && value >= 0 && value < question.options.length))) && new Set(item.optionOrder).size === question.options.length && item.optionOrder.every((index) => Number.isInteger(index) && index >= 0 && index < question.options.length) && ['pending', 'wrong', 'correct'].includes(item.status) && (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') && (item.userAnswer == null || (Number.isInteger(item.userAnswer) && item.userAnswer >= 0 && item.userAnswer < item.optionOrder.length)) && Number.isInteger(item.wrongCount) && item.wrongCount >= 0);
+    if (!item || typeof item !== 'object' || !Number.isInteger(item.questionPoolIndex) || item.questionPoolIndex < 0 || item.questionPoolIndex >= saved.pool.length) return false;
+    const questionText = saved.pool[item.questionPoolIndex];
+    return (Array.isArray(item.displayedAnswerOrder) && item.displayedAnswerOrder.length === questionText.answerOptions.length && (item.incorrectAnswerIndices == null || (Array.isArray(item.incorrectAnswerIndices) && item.incorrectAnswerIndices.every((value) => Number.isInteger(value) && value >= 0 && value < questionText.answerOptions.length))) && new Set(item.displayedAnswerOrder).size === questionText.answerOptions.length && item.displayedAnswerOrder.every((index) => Number.isInteger(index) && index >= 0 && index < questionText.answerOptions.length) && ['pending', 'wrong', 'correct'].includes(item.status) && (index >= saved.maxReached || item.status === 'correct' || saved.mode === 'practice-wrong') && (item.selectedAnswerIndex == null || (Number.isInteger(item.selectedAnswerIndex) && item.selectedAnswerIndex >= 0 && item.selectedAnswerIndex < item.displayedAnswerOrder.length)) && Number.isInteger(item.incorrectAttemptCount) && item.incorrectAttemptCount >= 0);
   });
-  if (!validSession || (saved.dataFingerprint !== fingerprint && !legacyCompatible)) {
+  if (!validSession || (saved.questionDataFingerprint !== fingerprint && !legacyCompatible)) {
     clearSession(state.currentDeck);
     return false;
   };
-  if (legacyCompatible) saved.dataFingerprint = fingerprint;
+  if (legacyCompatible) saved.questionDataFingerprint = fingerprint;
   const progress = getDeckProgress(saved.deckId);
-  if (progress.dataFingerprint && progress.dataFingerprint !== fingerprint && !legacyCompatible) {
+  if (progress.questionDataFingerprint && progress.questionDataFingerprint !== fingerprint && !legacyCompatible) {
     clearSession(state.currentDeck);
     return false;
   };
@@ -3105,13 +3126,13 @@ function restoreSessionIfAny() {
   saved.timeExpired = !!saved.timeExpired;
   saved.practiceInitialCount = Number.isInteger(saved.practiceInitialCount) && saved.practiceInitialCount > 0 ? saved.practiceInitialCount : saved.mode === 'practice-wrong' ? saved.items.length : 0;
   saved.practiceCompletedIndices = Array.isArray(saved.practiceCompletedIndices) ? [...new Set(saved.practiceCompletedIndices.filter((index) => Number.isInteger(index) && index >= 0))] : [];
-  saved.practiceWrongHistory = Array.isArray(saved.practiceWrongHistory) ? saved.practiceWrongHistory.filter((entry) => entry && Number.isInteger(entry.originalIndex) && entry.originalIndex >= 0 && typeof entry.question === 'string' && Number.isInteger(entry.wrongCount) && entry.wrongCount > 0) : [];
+  saved.practiceWrongHistory = Array.isArray(saved.practiceWrongHistory) ? saved.practiceWrongHistory.filter((entry) => entry && Number.isInteger(entry.sourceQuestionIndex) && entry.sourceQuestionIndex >= 0 && typeof entry.questionText === 'string' && Number.isInteger(entry.incorrectAttemptCount) && entry.incorrectAttemptCount > 0) : [];
   for (const item of saved.items) {
-    if (!Array.isArray(item.wrongOptions)) item.wrongOptions = [];
+    if (!Array.isArray(item.incorrectAnswerIndices)) item.incorrectAnswerIndices = [];
   };
   saved.completedInSession = saved.mode === 'practice-wrong' ? saved.practiceCompletedIndices.length : saved.items.filter((item) => item.status === 'correct').length;
-  saved.totalWrongAttempts = Math.max(Number.isInteger(saved.totalWrongAttempts) ? saved.totalWrongAttempts : 0, saved.items.reduce((sum, item) => sum + Math.max(0, Number(item.wrongCount) || 0), 0));
-  saved.firstTryCorrect = Number.isInteger(saved.firstTryCorrect) ? saved.firstTryCorrect : saved.items.filter((item) => item.status === 'correct' && item.wrongCount === 0).length;
+  saved.totalWrongAttempts = Math.max(Number.isInteger(saved.totalWrongAttempts) ? saved.totalWrongAttempts : 0, saved.items.reduce((sum, item) => sum + Math.max(0, Number(item.incorrectAttemptCount) || 0), 0));
+  saved.firstTryCorrect = Number.isInteger(saved.firstTryCorrect) ? saved.firstTryCorrect : saved.items.filter((item) => item.status === 'correct' && item.incorrectAttemptCount === 0).length;
   saved.maxReached = Math.max(0, Math.min(saved.items.length - 1, Number(saved.maxReached) || 0));
   saved.examMode = !!saved.examMode || saved.mode === 'exam';
   state.currentDeck = saved.deckId;
@@ -3146,17 +3167,17 @@ function initializeInterface() {
   getElementById('button-highlight-toggle')?.addEventListener('mousedown', (event) => event.preventDefault());
   getElementById('button-highlight-toggle')?.addEventListener('click', () => {
     captureHighlightSelection();
-    const question = currentQuestion();
+    const questionText = currentQuestion();
     const session = state.session;
     const selection = state.lastTextSelection;
-    if (!question || !session || session.examMode || !selection || selection.questionIndex !== question.originalIndex || selection.deckId !== session.deckId) {
+    if (!questionText || !session || session.examMode || !selection || selection.questionIndex !== questionText.sourceQuestionIndex || selection.deckId !== session.deckId) {
       toast('Hãy bôi đen đoạn chữ trong câu hỏi hoặc đáp án trước.');
       return;
     };
-    toggleHighlightSelection(selection.deckId, question.originalIndex, selection);
+    toggleHighlightSelection(selection.deckId, questionText.sourceQuestionIndex, selection);
   });
   const active = getSettings();
-  state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  state.currentDeck = active.deck === 'quocphonganninh2' ? 'quocphonganninh2' : 'quocphonganninh1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
   state.bankDeck = state.currentDeck;
@@ -3260,7 +3281,7 @@ function bindEvents() {
 
   document.querySelectorAll('#screen-setup .deck-button[data-deck]').forEach((button) => {
     button.addEventListener('click', () => {
-      const nextDeck = button.dataset.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+      const nextDeck = button.dataset.deck === 'quocphonganninh2' ? 'quocphonganninh2' : 'quocphonganninh1';
       if (state.currentDeck === nextDeck) return;
       const previousTotal = currentQuestions().length;
       const previousStart = Number.parseInt(getElementById('input-range-start').value, 10) || 1;
@@ -3272,10 +3293,10 @@ function bindEvents() {
       state.currentDeck = nextDeck;
       const settings = getSettings(state.currentDeck);
       const currentTotal = currentQuestions().length;
-      settings.endQuestion = getEndQuestionForDeckSwitch(previousEnd, previousTotal, currentTotal);
-      if (countWasMaximum) {
-        const newStart = settings.startQuestion || 1;
-        const newEnd = settings.endQuestion > 0 ? Math.min(settings.endQuestion, currentTotal) : currentTotal;
+      settings.lastQuestionNumber = getEndQuestionForDeckSwitch(previousEnd, previousTotal, currentTotal);
+      if (settings.allQuestionsEnabled || countWasMaximum) {
+        const newStart = settings.firstQuestionNumber || 1;
+        const newEnd = settings.lastQuestionNumber > 0 ? Math.min(settings.lastQuestionNumber, currentTotal) : currentTotal;
         settings.count = Math.max(1, newEnd - newStart + 1);
       };
       applySettingsToForm(settings);
@@ -3285,19 +3306,7 @@ function bindEvents() {
   });
 
   getElementById('button-select-all').addEventListener('click', () => {
-    const form = readSetupForm();
-    const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
-    const input = getElementById('input-count');
-    const current = Number.parseInt(input.value, 10);
-    const isAll = current === rangeTotal;
-    if (isAll) {
-      const previousValue = state.lastCountBeforeAll;
-      input.value = String(Number.isInteger(previousValue) && previousValue >= 1 ? Math.min(previousValue, rangeTotal) : Math.min(20, rangeTotal));
-    } else {
-      state.lastCountBeforeAll = Number.isInteger(current) && current >= 1 ? current : 20;
-
-      input.value = String(rangeTotal);
-    };
+    state.allQuestionsEnabled = !state.allQuestionsEnabled;
     persistSetupForm();
     refreshSetupUI();
   });
@@ -3305,18 +3314,7 @@ function bindEvents() {
   getElementById('button-unlimited-time')?.addEventListener('click', () => {
     const timeInput = getElementById('input-time-limit');
     if (!timeInput) return;
-    let current = Number.parseInt(timeInput.value, 10);
-    if (!Number.isInteger(current) || current < 0) current = 0;
-    current = Math.min(1440, current);
-    const isUnlimited = current === 0;
-    if (isUnlimited) {
-      const previousValue = state.lastTimeBeforeUnlimited;
-      timeInput.value = String(Number.isInteger(previousValue) && previousValue > 0 ? Math.min(1440, previousValue) : 50);
-    } else {
-      state.lastTimeBeforeUnlimited = current > 0 ? current : 50;
-
-      timeInput.value = '0';
-    };
+    state.unlimitedTimeEnabled = !state.unlimitedTimeEnabled;
     persistSetupForm();
     refreshSetupUI();
   });
@@ -3324,9 +3322,9 @@ function bindEvents() {
   document.querySelectorAll('.preset-btn').forEach((button) => {
     button.addEventListener('click', () => {
       const form = readSetupForm();
-      const max = Math.max(1, form.endQuestion - form.startQuestion + 1);
-      const n = Math.min(Number(button.dataset.count) || 20, max);
-      getElementById('input-count').value = String(n);
+      const max = Math.max(1, form.lastQuestionNumber - form.firstQuestionNumber + 1);
+      const presetQuestionCount = Math.min(Number(button.dataset.count) || 20, max);
+      getElementById('input-count').value = String(presetQuestionCount);
       persistSetupForm();
       refreshSetupUI();
     });
@@ -3345,9 +3343,8 @@ function bindEvents() {
   const updateCountButtonState = () => {
     const input = getElementById('input-count');
     const form = readSetupForm();
-    const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
-    const countNum = Number.parseInt(input.value, 10);
-    const isAllCount = Number.isInteger(countNum) && countNum === rangeTotal;
+    const rangeTotal = Math.max(1, form.lastQuestionNumber - form.firstQuestionNumber + 1);
+    const isAllCount = state.allQuestionsEnabled;
     const selectAllButton = getElementById('button-select-all');
     if (selectAllButton) {
       selectAllButton.classList.toggle('is-active', isAllCount);
@@ -3359,12 +3356,8 @@ function bindEvents() {
   };
   getElementById('input-count').addEventListener('input', () => {
     const form = readSetupForm();
-    const rangeTotal = Math.max(1, form.endQuestion - form.startQuestion + 1);
+    const rangeTotal = Math.max(1, form.lastQuestionNumber - form.firstQuestionNumber + 1);
     const count = Number.parseInt(getElementById('input-count').value, 10);
-    if (Number.isInteger(count) && count >= 1 && count < rangeTotal) {
-      state.lastCountBeforeAll = count;
-
-    };
     updateCountButtonState();
     persistSetupForm();
   });
@@ -3379,8 +3372,7 @@ function bindEvents() {
 
   const updateTimeButtonState = () => {
     const timeInput = getElementById('input-time-limit');
-    const timeVal = Number.parseInt(timeInput.value, 10);
-    const isUnlimited = Number.isInteger(timeVal) && timeVal === 0;
+    const isUnlimited = state.unlimitedTimeEnabled;
     const unlimitedTimeButton = getElementById('button-unlimited-time');
     if (unlimitedTimeButton) {
       unlimitedTimeButton.classList.toggle('is-active', isUnlimited);
@@ -3545,13 +3537,13 @@ function bindEvents() {
   });
 
   getElementById('button-review-goto').addEventListener('click', () => {
-    const n = Number.parseInt(getElementById('input-review-goto').value, 10);
+    const questionNumber = Number.parseInt(getElementById('input-review-goto').value, 10);
     const total = bankQuestions().length;
-    if (!Number.isInteger(n) || n < 1 || n > total) {
+    if (!Number.isInteger(questionNumber) || questionNumber < 1 || questionNumber > total) {
       toast('Nhập số câu từ 1 đến ' + total + '.');
       return;
     };
-    if (!scrollReviewToQuestionNumber(n)) toast('Không tìm thấy câu ' + n + ' trong danh sách hiện tại.');
+    if (!scrollReviewToQuestionNumber(questionNumber)) toast('Không tìm thấy câu ' + questionNumber + ' trong danh sách hiện tại.');
   });
   getElementById('input-review-goto').addEventListener('input', (event) => {
     const input = event.currentTarget;
@@ -3611,10 +3603,10 @@ function bindEvents() {
   });
 
   getElementById('button-bookmark').addEventListener('click', () => {
-    const question = currentQuestion();
+    const questionText = currentQuestion();
     const session = state.session;
-    if (!question || !session) return;
-    const result = toggleBookmark(session.deckId, question.originalIndex);
+    if (!questionText || !session) return;
+    const result = toggleBookmark(session.deckId, questionText.sourceQuestionIndex);
     if (result == null) {
       toast('Không thể lưu dấu trang. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
@@ -3650,10 +3642,10 @@ function bindEvents() {
   };
 
   function openNoteEditor() {
-    const question = currentQuestion();
+    const questionText = currentQuestion();
     const session = state.session;
-    if (!question || !session || !notePanel || !noteInput) return;
-    noteInput.value = getQuestionNote(session.deckId, question.originalIndex);
+    if (!questionText || !session || !notePanel || !noteInput) return;
+    noteInput.value = getQuestionNote(session.deckId, questionText.sourceQuestionIndex);
     if (noteDisplay) noteDisplay.hidden = true;
     notePanel.hidden = false;
     noteInput.focus();
@@ -3662,9 +3654,9 @@ function bindEvents() {
   function closeNoteEditor(refresh) {
     if (notePanel) notePanel.hidden = true;
     if (refresh !== false) {
-      const question = currentQuestion();
+      const questionText = currentQuestion();
       const session = state.session;
-      const note = question && session ? getQuestionNote(session.deckId, question.originalIndex) : '';
+      const note = questionText && session ? getQuestionNote(session.deckId, questionText.sourceQuestionIndex) : '';
       syncQuizNoteUI(note);
     };
   };
@@ -3676,24 +3668,24 @@ function bindEvents() {
   });
 
   getElementById('button-note-save')?.addEventListener('click', () => {
-    const question = currentQuestion();
+    const questionText = currentQuestion();
     const session = state.session;
-    if (!question || !session || !noteInput) return;
-    const ok = saveQuestionNote(session.deckId, question.originalIndex, noteInput.value);
+    if (!questionText || !session || !noteInput) return;
+    const ok = saveQuestionNote(session.deckId, questionText.sourceQuestionIndex, noteInput.value);
     if (!ok) {
       toast('Không thể lưu ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
     };
-    const note = getQuestionNote(session.deckId, question.originalIndex);
+    const note = getQuestionNote(session.deckId, questionText.sourceQuestionIndex);
     syncQuizNoteUI(note);
     toast(note ? 'Đã lưu ghi chú.' : 'Đã xóa ghi chú.');
   });
 
   getElementById('button-note-delete')?.addEventListener('click', () => {
-    const question = currentQuestion();
+    const questionText = currentQuestion();
     const session = state.session;
-    if (!question || !session) return;
-    const ok = saveQuestionNote(session.deckId, question.originalIndex, '');
+    if (!questionText || !session) return;
+    const ok = saveQuestionNote(session.deckId, questionText.sourceQuestionIndex, '');
     if (!ok) {
       toast('Không thể xóa ghi chú. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
       return;
@@ -3783,7 +3775,7 @@ function bindEvents() {
       return;
     };
     state.currentDeck = previous.deckId;
-    const byIndex = new Map(currentQuestions().map((question) => [question.originalIndex, question]));
+    const byIndex = new Map(currentQuestions().map((questionText) => [questionText.sourceQuestionIndex, questionText]));
     const pool = previous.indices.map((index) => byIndex.get(index)).filter(Boolean);
     if (!pool.length) {
       toast('Không còn câu hỏi phù hợp để làm lại.');
@@ -3793,6 +3785,8 @@ function bindEvents() {
     getElementById('input-range-end').value = String(previous.rangeEnd);
     getElementById('input-count').value = String(pool.length);
     getElementById('input-time-limit').value = String(previous.timeLimit);
+    state.allQuestionsEnabled = false;
+    state.unlimitedTimeEnabled = false;
     getElementById('checkbox-shuffle-questions').checked = true;
     getElementById('checkbox-shuffle-answers').checked = true;
     setPracticeMode(previous.mode === 'exam' ? 'exam' : 'practice');
@@ -3824,8 +3818,8 @@ function bindEvents() {
     const ok = await confirmModal('Làm lại từ đầu?', 'Tiến độ hoàn thành của bộ đề sẽ được đặt lại để bạn ôn tuần tự từ câu đầu. Lịch sử câu sai vẫn được giữ.');
     if (!ok) return;
     const progress = getDeckProgress(state.currentDeck);
-    progress.completed = [];
-    progress.sequentialCursor = 0;
+    progress.completedQuestionIndices = [];
+    progress.sequentialQuestionCursor = 0;
     if (!saveDeckProgress(state.currentDeck, progress)) {
       toast('Không thể đặt lại tiến độ vì bộ nhớ trình duyệt đã đầy hoặc bị chặn.');
       return;

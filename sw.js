@@ -1,18 +1,18 @@
 const NAME = 'quocphonganninh';
-const VERSION = '1.0.6';
+const VERSION = '1.0.0';
 const ASSETS = [
   './',
   './index.html',
   './sw.js',
   './manifest.webmanifest',
-  './data/quocphong1.json',
-  './data/quocphong2.json',
+  './data/quocphonganninh1.json',
+  './data/quocphonganninh2.json',
   './assets/fonts/Inter.woff2',
-  './assets/css/style.css',
-  './assets/javascript/app.js',
-  './assets/javascript/enhance.js',
-  './assets/javascript/quiz.js',
-  './assets/javascript/storage.js',
+  './assets/styles/app.css',
+  './assets/scripts/app.js',
+  './assets/scripts/enhance.js',
+  './assets/scripts/quiz.js',
+  './assets/scripts/storage.js',
   './assets/sounds/correct.mp3',
   './assets/sounds/incorrect.mp3',
   './assets/icons/icon.svg',
