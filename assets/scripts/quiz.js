@@ -23,9 +23,7 @@ export function normalizeQuestions(rawData) {
     const answerOptions = questionText.answerOptions.slice();
     const correctAnswerIndex = questionText.correctAnswerIndex;
     if (!Number.isInteger(correctAnswerIndex) || correctAnswerIndex < 0 || correctAnswerIndex >= answerOptions.length) throw new Error('Câu ' + (index + 1) + ' có chỉ số đáp án đúng không hợp lệ.');
-    const fixedAnswerIndices = Array.isArray(questionText.fixedAnswerIndices)
-      ? [...new Set(questionText.fixedAnswerIndices.filter((value) => Number.isInteger(value) && value >= 0 && value < answerOptions.length))]
-      : [];
+    const fixedAnswerIndices = Array.isArray(questionText.fixedAnswerIndices) ? [...new Set(questionText.fixedAnswerIndices.filter((value) => Number.isInteger(value) && value >= 0 && value < answerOptions.length))] : [];
     normalized.push({
       sourceQuestionIndex: index,
       questionText: questionText.questionText,

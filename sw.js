@@ -1,5 +1,5 @@
 const CACHE_NAME = 'quocphonganninh';
-const CACHE_VERSION = '1';
+const CACHE_VERSION = '0';
 const ASSETS = [
   './',
   './index.html',

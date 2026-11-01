@@ -2999,9 +2999,7 @@ function finishSession() {
   };
 
   const scoreTotal = session.mode === 'practice-wrong' ? session.practiceInitialCount || session.items.length : session.items.length;
-  const unansweredQuestions = session.examMode
-    ? session.items.filter((item) => item.selectedAnswerIndex == null).length
-    : 0;
+  const unansweredQuestions = session.examMode ? session.items.filter((item) => item.selectedAnswerIndex == null).length : 0;
   session.summary = {
     total: scoreTotal,
     score: formatScore(session.firstTryCorrect || 0, scoreTotal),
@@ -3073,9 +3071,7 @@ function showSummary(summary, deckId, mode) {
   getElementById('summary-time').textContent = formatTime(summary.elapsedSeconds || 0);
   getElementById('summary-correct').textContent = String(summary.correctAnswerIndex);
   getElementById('summary-wrong-question-count').textContent = String(summary.wrongQuestions);
-  const answeredCount = isExamResult
-    ? summary.total - (summary.unansweredQuestions || 0)
-    : summary.total;
+  const answeredCount = isExamResult ? summary.total - (summary.unansweredQuestions || 0) : summary.total;
   const accuracy = answeredCount > 0 ? Math.round((summary.correctAnswerIndex / answeredCount) * 100) : 0;
   getElementById('summary-unanswered').textContent = String(summary.unansweredQuestions || 0);
   getElementById('summary-accuracy').textContent = accuracy + '%';
@@ -3095,15 +3091,7 @@ function showSummary(summary, deckId, mode) {
   const totalQuestions = (state.decks[deckId] || []).length;
   const progressAfterSession = getDeckProgress(deckId);
   const completedAfterSession = new Set(progressAfterSession.completedQuestionIndices).size;
-  getElementById('summary-note').textContent = summary.timeExpired
-    ? 'Đã hết giờ. Bài làm được tự động kết thúc.'
-    : isExamResult
-      ? 'Đây là kết quả riêng của lượt thi thử; không thay đổi tiến độ ôn luyện bộ đề.'
-      : completedAfterSession >= totalQuestions
-        ? 'Bạn đã hoàn thành toàn bộ bộ đề ' + DECKS[deckId].label + '.'
-        : summary.wrongQuestions === 0
-          ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.'
-          : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
+  getElementById('summary-note').textContent = summary.timeExpired ? 'Đã hết giờ. Bài làm được tự động kết thúc.' : isExamResult ? 'Đây là kết quả riêng của lượt thi thử; không thay đổi tiến độ ôn luyện bộ đề.' : completedAfterSession >= totalQuestions ? 'Bạn đã hoàn thành toàn bộ bộ đề ' + DECKS[deckId].label + '.' : summary.wrongQuestions === 0 ? 'Xuất sắc! Bạn không mắc lỗi nào trong lượt này.' : 'Bạn có thể ôn lại các câu sai hoặc tiếp tục với những câu chưa hoàn thành.';
 
   const listCard = getElementById('wrong-list-card');
   const list = getElementById('wrong-list');

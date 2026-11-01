@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'quocphonganninh';
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 0;
 
 function emptyRoot() {
   return {
@@ -382,9 +382,7 @@ function normalizeOverrideEntry(value) {
   if (answerOptions.length < 2) return null;
   const correctAnswerIndex = Number(value.correctAnswerIndex);
   if (!Number.isInteger(correctAnswerIndex) || correctAnswerIndex < 0 || correctAnswerIndex >= answerOptions.length) return null;
-  const fixedAnswerIndices = Array.isArray(value.fixedAnswerIndices)
-    ? [...new Set(value.fixedAnswerIndices.filter((index) => Number.isInteger(index) && index >= 0 && index < answerOptions.length))]
-    : [];
+  const fixedAnswerIndices = Array.isArray(value.fixedAnswerIndices) ? [...new Set(value.fixedAnswerIndices.filter((index) => Number.isInteger(index) && index >= 0 && index < answerOptions.length))] : [];
   return { questionText, answerOptions, correctAnswerIndex, fixedAnswerIndices };
 };
 
