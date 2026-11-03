@@ -2456,6 +2456,34 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
   gap: 8px;
 }
 
+.custom-deck-list:not(:empty) {
+  margin-bottom: 8px;
+}
+
+.custom-deck-add-button {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 14px;
+  border: 1px dashed var(--strong-border-color);
+  border-radius: var(--medium-radius);
+  background: var(--raised-color);
+  color: var(--muted-text-color);
+  cursor: pointer;
+  transition: background var(--transition-duration) var(--easing-function), border-color var(--transition-duration) var(--easing-function), color var(--transition-duration) var(--easing-function), transform 0.08s var(--easing-function);
+}
+
+.custom-deck-add-button:active {
+  transform: scale(0.985);
+}
+
+.custom-deck-add-button::before {
+  width: 28px;
+  height: 28px;
+  opacity: 0.85;
+}
+
 .custom-deck-item {
   display: flex;
   align-items: center;
@@ -2546,7 +2574,7 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
 }
 
 #screen-custom-editor {
-  padding-bottom: calc(96px + var(--safe-area-bottom));
+  padding-bottom: calc(200px + var(--safe-area-bottom));
 }
 
 #screen-custom-editor .custom-editor-footer-card {
@@ -2578,6 +2606,10 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
 }
 
 @media (max-width: 480px) {
+  #screen-custom-editor {
+    padding-bottom: calc(220px + var(--safe-area-bottom));
+  }
+
   .custom-editor-footer-actions {
     grid-template-columns: 1fr;
   }
@@ -2594,8 +2626,7 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
   cursor: not-allowed;
 }
 
-#custom-questions-empty[hidden],
-#custom-decks-empty[hidden] {
+#custom-questions-empty[hidden] {
   display: none !important;
 }
 
@@ -2606,6 +2637,12 @@ body[data-screen='exam'] .fixed-floating-action-button-stack {
 
   .custom-deck-item.is-selected:hover {
     border-color: var(--accent-color);
+  }
+
+  .custom-deck-add-button:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: var(--accent-soft-color);
   }
 }
 

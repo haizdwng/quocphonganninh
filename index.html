@@ -40,12 +40,9 @@
             </div>
           </div>
           <div class='card' id='custom-decks-card'>
-            <div class='card-header-row'>
-              <h2>BỘ ĐỀ TỰ TẠO</h2>
-              <button type='button' class='button button-secondary button-icon-only' id='button-add-custom-deck' data-icon='plus' aria-label='Thêm bộ đề' title='Thêm bộ đề'></button>
-            </div>
-            <p class='hint' id='custom-decks-empty'>Chưa có bộ đề tự tạo. Nhấn + để tạo mới.</p>
+            <h2>BỘ ĐỀ TỰ TẠO</h2>
             <ul class='custom-deck-list' id='custom-deck-list' role='list'></ul>
+            <button type='button' class='custom-deck-add-button' id='button-add-custom-deck' data-icon='plus' aria-label='Thêm bộ đề' title='Thêm bộ đề'></button>
           </div>
           <div class='card'>
             <h2>CHẾ ĐỘ</h2>
@@ -526,15 +523,15 @@
             </div>
             <div class='field'>
               <label for='input-custom-deck-name'>TÊN BỘ ĐỀ</label>
-              <input type='text' id='input-custom-deck-name' maxlength='80' placeholder='Ví dụ: Ôn chương 1' autocomplete='off' />
+              <input type='text' id='input-custom-deck-name' maxlength='80' placeholder='NHẬP TÊN BỘ ĐỀ' autocomplete='off' />
             </div>
           </div>
           <div class='card'>
             <div class='card-header-row'>
-              <h2>CÂU HỎI <span class='muted' id='custom-question-count'>(0)</span></h2>
+              <h2>CÂU HỎI</h2>
             </div>
             <div id='custom-questions-container' class='custom-questions-container'></div>
-            <p class='hint' id='custom-questions-empty'>Chưa có câu hỏi. Nhấn + để bắt đầu.</p>
+            <p class='hint' id='custom-questions-empty'>Chưa có câu hỏi.</p>
           </div>
           <div class='card setup-start-card custom-editor-footer-card' id='custom-editor-actions'>
             <div class='button-row custom-editor-footer-actions'>

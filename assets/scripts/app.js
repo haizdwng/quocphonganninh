@@ -1613,11 +1613,9 @@ function getDeckDisplayName(deckId) {
 
 function renderCustomDeckList() {
   const listEl = getElementById('custom-deck-list');
-  const emptyEl = getElementById('custom-decks-empty');
   if (!listEl) return;
   const decks = getCustomDecks();
   listEl.replaceChildren();
-  if (emptyEl) emptyEl.hidden = decks.length > 0;
   for (const deck of decks) {
     const li = document.createElement('li');
     li.className = 'custom-deck-item' + (state.currentDeck === deck.id ? ' is-selected' : '');
@@ -2106,11 +2104,9 @@ function renderCustomQuestionEdit(card, question, questionIndex) {
 function renderCustomQuestionsEditor() {
   const container = getElementById('custom-questions-container');
   const emptyEl = getElementById('custom-questions-empty');
-  const countEl = getElementById('custom-question-count');
   if (!container) return;
   container.replaceChildren();
   const questions = customEditorState.questions;
-  if (countEl) countEl.textContent = '(' + questions.length + ')';
   if (emptyEl) emptyEl.hidden = questions.length > 0;
 
   questions.forEach((question, questionIndex) => {

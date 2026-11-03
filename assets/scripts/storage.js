@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'quocphonganninh';
-const STORAGE_VERSION = 0;
+const STORAGE_VERSION = 1;
 
 function emptyRoot() {
   return {
