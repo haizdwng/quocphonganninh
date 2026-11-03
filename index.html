@@ -39,6 +39,14 @@
               </button>
             </div>
           </div>
+          <div class='card' id='custom-decks-card'>
+            <div class='card-header-row'>
+              <h2>BỘ ĐỀ TỰ TẠO</h2>
+              <button type='button' class='button button-secondary button-icon-only' id='button-add-custom-deck' data-icon='plus' aria-label='Thêm bộ đề' title='Thêm bộ đề'></button>
+            </div>
+            <p class='hint' id='custom-decks-empty'>Chưa có bộ đề tự tạo. Nhấn + để tạo mới.</p>
+            <ul class='custom-deck-list' id='custom-deck-list' role='list'></ul>
+          </div>
           <div class='card'>
             <h2>CHẾ ĐỘ</h2>
             <div class='mode-switch' role='group' aria-label='Chế độ'>
@@ -255,8 +263,7 @@
               aria-label='Quay lại thiết lập'
               title='Quay lại thiết lập'
             ></button>
-            <h2>NGÂN HÀNG CÂU HỎI</h2>
-            <div class='deck-switch' role='group' aria-label='Bộ đề ngân hàng'>
+            <div class='deck-switch bank-deck-switch' id='bank-deck-switch' role='group' aria-label='Bộ đề ngân hàng'>
               <button type='button' class='deck-button' data-bank-deck='quocphong1'>
                 <span class='deck-name'>QUỐC PHÒNG 1</span>
                 <span class='deck-count' id='bank-count-quocphong1'>479 CÂU</span>
@@ -510,6 +517,31 @@
             <button type='button' class='button button-ghost button-block' id='button-summary-home' data-icon='arrow-left'>
               VỀ MÀN HÌNH THIẾT LẬP
             </button>
+          </div>
+        </section>
+        <section id='screen-custom-editor' class='screen' aria-label='Tạo bộ đề tự tạo' hidden>
+          <div class='card custom-editor-header-card'>
+            <div class='custom-editor-back-row'>
+              <button type='button' class='button button-ghost button-icon-only' id='button-custom-editor-back' data-icon='arrow-left' aria-label='Quay lại' title='Quay lại'></button>
+            </div>
+            <div class='field'>
+              <label for='input-custom-deck-name'>TÊN BỘ ĐỀ</label>
+              <input type='text' id='input-custom-deck-name' maxlength='80' placeholder='Ví dụ: Ôn chương 1' autocomplete='off' />
+            </div>
+          </div>
+          <div class='card'>
+            <div class='card-header-row'>
+              <h2>CÂU HỎI <span class='muted' id='custom-question-count'>(0)</span></h2>
+            </div>
+            <div id='custom-questions-container' class='custom-questions-container'></div>
+            <p class='hint' id='custom-questions-empty'>Chưa có câu hỏi. Nhấn + để bắt đầu.</p>
+          </div>
+          <div class='card setup-start-card custom-editor-footer-card' id='custom-editor-actions'>
+            <div class='button-row custom-editor-footer-actions'>
+              <button type='button' class='button button-secondary' id='button-add-custom-question' data-icon='plus'>THÊM CÂU HỎI</button>
+              <button type='button' class='button button-primary' id='button-custom-editor-save-bottom' data-icon='device-floppy'>LƯU BỘ ĐỀ</button>
+              <button type='button' class='button button-ghost' id='button-custom-editor-cancel' data-icon='x'>HỦY</button>
+            </div>
           </div>
         </section>
         <section id='screen-error' class='screen' aria-label='Lỗi' hidden>

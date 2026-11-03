@@ -1,5 +1,5 @@
 const CACHE_NAME = 'quocphonganninh';
-const CACHE_VERSION = '0';
+const CACHE_VERSION = '1';
 const ASSETS = [
   './',
   './index.html',
@@ -48,6 +48,8 @@ const ASSETS = [
   './assets/icons/tabler/x.svg',
   './assets/icons/tabler/select-all.svg',
   './assets/icons/tabler/deselect.svg',
+  './assets/icons/tabler/plus.svg',
+  './assets/icons/tabler/share.svg',
   './assets/icons/tabler/infinity.svg',
   './assets/icons/tabler/infinity-off.svg',
   './assets/icons/tabler/sun.svg',

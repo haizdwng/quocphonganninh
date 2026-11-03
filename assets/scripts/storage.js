@@ -8,6 +8,7 @@ function emptyRoot() {
     activeDeck: 'quocphong1',
     decks: {},
     sessions: {},
+    customDecks: {},
     highlights: {
       quocphong1: {},
       quocphong2: {}
@@ -58,7 +59,39 @@ function writeRoot(data) {
 };
 
 function normalizeDeckId(deckId) {
+  if (typeof deckId === 'string' && deckId.startsWith('custom_')) return deckId;
   return deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+};
+
+function isCustomDeckId(deckId) {
+  return typeof deckId === 'string' && deckId.startsWith('custom_');
+};
+
+function normalizeCustomQuestion(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const questionText = typeof raw.questionText === 'string' ? raw.questionText.trim() : '';
+  if (!questionText) return null;
+  const answerOptions = Array.isArray(raw.answerOptions) ? raw.answerOptions.map((option) => (typeof option === 'string' ? option.trim() : '')).filter(Boolean) : [];
+  if (answerOptions.length < 2) return null;
+  let correctAnswerIndex = Number(raw.correctAnswerIndex);
+  if (!Number.isInteger(correctAnswerIndex) || correctAnswerIndex < 0 || correctAnswerIndex >= answerOptions.length) correctAnswerIndex = 0;
+  const fixedAnswerIndices = Array.isArray(raw.fixedAnswerIndices) ? [...new Set(raw.fixedAnswerIndices.filter((index) => Number.isInteger(index) && index >= 0 && index < answerOptions.length))].sort((a, b) => a - b) : [];
+  return { questionText, answerOptions, correctAnswerIndex, fixedAnswerIndices };
+};
+
+function normalizeCustomDeck(raw, id) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const deckId = typeof id === 'string' && id.startsWith('custom_') ? id : (typeof raw.id === 'string' && raw.id.startsWith('custom_') ? raw.id : null);
+  if (!deckId) return null;
+  const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+  if (!name) return null;
+  const questions = Array.isArray(raw.questions) ? raw.questions.map(normalizeCustomQuestion).filter(Boolean) : [];
+  return {
+    id: deckId,
+    name,
+    questions,
+    updatedAt: Number.isFinite(Number(raw.updatedAt)) ? Number(raw.updatedAt) : Date.now()
+  };
 };
 
 function normalizeSettingsEntry(rawData, deckId) {
@@ -175,7 +208,7 @@ export function getSession(deckId) {
 };
 
 export function saveSession(session) {
-  if (!session || !['quocphong1', 'quocphong2'].includes(session.deckId)) return false;
+  if (!session || !(session.deckId === 'quocphong1' || session.deckId === 'quocphong2' || isCustomDeckId(session.deckId))) return false;
   const root = readRoot();
   if (!root.sessions || typeof root.sessions !== 'object' || Array.isArray(root.sessions)) root.sessions = {};
   root.sessions[session.deckId] = session;
@@ -583,6 +616,56 @@ export function importBackup(rawData) {
   };
   return writeRoot(normalized);
 };
+
+export function getCustomDecks() {
+  const root = readRoot();
+  const custom = root.customDecks && typeof root.customDecks === 'object' && !Array.isArray(root.customDecks) ? root.customDecks : {};
+  const list = [];
+  for (const [id, raw] of Object.entries(custom)) {
+    const deck = normalizeCustomDeck(raw, id);
+    if (deck) list.push(deck);
+  };
+  list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  return list;
+};
+
+export function getCustomDeck(deckId) {
+  if (!isCustomDeckId(deckId)) return null;
+  const root = readRoot();
+  const custom = root.customDecks && typeof root.customDecks === 'object' && !Array.isArray(root.customDecks) ? root.customDecks : {};
+  return normalizeCustomDeck(custom[deckId], deckId);
+};
+
+export function saveCustomDeck(deck) {
+  const normalized = normalizeCustomDeck(deck, deck?.id);
+  if (!normalized) return false;
+  const root = readRoot();
+  if (!root.customDecks || typeof root.customDecks !== 'object' || Array.isArray(root.customDecks)) root.customDecks = {};
+  normalized.updatedAt = Date.now();
+  root.customDecks[normalized.id] = normalized;
+  return writeRoot(root);
+};
+
+export function deleteCustomDeck(deckId) {
+  if (!isCustomDeckId(deckId)) return false;
+  const root = readRoot();
+  if (!root.customDecks || typeof root.customDecks !== 'object') return true;
+  delete root.customDecks[deckId];
+  if (root.decks) delete root.decks[deckId];
+  if (root.sessions) delete root.sessions[deckId];
+  if (root.highlights) delete root.highlights[deckId];
+  if (root.notes) delete root.notes[deckId];
+  if (root.overrides) delete root.overrides[deckId];
+  if (root.hidden) delete root.hidden[deckId];
+  if (root.activeDeck === deckId) root.activeDeck = 'quocphong1';
+  return writeRoot(root);
+};
+
+export function createCustomDeckId() {
+  return 'custom_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+};
+
+export { isCustomDeckId };
 
 export function storageAvailable() {
   try {

@@ -1,6 +1,6 @@
 import { initializeEnhancements } from './enhance.js';
 import { fingerprintQuestions, normalizeQuestions, createSessionItems, pickSequential, findNextUncompletedQuestion, pickRandom, pickWrong, isAnswerCorrect, displayedCorrectIndex, getEndQuestionForDeckSwitch } from './quiz.js';
-import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, clearWrongAnswers, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, clearBookmarks, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden } from './storage.js';
+import { getSettings, saveSettings, getDeckProgress, saveDeckProgress, getSession, saveSession, clearSession, resetDeckProgress, clearWrongAnswers, markWrong, markPracticed, addCompleted, setSequentialCursor, getWrongIndices, getRangeWrongIndices, addWrongIndicesForRange, getBookmarkedIndices, toggleBookmark, clearBookmarks, exportBackup, importBackup, storageAvailable, getQuestionHighlights, saveQuestionHighlights, resetDeckHighlights, getQuestionNote, saveQuestionNote, resetDeckNotes, saveQuestionOverride, getDeckOverrides, getHiddenIndices, toggleHiddenQuestion, isQuestionHidden, getCustomDecks, getCustomDeck, saveCustomDeck, deleteCustomDeck, createCustomDeckId, isCustomDeckId } from './storage.js';
 
 const DECKS = {
   quocphong1: {
@@ -73,22 +73,30 @@ function createDataFileUrl(relativePath) {
 };
 
 async function loadDeck(deckIdentifier) {
-  const deckMetadata = DECKS[deckIdentifier];
-  const dataFileUrl = createDataFileUrl(deckMetadata.file);
-  let response;
-  try {
-    response = await fetch(dataFileUrl, { cache: 'no-cache' });
-  } catch {
-    throw new Error('Không thể tải ' + deckMetadata.label + '. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.');
+  let questions;
+  if (isCustomDeckId(deckIdentifier)) {
+    const custom = getCustomDeck(deckIdentifier);
+    if (!custom) throw new Error('Không tìm thấy bộ đề tự tạo.');
+    questions = normalizeQuestions(custom.questions || []);
+  } else {
+    const deckMetadata = DECKS[deckIdentifier];
+    if (!deckMetadata) throw new Error('Bộ đề không hợp lệ.');
+    const dataFileUrl = createDataFileUrl(deckMetadata.file);
+    let response;
+    try {
+      response = await fetch(dataFileUrl, { cache: 'no-cache' });
+    } catch {
+      throw new Error('Không thể tải ' + deckMetadata.label + '. Hãy kiểm tra kết nối mạng hoặc mở trang trực tuyến ít nhất một lần để lưu dữ liệu ngoại tuyến.');
+    };
+    if (!response.ok) throw new Error('Không tải được ' + deckMetadata.label + ' (' + response.status + '). Hãy kiểm tra vị trí tệp dữ liệu.');
+    let rawData;
+    try {
+      rawData = await response.json();
+    } catch {
+      throw new Error('Tệp dữ liệu ' + deckMetadata.file + ' không hợp lệ.');
+    };
+    questions = normalizeQuestions(rawData);
   };
-  if (!response.ok) throw new Error('Không tải được ' + deckMetadata.label + ' (' + response.status + '). Hãy kiểm tra vị trí tệp dữ liệu.');
-  let rawData;
-  try {
-    rawData = await response.json();
-  } catch {
-    throw new Error('Tệp dữ liệu ' + deckMetadata.file + ' không hợp lệ.');
-  };
-  const questions = normalizeQuestions(rawData);
   const overrides = getDeckOverrides(deckIdentifier);
   for (const [key, entry] of Object.entries(overrides)) {
     const index = Number(key);
@@ -132,6 +140,19 @@ async function loadDeck(deckIdentifier) {
   return questions;
 };
 
+function hydrateCustomDecksIntoState() {
+  const list = getCustomDecks();
+  for (const deck of list) {
+    try {
+      const questions = normalizeQuestions(deck.questions || []);
+      state.decks[deck.id] = questions;
+      state.fingerprints[deck.id] = fingerprintQuestions(questions);
+    } catch (error) {
+      console.warn('Bỏ qua bộ đề tự tạo lỗi:', deck.id, error);
+    };
+  };
+};
+
 async function loadAll() {
   state.loading = true;
   state.error = null;
@@ -139,9 +160,11 @@ async function loadAll() {
   let stage = 'tải dữ liệu';
   try {
     await Promise.all([loadDeck('quocphong1'), loadDeck('quocphong2')]);
+    hydrateCustomDecksIntoState();
     state.loading = false;
     stage = 'khởi tạo giao diện';
     initializeInterface();
+    await importCustomDeckFromHash();
   } catch (error) {
     state.loading = false;
     state.error = error?.message || String(error);
@@ -286,6 +309,10 @@ function updateDeckCountLabels() {
   if (getElementById('count-quocphong2')) getElementById('count-quocphong2').textContent = formatDeckCountLabel('quocphong2');
   if (getElementById('bank-count-quocphong1')) getElementById('bank-count-quocphong1').textContent = formatBankDeckCountLabel('quocphong1');
   if (getElementById('bank-count-quocphong2')) getElementById('bank-count-quocphong2').textContent = formatBankDeckCountLabel('quocphong2');
+  for (const deck of getCustomDecks()) {
+    const element = getElementById('bank-count-' + deck.id);
+    if (element) element.textContent = formatBankDeckCountLabel(deck.id);
+  };
 };
 
 function sessionPreferences(deckId) {
@@ -761,6 +788,10 @@ function enterBankQuestionEdit(card, questionIndex) {
   });
 
   resetBtn.addEventListener('click', async () => {
+    if (isCustomDeckId(state.bankDeck)) {
+      toast('Bộ đề tự tạo không có bản gốc để khôi phục.');
+      return;
+    };
     const ok = saveQuestionOverride(state.bankDeck, questionIndex, null);
     if (!ok) {
       toast('Không thể khôi phục. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
@@ -806,25 +837,58 @@ function enterBankQuestionEdit(card, questionIndex) {
       correctAnswerIndex,
       fixedAnswerIndices: [...fixedAnswerIndices].filter((index) => filledIndices.includes(index)).map((index) => filledIndices.indexOf(index))
     };
-    const ok = saveQuestionOverride(state.bankDeck, questionIndex, payload);
-    if (!ok) {
-      toast('Không thể lưu chỉnh sửa. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
-      return;
-    };
-    const deck = state.decks[state.bankDeck];
-    if (deck && deck[questionIndex]) {
-      deck[questionIndex] = {
-        ...deck[questionIndex],
-        questionText: questionText,
-        answerOptions: answerOptions.slice(),
-        correctAnswerIndex,
-        fixedAnswerIndices: payload.fixedAnswerIndices.slice()
+    if (isCustomDeckId(state.bankDeck)) {
+      const custom = getCustomDeck(state.bankDeck);
+      if (!custom) {
+        toast('Không tìm thấy bộ đề tự tạo.');
+        return;
       };
-      state.fingerprints[state.bankDeck] = fingerprintQuestions(deck);
+      const questions = (custom.questions || []).map((item, index) => {
+        if (index !== questionIndex) return item;
+        return {
+          questionText: payload.questionText,
+          answerOptions: payload.answerOptions.slice(),
+          correctAnswerIndex: payload.correctAnswerIndex,
+          fixedAnswerIndices: payload.fixedAnswerIndices.slice()
+        };
+      });
+      if (!saveCustomDeck({ ...custom, questions })) {
+        toast('Không thể lưu chỉnh sửa. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+        return;
+      };
+      const deck = state.decks[state.bankDeck];
+      if (deck && deck[questionIndex]) {
+        deck[questionIndex] = {
+          ...deck[questionIndex],
+          questionText: payload.questionText,
+          answerOptions: payload.answerOptions.slice(),
+          correctAnswerIndex: payload.correctAnswerIndex,
+          fixedAnswerIndices: payload.fixedAnswerIndices.slice()
+        };
+        state.fingerprints[state.bankDeck] = fingerprintQuestions(deck);
+      };
+    } else {
+      const ok = saveQuestionOverride(state.bankDeck, questionIndex, payload);
+      if (!ok) {
+        toast('Không thể lưu chỉnh sửa. Bộ nhớ trình duyệt có thể đã đầy hoặc bị chặn.');
+        return;
+      };
+      const deck = state.decks[state.bankDeck];
+      if (deck && deck[questionIndex]) {
+        deck[questionIndex] = {
+          ...deck[questionIndex],
+          questionText: questionText,
+          answerOptions: answerOptions.slice(),
+          correctAnswerIndex,
+          fixedAnswerIndices: payload.fixedAnswerIndices.slice()
+        };
+        state.fingerprints[state.bankDeck] = fingerprintQuestions(deck);
+      };
     };
     toast('Đã lưu chỉnh sửa câu hỏi.');
     state.reviewEditingQuestionIndex = null;
     renderQuestionBank();
+    renderCustomDeckList();
   });
 
   questionInput.focus();
@@ -1532,13 +1596,618 @@ function openQuestionBank() {
   });
 };
 
+let customEditorState = {
+  id: null,
+  name: '',
+  questions: [],
+  editingIndex: null
+};
+
+function getDeckDisplayName(deckId) {
+  if (isCustomDeckId(deckId)) {
+    const custom = getCustomDeck(deckId);
+    return custom?.name || 'Bộ đề tự tạo';
+  };
+  return DECKS[deckId]?.label || deckId;
+};
+
+function renderCustomDeckList() {
+  const listEl = getElementById('custom-deck-list');
+  const emptyEl = getElementById('custom-decks-empty');
+  if (!listEl) return;
+  const decks = getCustomDecks();
+  listEl.replaceChildren();
+  if (emptyEl) emptyEl.hidden = decks.length > 0;
+  for (const deck of decks) {
+    const li = document.createElement('li');
+    li.className = 'custom-deck-item' + (state.currentDeck === deck.id ? ' is-selected' : '');
+    li.dataset.deckId = deck.id;
+
+    const main = document.createElement('button');
+    main.type = 'button';
+    main.className = 'custom-deck-item-main';
+    main.setAttribute('aria-label', 'Chọn bộ đề ' + deck.name);
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'custom-deck-item-name';
+    nameSpan.textContent = String(deck.name || '').toLocaleUpperCase('vi-VN');
+    const metaSpan = document.createElement('span');
+    metaSpan.className = 'custom-deck-item-meta';
+    metaSpan.textContent = (deck.questions?.length || 0) + ' câu';
+    main.append(nameSpan, metaSpan);
+    main.addEventListener('click', () => selectCustomDeck(deck.id));
+
+    const actions = document.createElement('div');
+    actions.className = 'custom-deck-item-actions';
+
+    const shareBtn = document.createElement('button');
+    shareBtn.type = 'button';
+    shareBtn.className = 'button button-ghost button-icon-only';
+    shareBtn.dataset.icon = 'share';
+    shareBtn.setAttribute('aria-label', 'Chia sẻ bộ đề');
+    shareBtn.title = 'Chia sẻ';
+    shareBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      shareCustomDeck(deck.id);
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'button button-ghost button-icon-only';
+    deleteBtn.dataset.icon = 'trash';
+    deleteBtn.setAttribute('aria-label', 'Xóa bộ đề');
+    deleteBtn.title = 'Xóa';
+    deleteBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      confirmDeleteCustomDeck(deck.id, deck.name);
+    });
+
+    actions.append(shareBtn, deleteBtn);
+    li.append(main, actions);
+    listEl.append(li);
+  };
+  renderBankDeckSwitch();
+};
+
+function encodeCustomDeckSharePayload(deck) {
+  const payload = {
+    v: 1,
+    name: deck.name,
+    questions: (deck.questions || []).map((question) => ({
+      questionText: question.questionText,
+      answerOptions: question.answerOptions,
+      correctAnswerIndex: question.correctAnswerIndex,
+      fixedAnswerIndices: Array.isArray(question.fixedAnswerIndices) ? question.fixedAnswerIndices : []
+    }))
+  };
+  const json = JSON.stringify(payload);
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  for (let index = 0; index < bytes.length; index++) binary += String.fromCharCode(bytes[index]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+};
+
+function decodeCustomDeckSharePayload(encoded) {
+  try {
+    const base64 = String(encoded || '').replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+    const json = new TextDecoder().decode(bytes);
+    const data = JSON.parse(json);
+    if (!data || typeof data !== 'object' || typeof data.name !== 'string' || !Array.isArray(data.questions)) return null;
+    const name = data.name.trim().toLocaleUpperCase('vi-VN');
+    if (!name) return null;
+    const questions = data.questions.map((raw) => {
+      const questionText = typeof raw?.questionText === 'string' ? raw.questionText.trim() : '';
+      const answerOptions = Array.isArray(raw?.answerOptions) ? raw.answerOptions.map((option) => (typeof option === 'string' ? option.trim() : '')).slice(0, 4) : [];
+      while (answerOptions.length < 4) answerOptions.push('');
+      if (!questionText || answerOptions.some((option) => !option)) return null;
+      let correctAnswerIndex = Number(raw?.correctAnswerIndex);
+      if (!Number.isInteger(correctAnswerIndex) || correctAnswerIndex < 0 || correctAnswerIndex > 3) correctAnswerIndex = 0;
+      const fixedAnswerIndices = Array.isArray(raw?.fixedAnswerIndices) ? raw.fixedAnswerIndices.filter((index) => Number.isInteger(index) && index >= 0 && index < 4) : [];
+      return { questionText, answerOptions, correctAnswerIndex, fixedAnswerIndices };
+    }).filter(Boolean);
+    if (!questions.length) return null;
+    return { name, questions };
+  } catch {
+    return null;
+  };
+};
+
+async function shareCustomDeck(deckId) {
+  const deck = getCustomDeck(deckId);
+  if (!deck || !Array.isArray(deck.questions) || !deck.questions.length) {
+    toast('Bộ đề trống hoặc không tồn tại.');
+    return;
+  };
+  let encoded;
+  try {
+    encoded = encodeCustomDeckSharePayload(deck);
+  } catch {
+    toast('Không thể tạo liên kết chia sẻ.');
+    return;
+  };
+  const url = new URL(window.location.href);
+  url.hash = 'import=' + encoded;
+  const shareUrl = url.toString();
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareUrl);
+      toast('Đã sao chép liên kết chia sẻ.');
+      return;
+    };
+  } catch {};
+  window.prompt('Sao chép liên kết chia sẻ:', shareUrl);
+};
+
+async function importCustomDeckFromHash() {
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#import=')) return false;
+  const encoded = hash.slice('#import='.length);
+  const payload = decodeCustomDeckSharePayload(encoded);
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  if (!payload) {
+    toast('Liên kết bộ đề không hợp lệ.');
+    return false;
+  };
+  const deck = {
+    id: createCustomDeckId(),
+    name: payload.name,
+    questions: payload.questions,
+    updatedAt: Date.now()
+  };
+  if (!saveCustomDeck(deck)) {
+    toast('Không thể nhập bộ đề (bộ nhớ trình duyệt đầy hoặc bị chặn).');
+    return false;
+  };
+  try {
+    const normalized = normalizeQuestions(deck.questions);
+    state.decks[deck.id] = normalized;
+    state.fingerprints[deck.id] = fingerprintQuestions(normalized);
+  } catch (error) {
+    console.error(error);
+  };
+  state.currentDeck = deck.id;
+  applySettingsToForm(getSettings(deck.id));
+  persistSetupForm();
+  refreshSetupUI();
+  toast('Đã nhập bộ đề ' + deck.name + '.');
+  return true;
+};
+
+async function selectCustomDeck(deckId) {
+  if (!isCustomDeckId(deckId)) return;
+  if (!state.decks[deckId]) {
+    try {
+      await loadDeck(deckId);
+    } catch (error) {
+      toast(error?.message || 'Không tải được bộ đề tự tạo.');
+      return;
+    };
+  };
+  if (state.currentDeck === deckId) {
+    refreshSetupUI();
+    return;
+  };
+  const previousTotal = currentQuestions().length;
+  const previousStart = Number.parseInt(getElementById('input-range-start')?.value, 10) || 1;
+  const previousEnd = Number.parseInt(getElementById('input-range-end')?.value, 10);
+  const previousRangeTotal = Math.max(1, (Number.isInteger(previousEnd) ? previousEnd : previousTotal) - previousStart + 1);
+  const previousCount = Number.parseInt(getElementById('input-count')?.value, 10);
+  const countWasMaximum = Number.isInteger(previousCount) && previousCount >= previousRangeTotal;
+  persistSetupForm();
+  state.currentDeck = deckId;
+  document.querySelectorAll('#screen-setup .deck-button[data-deck]').forEach((button) => button.classList.remove('active'));
+  const settings = getSettings(deckId);
+  const currentTotal = currentQuestions().length;
+  settings.deck = deckId;
+  settings.lastQuestionNumber = getEndQuestionForDeckSwitch(previousEnd, previousTotal, currentTotal);
+  if (settings.allQuestionsEnabled || countWasMaximum) {
+    const newStart = settings.firstQuestionNumber || 1;
+    const newEnd = settings.lastQuestionNumber > 0 ? Math.min(settings.lastQuestionNumber, currentTotal) : currentTotal;
+    settings.count = Math.max(1, newEnd - newStart + 1);
+  };
+  applySettingsToForm(settings);
+  persistSetupForm();
+  refreshSetupUI();
+};
+
+async function confirmDeleteCustomDeck(deckId, name) {
+  const confirmed = await confirmModal('Xóa bộ đề', 'Bạn có chắc muốn xóa bộ đề ' + name + '? Toàn bộ câu hỏi và tiến độ liên quan sẽ bị xóa.');
+  if (!confirmed) return;
+  if (!deleteCustomDeck(deckId)) {
+    toast('Không thể xóa bộ đề (bộ nhớ trình duyệt).');
+    return;
+  };
+  delete state.decks[deckId];
+  delete state.fingerprints[deckId];
+  if (state.currentDeck === deckId) {
+    state.currentDeck = 'quocphong1';
+    applySettingsToForm(getSettings('quocphong1'));
+    persistSetupForm();
+  };
+  if (state.bankDeck === deckId) {
+    state.bankDeck = state.currentDeck;
+  };
+  toast('Đã xóa bộ đề.');
+  refreshSetupUI();
+};
+
+function openCustomDeckEditor(deckId = null) {
+  if (deckId && isCustomDeckId(deckId)) {
+    const existing = getCustomDeck(deckId);
+    if (!existing) {
+      toast('Không tìm thấy bộ đề.');
+      return;
+    };
+    customEditorState = {
+      id: existing.id,
+      name: existing.name,
+      questions: (existing.questions || []).map((q) => ({
+        questionText: q.questionText || '',
+        answerOptions: (() => {
+          const answers = Array.isArray(q.answerOptions) ? q.answerOptions.slice(0, 4) : [];
+          while (answers.length < 4) answers.push('');
+          return answers;
+        })(),
+        correctAnswerIndex: Number.isInteger(q.correctAnswerIndex) ? q.correctAnswerIndex : 0,
+        fixedAnswerIndices: Array.isArray(q.fixedAnswerIndices) ? q.fixedAnswerIndices.slice() : []
+      })),
+      editingIndex: null
+    };
+  } else {
+    customEditorState = {
+      id: createCustomDeckId(),
+      name: '',
+      questions: [],
+      editingIndex: null
+    };
+  };
+  const nameInput = getElementById('input-custom-deck-name');
+  if (nameInput) nameInput.value = customEditorState.name;
+  renderCustomQuestionsEditor();
+  showScreen('custom-editor');
+  window.scrollTo({ top: 0 });
+};
+
+function closeCustomDeckEditor() {
+  customEditorState.editingIndex = null;
+  showScreen('setup');
+  refreshSetupUI();
+  window.scrollTo({ top: 0 });
+};
+
+function renderCustomQuestionView(card, question, questionIndex) {
+  const heading = document.createElement('div');
+  heading.className = 'review-question-heading';
+  heading.textContent = 'CÂU ' + (questionIndex + 1);
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'custom-question-toolbar';
+
+  const editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'button button-ghost button-icon-only';
+  editBtn.dataset.icon = 'pencil';
+  editBtn.setAttribute('aria-label', 'Chỉnh sửa câu hỏi');
+  editBtn.title = 'Chỉnh sửa';
+  editBtn.addEventListener('click', () => {
+    customEditorState.editingIndex = questionIndex;
+    renderCustomQuestionsEditor();
+  });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'button button-ghost button-icon-only';
+  deleteBtn.dataset.icon = 'trash';
+  deleteBtn.setAttribute('aria-label', 'Xóa câu hỏi');
+  deleteBtn.title = 'Xóa câu';
+  deleteBtn.addEventListener('click', () => {
+    if (customEditorState.editingIndex === questionIndex) customEditorState.editingIndex = null;
+    else if (Number.isInteger(customEditorState.editingIndex) && customEditorState.editingIndex > questionIndex) customEditorState.editingIndex -= 1;
+    customEditorState.questions.splice(questionIndex, 1);
+    renderCustomQuestionsEditor();
+  });
+
+  toolbar.append(editBtn, deleteBtn);
+
+  const prompt = document.createElement('div');
+  prompt.className = 'review-question-text';
+  prompt.textContent = question.questionText || '(Chưa có nội dung câu hỏi)';
+
+  const answerOptions = document.createElement('ol');
+  answerOptions.className = 'review-options';
+  const answers = Array.isArray(question.answerOptions) ? question.answerOptions : [];
+  answers.forEach((answer, answerIndex) => {
+    if (!answer && answer !== 0) return;
+    const item = document.createElement('li');
+    item.className = 'review-option' + (question.correctAnswerIndex === answerIndex ? ' is-correct' : '');
+    const label = document.createElement('span');
+    label.className = 'review-option-label';
+    label.textContent = String.fromCharCode(65 + answerIndex);
+    const text = document.createElement('span');
+    text.className = 'review-option-text';
+    text.textContent = answer;
+    const badge = document.createElement('span');
+    badge.className = 'review-correct-badge';
+    badge.textContent = 'Đáp án đúng';
+    if (question.correctAnswerIndex !== answerIndex) badge.hidden = true;
+    item.append(label, text, badge);
+    answerOptions.appendChild(item);
+  });
+
+  if (Array.isArray(question.fixedAnswerIndices) && question.fixedAnswerIndices.length > 0) card.classList.add('is-answer-fixed');
+
+  card.append(heading, prompt, toolbar, answerOptions);
+};
+
+function renderCustomQuestionEdit(card, question, questionIndex) {
+  const heading = document.createElement('div');
+  heading.className = 'review-question-heading';
+  heading.textContent = 'CÂU ' + (questionIndex + 1);
+
+  const editBlock = document.createElement('div');
+  editBlock.className = 'review-edit-block';
+
+  const questionLabel = document.createElement('label');
+  questionLabel.className = 'review-edit-label';
+  questionLabel.textContent = 'CÂU HỎI';
+
+  const questionInput = document.createElement('textarea');
+  questionInput.className = 'review-edit-question';
+  questionInput.rows = 3;
+  questionInput.placeholder = 'Nội dung câu hỏi…';
+  questionInput.value = question.questionText || '';
+
+  const answerLabel = document.createElement('div');
+  answerLabel.className = 'review-edit-label';
+  answerLabel.textContent = 'ĐÁP ÁN';
+
+  const answerOptionList = document.createElement('div');
+  answerOptionList.className = 'review-edit-options';
+
+  const draftAnswers = Array.isArray(question.answerOptions) ? question.answerOptions.slice(0, 4) : [];
+  while (draftAnswers.length < 4) draftAnswers.push('');
+  const fixedAnswerIndices = new Set((Array.isArray(question.fixedAnswerIndices) ? question.fixedAnswerIndices : []).filter((index) => Number.isInteger(index) && index >= 0 && index < 4));
+  let correctIndex = Number.isInteger(question.correctAnswerIndex) ? question.correctAnswerIndex : 0;
+  if (correctIndex < 0 || correctIndex >= 4) correctIndex = 0;
+
+  const optionInputs = [];
+  const answerLetterButtons = [];
+
+  for (let optionIndex = 0; optionIndex < 4; optionIndex++) {
+    const row = document.createElement('div');
+    row.className = 'review-edit-option-row';
+    const letter = String.fromCharCode(65 + optionIndex);
+
+    const answerLetterButton = document.createElement('button');
+    answerLetterButton.type = 'button';
+    answerLetterButton.className = 'review-edit-correct-btn' + (correctIndex === optionIndex ? ' is-correct' : '');
+    answerLetterButton.textContent = letter;
+    answerLetterButton.setAttribute('aria-label', 'Chọn đáp án đúng ' + letter);
+    answerLetterButton.title = 'Đáp án đúng: ' + letter;
+    answerLetterButton.setAttribute('aria-pressed', String(correctIndex === optionIndex));
+    answerLetterButton.addEventListener('click', () => {
+      correctIndex = optionIndex;
+      answerLetterButtons.forEach((btn, i) => {
+        btn.classList.toggle('is-correct', i === optionIndex);
+        btn.setAttribute('aria-pressed', String(i === optionIndex));
+      });
+    });
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'review-edit-option-input';
+    input.placeholder = 'Đáp án ' + letter;
+    input.value = draftAnswers[optionIndex] || '';
+
+    const fixedButton = document.createElement('button');
+    fixedButton.type = 'button';
+    fixedButton.className = 'button button-ghost button-icon-only review-edit-fixed-btn';
+    fixedButton.dataset.icon = fixedAnswerIndices.has(optionIndex) ? 'pinned' : 'pinned-off';
+    fixedButton.setAttribute('aria-pressed', String(fixedAnswerIndices.has(optionIndex)));
+    fixedButton.setAttribute('aria-label', fixedAnswerIndices.has(optionIndex) ? 'Bỏ cố định đáp án ' + letter : 'Cố định đáp án ' + letter);
+    fixedButton.title = fixedAnswerIndices.has(optionIndex) ? 'Bỏ cố định đáp án' : 'Cố định đáp án';
+    fixedButton.classList.toggle('is-on', fixedAnswerIndices.has(optionIndex));
+    fixedButton.addEventListener('click', () => {
+      const active = !fixedAnswerIndices.has(optionIndex);
+      if (active) fixedAnswerIndices.add(optionIndex);
+      else fixedAnswerIndices.delete(optionIndex);
+      fixedButton.dataset.icon = active ? 'pinned' : 'pinned-off';
+      fixedButton.setAttribute('aria-pressed', String(active));
+      fixedButton.setAttribute('aria-label', active ? 'Bỏ cố định đáp án ' + letter : 'Cố định đáp án ' + letter);
+      fixedButton.title = active ? 'Bỏ cố định đáp án' : 'Cố định đáp án';
+      fixedButton.classList.toggle('is-on', active);
+    });
+
+    row.append(answerLetterButton, input, fixedButton);
+    answerOptionList.appendChild(row);
+    optionInputs.push(input);
+    answerLetterButtons.push(answerLetterButton);
+  };
+
+  const actions = document.createElement('div');
+  actions.className = 'review-edit-action-buttons';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'button button-primary button-icon-only';
+  saveBtn.dataset.icon = 'device-floppy';
+  saveBtn.setAttribute('aria-label', 'Lưu câu hỏi');
+  saveBtn.title = 'Lưu';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'button button-ghost button-icon-only';
+  cancelBtn.dataset.icon = 'x';
+  cancelBtn.setAttribute('aria-label', 'Hủy');
+  cancelBtn.title = 'Hủy';
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'button button-ghost button-icon-only';
+  deleteBtn.dataset.icon = 'trash';
+  deleteBtn.setAttribute('aria-label', 'Xóa câu hỏi');
+  deleteBtn.title = 'Xóa câu';
+
+  actions.append(saveBtn, cancelBtn, deleteBtn);
+
+  saveBtn.addEventListener('click', () => {
+    const questionText = questionInput.value.trim();
+    if (!questionText) {
+      toast('Câu hỏi không được để trống.');
+      questionInput.focus();
+      return;
+    };
+    const answerOptions = optionInputs.map((input) => (input.value || '').trim());
+    if (answerOptions.some((value) => !value)) {
+      toast('Cần điền đủ 4 đáp án.');
+      return;
+    };
+    if (correctIndex < 0 || correctIndex > 3) {
+      toast('Hãy chọn đáp án đúng.');
+      return;
+    };
+    customEditorState.questions[questionIndex] = {
+      questionText,
+      answerOptions,
+      correctAnswerIndex: correctIndex,
+      fixedAnswerIndices: [...fixedAnswerIndices].filter((index) => index >= 0 && index < 4).sort((a, b) => a - b)
+    };
+    customEditorState.editingIndex = null;
+    renderCustomQuestionsEditor();
+    toast('Đã lưu câu hỏi.');
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    const current = customEditorState.questions[questionIndex];
+    const isEmpty = !(current.questionText || '').trim() && !(current.answerOptions || []).some((a) => (a || '').trim());
+    if (isEmpty) customEditorState.questions.splice(questionIndex, 1);
+    customEditorState.editingIndex = null;
+    renderCustomQuestionsEditor();
+  });
+
+  deleteBtn.addEventListener('click', () => {
+    customEditorState.questions.splice(questionIndex, 1);
+    customEditorState.editingIndex = null;
+    renderCustomQuestionsEditor();
+  });
+
+  editBlock.append(questionLabel, questionInput, answerLabel, answerOptionList, actions);
+  card.append(heading, editBlock);
+
+  requestAnimationFrame(() => {
+    questionInput.focus();
+    questionInput.setSelectionRange(questionInput.value.length, questionInput.value.length);
+  });
+};
+
+function renderCustomQuestionsEditor() {
+  const container = getElementById('custom-questions-container');
+  const emptyEl = getElementById('custom-questions-empty');
+  const countEl = getElementById('custom-question-count');
+  if (!container) return;
+  container.replaceChildren();
+  const questions = customEditorState.questions;
+  if (countEl) countEl.textContent = '(' + questions.length + ')';
+  if (emptyEl) emptyEl.hidden = questions.length > 0;
+
+  questions.forEach((question, questionIndex) => {
+    const card = document.createElement('div');
+    card.className = 'review-question-card custom-question-card';
+    card.dataset.questionIndex = String(questionIndex);
+    if (customEditorState.editingIndex === questionIndex) renderCustomQuestionEdit(card, question, questionIndex);
+    else renderCustomQuestionView(card, question, questionIndex);
+    container.append(card);
+  });
+};
+
+function addCustomQuestion() {
+  if (Number.isInteger(customEditorState.editingIndex)) {
+    toast('Hãy lưu hoặc hủy câu đang chỉnh sửa trước.');
+    return;
+  };
+  customEditorState.questions.push({
+    questionText: '',
+    answerOptions: ['', '', '', ''],
+    correctAnswerIndex: 0,
+    fixedAnswerIndices: []
+  });
+  customEditorState.editingIndex = customEditorState.questions.length - 1;
+  renderCustomQuestionsEditor();
+  const container = getElementById('custom-questions-container');
+  if (container?.lastElementChild) container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+function saveCustomDeckFromEditor() {
+  const nameInput = getElementById('input-custom-deck-name');
+  const name = (nameInput?.value || '').trim().toLocaleUpperCase('vi-VN');
+  if (!name) {
+    toast('Vui lòng nhập tên bộ đề.');
+    nameInput?.focus();
+    return;
+  };
+  if (nameInput) nameInput.value = name;
+  if (Number.isInteger(customEditorState.editingIndex)) {
+    toast('Hãy lưu hoặc hủy câu đang chỉnh sửa trước.');
+    return;
+  };
+  const questions = [];
+  for (let i = 0; i < customEditorState.questions.length; i++) {
+    const q = customEditorState.questions[i];
+    const questionText = (q.questionText || '').trim();
+    const rawAnswers = Array.isArray(q.answerOptions) ? q.answerOptions.slice(0, 4) : [];
+    while (rawAnswers.length < 4) rawAnswers.push('');
+    const answerOptions = rawAnswers.map((a) => (typeof a === 'string' ? a.trim() : ''));
+    if (!questionText) {
+      toast('Câu ' + (i + 1) + ' thiếu nội dung.');
+      return;
+    };
+    if (answerOptions.some((value) => !value)) {
+      toast('Câu ' + (i + 1) + ' cần đủ 4 đáp án.');
+      return;
+    };
+    let correct = Number(q.correctAnswerIndex);
+    if (!Number.isInteger(correct) || correct < 0 || correct > 3) correct = 0;
+    const fixedAnswerIndices = Array.isArray(q.fixedAnswerIndices) ? q.fixedAnswerIndices.filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < 4) : [];
+    questions.push({ questionText, answerOptions, correctAnswerIndex: correct, fixedAnswerIndices });
+  };
+  if (!questions.length) {
+    toast('Bộ đề cần ít nhất 1 câu hỏi.');
+    return;
+  };
+  const payload = {
+    id: customEditorState.id || createCustomDeckId(),
+    name,
+    questions,
+    updatedAt: Date.now()
+  };
+  if (!saveCustomDeck(payload)) {
+    toast('Không thể lưu bộ đề (bộ nhớ trình duyệt đầy hoặc bị chặn).');
+    return;
+  };
+  try {
+    const normalized = normalizeQuestions(questions);
+    state.decks[payload.id] = normalized;
+    state.fingerprints[payload.id] = fingerprintQuestions(normalized);
+  } catch (error) {
+    console.error(error);
+  };
+  toast('Đã lưu bộ đề «' + name + '».');
+  state.currentDeck = payload.id;
+  applySettingsToForm(getSettings(payload.id));
+  closeCustomDeckEditor();
+};
+
 function refreshSetupUI() {
   const questions = currentQuestions();
   const fullTotal = questions.length;
   const total = questions.length;
   updateDeckCountLabels();
+  renderCustomDeckList();
 
-  document.querySelectorAll('.deck-button').forEach((button) => button.classList.toggle('active', button.dataset.deck === state.currentDeck));
+  document.querySelectorAll('.deck-button').forEach((button) => button.classList.toggle('active', button.dataset.deck === state.currentDeck && !isCustomDeckId(state.currentDeck)));
 
   const startInput = getElementById('input-range-start');
   const endInput = getElementById('input-range-end');
@@ -1744,25 +2413,67 @@ function syncVolumeFromSoundCheckbox(volumeInputId, checkboxId, labelId) {
   };
 };
 
-function setBankDeck(deckId) {
-  const id = deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1';
-  if (state.bankDeck === id) return;
-  
-  state.bankDeck = id;
+function renderBankDeckSwitch() {
+  const switchEl = getElementById('bank-deck-switch');
+  if (!switchEl) return;
+  switchEl.querySelectorAll('.deck-button[data-bank-deck^="custom_"]').forEach((button) => button.remove());
+  const customDecks = getCustomDecks();
+  for (const deck of customDecks) {
+    if (!state.decks[deck.id]) {
+      try {
+        const questions = normalizeQuestions(deck.questions || []);
+        state.decks[deck.id] = questions;
+        state.fingerprints[deck.id] = fingerprintQuestions(questions);
+      } catch {
+        continue;
+      };
+    };
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'deck-button';
+    button.dataset.bankDeck = deck.id;
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'deck-name';
+    nameSpan.textContent = deck.name.toUpperCase();
+    const countSpan = document.createElement('span');
+    countSpan.className = 'deck-count';
+    countSpan.id = 'bank-count-' + deck.id;
+    countSpan.textContent = formatBankDeckCountLabel(deck.id);
+    button.append(nameSpan, countSpan);
+    button.addEventListener('click', () => setBankDeck(deck.id));
+    switchEl.append(button);
+  };
+  switchEl.querySelectorAll('.deck-button[data-bank-deck]').forEach((button) => button.classList.toggle('active', button.dataset.bankDeck === state.bankDeck));
+};
 
-  
+function setBankDeck(deckId) {
+  const id = isCustomDeckId(deckId) ? deckId : (deckId === 'quocphong2' ? 'quocphong2' : 'quocphong1');
+  if (isCustomDeckId(id) && !state.decks[id]) {
+    try {
+      const custom = getCustomDeck(id);
+      if (!custom) return;
+      const questions = normalizeQuestions(custom.questions || []);
+      state.decks[id] = questions;
+      state.fingerprints[id] = fingerprintQuestions(questions);
+    } catch {
+      toast('Không tải được bộ đề tự tạo.');
+      return;
+    };
+  };
+  if (state.bankDeck === id) return;
+
+  state.bankDeck = id;
   state.bankSearchMatchIndex = -1;
   state.reviewEditingNoteIndex = null;
   state.reviewEditingNoteDraft = '';
+  state.reviewEditingQuestionIndex = null;
   const virtualScrollState = getReviewVirtualState();
   virtualScrollState.heights = [];
   virtualScrollState.positions = [];
-  
+
   renderQuestionBank();
-  if (getElementById('bank-count-quocphong1')) {
-    getElementById('bank-count-quocphong1').textContent = formatBankDeckCountLabel('quocphong1');
-    getElementById('bank-count-quocphong2').textContent = formatBankDeckCountLabel('quocphong2');
-  };
+  updateDeckCountLabels();
+  renderBankDeckSwitch();
   updateBankSearchHint();
   updateBankSearchNavButtons();
 };
@@ -3144,7 +3855,7 @@ function showSummary(summary, deckId, mode) {
 function restoreSessionIfAny() {
   const saved = getSession(state.currentDeck);
   if (!saved) return false;
-  if (!['quocphong1', 'quocphong2'].includes(saved.deckId) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
+  if (!(saved.deckId === 'quocphong1' || saved.deckId === 'quocphong2' || isCustomDeckId(saved.deckId)) || !Array.isArray(saved.items) || !Array.isArray(saved.pool)) {
     clearSession(state.currentDeck);
     return false;
   };
@@ -3243,11 +3954,23 @@ function initializeInterface() {
     toggleHighlightSelection(selection.deckId, questionText.sourceQuestionIndex, selection);
   });
   const active = getSettings();
-  state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
+  if (isCustomDeckId(active.deck) && (state.decks[active.deck] || getCustomDeck(active.deck))) {
+    if (!state.decks[active.deck]) {
+      try {
+        const custom = getCustomDeck(active.deck);
+        const questions = normalizeQuestions(custom.questions || []);
+        state.decks[active.deck] = questions;
+        state.fingerprints[active.deck] = fingerprintQuestions(questions);
+      } catch {
+        active.deck = 'quocphong1';
+      };
+    };
+    state.currentDeck = active.deck;
+  } else state.currentDeck = active.deck === 'quocphong2' ? 'quocphong2' : 'quocphong1';
   const settings = getSettings(state.currentDeck);
   applySettingsToForm(settings);
   state.bankDeck = state.currentDeck;
-  
+  renderBankDeckSwitch();
   showScreen('setup');
   refreshSetupUI();
 };
@@ -3370,6 +4093,12 @@ function bindEvents() {
       persistSetupForm();
     });
   });
+
+  getElementById('button-add-custom-deck')?.addEventListener('click', () => openCustomDeckEditor(null));
+  getElementById('button-custom-editor-back')?.addEventListener('click', () => closeCustomDeckEditor());
+  getElementById('button-custom-editor-cancel')?.addEventListener('click', () => closeCustomDeckEditor());
+  getElementById('button-custom-editor-save-bottom')?.addEventListener('click', () => saveCustomDeckFromEditor());
+  getElementById('button-add-custom-question')?.addEventListener('click', () => addCustomQuestion());
 
   getElementById('button-select-all').addEventListener('click', () => {
     state.allQuestionsEnabled = !state.allQuestionsEnabled;
